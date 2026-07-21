@@ -1,6 +1,6 @@
-# Resource Adapter
+# Oak Resource Adapter
 
-Resource Adapter is Oak National Academy's service and UI package for adapting
+Oak Resource Adapter is Oak National Academy's service and UI package for adapting
 lesson resources with Aila, Oak's AI Lesson Assistant.
 
 This repository is in initial setup, containing a local and hosted
