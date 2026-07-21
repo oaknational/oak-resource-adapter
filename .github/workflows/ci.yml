@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pinned Gitleaks
+        run: |
+          version=8.30.0
+          asset="gitleaks_${version}_linux_x64.tar.gz"
+          expected=79a3ab579b53f71efd634f3aaf7e04a0fa0cf206b7ed434638d1547a2470a66e
+          curl -sSfL -o "$asset" "https://github.com/gitleaks/gitleaks/releases/download/v${version}/${asset}"
+          echo "${expected}  ${asset}" | sha256sum -c -
+          tar -xzf "$asset" gitleaks
+          ./gitleaks detect --redact=100 --source . --log-opts="--branches --tags"
+
+  checks:
+    name: Quality checks
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/resource_adapter
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Validate Prisma schema
+        run: pnpm db:validate
+
+      - name: Type-check
+        run: pnpm type-check
+
+      - name: Run unit tests
+        run: pnpm test
+
+      - name: Verify package artifact
+        run: pnpm test:artifact
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser tests
+        run: pnpm test:e2e

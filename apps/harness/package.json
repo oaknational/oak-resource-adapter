@@ -1,0 +1,30 @@
+{
+  "name": "@oaknational/resource-adapter-harness",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Local OWA-like host for Resource Adapter",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev --port 3000",
+    "lint": "eslint . --max-warnings=0",
+    "start": "next start --port 3000",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@oaknational/oak-components": "^3.0.0",
+    "@oaknational/resource-adapter": "workspace:*",
+    "@oaknational/resource-adapter-contracts": "workspace:*",
+    "next": "^16.1.0",
+    "next-cloudinary": "^6.16.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "styled-components": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}

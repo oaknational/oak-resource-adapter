@@ -1,0 +1,47 @@
+{
+  "name": "@oaknational/resource-adapter",
+  "version": "0.0.0",
+  "private": true,
+  "description": "React UI for Oak National Academy Resource Adapter",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup && tsc --project tsconfig.build.json",
+    "dev": "tsup --watch",
+    "lint": "eslint src --max-warnings=0",
+    "lint:fix": "eslint src --fix",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
+    "type-check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@oaknational/oak-components": "^3.0.0",
+    "next": ">=16.0.0",
+    "next-cloudinary": ">=6.16.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "styled-components": ">=5.3.11"
+  },
+  "devDependencies": {
+    "@oaknational/oak-components": "^3.0.0",
+    "@oaknational/resource-adapter-contracts": "workspace:*",
+    "@types/react": "^19.0.0",
+    "next": "^16.1.0",
+    "next-cloudinary": "^6.16.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "styled-components": "^6.1.0",
+    "tsup": "^8.5.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "vitest": "^4.1.10"
+  }
+}

@@ -1,0 +1,5 @@
+title = "Resource Adapter Gitleaks configuration"
+minVersion = "8.30.0"
+
+[extend]
+useDefault = true

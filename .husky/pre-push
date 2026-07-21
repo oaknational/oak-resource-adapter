@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "gitleaks is required before pushing."
+  echo "Install it with: brew install gitleaks"
+  exit 1
+fi
+
+echo "Scanning Git history for secrets..."
+pnpm secrets:scan

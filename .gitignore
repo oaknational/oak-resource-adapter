@@ -1,0 +1,20 @@
+node_modules/
+.turbo/
+dist/
+.next/
+coverage/
+playwright-report/
+test-results/
+
+.env
+.env.*
+!.env.example
+
+packages/db/generated/
+
+*.tsbuildinfo
+.DS_Store
+
+# Local working draft retained outside the initial repository baseline.
+initial_proposals.md
+RELEASE_PROCESS_DRAFT.md

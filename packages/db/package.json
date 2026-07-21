@@ -1,0 +1,25 @@
+{
+  "name": "@oaknational/resource-adapter-db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PostgreSQL and Prisma setup for Resource Adapter",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:validate": "prisma validate"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.9.0",
+    "@prisma/client": "^7.9.0",
+    "dotenv": "^17.4.2",
+    "pg": "^8.22.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.20.0",
+    "prisma": "^7.9.0"
+  }
+}
