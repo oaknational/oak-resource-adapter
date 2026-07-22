@@ -1,0 +1,3 @@
+setup:
+  project: oak-resource-adapter
+  config: dev

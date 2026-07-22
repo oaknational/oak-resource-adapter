@@ -3,6 +3,19 @@
 This is the shared home for repository-operational knowledge that is useful to
 Resource Adapter contributors but does not belong in the public README.
 
+## Adding a new secret
+
+Doppler (`oak-resource-adapter` project) is the source of truth. To add a
+secret:
+
+1. Add it to Doppler in every config that needs it (`dev`, `stg`, `prd`).
+2. If any `turbo run` task reads it, declare it in that task's `env` (or
+   `globalEnv`) in [`turbo.json`](../turbo.json). Turbo hashes caches on declared
+   env vars only — an undeclared secret means stale or cross-environment cache.
+3. Consumers get it automatically: `doppler run`-wrapped scripts inject it, and
+   `pnpm doppler:pull:dev` refreshes the local `.env` for tools that read env
+   files directly.
+
 ## Package release enforcement
 
 `@oaknational/resource-adapter` and
