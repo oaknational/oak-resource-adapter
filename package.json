@@ -12,6 +12,9 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "changeset": "changeset",
+    "changeset:status": "changeset status",
+    "changeset:version": "changeset version",
     "dev": "turbo run dev --parallel",
     "db:generate": "pnpm --filter @oaknational/resource-adapter-db db:generate",
     "db:migrate:deploy": "pnpm --filter @oaknational/resource-adapter-db db:migrate:deploy",
@@ -30,6 +33,7 @@
     "type-check": "turbo run type-check"
   },
   "devDependencies": {
+    "@changesets/cli": "2.31.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.58.0",
     "@types/node": "^24.0.0",

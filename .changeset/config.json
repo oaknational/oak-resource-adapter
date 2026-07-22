@@ -1,0 +1,17 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    ["@oaknational/resource-adapter", "@oaknational/resource-adapter-contracts"]
+  ],
+  "linked": [],
+  "access": "restricted",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "@oaknational/resource-adapter-api",
+    "@oaknational/resource-adapter-db",
+    "@oaknational/resource-adapter-harness"
+  ]
+}

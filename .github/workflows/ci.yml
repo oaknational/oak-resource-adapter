@@ -14,6 +14,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changeset:
+    name: Check package release metadata
+    if: github.event_name == 'pull_request' && vars.ENFORCE_CHANGESETS == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check changeset status
+        run: pnpm changeset status --since=origin/${{ github.base_ref }}
+
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest
