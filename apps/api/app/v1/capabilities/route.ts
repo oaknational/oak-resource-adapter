@@ -2,9 +2,12 @@ import {
   resourceAdapterCapabilitiesRequestSchema,
   resourceAdapterCapabilitiesResponseSchema,
 } from "@oaknational/resource-adapter-contracts";
+import { raLogger } from "@oaknational/resource-adapter-logger";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getCorsHeaders } from "../../../src/cors";
+
+const log = raLogger("capabilities");
 
 const capabilitiesResponse = resourceAdapterCapabilitiesResponseSchema.parse({
   capabilities: [
@@ -29,11 +32,14 @@ export async function POST(request: NextRequest) {
   const parsedRequest = resourceAdapterCapabilitiesRequestSchema.safeParse(body);
 
   if (!parsedRequest.success) {
+    log.warn("Rejected invalid capabilities request");
     return NextResponse.json(
       { message: "Invalid capabilities request." },
       { headers: corsHeaders, status: 400 },
     );
   }
+
+  log.info("Resolved capabilities for lesson %s", parsedRequest.data.lesson.lessonSlug);
 
   // Eligibility rules will use parsedRequest.data.lesson in a later slice.
   // The initial endpoint intentionally offers the worksheet adapter for every

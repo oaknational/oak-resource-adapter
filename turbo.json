@@ -3,6 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["DEBUG"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "@oaknational/resource-adapter-db#build": {
