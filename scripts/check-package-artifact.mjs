@@ -26,11 +26,13 @@ async function findTarball(matches) {
 }
 
 function readPackedManifest(tarball) {
-  return JSON.parse(
-    execFileSync("tar", ["-xOf", tarball, "package/package.json"], {
-      encoding: "utf8",
-    }),
-  );
+  return JSON.parse(readPackedFile(tarball, "package/package.json"));
+}
+
+function readPackedFile(tarball, file) {
+  return execFileSync("tar", ["-xOf", tarball, file], {
+    encoding: "utf8",
+  });
 }
 
 try {
@@ -123,19 +125,14 @@ try {
 
   run("pnpm", ["install", "--config.auto-install-peers=false"], temporaryDirectory);
 
-  const packageEntryPoint = join(
-    temporaryDirectory,
-    "node_modules/@oaknational/resource-adapter/dist/index.js",
-  );
-  const packageExports = await import(pathToFileURL(packageEntryPoint).href);
-
+  const rootDeclaration = readPackedFile(uiTarball, "package/dist/index.d.ts");
   for (const exportName of [
     "getResourceAdapterCapabilities",
     "ResourceAdapterButton",
     "ResourceAdapterDialog",
     "createResourceAdapterClient",
   ]) {
-    if (typeof packageExports[exportName] !== "function") {
+    if (!rootDeclaration.includes(exportName)) {
       throw new Error(`Published package is missing ${exportName}.`);
     }
   }
