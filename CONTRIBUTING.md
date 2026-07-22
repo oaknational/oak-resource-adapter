@@ -8,3 +8,8 @@ community.
 
 Do not report security vulnerabilities in a public issue. Follow the
 [security policy](SECURITY.md) instead.
+
+## Development
+
+Repository development and release-operational notes are in
+[docs/development.md](docs/development.md).

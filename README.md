@@ -43,10 +43,25 @@ The harness is an OWA-like local host for the published UI boundary.
 pnpm dev
 ```
 
-This starts the harness on port 3000 and the local API on port 3001. The page renders
-`ResourceAdapterButton` and `ResourceAdapterDialog` from the workspace UI
-package with representative lesson context and a response from the API to
-mirror the OWA integration.
+This starts the harness on port 3000 and the local API on port 3001. The harness page
+uses the workspace UI package's typed client to resolve capabilities, then
+renders the package-owned drawer with representative lesson context. This
+mirrors the OWA/package composition boundary.
+
+## API client
+
+The service API uses tRPC. The published UI package includes its typed
+client, which can also be used directly by OWA or another host, such as the harness:
+
+```ts
+import { createResourceAdapterClient } from "@oaknational/resource-adapter/client";
+
+const api = createResourceAdapterClient({
+  getToken,
+  trpcEndpoint: "https://resource-adapter.example/trpc/v1",
+});
+const capabilities = await api.capabilities.get.query(lesson);
+```
 
 ## Local database
 
@@ -70,3 +85,11 @@ In development, run `pnpm db:migrate:dev` to update your local database.
 
 > Staging and production deployments must run `pnpm db:migrate:deploy` as a
 > dedicated CI job before the API deployment.
+
+## Release Versioning
+
+`@oaknational/resource-adapter` and its contracts package are preconfigured to
+release as a fixed version group; OWA will depend only on the UI package. Until
+the first publish, contributors do not need to add Changesets. See [release
+management](.changeset/README.md) for the later release steps, including the
+single repository setting that enables enforcement.

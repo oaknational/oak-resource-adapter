@@ -2,6 +2,8 @@ node_modules/
 .turbo/
 dist/
 .next/
+# Written by Next.js and differs between development and production builds.
+apps/*/next-env.d.ts
 coverage/
 playwright-report/
 test-results/
