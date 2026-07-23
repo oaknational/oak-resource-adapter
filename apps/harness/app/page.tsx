@@ -65,7 +65,7 @@ export default function HarnessPage() {
       setCapabilitiesState("ready");
       log.info("Loaded %d capabilities", response.capabilities.length);
     } catch (error) {
-      log.error("Unable to load Resource Adapter capabilities", error);
+      log.error(error, { report: true });
       setCapabilities([]);
       setCapabilitiesState("error");
     }
