@@ -88,3 +88,85 @@ describe("raLogger error reporting", () => {
     expect(reporter).not.toHaveBeenCalled();
   });
 });
+
+describe("raLogger table", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "table").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("passes tabular data through to console.table", async () => {
+    const { raLogger } = await freshLogger();
+    const log = raLogger("capabilities");
+    const rows = [{ id: 1 }, { id: 2 }];
+
+    log.table(rows);
+
+    expect(console.table).toHaveBeenCalledWith(rows, undefined);
+  });
+
+  it("forwards the columns argument to console.table", async () => {
+    const { raLogger } = await freshLogger();
+    const log = raLogger("capabilities");
+    const rows = [{ id: 1, name: "a" }];
+
+    log.table(rows, ["id"]);
+
+    expect(console.table).toHaveBeenCalledWith(rows, ["id"]);
+  });
+});
+
+describe("debug enablement on import", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it("enables debug from NEXT_PUBLIC_DEBUG when running in a browser", async () => {
+    vi.stubGlobal("window", {});
+    vi.stubEnv("NEXT_PUBLIC_DEBUG", "ra:*");
+    vi.resetModules();
+
+    const debugModule = await import("debug");
+    const enableSpy = vi
+      .spyOn(debugModule.default, "enable")
+      .mockImplementation(() => {});
+
+    await import("./index.js");
+
+    expect(enableSpy).toHaveBeenCalledWith("ra:*");
+  });
+
+  it("does not enable debug when window is undefined", async () => {
+    vi.stubEnv("NEXT_PUBLIC_DEBUG", "ra:*");
+    vi.resetModules();
+
+    const debugModule = await import("debug");
+    const enableSpy = vi
+      .spyOn(debugModule.default, "enable")
+      .mockImplementation(() => {});
+
+    await import("./index.js");
+
+    expect(enableSpy).not.toHaveBeenCalled();
+  });
+
+  it("does not enable debug when NEXT_PUBLIC_DEBUG is unset", async () => {
+    vi.stubGlobal("window", {});
+    vi.stubEnv("NEXT_PUBLIC_DEBUG", "");
+    vi.resetModules();
+
+    const debugModule = await import("debug");
+    const enableSpy = vi
+      .spyOn(debugModule.default, "enable")
+      .mockImplementation(() => {});
+
+    await import("./index.js");
+
+    expect(enableSpy).not.toHaveBeenCalled();
+  });
+});
