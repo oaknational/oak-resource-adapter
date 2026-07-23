@@ -76,8 +76,7 @@ describe("raLogger error reporting", () => {
   });
 
   it("stops calling a previously-set reporter after resetErrorReporter", async () => {
-    const { raLogger, setErrorReporter, resetErrorReporter } =
-      await freshLogger();
+    const { raLogger, setErrorReporter, resetErrorReporter } = await freshLogger();
     const reporter = vi.fn();
     setErrorReporter(reporter);
     resetErrorReporter();
