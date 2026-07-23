@@ -1,9 +1,22 @@
 {
   "name": "@oaknational/resource-adapter-contracts",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Shared tRPC contracts for Resource Adapter services and UI",
   "license": "MIT",
   "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oaknational/oak-resource-adapter.git",
+    "directory": "packages/contracts"
+  },
+  "homepage": "https://github.com/oaknational/oak-resource-adapter/tree/main/packages/contracts#readme",
+  "bugs": {
+    "url": "https://github.com/oaknational/oak-resource-adapter/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -22,6 +35,7 @@
     "dev": "tsc --project tsconfig.build.json --watch",
     "lint": "eslint src --max-warnings=0",
     "lint:fix": "eslint src --fix",
+    "publish:local": "pnpm build && yalc publish --no-scripts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
     "type-check": "tsc --noEmit"
