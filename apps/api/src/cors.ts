@@ -23,7 +23,8 @@ export function getCorsHeaders(
   }
 
   return {
-    "Access-Control-Allow-Headers": "Authorization, Content-Type",
+    "Access-Control-Allow-Headers":
+      "Authorization, Content-Type, X-Resource-Adapter-Contract-Version",
     "Access-Control-Allow-Methods": allowedMethods,
     "Access-Control-Allow-Origin": origin,
     Vary: "Origin",

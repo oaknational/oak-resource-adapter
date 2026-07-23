@@ -1,7 +1,6 @@
 {
   "name": "@oaknational/resource-adapter",
   "version": "0.0.0",
-  "private": true,
   "description": "React UI for Oak National Academy Resource Adapter",
   "license": "MIT",
   "type": "module",
@@ -9,6 +8,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
     }
   },
   "files": [
@@ -33,15 +36,18 @@
   },
   "devDependencies": {
     "@oaknational/oak-components": "^3.0.0",
-    "@oaknational/resource-adapter-contracts": "workspace:*",
     "@types/react": "^19.0.0",
+    "@vitest/coverage-v8": "^4.1.10",
     "next": "^16.1.0",
     "next-cloudinary": "^6.16.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "styled-components": "^6.1.0",
     "tsup": "^8.5.1",
-    "@vitest/coverage-v8": "^4.1.10",
     "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "@oaknational/resource-adapter-contracts": "workspace:*",
+    "@trpc/client": "11.18.0"
   }
 }

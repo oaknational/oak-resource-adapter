@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  getResourceAdapterCapabilities,
-  ResourceAdapterApiError,
-} from "./getResourceAdapterCapabilities.js";
+import { getResourceAdapterCapabilities } from "./getResourceAdapterCapabilities.js";
 
 const lesson = {
   lessonSlug: "adding-fractions",
@@ -19,68 +16,82 @@ afterEach(() => {
 });
 
 describe("getResourceAdapterCapabilities", () => {
-  it("sends versioned lesson context and the host token", async () => {
+  it("sends lesson context and the host token through tRPC", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
-        JSON.stringify({
-          capabilities: [
-            {
-              id: "worksheetAdapter",
-              label: "Adapt worksheet",
-              resourceType: "worksheet",
+        JSON.stringify([
+          {
+            result: {
+              data: {
+                capabilities: [
+                  {
+                    id: "worksheetAdapter",
+                    label: "Adapt worksheet",
+                    resourceType: "worksheet",
+                  },
+                ],
+              },
             },
-          ],
-        }),
+          },
+        ]),
       ),
     );
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
       getResourceAdapterCapabilities({
-        apiBaseUrl: "https://resource-adapter-api.example",
         getToken: async () => "clerk-token",
         lesson,
+        trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
       }),
     ).resolves.toMatchObject({
       capabilities: [{ id: "worksheetAdapter" }],
     });
 
     const [url, request] = fetchMock.mock.calls[0] ?? [];
-    expect(String(url)).toBe("https://resource-adapter-api.example/v1/capabilities");
+    expect(String(url)).toContain(
+      "https://resource-adapter-api.example/trpc/v1/capabilities.get?batch=1",
+    );
     expect(request).toMatchObject({
-      body: JSON.stringify({ contractVersion: 1, lesson }),
+      body: JSON.stringify({ "0": lesson }),
       headers: {
         Authorization: "Bearer clerk-token",
-        "Content-Type": "application/json",
+        "x-resource-adapter-contract-version": "1",
       },
       method: "POST",
     });
   });
 
-  it("rejects an invalid API response", async () => {
+  it("ignores capabilities not supported by this package version", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
         new Response(
-          JSON.stringify({
-            capabilities: [
-              {
-                id: "unknownAdapter",
-                label: "Unknown adapter",
-                resourceType: "worksheet",
+          JSON.stringify([
+            {
+              result: {
+                data: {
+                  capabilities: [
+                    {
+                      id: "unknownAdapter",
+                      label: "Unknown adapter",
+                      resourceType: "worksheet",
+                    },
+                  ],
+                },
               },
-            ],
-          }),
+            },
+          ]),
         ),
       ),
     );
 
     await expect(
       getResourceAdapterCapabilities({
-        apiBaseUrl: "https://resource-adapter-api.example",
         getToken: async () => null,
         lesson,
+        trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
       }),
-    ).rejects.toBeInstanceOf(ResourceAdapterApiError);
+    ).resolves.toEqual({ capabilities: [] });
   });
 });

@@ -1,14 +1,17 @@
 {
   "name": "@oaknational/resource-adapter-contracts",
   "version": "0.0.0",
-  "private": true,
-  "description": "Shared contracts for Resource Adapter services and UI",
+  "description": "Shared tRPC contracts for Resource Adapter services and UI",
   "license": "MIT",
   "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
     }
   },
   "files": [
@@ -24,6 +27,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@trpc/server": "11.18.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

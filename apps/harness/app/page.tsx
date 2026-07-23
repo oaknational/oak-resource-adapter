@@ -26,6 +26,9 @@ const lesson: LessonContext = {
 
 const apiBaseUrl =
   process.env.NEXT_PUBLIC_RESOURCE_ADAPTER_API_BASE_URL ?? "http://localhost:3001";
+const trpcEndpoint =
+  process.env.NEXT_PUBLIC_RESOURCE_ADAPTER_TRPC_ENDPOINT ??
+  "http://localhost:3001/trpc/v1";
 
 const getToken = async (): Promise<string | null> => null;
 
@@ -53,9 +56,9 @@ export default function HarnessPage() {
 
     try {
       const response = await getResourceAdapterCapabilities({
-        apiBaseUrl,
         getToken,
         lesson,
+        trpcEndpoint,
       });
 
       setCapabilities(response.capabilities);
