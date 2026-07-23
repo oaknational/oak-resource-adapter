@@ -7,6 +7,7 @@ export default tseslint.config(
     ignores: [
       "**/dist/**",
       "**/.next/**",
+      "**/app/.well-known/workflow/**",
       "**/coverage/**",
       "**/node_modules/**",
       "**/playwright-report/**",

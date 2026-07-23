@@ -2,6 +2,8 @@ node_modules/
 .turbo/
 dist/
 .next/
+.workflow-data/
+.workflow-vitest/
 # Written by Next.js and differs between development and production builds.
 apps/*/next-env.d.ts
 coverage/

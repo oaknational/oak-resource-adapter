@@ -125,6 +125,50 @@ jobs:
       - name: Run unit tests
         run: pnpm test
 
+  database-integration:
+    name: Run database integration tests
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/resource_adapter
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: resource_adapter
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d resource_adapter"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply database migrations
+        run: pnpm --filter @oaknational/resource-adapter-db db:migrate:deploy
+
+      - name: Run database integration tests
+        run: pnpm test:integration
+
   package-artifact:
     name: Verify published package
     runs-on: ubuntu-latest

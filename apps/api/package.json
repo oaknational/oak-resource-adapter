@@ -2,7 +2,7 @@
   "name": "@oaknational/resource-adapter-api",
   "version": "0.0.0",
   "private": true,
-  "description": "Resource Adapter capabilities API",
+  "description": "Resource Adapter API and background worker",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -12,14 +12,18 @@
     "start": "next start --port 3001",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
+    "test:integration": "RUN_DATABASE_INTEGRATION_TESTS=1 vitest run src/jobs/job-repository.integration.test.ts",
     "type-check": "next typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@trpc/server": "11.18.0",
     "@oaknational/resource-adapter-contracts": "workspace:*",
+    "@oaknational/resource-adapter-db": "workspace:*",
+    "@trpc/server": "11.18.0",
     "next": "^16.1.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "workflow": "4.6.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

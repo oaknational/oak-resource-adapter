@@ -12,9 +12,9 @@ secret:
 2. If any `turbo run` task reads it, declare it in that task's `env` (or
    `globalEnv`) in [`turbo.json`](../turbo.json). Turbo hashes caches on declared
    env vars only — an undeclared secret means stale or cross-environment cache.
-3. Consumers get it automatically: `doppler run`-wrapped scripts inject it, and
-   `pnpm doppler:pull:dev` refreshes the local `.env` for tools that read env
-   files directly.
+3. Supply it through the deployment environment in CI. Locally,
+   `pnpm doppler:pull:dev` refreshes the gitignored `.env` read by repository
+   tooling.
 
 ## Package release enforcement
 

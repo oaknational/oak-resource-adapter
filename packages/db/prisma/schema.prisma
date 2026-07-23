@@ -8,4 +8,30 @@ datasource db {
   provider = "postgresql"
 }
 
-// Domain models will be introduced with their first use case.
+enum JobStatus {
+  QUEUED    @map("queued")
+  RUNNING   @map("running")
+  SUCCEEDED @map("succeeded")
+  FAILED    @map("failed")
+
+  @@map("job_status")
+}
+
+model Job {
+  id             String    @id @default(uuid()) @db.Uuid
+  idempotencyKey String    @unique @map("idempotency_key") @db.VarChar(128)
+  kind           String
+  status         JobStatus @default(QUEUED)
+  /// Job-kind-specific request, validated by the TypeScript job registry.
+  input          Json
+  workflowRunId  String?   @unique @map("workflow_run_id")
+  failureCode    String?   @map("failure_code")
+  failureMessage String?   @map("failure_message")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  startedAt      DateTime? @map("started_at") @db.Timestamptz(3)
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz(3)
+
+  @@index([status, createdAt])
+  @@map("jobs")
+}

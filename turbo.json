@@ -9,8 +9,13 @@
       "env": ["DATABASE_URL"],
       "outputs": ["generated/**"]
     },
+    "@oaknational/resource-adapter-db#type-check": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
     "dev": {
       "cache": false,
+      "env": ["DATABASE_URL"],
       "persistent": true
     },
     "lint": {
@@ -31,6 +36,12 @@
     "test:coverage": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"]
+    },
+    "test:integration": {
+      "cache": false,
+      "dependsOn": ["^build"],
+      "env": ["DATABASE_URL", "RUN_DATABASE_INTEGRATION_TESTS"],
+      "outputs": []
     }
   }
 }
