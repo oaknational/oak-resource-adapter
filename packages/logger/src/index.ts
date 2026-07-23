@@ -11,6 +11,25 @@ debugBase.log = console.log.bind(console);
 export type LoggerKey = "capabilities" | "harness";
 
 /**
+ * A pluggable error reporter (e.g. `Sentry.captureException`). The logger stays
+ * dependency-free; apps inject a reporter at boot via {@link setErrorReporter}.
+ */
+type ErrorReporter = (error: unknown) => void;
+
+const g = globalThis as { __raErrorReporter?: ErrorReporter };
+
+/**
+ * Register the error reporter used by `log.error(err, { report: true })`.
+ */
+export function setErrorReporter(fn: ErrorReporter): void {
+  g.__raErrorReporter = fn;
+}
+
+export function resetErrorReporter(): void {
+  delete g.__raErrorReporter;
+}
+
+/**
  * The logger uses namespaces so that we can selectively toggle noisy logs.
  * Logs are selected with the DEBUG environment variable.
  * Error logs are always shown.
@@ -35,7 +54,17 @@ export function raLogger(childKey: LoggerKey) {
   return {
     info: debugLogger,
     warn: debugLogger,
-    error: console.error,
+    error: (error: unknown, opts?: { report?: boolean }) => {
+      console.error(error);
+      if (opts?.report && g.__raErrorReporter) {
+        // A broken reporter must never mask the original error path.
+        try {
+          g.__raErrorReporter(error);
+        } catch {
+          // Swallow: the error is already on the console above.
+        }
+      }
+    },
     table: tableLogger,
   };
 }

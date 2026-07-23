@@ -28,21 +28,33 @@ export function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const corsHeaders = getCorsHeaders(request);
-  const body: unknown = await request.json().catch(() => undefined);
-  const parsedRequest = resourceAdapterCapabilitiesRequestSchema.safeParse(body);
 
-  if (!parsedRequest.success) {
-    log.warn("Rejected invalid capabilities request");
-    return NextResponse.json(
-      { message: "Invalid capabilities request." },
-      { headers: corsHeaders, status: 400 },
+  try {
+    const body: unknown = await request.json().catch(() => undefined);
+    const parsedRequest =
+      resourceAdapterCapabilitiesRequestSchema.safeParse(body);
+
+    if (!parsedRequest.success) {
+      log.warn("Rejected invalid capabilities request");
+      return NextResponse.json(
+        { message: "Invalid capabilities request." },
+        { headers: corsHeaders, status: 400 },
+      );
+    }
+
+    log.info(
+      "Resolved capabilities for lesson %s",
+      parsedRequest.data.lesson.lessonSlug,
     );
+
+    // Eligibility rules will use parsedRequest.data.lesson in a later slice.
+    // The initial endpoint intentionally offers the worksheet adapter for every
+    // valid lesson context, establishing the deployable HTTP seam first.
+    return NextResponse.json(capabilitiesResponse, { headers: corsHeaders });
+  } catch (error) {
+    // Log and report to Sentry, then re-throw so Next's default 500 handling
+    // is unchanged.
+    log.error(error, { report: true });
+    throw error;
   }
-
-  log.info("Resolved capabilities for lesson %s", parsedRequest.data.lesson.lessonSlug);
-
-  // Eligibility rules will use parsedRequest.data.lesson in a later slice.
-  // The initial endpoint intentionally offers the worksheet adapter for every
-  // valid lesson context, establishing the deployable HTTP seam first.
-  return NextResponse.json(capabilitiesResponse, { headers: corsHeaders });
 }
