@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { config } from "dotenv";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
 config({
   path: resolve(fileURLToPath(new URL("../../.env", import.meta.url))),
@@ -14,7 +14,9 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
-  datasource: {
-    url: env("DATABASE_URL"),
-  },
+  datasource: process.env.DATABASE_URL
+    ? {
+        url: process.env.DATABASE_URL,
+      }
+    : undefined,
 });

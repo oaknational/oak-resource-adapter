@@ -7,7 +7,10 @@ import {
   claimJob,
   completeJob,
   createOrGetJob,
+  failJob,
+  getJob,
   IdempotencyConflictError,
+  recordWorkflowRun,
 } from "./job-repository";
 
 const describeWithDatabase =
@@ -76,6 +79,77 @@ describeWithDatabase("job repository integration", () => {
     ).resolves.toMatchObject({
       status: JobStatus.SUCCEEDED,
       workflowRunId: "wrun_winner",
+    });
+  });
+
+  it("reads a job by id and returns null when it is absent", async () => {
+    const created = await createOrGetJob({
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { message: "hello" },
+      kind: "test.echo",
+    });
+    createdJobIds.push(created.job.id);
+
+    await expect(getJob(created.job.id)).resolves.toMatchObject({
+      id: created.job.id,
+      status: JobStatus.QUEUED,
+    });
+    await expect(getJob(randomUUID())).resolves.toBeNull();
+  });
+
+  it("records a workflow run only while none is set", async () => {
+    const created = await createOrGetJob({
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { message: "hello" },
+      kind: "test.echo",
+    });
+    createdJobIds.push(created.job.id);
+
+    await recordWorkflowRun(created.job.id, "wrun_first");
+    await recordWorkflowRun(created.job.id, "wrun_second");
+
+    await expect(getJob(created.job.id)).resolves.toMatchObject({
+      workflowRunId: "wrun_first",
+    });
+  });
+
+  it("marks a queued job as failed with a failure code and message", async () => {
+    const created = await createOrGetJob({
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { message: "hello" },
+      kind: "test.echo",
+    });
+    createdJobIds.push(created.job.id);
+
+    await failJob(created.job.id, null, {
+      code: "job_execution_failed",
+      message: "The background job failed while executing.",
+    });
+
+    await expect(getJob(created.job.id)).resolves.toMatchObject({
+      failureCode: "job_execution_failed",
+      failureMessage: "The background job failed while executing.",
+      status: JobStatus.FAILED,
+    });
+  });
+
+  it("fails a running job for its owning workflow run", async () => {
+    const created = await createOrGetJob({
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { message: "hello" },
+      kind: "test.echo",
+    });
+    createdJobIds.push(created.job.id);
+    await claimJob(created.job.id, "wrun_owner");
+
+    await failJob(created.job.id, "wrun_owner", {
+      code: "job_execution_failed",
+      message: "The background job failed while executing.",
+    });
+
+    await expect(getJob(created.job.id)).resolves.toMatchObject({
+      status: JobStatus.FAILED,
+      workflowRunId: "wrun_owner",
     });
   });
 });

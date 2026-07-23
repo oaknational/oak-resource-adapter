@@ -35,6 +35,7 @@
     },
     "test:coverage": {
       "dependsOn": ["^build"],
+      "env": ["DATABASE_URL", "RUN_DATABASE_INTEGRATION_TESTS"],
       "outputs": ["coverage/**"]
     },
     "test:integration": {
