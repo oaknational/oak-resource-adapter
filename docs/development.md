@@ -33,7 +33,23 @@ When the first real package release is being prepared, we will:
 1. Add one `v1` changeset covering both packages.
 2. Set `ENFORCE_CHANGESETS=true` in the repository's GitHub Actions variables.
 3. From then on, require a changeset for every UI or contracts package change; CI enforces this.
-4. Generate versions with `pnpm changeset version`, then publish through the
-   approved registry workflow.
+4. Merge to `main`; the [Release workflow](../.github/workflows/release.yml)
+   opens a "chore: version packages" PR, and merging that PR publishes both
+   packages via npm OIDC trusted publishing.
 
-The full package-release configuration is in [`.changeset`](../.changeset/).
+## Release infrastructure
+
+Publishing needs no npm tokens. The Release workflow authenticates through
+OIDC trusted publishing, configured once per package on npmjs.com (org
+`oaknational`, repository `oak-resource-adapter`, workflow `release.yml`).
+Because npm only allows a trusted publisher on an existing package, the first
+publish of each package is manual:
+`pnpm --filter <package> publish --access public --no-git-checks` from an npm
+account in the `@oaknational` org. The only secret the Release workflow uses
+is `RELEASE_GITHUB_TOKEN`, a fine-grained PAT (Contents and Pull requests
+read/write) used so the version packages PR triggers CI; Doppler's
+`DOPPLER_TOKEN` plays no part in releases.
+
+The full package-release configuration is in [`.changeset`](../.changeset/),
+and the step-by-step journey from pull request to npm is described in the
+[release workflow](RELEASE_WORKFLOW.md).
