@@ -17,6 +17,25 @@ an OWA-like host, along with a skeleton API.
 
 - Node.js 24 LTS (see `.nvmrc`)
 - pnpm 10 or later
+- [Doppler CLI](https://docs.doppler.com/docs/install-cli), authenticated with
+  `doppler login`, before running any secret-dependent script
+
+Doppler is the single source of truth for secrets. `doppler.yaml` scopes this
+repo to the `oak-resource-adapter` project and `dev` config by default, so
+`doppler run` / `doppler secrets` commands target the right place without
+passing `--project`/`--config` (scripts still pass `--config` explicitly for
+non-default environments like `stg`/`prd`).
+
+Most scripts that need secrets are already wrapped in `doppler run` and inject
+secrets directly — they do not read `.env`. The `.env` file below is only for
+tooling that loads env files itself (the Next.js dev server, Prisma config, IDE
+run/debug configs, ad hoc CLI commands, and test runners launched outside a
+wrapper). Run this once after cloning, and again whenever secrets change in
+Doppler:
+
+```sh
+pnpm doppler:pull:dev   # writes the dev config into a local, gitignored .env
+```
 
 ## Commands
 
@@ -65,8 +84,9 @@ const capabilities = await api.capabilities.get.query(lesson);
 
 ## Local database
 
-Use a local PostgreSQL database. Copy `.env.example` to `.env`, set
-`DATABASE_URL`, then run:
+`DATABASE_URL` is provided by Doppler's `dev` config. `pnpm db:migrate:dev` is
+wrapped in `doppler run` and injects it automatically; `pnpm db:generate` reads
+the pulled `.env`. Run `pnpm doppler:pull:dev` first (see Prerequisites), then:
 
 ```sh
 pnpm db:generate
@@ -83,8 +103,10 @@ pnpm db:migrate:dev
 
 In development, run `pnpm db:migrate:dev` to update your local database.
 
-> Staging and production deployments must run `pnpm db:migrate:deploy` as a
-> dedicated CI job before the API deployment.
+> Staging and production deployments must run `pnpm db:migrate:deploy:stg` /
+> `pnpm db:migrate:deploy:prd` as a dedicated CI job before the API deployment.
+> In CI, Doppler authenticates with a service token (`DOPPLER_TOKEN` set as a
+> GitHub Actions secret) rather than `doppler login`.
 
 ## Release Versioning
 
