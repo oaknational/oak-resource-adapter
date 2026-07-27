@@ -1,8 +1,13 @@
 name: Release
 
 on:
-  push:
+  # Only after CI has gone green on main, so a release can never start from a
+  # red main. GitHub reads this trigger from the default branch, so a change to
+  # it takes effect once merged, not from a branch.
+  workflow_run:
+    workflows: [CI]
     branches: [main]
+    types: [completed]
 
 permissions:
   contents: read
@@ -15,10 +20,12 @@ jobs:
   release:
     name: Release
     # Dormant until the repository variable ENABLE_NPM_RELEASES is exactly
-    # "true". Without it, every push to main would attempt a publish, because
+    # "true". Without it, every qualifying run would attempt a publish, because
     # the changesets action treats "no changesets pending" as "publish anything
     # unpublished". See docs/DEVELOPMENT.md for when to enable it.
-    if: vars.ENABLE_NPM_RELEASES == 'true'
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      vars.ENABLE_NPM_RELEASES == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write # push the version commit, tags, and GitHub releases
