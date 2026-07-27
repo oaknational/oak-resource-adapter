@@ -8,9 +8,12 @@ import {
   type ResourceAdapterCapability,
 } from "@oaknational/resource-adapter";
 import { OakSecondaryButton } from "@oaknational/oak-components";
+import { raLogger } from "@oaknational/resource-adapter-logger";
 import { useCallback, useEffect, useState } from "react";
 
 import styles from "./page.module.css";
+
+const log = raLogger("harness");
 
 const lesson: LessonContext = {
   lessonSlug: "adding-fractions",
@@ -65,6 +68,7 @@ export default function HarnessPage() {
 
   const loadCapabilities = useCallback(async () => {
     setCapabilitiesState("loading");
+    log.info("Loading capabilities for lesson %s", lesson.lessonSlug);
 
     try {
       const response = await getResourceAdapterCapabilities({
@@ -75,8 +79,9 @@ export default function HarnessPage() {
 
       setCapabilities(response.capabilities);
       setCapabilitiesState("ready");
+      log.info("Loaded %d capabilities", response.capabilities.length);
     } catch (error) {
-      console.error("Unable to load Resource Adapter capabilities", error);
+      log.error(error, { report: true });
       setCapabilities([]);
       setCapabilitiesState("error");
     }
@@ -135,7 +140,7 @@ export default function HarnessPage() {
 
       setTestJob((await response.json()) as TestJobResponse);
     } catch (error) {
-      console.error("Unable to create the background worker test job", error);
+      log.error(error, { report: true });
       setTestJobError("Could not create the test job.");
     } finally {
       setIsCreatingTestJob(false);
@@ -175,7 +180,7 @@ export default function HarnessPage() {
           return;
         }
 
-        console.error("Unable to poll the background worker test job", error);
+        log.error(error, { report: true });
         setTestJob(null);
         setTestJobError("Could not read the test job status.");
       } finally {

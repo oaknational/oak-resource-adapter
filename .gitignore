@@ -22,4 +22,5 @@ packages/db/generated/
 # Local working draft retained outside the initial repository baseline.
 initial_proposals.md
 RELEASE_PROCESS_DRAFT.md
-/.serena
+
+.serena
