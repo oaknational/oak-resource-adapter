@@ -14,6 +14,11 @@ concurrency:
 jobs:
   release:
     name: Release
+    # Dormant until the repository variable ENABLE_NPM_RELEASES is exactly
+    # "true". Without it, every push to main would attempt a publish, because
+    # the changesets action treats "no changesets pending" as "publish anything
+    # unpublished". See docs/DEVELOPMENT.md for when to enable it.
+    if: vars.ENABLE_NPM_RELEASES == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write # push the version commit, tags, and GitHub releases
@@ -38,8 +43,9 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
-      # Trusted publishing needs npm >= 11.5.1; pin the major so it cannot
-      # silently jump to a new one.
+      # Load-bearing under pnpm: `pnpm publish` delegates the upload to the npm
+      # CLI it finds on PATH, and trusted publishing needs npm >= 11.5.1. Pin
+      # the major so it cannot silently jump to a new one.
       - name: Ensure npm supports trusted publishing
         run: |
           npm install -g npm@11
@@ -55,6 +61,10 @@ jobs:
           publish: pnpm ci:publish
           commit: "chore: version packages"
           title: "chore: version packages"
+          # Commit and push the version PR through the GitHub API, so the run
+          # needs no git credentials and persist-credentials: false above stays
+          # meaningful. Commits are signed with GitHub's key.
+          commitMode: github-api
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
           HUSKY: "0"
