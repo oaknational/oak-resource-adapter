@@ -61,6 +61,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Checks registry signatures and provenance attestations of the installed
+      # tree before this job publishes anything. Must be npm, not pnpm: pnpm
+      # ignores the "signatures" argument and runs a vulnerability audit
+      # instead, which fails on any open advisory.
+      - name: Verify dependency signatures and attestations
+        run: npm audit signatures
+
       - name: Create release pull request or publish
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
         with:
