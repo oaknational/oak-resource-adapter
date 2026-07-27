@@ -70,14 +70,26 @@ Merging to `main` triggers the release workflow:
 on:
   push:
     branches: [main]
-# ...
-- uses: changesets/action@v1
-  with:
-    version: pnpm ci:version
-    publish: pnpm ci:publish
-  env:
-    GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+
+jobs:
+  release:
+    if: vars.ENABLE_NPM_RELEASES == 'true'
+    steps:
+      # ...
+      - uses: changesets/action@<commit-sha> # v1.9.0
+        with:
+          version: pnpm ci:version
+          publish: pnpm ci:publish
+          commitMode: github-api
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
 ```
+
+Third-party actions are pinned to commit SHAs rather than tags, because a tag
+can be moved to different code and this job can publish packages. The job is
+also gated on the `ENABLE_NPM_RELEASES` repository variable, so it does nothing
+until releases are deliberately switched on (see
+[development notes](DEVELOPMENT.md)).
 
 The action looks in `.changeset/`. When changesets are present it runs
 `pnpm ci:version` and opens (or updates) a PR titled "chore: version
@@ -116,7 +128,9 @@ on npm and publishes both, delegating to `pnpm publish`, which rewrites the
 internal `workspace:*` dependency to the exact released version. This rewrite
 is necessary because `workspace:*` means "the copy in this monorepo" and is
 unresolvable in a consumer's install; pinning the exact version also keeps
-the fixed pair in lockstep. Publishing authenticates through the OIDC
+the fixed pair in lockstep. Each package's `prepublishOnly` hook rebuilds it at
+this point as well, which is redundant after the filtered build above but is what
+makes a manual publish outside CI safe. Publishing authenticates through the OIDC
 handshake (the `id-token: write` permission in the workflow) rather than a
 stored `NPM_TOKEN`, so there is no long-lived credential to steal or rotate,
 and npm accepts publishes only from this workflow in this repository.
