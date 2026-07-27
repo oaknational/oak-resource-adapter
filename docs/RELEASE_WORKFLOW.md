@@ -63,17 +63,22 @@ packs both packages and verifies the tarballs are sound.
 
 ### 3. The workflow opens the Version Packages PR
 
-Merging to `main` triggers the release workflow:
+Merging to `main` starts CI, and the release workflow runs only once that CI run
+has finished successfully:
 
 ```yaml
 # .github/workflows/release.yml
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
     branches: [main]
+    types: [completed]
 
 jobs:
   release:
-    if: vars.ENABLE_NPM_RELEASES == 'true'
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      vars.ENABLE_NPM_RELEASES == 'true'
     steps:
       # ...
       - uses: changesets/action@<commit-sha> # v1.9.0
@@ -85,11 +90,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
 ```
 
-Third-party actions are pinned to commit SHAs rather than tags, because a tag
-can be moved to different code and this job can publish packages. The job is
-also gated on the `ENABLE_NPM_RELEASES` repository variable, so it does nothing
-until releases are deliberately switched on (see
-[development notes](DEVELOPMENT.md)).
+Three deliberate guards sit in that snippet:
+
+- Chaining off CI rather than the push itself means nothing can be published
+  from a red `main`.
+- Third-party actions are pinned to commit SHAs rather than tags, because a tag
+  can be moved to different code and this job can publish packages.
+- The `ENABLE_NPM_RELEASES` repository variable gates the whole job, so it does
+  nothing until releases are deliberately switched on (see
+  [development notes](DEVELOPMENT.md)).
+
+Note that GitHub reads a `workflow_run` trigger from the default branch, so
+changes to it only take effect once merged, and the release workflow cannot be
+exercised from a feature branch.
 
 The action looks in `.changeset/`. When changesets are present it runs
 `pnpm ci:version` and opens (or updates) a PR titled "chore: version
@@ -115,8 +128,9 @@ untouched and publish nothing.
 
 ### 4. Merge the Version Packages PR to publish
 
-When the Version Packages PR is merged, the workflow runs again, finds no
-changesets pending, and switches to publish mode via `pnpm ci:publish`:
+When the Version Packages PR is merged, CI runs on `main` again and, on success,
+the release workflow follows it, finds no changesets pending, and switches to
+publish mode via `pnpm ci:publish`:
 
 ```json
 "ci:publish": "turbo run build --filter=@oaknational/resource-adapter... && changeset publish"

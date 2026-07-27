@@ -43,8 +43,9 @@ When the first real package release is being prepared, we will:
 3. Set `ENFORCE_CHANGESETS=true` and `ENABLE_NPM_RELEASES=true` together, so the
    two halves of the policy cannot drift apart.
 4. From then on, require a changeset for every UI or contracts package change; CI enforces this.
-5. Merge to `main`; the Release workflow opens a "chore: version packages" PR,
-   and merging that PR publishes both packages via npm OIDC trusted publishing.
+5. Merge to `main`; once CI passes there the Release workflow opens a
+   "chore: version packages" PR, and merging that PR publishes both packages via
+   npm OIDC trusted publishing.
 
 Because the release job never runs while it is gated, the first enable is also
 its first real execution. Enable it directly after the manual publish and prove
