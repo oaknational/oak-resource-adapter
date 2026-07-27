@@ -11,6 +11,7 @@ import {
   GET as getCapabilities,
   OPTIONS as options,
 } from "../app/trpc/v1/[trpc]/route";
+import { OPTIONS as testJobOptions } from "../app/dev/jobs/test-echo/route";
 import * as capabilities from "./capabilities";
 
 // Passthrough mock: keeps the real capabilities service for every test, but
@@ -142,5 +143,20 @@ describe("API routes", () => {
     expect(response.headers.get("Access-Control-Allow-Headers")).toContain(
       "X-Resource-Adapter-Contract-Version",
     );
+  });
+
+  it("returns CORS headers for test job preflight requests", () => {
+    const response = testJobOptions(
+      request("http://localhost:3001/dev/jobs/test-echo", {
+        headers: { Origin: "http://localhost:3000" },
+        method: "OPTIONS",
+      }),
+    );
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
+      "http://localhost:3000",
+    );
+    expect(response.headers.get("Access-Control-Allow-Methods")).toBe("POST, OPTIONS");
   });
 });

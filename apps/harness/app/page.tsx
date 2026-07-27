@@ -33,11 +33,24 @@ const trpcEndpoint =
 const getToken = async (): Promise<string | null> => null;
 
 type ApiHealthState = "checking" | "healthy" | "unavailable";
+type TestJobStatus = "FAILED" | "QUEUED" | "RUNNING" | "SUCCEEDED";
+type TestJobResponse = {
+  failure: { message: string } | null;
+  id: string;
+  status: TestJobStatus;
+};
 
 const apiHealthLabels: Record<ApiHealthState, string> = {
   checking: "Checking",
   healthy: "Healthy",
   unavailable: "Unavailable",
+};
+
+const testJobStatusLabels: Record<TestJobStatus, string> = {
+  FAILED: "Failed",
+  QUEUED: "Queued",
+  RUNNING: "Running",
+  SUCCEEDED: "Succeeded",
 };
 
 export default function HarnessPage() {
@@ -49,6 +62,9 @@ export default function HarnessPage() {
   >("loading");
   const [apiHealthState, setApiHealthState] = useState<ApiHealthState>("checking");
   const [isResourceAdapterOpen, setIsResourceAdapterOpen] = useState(false);
+  const [isCreatingTestJob, setIsCreatingTestJob] = useState(false);
+  const [testJob, setTestJob] = useState<TestJobResponse | null>(null);
+  const [testJobError, setTestJobError] = useState<string | null>(null);
 
   const loadCapabilities = useCallback(async () => {
     setCapabilitiesState("loading");
@@ -106,6 +122,93 @@ export default function HarnessPage() {
     };
   }, []);
 
+  const runWorkerSmokeTest = useCallback(async () => {
+    setIsCreatingTestJob(true);
+    setTestJob(null);
+    setTestJobError(null);
+
+    try {
+      const response = await fetch(new URL("/dev/jobs/test-echo", apiBaseUrl), {
+        body: JSON.stringify({ message: "Hello from the harness" }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error(`The API returned HTTP ${response.status}.`);
+      }
+
+      setTestJob((await response.json()) as TestJobResponse);
+    } catch (error) {
+      log.error(error, { report: true });
+      setTestJobError("Could not create the test job.");
+    } finally {
+      setIsCreatingTestJob(false);
+    }
+  }, []);
+
+  const testJobIsActive = testJob?.status === "QUEUED" || testJob?.status === "RUNNING";
+
+  useEffect(() => {
+    if (!testJob || !testJobIsActive) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const testJobId = testJob.id;
+    let requestInFlight = false;
+
+    async function pollJob() {
+      if (requestInFlight) {
+        return;
+      }
+
+      requestInFlight = true;
+
+      try {
+        const response = await fetch(new URL(`/dev/jobs/${testJobId}`, apiBaseUrl), {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`The API returned HTTP ${response.status}.`);
+        }
+
+        setTestJob((await response.json()) as TestJobResponse);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        log.error(error, { report: true });
+        setTestJob(null);
+        setTestJobError("Could not read the test job status.");
+      } finally {
+        requestInFlight = false;
+      }
+    }
+
+    void pollJob();
+    const interval = window.setInterval(() => void pollJob(), 500);
+
+    return () => {
+      controller.abort();
+      window.clearInterval(interval);
+    };
+  }, [testJob?.id, testJobIsActive]);
+
+  let testJobStatus = "Not run";
+  if (isCreatingTestJob) {
+    testJobStatus = "Creating";
+  } else if (testJobError) {
+    testJobStatus = testJobError;
+  } else if (testJob) {
+    testJobStatus = testJobStatusLabels[testJob.status];
+    if (testJob.failure?.message) {
+      testJobStatus += `: ${testJob.failure.message}`;
+    }
+  }
+
   return (
     <>
       <a className={styles.skipLink} href="#main-content">
@@ -133,6 +236,22 @@ export default function HarnessPage() {
           <section aria-labelledby="worksheet-heading" className={styles.worksheet}>
             <h2 id="worksheet-heading">Worksheet</h2>
             <p>A worksheet is available for this lesson.</p>
+          </section>
+          <section aria-labelledby="worker-test-heading" className={styles.workerTest}>
+            <h2 id="worker-test-heading">Background worker test</h2>
+            <div className={styles.workerTestControls}>
+              <button
+                className={styles.workerTestButton}
+                disabled={isCreatingTestJob || testJobIsActive}
+                onClick={() => void runWorkerSmokeTest()}
+                type="button"
+              >
+                Run test job
+              </button>
+              <p aria-live="polite" className={styles.workerTestStatus}>
+                Status: {testJobStatus}
+              </p>
+            </div>
           </section>
           {capabilities.length > 0 && (
             <section
