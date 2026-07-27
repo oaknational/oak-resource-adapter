@@ -7,9 +7,9 @@
   "type": "module",
   "scripts": {
     "build": "next build",
-    "dev": "next dev --port 3001",
+    "dev": "dotenv -e ../../.env -- next dev --port 3001",
     "lint": "eslint . --max-warnings=0",
-    "start": "next start --port 3001",
+    "start": "dotenv -e ../../.env -- next start --port 3001",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
     "type-check": "next typegen && tsc --noEmit"
@@ -17,6 +17,8 @@
   "dependencies": {
     "@trpc/server": "11.18.0",
     "@oaknational/resource-adapter-contracts": "workspace:*",
+    "@oaknational/resource-adapter-logger": "workspace:*",
+    "@sentry/nextjs": "^10.67.0",
     "next": "^16.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -26,6 +28,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitest/coverage-v8": "^4.1.10",
+    "dotenv-cli": "^11.0.0",
     "vitest": "^4.1.10"
   }
 }

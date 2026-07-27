@@ -8,9 +8,12 @@ import {
   type ResourceAdapterCapability,
 } from "@oaknational/resource-adapter";
 import { OakSecondaryButton } from "@oaknational/oak-components";
+import { raLogger } from "@oaknational/resource-adapter-logger";
 import { useCallback, useEffect, useState } from "react";
 
 import styles from "./page.module.css";
+
+const log = raLogger("harness");
 
 const lesson: LessonContext = {
   lessonSlug: "adding-fractions",
@@ -49,6 +52,7 @@ export default function HarnessPage() {
 
   const loadCapabilities = useCallback(async () => {
     setCapabilitiesState("loading");
+    log.info("Loading capabilities for lesson %s", lesson.lessonSlug);
 
     try {
       const response = await getResourceAdapterCapabilities({
@@ -59,8 +63,9 @@ export default function HarnessPage() {
 
       setCapabilities(response.capabilities);
       setCapabilitiesState("ready");
+      log.info("Loaded %d capabilities", response.capabilities.length);
     } catch (error) {
-      console.error("Unable to load Resource Adapter capabilities", error);
+      log.error(error, { report: true });
       setCapabilities([]);
       setCapabilitiesState("error");
     }

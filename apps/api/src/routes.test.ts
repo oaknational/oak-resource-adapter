@@ -1,15 +1,23 @@
 import type { NextRequest } from "next/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   resourceAdapterApiContractVersion,
   resourceAdapterApiContractVersionHeader,
 } from "@oaknational/resource-adapter-contracts";
+import { setErrorReporter } from "@oaknational/resource-adapter-logger";
 
 import { GET as getHealth } from "../app/health/route";
 import {
   GET as getCapabilities,
   OPTIONS as options,
 } from "../app/trpc/v1/[trpc]/route";
+import * as capabilities from "./capabilities";
+
+// Passthrough mock: keeps the real capabilities service for every test, but
+// makes its exports spy-able so a single test can force the resolver to throw.
+vi.mock("./capabilities", async (importOriginal) =>
+  importOriginal<typeof import("./capabilities")>(),
+);
 
 const lesson = {
   lessonSlug: "adding-fractions",
@@ -44,6 +52,10 @@ function capabilitiesRequest(
 }
 
 describe("API routes", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("returns CORS-enabled health status", async () => {
     const response = getHealth(
       request("http://localhost:3001/health", {
@@ -82,6 +94,37 @@ describe("API routes", () => {
     await expect(response.json()).resolves.toMatchObject([
       { error: { data: { code: "PRECONDITION_FAILED" } } },
     ]);
+  });
+
+  it("reports an unexpected server error to the error reporter", async () => {
+    const report = vi.fn();
+    setErrorReporter(report);
+    vi.spyOn(capabilities, "getCapabilities").mockImplementation(() => {
+      throw new Error("capabilities service unavailable");
+    });
+
+    const response = await getCapabilities(capabilitiesRequest(lesson));
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject([
+      { error: { data: { code: "INTERNAL_SERVER_ERROR" } } },
+    ]);
+    expect(report).toHaveBeenCalledOnce();
+  });
+
+  it("does not report a client input error to the error reporter", async () => {
+    const report = vi.fn();
+    setErrorReporter(report);
+
+    const response = await getCapabilities(
+      capabilitiesRequest({ ...lesson, availableResources: ["essay"] }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject([
+      { error: { data: { code: "BAD_REQUEST" } } },
+    ]);
+    expect(report).not.toHaveBeenCalled();
   });
 
   it("returns CORS headers for tRPC preflight requests", () => {
