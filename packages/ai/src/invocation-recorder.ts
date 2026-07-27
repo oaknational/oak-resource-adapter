@@ -1,5 +1,5 @@
-import type { ResolvedModelInvocation } from "./model-transport.js";
 import type { ModelInvocationResponse } from "./protocol.js";
+import type { ResolvedModelInvocation } from "./resolved-invocation.js";
 
 export type ModelInvocationStarted = ResolvedModelInvocation &
   Readonly<{

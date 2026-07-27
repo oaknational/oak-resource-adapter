@@ -1,24 +1,24 @@
 import { randomUUID } from "node:crypto";
 
-import { raLogger } from "@oaknational/resource-adapter-logger";
-
 import type {
   InvocationRecorder,
   ModelInvocationStarted,
 } from "./invocation-recorder.js";
+import {
+  DEFAULT_TIMEOUT_MS,
+  resolveSignal,
+  validateTimeoutMs,
+} from "./invocation-timeout.js";
 import { providerForModel } from "./model-catalogue.js";
-import type { ModelRole, ModelRoutes, ModelTransportId } from "./model-routes.js";
-import type {
-  ModelTransport,
-  ModelTransportOptions,
-  ResolvedModelInvocation,
-} from "./model-transport.js";
+import type { ModelTransport, ModelTransportOptions } from "./model-transport.js";
 import type { ModelInvocationRequest, ModelInvocationResponse } from "./protocol.js";
-
-/** The lifecycle event a recorder was writing when it failed. */
-export type RecordingStage = "failed" | "started" | "succeeded";
-
-export type RecorderErrorHandler = (error: unknown, stage: RecordingStage) => void;
+import {
+  createRecorderErrorReporter,
+  type RecorderErrorHandler,
+  type RecordingStage,
+} from "./recorder-error-reporting.js";
+import type { ResolvedModelInvocation } from "./resolved-invocation.js";
+import type { ModelRole, ModelTransportId, RoleBindings } from "./role-bindings.js";
 
 export type InvokeModelParams<TRole extends string> = Readonly<{
   /**
@@ -34,19 +34,19 @@ export type InvokeModelParams<TRole extends string> = Readonly<{
   timeoutMs?: number;
 }>;
 
-export type ModelInvoker<TRoutes extends ModelRoutes> = Readonly<{
+export type ModelInvoker<TBindings extends RoleBindings> = Readonly<{
   invoke(
-    params: InvokeModelParams<ModelRole<TRoutes>>,
+    params: InvokeModelParams<ModelRole<TBindings>>,
   ): Promise<ModelInvocationResponse>;
 }>;
 
-export type ModelInvokerConfig<TRoutes extends ModelRoutes> = Readonly<{
+export type ModelInvokerConfig<TBindings extends RoleBindings> = Readonly<{
   /**
    * Applied to every invocation that does not pass its own `timeoutMs`.
    * Defaults to {@link DEFAULT_TIMEOUT_MS}.
    */
   defaultTimeoutMs?: number;
-  models: TRoutes;
+  roleBindings: TBindings;
   /**
    * Called when `recordSucceeded` or `recordFailed` throws. Defaults to
    * reporting sanitised metadata through the shared logger. Custom handlers
@@ -56,46 +56,21 @@ export type ModelInvokerConfig<TRoutes extends ModelRoutes> = Readonly<{
    */
   onRecorderError?: RecorderErrorHandler;
   recorder: InvocationRecorder;
-  transports: Readonly<Record<ModelTransportId<TRoutes>, ModelTransport>>;
+  transports: Readonly<Record<ModelTransportId<TBindings>, ModelTransport>>;
 }>;
 
-function reportRecorderError(error: unknown, stage: RecordingStage): void {
-  // Deliberately do not attach the raw error as a cause: recorder failures can
-  // contain prompts, model output, or persistence payloads.
-  const rejectionKind = error instanceof Error ? "an Error" : "a non-Error value";
-  raLogger("ai").error(
-    new Error(
-      `Model invocation recorder failed with ${rejectionKind} while recording "${stage}".`,
-    ),
-    { report: true },
-  );
+function completionFields(started: ModelInvocationStarted) {
+  const completedAt = new Date();
+  return {
+    completedAt,
+    durationMs: completedAt.getTime() - started.startedAt.getTime(),
+  };
 }
 
-export const DEFAULT_TIMEOUT_MS = 60_000;
-const MAX_TIMEOUT_MS = 2_147_483_647;
-
-function validateTimeoutMs(timeoutMs: number, field: string): number {
-  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > MAX_TIMEOUT_MS) {
-    throw new RangeError(
-      `${field} must be an integer between 1 and ${MAX_TIMEOUT_MS}.`,
-    );
-  }
-
-  return timeoutMs;
-}
-
-function resolveSignal(
-  signal: AbortSignal | undefined,
-  timeoutMs: number,
-): AbortSignal {
-  const timeout = AbortSignal.timeout(timeoutMs);
-  return signal === undefined ? timeout : AbortSignal.any([signal, timeout]);
-}
-
-export function createModelInvoker<const TRoutes extends ModelRoutes>(
-  config: ModelInvokerConfig<TRoutes>,
-): ModelInvoker<TRoutes> {
-  const onRecorderError = config.onRecorderError ?? reportRecorderError;
+export function createModelInvoker<const TBindings extends RoleBindings>(
+  config: ModelInvokerConfig<TBindings>,
+): ModelInvoker<TBindings> {
+  const reportRecorderFailure = createRecorderErrorReporter(config.onRecorderError);
   const defaultTimeoutMs = validateTimeoutMs(
     config.defaultTimeoutMs ?? DEFAULT_TIMEOUT_MS,
     "defaultTimeoutMs",
@@ -108,35 +83,21 @@ export function createModelInvoker<const TRoutes extends ModelRoutes>(
     try {
       await write();
     } catch (error) {
-      try {
-        onRecorderError(error, stage);
-      } catch {
-        // Keep a broken custom handler observable without allowing it to mask a
-        // paid-for response or the original provider error.
-        try {
-          raLogger("ai").error(
-            new Error(
-              `Model invocation recorder error handler failed while reporting "${stage}".`,
-            ),
-            { report: true },
-          );
-        } catch {
-          // Last resort: error reporting must never change invocation semantics.
-        }
-      }
+      await reportRecorderFailure(error, stage);
     }
   }
 
   return {
     async invoke(params) {
-      const route = config.models[params.role];
-      if (!route) {
+      const binding = config.roleBindings[params.role];
+      if (!binding) {
         throw new Error(`Unknown model role: ${params.role}`);
       }
 
-      const transport = config.transports[route.transport as ModelTransportId<TRoutes>];
+      const transport =
+        config.transports[binding.transport as ModelTransportId<TBindings>];
       if (!transport) {
-        throw new Error(`Unknown model transport: ${route.transport}`);
+        throw new Error(`Unknown model transport: ${binding.transport}`);
       }
 
       const resolvedInvocation: ResolvedModelInvocation = {
@@ -144,53 +105,47 @@ export function createModelInvoker<const TRoutes extends ModelRoutes>(
           ? {}
           : { correlationKey: params.correlationKey }),
         invocationId: randomUUID(),
-        model: route.model,
-        provider: providerForModel(route.model),
+        model: binding.model,
+        provider: providerForModel(binding.model),
         request: params.request,
         role: params.role,
-        transport: route.transport,
+        transport: binding.transport,
       };
       const started: ModelInvocationStarted = {
         ...resolvedInvocation,
         startedAt: new Date(),
       };
 
+      // Validated before recording so an invalid timeout costs nothing.
       const timeoutMs =
         params.timeoutMs === undefined
           ? defaultTimeoutMs
           : validateTimeoutMs(params.timeoutMs, "timeoutMs");
-      const options: ModelTransportOptions = {
-        signal: resolveSignal(params.signal, timeoutMs),
-      };
 
       // Deliberately fail closed: a model is never invoked without an audit
       // record, so a recorder outage prevents the call.
       await config.recorder.recordStarted(started);
 
+      // Started only now: the timeout budgets the provider call, so a slow
+      // recorder must not consume it.
+      const options: ModelTransportOptions = {
+        signal: resolveSignal(params.signal, timeoutMs),
+      };
+
       let response: ModelInvocationResponse;
       try {
         response = await transport.invoke(resolvedInvocation, options);
       } catch (error) {
-        const completedAt = new Date();
+        const completion = completionFields(started);
         await recordOutcome("failed", () =>
-          config.recorder.recordFailed({
-            ...started,
-            completedAt,
-            durationMs: completedAt.getTime() - started.startedAt.getTime(),
-            error,
-          }),
+          config.recorder.recordFailed({ ...started, ...completion, error }),
         );
         throw error;
       }
 
-      const completedAt = new Date();
+      const completion = completionFields(started);
       await recordOutcome("succeeded", () =>
-        config.recorder.recordSucceeded({
-          ...started,
-          completedAt,
-          durationMs: completedAt.getTime() - started.startedAt.getTime(),
-          response,
-        }),
+        config.recorder.recordSucceeded({ ...started, ...completion, response }),
       );
 
       return response;

@@ -7,9 +7,9 @@ import type {
   ModelTransport,
   RecordingStage,
 } from "./index.js";
-import { createModelInvoker, DEFAULT_TIMEOUT_MS, defineModelRoutes } from "./index.js";
+import { createModelInvoker, DEFAULT_TIMEOUT_MS, defineRoleBindings } from "./index.js";
 
-const models = defineModelRoutes({
+const roleBindings = defineRoleBindings({
   "quick-classifier": {
     model: "gpt-5.4-2026-03-05",
     transport: "primary",
@@ -52,7 +52,7 @@ describe("createModelInvoker", () => {
   });
 
   it("preserves model roles as a literal union", () => {
-    expectTypeOf<ModelRole<typeof models>>().toEqualTypeOf<"quick-classifier">();
+    expectTypeOf<ModelRole<typeof roleBindings>>().toEqualTypeOf<"quick-classifier">();
   });
 
   it("resolves a role and records a successful invocation", async () => {
@@ -66,7 +66,7 @@ describe("createModelInvoker", () => {
       }),
     };
     const invoker = createModelInvoker({
-      models,
+      roleBindings,
       recorder,
       transports: { primary: transport },
     });
@@ -103,11 +103,11 @@ describe("createModelInvoker", () => {
     expect(recorder.recordFailed).not.toHaveBeenCalled();
   });
 
-  it("derives the provider from the model rather than the route", async () => {
+  it("derives the provider from the model rather than the binding", async () => {
     const recorder = recorderFixture();
     const transport: ModelTransport = { invoke: vi.fn(async () => responseFixture()) };
     const invoker = createModelInvoker({
-      models: defineModelRoutes({
+      roleBindings: defineRoleBindings({
         writer: { model: "gpt-5.4-2026-03-05", transport: "primary" },
       }),
       recorder,
@@ -132,7 +132,7 @@ describe("createModelInvoker", () => {
       }),
     };
     const invoker = createModelInvoker({
-      models,
+      roleBindings,
       recorder,
       transports: { primary: transport },
     });
@@ -161,7 +161,7 @@ describe("createModelInvoker", () => {
       });
       const recorderErrors: Array<[unknown, RecordingStage]> = [];
       const invoker = createModelInvoker({
-        models,
+        roleBindings,
         onRecorderError: (error, stage) => {
           recorderErrors.push([error, stage]);
         },
@@ -184,7 +184,7 @@ describe("createModelInvoker", () => {
       });
       const recorderErrors: Array<[unknown, RecordingStage]> = [];
       const invoker = createModelInvoker({
-        models,
+        roleBindings,
         onRecorderError: (error, stage) => {
           recorderErrors.push([error, stage]);
         },
@@ -214,8 +214,37 @@ describe("createModelInvoker", () => {
         .spyOn(console, "error")
         .mockImplementation(() => undefined);
       const invoker = createModelInvoker({
-        models,
+        roleBindings,
         onRecorderError: () => {
+          throw new Error("Recorder error handler unavailable");
+        },
+        recorder,
+        transports: { primary: { invoke: async () => response } },
+      });
+
+      await expect(
+        invoker.invoke({ request: { input: "Classify" }, role: "quick-classifier" }),
+      ).resolves.toBe(response);
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            'Model invocation recorder error handler failed while reporting "succeeded".',
+        }),
+      );
+    });
+
+    it("preserves the response when an async onRecorderError rejects", async () => {
+      const response = responseFixture();
+      const recorder = recorderFixture();
+      recorder.recordSucceeded.mockImplementation(() => {
+        throw new Error("Recorder unavailable");
+      });
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+      const invoker = createModelInvoker({
+        roleBindings,
+        onRecorderError: async () => {
           throw new Error("Recorder error handler unavailable");
         },
         recorder,
@@ -244,7 +273,7 @@ describe("createModelInvoker", () => {
         .spyOn(console, "error")
         .mockImplementation(() => undefined);
       const invoker = createModelInvoker({
-        models,
+        roleBindings,
         recorder,
         transports: { primary: { invoke: async () => response } },
       });
@@ -259,6 +288,37 @@ describe("createModelInvoker", () => {
       expect((reported as Error & { cause?: unknown }).cause).toBeUndefined();
     });
 
+    it("reports recorder error name, status, and code but not its message", async () => {
+      const response = responseFixture();
+      const recorder = recorderFixture();
+      const secret = "SECRET_RECORDER_PAYLOAD";
+      recorder.recordSucceeded.mockImplementation(() => {
+        throw Object.assign(new Error(secret), {
+          code: "P2002",
+          name: "PrismaClientKnownRequestError",
+          status: 409,
+        });
+      });
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+      const invoker = createModelInvoker({
+        roleBindings,
+        recorder,
+        transports: { primary: { invoke: async () => response } },
+      });
+
+      await expect(
+        invoker.invoke({ request: { input: "Classify" }, role: "quick-classifier" }),
+      ).resolves.toBe(response);
+
+      const message = (consoleError.mock.calls[0]?.[0] as Error).message;
+      expect(message).toContain("PrismaClientKnownRequestError");
+      expect(message).toContain("status 409");
+      expect(message).toContain("code P2002");
+      expect(message).not.toContain(secret);
+    });
+
     it("fails closed when recordStarted throws", async () => {
       const recorderError = new Error("Recorder unavailable");
       const recorder = recorderFixture();
@@ -269,7 +329,7 @@ describe("createModelInvoker", () => {
         invoke: vi.fn(async () => responseFixture()),
       };
       const invoker = createModelInvoker({
-        models,
+        roleBindings,
         recorder,
         transports: { primary: transport },
       });
@@ -290,7 +350,7 @@ describe("createModelInvoker", () => {
           invoke: vi.fn(async () => responseFixture()),
         };
         const invoker = createModelInvoker({
-          models,
+          roleBindings,
           recorder,
           transports: { primary: transport },
         });
@@ -311,7 +371,7 @@ describe("createModelInvoker", () => {
       expect(() =>
         createModelInvoker({
           defaultTimeoutMs: 0,
-          models,
+          roleBindings,
           recorder: recorderFixture(),
           transports: { primary: { invoke: async () => responseFixture() } },
         }),
@@ -327,7 +387,7 @@ describe("createModelInvoker", () => {
         },
       };
       const invoker = createModelInvoker({
-        models,
+        roleBindings,
         recorder: recorderFixture(),
         transports: { primary: transport },
       });
@@ -342,6 +402,34 @@ describe("createModelInvoker", () => {
       expect(DEFAULT_TIMEOUT_MS).toBe(60_000);
     });
 
+    it("does not spend the timeout budget on a slow recordStarted", async () => {
+      let abortedOnArrival: boolean | undefined;
+      const recorder = recorderFixture();
+      recorder.recordStarted.mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 30)),
+      );
+      const invoker = createModelInvoker({
+        defaultTimeoutMs: 20,
+        roleBindings,
+        recorder,
+        transports: {
+          primary: {
+            invoke: async (_invocation, options) => {
+              abortedOnArrival = options.signal.aborted;
+              return responseFixture();
+            },
+          },
+        },
+      });
+
+      await invoker.invoke({
+        request: { input: "Classify" },
+        role: "quick-classifier",
+      });
+
+      expect(abortedOnArrival).toBe(false);
+    });
+
     it("forwards the caller's signal and aborts with it", async () => {
       const controller = new AbortController();
       let observed: AbortSignal | undefined;
@@ -353,7 +441,7 @@ describe("createModelInvoker", () => {
         },
       };
       const invoker = createModelInvoker({
-        models,
+        roleBindings,
         recorder: recorderFixture(),
         transports: { primary: transport },
       });
@@ -379,7 +467,7 @@ describe("createModelInvoker", () => {
       };
       const invoker = createModelInvoker({
         defaultTimeoutMs: 1,
-        models,
+        roleBindings,
         recorder: recorderFixture(),
         transports: { primary: transport },
       });
@@ -405,7 +493,7 @@ describe("createModelInvoker", () => {
       };
       const invoker = createModelInvoker({
         defaultTimeoutMs: 60_000,
-        models,
+        roleBindings,
         recorder: recorderFixture(),
         transports: { primary: transport },
       });

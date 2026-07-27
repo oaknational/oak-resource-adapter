@@ -11,7 +11,7 @@ export const SUPPORTED_MODELS = {
 } as const satisfies Readonly<Record<string, ModelCatalogueEntry>>;
 
 /**
- * The physical model identifier accepted by {@link defineModelRoutes}.
+ * The physical model identifier accepted by {@link defineRoleBindings}.
  */
 export type ModelId = keyof typeof SUPPORTED_MODELS;
 

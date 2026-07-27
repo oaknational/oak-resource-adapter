@@ -5,6 +5,7 @@ export type {
   ModelInvocationStarted,
   ModelInvocationSucceeded,
 } from "./invocation-recorder.js";
+export { DEFAULT_TIMEOUT_MS } from "./invocation-timeout.js";
 export {
   MODEL_PROVIDERS,
   providerForModel,
@@ -14,23 +15,21 @@ export {
 } from "./model-catalogue.js";
 export {
   createModelInvoker,
-  DEFAULT_TIMEOUT_MS,
   type InvokeModelParams,
   type ModelInvoker,
   type ModelInvokerConfig,
-  type RecorderErrorHandler,
-  type RecordingStage,
 } from "./model-invoker.js";
-export {
-  defineModelRoutes,
-  type ModelRole,
-  type ModelRoute,
-  type ModelRoutes,
-  type ModelTransportId,
-} from "./model-routes.js";
-export type {
-  ModelTransport,
-  ModelTransportOptions,
-  ResolvedModelInvocation,
-} from "./model-transport.js";
+export type { ModelTransport, ModelTransportOptions } from "./model-transport.js";
 export type { ModelInvocationRequest, ModelInvocationResponse } from "./protocol.js";
+export type {
+  RecorderErrorHandler,
+  RecordingStage,
+} from "./recorder-error-reporting.js";
+export type { ResolvedModelInvocation } from "./resolved-invocation.js";
+export {
+  defineRoleBindings,
+  type ModelRole,
+  type ModelTransportId,
+  type RoleBinding,
+  type RoleBindings,
+} from "./role-bindings.js";

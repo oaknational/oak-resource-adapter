@@ -2,10 +2,10 @@
 
 `@oaknational/resource-adapter-ai` is the server-side entry point for invoking
 AI models. It separates the stable role used by generation code from the
-physical model and route used to fulfil the request.
+physical model and transport used to fulfil the request.
 
 The package is currently infrastructure only. It contains no production model
-routes, provider clients, credentials, or network calls.
+role bindings, provider clients, credentials, or network calls.
 
 ## Vocabulary
 
@@ -14,13 +14,13 @@ routes, provider clients, credentials, or network calls.
 - A **model** is the physical provider model ID selected for a role, drawn from
   the supported catalogue in `packages/ai/src/model-catalogue.ts`.
 - A **provider** owns or serves the model, such as OpenAI, Anthropic, or an
-  internal service. It is derived from the model, never declared per route.
+  internal service. It is derived from the model, never declared per binding.
 - A **transport** is how the invocation reaches that provider, such as a
   direct client, Helicone, or another gateway.
 - A **protocol** is the request and response shape used by a transport.
 
 Pipeline code selects a role, never a physical model or gateway. Changing a
-model therefore changes the central route map; changing a gateway changes the
+model therefore changes the role bindings; changing a gateway changes the
 transport configuration.
 
 Only `packages/ai/src/protocol.ts` imports the OpenAI SDK. However, adopting a
@@ -31,11 +31,11 @@ than only this boundary.
 
 `model-catalogue.ts` holds the closed set of models this service may invoke.
 
-## Defining and invoking models
+## Binding roles and invoking models
 
 ```ts
 // examples
-const models = defineModelRoutes({
+const roleBindings = defineRoleBindings({
   "quick-classifier": {
     model: "gpt-5.4-2026-03-05", // must be one of our SUPPORTED_MODELS
     transport: "primary",
@@ -43,7 +43,7 @@ const models = defineModelRoutes({
 });
 
 const ai = createModelInvoker({
-  models,
+  roleBindings,
   recorder: invocationRecorder,
   transports: {
     primary: modelTransport,
@@ -112,12 +112,6 @@ Recording is observability and does not change the outcome of a call. If
 `onRecorderError` — a broken recorder never discards a paid-for response or
 masks a provider error. `recordStarted` is an exception: it fails
 closed, so a recorder outage prevents the call.
-
-The default error handler reports only the lifecycle stage and whether the
-thrown value was an `Error`, without attaching the raw recorder error as a
-cause. A custom `onRecorderError` receives that raw error and therefore owns its
-redaction. If a custom handler throws, the invoker reports a sanitised handler
-failure and preserves the original invocation outcome.
 
 Recorders may receive prompt and response content and are responsible for
 applying retention and redaction rules.

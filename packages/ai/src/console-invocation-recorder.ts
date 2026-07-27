@@ -1,5 +1,6 @@
 import { raLogger } from "@oaknational/resource-adapter-logger";
 
+import { errorMetadata } from "./error-metadata.js";
 import type {
   InvocationRecorder,
   ModelInvocationFailed,
@@ -18,20 +19,6 @@ function baseLogFields(invocation: ModelInvocationStarted) {
     transport: invocation.transport,
     model: invocation.model,
     startedAt: invocation.startedAt.toISOString(),
-  };
-}
-
-/** `status` and `code` distinguish, for example, a rate limit from an outage. */
-function errorLogFields(error: unknown) {
-  if (!(error instanceof Error)) {
-    return { errorName: "UnknownModelInvocationError" };
-  }
-
-  const candidate = error as { code?: unknown; status?: unknown };
-  return {
-    errorName: error.name,
-    ...(typeof candidate.status === "number" ? { errorStatus: candidate.status } : {}),
-    ...(typeof candidate.code === "string" ? { errorCode: candidate.code } : {}),
   };
 }
 
@@ -70,7 +57,7 @@ export function createConsoleInvocationRecorder(
         ...baseLogFields(invocation),
         completedAt: invocation.completedAt.toISOString(),
         durationMs: invocation.durationMs,
-        ...errorLogFields(invocation.error),
+        ...errorMetadata(invocation.error),
       });
     },
   };
