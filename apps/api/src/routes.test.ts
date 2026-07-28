@@ -63,7 +63,7 @@ function capabilitiesRequest(
 
 describe("API routes", () => {
   beforeEach(() => {
-    vi.mocked(requestAuthenticator).mockImplementation(async (request) => {
+    vi.mocked(requestAuthenticator).mockImplementation(async () => {
       return {
         organisationId: "org-123",
         teacherId: "teacher-456",
@@ -177,8 +177,8 @@ describe("API routes", () => {
     );
     expect(response.headers.get("Access-Control-Allow-Methods")).toBe("POST, OPTIONS");
   });
-  it("returns  401 Unauthorized when the request is not authenticated", async () => {
-    vi.mocked(requestAuthenticator).mockImplementation(async (request) => {
+  it("returns 401 Unauthorized when the request is not authenticated", async () => {
+    vi.mocked(requestAuthenticator).mockImplementation(async () => {
       return null;
     });
 
