@@ -94,8 +94,8 @@ Three deliberate guards sit in that snippet:
 
 - Chaining off CI rather than the push itself means nothing can be published
   from a red `main`.
-- Third-party actions are pinned to commit SHAs rather than tags, because a tag
-  can be moved to different code and this job can publish packages.
+- Actions are pinned to commit SHAs rather than tags, because a tag can be
+  moved to different code and this job can publish packages.
 - The `ENABLE_NPM_RELEASES` repository variable gates the whole job, so it does
   nothing until releases are deliberately switched on (see
   [development notes](DEVELOPMENT.md)).
