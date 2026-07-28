@@ -70,17 +70,18 @@ job and durable-output conventions.
 
 ## API client
 
-The service API uses tRPC. The published UI package includes its typed
-client, which can also be used directly by OWA or another host, such as the harness:
+The service API uses tRPC. The typed client is internal to the UI package;
+hosts such as OWA or the harness call `getResourceAdapterCapabilities`, which
+wraps it, so they never depend on `@trpc/client` themselves:
 
 ```ts
-import { createResourceAdapterClient } from "@oaknational/resource-adapter/client";
+import { getResourceAdapterCapabilities } from "@oaknational/resource-adapter";
 
-const api = createResourceAdapterClient({
+const capabilities = await getResourceAdapterCapabilities({
   getToken,
+  lesson,
   trpcEndpoint: "https://resource-adapter.example/trpc/v1",
 });
-const capabilities = await api.capabilities.get.query(lesson);
 ```
 
 ## Local database

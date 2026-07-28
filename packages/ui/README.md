@@ -1,10 +1,9 @@
 # @oaknational/resource-adapter
 
 React UI for Oak National Academy's Resource Adapter: the lesson-page entry
-point (`ResourceAdapterButton`, `ResourceAdapterDialog`), the
-`getResourceAdapterCapabilities` helper, and a typed tRPC client for the
-Resource Adapter API (`createResourceAdapterClient`, also exposed on the
-`./client` subpath).
+point (`ResourceAdapterButton`, `ResourceAdapterDialog`) and the
+`getResourceAdapterCapabilities` helper for resolving what the service can do
+for a lesson.
 
 ## Installation
 
@@ -30,18 +29,20 @@ transpilePackages: ["@oaknational/resource-adapter"],
 
 The root entry is bundled with a `"use client"` directive, so the components
 can be rendered directly from React Server Component trees in the Next.js app
-router. The `./client` subpath carries no directive and stays importable from
-server code:
+router:
 
 ```ts
-import { createResourceAdapterClient } from "@oaknational/resource-adapter/client";
+import { getResourceAdapterCapabilities } from "@oaknational/resource-adapter";
 
-const api = createResourceAdapterClient({
+const capabilities = await getResourceAdapterCapabilities({
   getToken,
+  lesson,
   trpcEndpoint: "https://resource-adapter.example/trpc/v1",
 });
-const capabilities = await api.capabilities.get.query(lesson);
 ```
+
+The helper wraps the package's internal typed tRPC client, so hosts never
+depend on `@trpc/client` themselves.
 
 ## Testing local changes inside a host app like OWA
 

@@ -142,7 +142,6 @@ try {
     "getResourceAdapterCapabilities",
     "ResourceAdapterButton",
     "ResourceAdapterDialog",
-    "createResourceAdapterClient",
   ]) {
     if (!rootDeclaration.includes(exportName)) {
       throw new Error(`Published package is missing ${exportName}.`);
