@@ -1,0 +1,35 @@
+{
+  "name": "@oaknational/resource-adapter-ai",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Model invocation infrastructure for Resource Adapter",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "dev": "tsc --project tsconfig.build.json --watch",
+    "lint": "eslint src --max-warnings=0",
+    "lint:fix": "eslint src --fix",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@oaknational/resource-adapter-logger": "workspace:*",
+    "openai": "6.49.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "vitest": "^4.1.10"
+  }
+}
