@@ -14,9 +14,11 @@ pnpm add @oaknational/resource-adapter
 This also installs `@oaknational/resource-adapter-contracts` (published from
 the same repository as a fixed version pair) and `@trpc/client`.
 
-Peer dependencies: `react` ^19, `react-dom` ^19, `next` >=16,
+Peer dependencies: `react` >=18.2, `react-dom` >=18.2, `next` >=14.2.12,
 `next-cloudinary` >=6.16, `styled-components` >=5.3.11 and
-`@oaknational/oak-components` ^3.
+`@oaknational/oak-components` ^3. The react and next floors mirror
+oak-components' own peers, since it is the package's only React-facing
+dependency; keep them in step when bumping it.
 
 In a Next.js host, add the package to `transpilePackages` in the Next config
 so the server build bundles it rather than loading it as external Node ESM:

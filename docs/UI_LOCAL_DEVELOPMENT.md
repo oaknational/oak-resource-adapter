@@ -99,9 +99,6 @@ In OWA:
   in plain Node ESM, which fails with `Cannot find module ... next/image` and
   a 500 on any page using the components.
 
-- Expect peer dependency warnings in OWA until its stack catches up with the
-  package's peer ranges (`next` >=16 against OWA's ^15.5.19, and `react` ^19
-  against OWA's ^18.3.1); installs still succeed.
 - The override and the `.yalc/` folder are local-only test state. Never
   commit them.
 - If OWA behaves as though changes are missing, re-run `pnpm build` and
