@@ -90,8 +90,20 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Validate Prisma schema
-        run: pnpm db:validate
+      - name: Check migration history
+        run: pnpm db:check
+
+      - name: Check the schema and its migrations agree
+        run: |
+          pnpm db:generate
+          # Include untracked generated migrations as well as edited files.
+          drift="$(git status --porcelain -- packages/db/drizzle)"
+          if [ -n "$drift" ]; then
+            echo "::error::The Drizzle schema has changes with no committed migration."
+            echo "Run 'pnpm db:generate' and commit the generated files."
+            echo "$drift"
+            exit 1
+          fi
 
       - name: Type-check
         run: pnpm type-check

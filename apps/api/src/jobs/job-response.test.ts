@@ -15,7 +15,7 @@ function job(overrides: Partial<Job> = {}): Job {
     input: { message: "hello" },
     kind: "test.echo",
     startedAt: null,
-    status: "QUEUED",
+    status: "queued",
     updatedAt: now,
     workflowRunId: null,
     ...overrides,
@@ -31,7 +31,7 @@ describe("toJobResponse", () => {
       id: "bbce8f09-e4a9-46c1-a099-ed346dc5ef4f",
       kind: "test.echo",
       startedAt: null,
-      status: "QUEUED",
+      status: "queued",
       updatedAt: "2026-07-23T12:00:00.000Z",
       workflowRunId: null,
     });
@@ -42,7 +42,7 @@ describe("toJobResponse", () => {
       job({
         completedAt: new Date("2026-07-23T12:00:02.000Z"),
         startedAt: new Date("2026-07-23T12:00:01.000Z"),
-        status: "SUCCEEDED",
+        status: "succeeded",
         workflowRunId: "wrun_done",
       }),
     );
@@ -50,7 +50,7 @@ describe("toJobResponse", () => {
     expect(response).toMatchObject({
       completedAt: "2026-07-23T12:00:02.000Z",
       startedAt: "2026-07-23T12:00:01.000Z",
-      status: "SUCCEEDED",
+      status: "succeeded",
       workflowRunId: "wrun_done",
     });
   });
@@ -60,7 +60,7 @@ describe("toJobResponse", () => {
       job({
         failureCode: "job_execution_failed",
         failureMessage: "The background job failed while executing.",
-        status: "FAILED",
+        status: "failed",
       }),
     );
 

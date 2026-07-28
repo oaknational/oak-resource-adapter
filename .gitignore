@@ -14,13 +14,12 @@ test-results/
 .env.*
 !.env.example
 
-packages/db/generated/
-
 *.tsbuildinfo
 .DS_Store
 
 # Local working draft retained outside the initial repository baseline.
 initial_proposals.md
+appendix_b.md
 RELEASE_PROCESS_DRAFT.md
 
 .serena

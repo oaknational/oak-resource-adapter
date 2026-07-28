@@ -12,6 +12,7 @@ an OWA-like host, along with a skeleton API.
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
 - [Oak branding and documentation notice](NOTICE.md)
+- [Database](docs/database.md)
 
 ## Prerequisites
 
@@ -82,27 +83,28 @@ const capabilities = await api.capabilities.get.query(lesson);
 
 ## Local database
 
-`DATABASE_URL` is read from the process environment or the root `.env`. Run
-`pnpm doppler:pull:dev` first (see Prerequisites), then:
+PostgreSQL, accessed through Drizzle. `DATABASE_URL` is read from the process
+environment or the root `.env`. Run `pnpm doppler:pull:dev` first (see
+Prerequisites), then point it at any local PostgreSQL instance you control and
+build the schema:
 
 ```sh
-pnpm db:generate
-pnpm db:migrate:dev
+pnpm db:reset          # drops and recreates the local schema, then migrates
 ```
 
-## Migration Guidance
+Day to day:
 
-- Migration SQL is committed and reviewed alongside code.
-- Do not edit a migration after it has been applied to a shared environment.
-- Make changes in additive, backwards-compatible steps where a rollout needs more than one release.
+```sh
+pnpm db:migrate:dev    # apply migrations someone else added
+pnpm db:generate       # write a migration for a schema change you made
+```
 
-## Migration Commands
+Note that `db:generate` writes a migration file; it does not create a database.
+Migration SQL is committed and reviewed alongside the code that needs it, and CI
+fails if a schema change arrives without one.
 
-In development, run `pnpm db:migrate:dev` to update your local database.
-
-> Staging and production deployments must run `pnpm db:migrate:deploy` as a
-> dedicated CI job before the API deployment, with Vercel's Doppler integration pulling in
-> relevant secrets to the environment.
+See [database](docs/database.md) for the schema, the migration workflow, and the
+retention implications of storing prompts and worksheet content.
 
 ## Release Versioning
 

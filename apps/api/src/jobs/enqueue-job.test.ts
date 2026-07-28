@@ -15,7 +15,7 @@ function queuedJob(overrides: Partial<Job> = {}): Job {
     input: { message: "hello" },
     kind: "test.echo",
     startedAt: null,
-    status: "QUEUED",
+    status: "queued",
     updatedAt: now,
     workflowRunId: null,
     ...overrides,
@@ -67,7 +67,7 @@ describe("enqueueJob", () => {
         created: false,
         job: queuedJob({
           startedAt: new Date("2026-07-23T12:00:01.000Z"),
-          status: "RUNNING",
+          status: "running",
           workflowRunId: "wrun_existing",
         }),
       }),

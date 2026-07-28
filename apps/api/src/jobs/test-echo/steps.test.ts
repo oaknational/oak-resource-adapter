@@ -28,7 +28,7 @@ function echoJob(overrides: Partial<Job> = {}): Job {
     input: { message: "hello" },
     kind: "test.echo",
     startedAt: null,
-    status: "RUNNING",
+    status: "running",
     updatedAt: now,
     workflowRunId: "wrun_test",
     ...overrides,
