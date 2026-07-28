@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, beforeEach, expect, it, vi } from "vitest";
 import {
   resourceAdapterApiContractVersion,
   resourceAdapterApiContractVersionHeader,
@@ -13,12 +13,21 @@ import {
 } from "../app/trpc/v1/[trpc]/route";
 import { OPTIONS as testJobOptions } from "../app/dev/jobs/test-echo/route";
 import * as capabilities from "./capabilities";
+import { requestAuthenticator } from "./authentication";
 
 // Passthrough mock: keeps the real capabilities service for every test, but
 // makes its exports spy-able so a single test can force the resolver to throw.
 vi.mock("./capabilities", async (importOriginal) =>
   importOriginal<typeof import("./capabilities")>(),
 );
+
+vi.mock("./authentication", async (importOriginal) => {
+  const original = await importOriginal<typeof import("./authentication")>();
+  return {
+    ...original,
+    requestAuthenticator: vi.fn(original.requestAuthenticator),
+  };
+});
 
 const lesson = {
   lessonSlug: "adding-fractions",
@@ -53,6 +62,15 @@ function capabilitiesRequest(
 }
 
 describe("API routes", () => {
+  beforeEach(() => {
+    vi.mocked(requestAuthenticator).mockImplementation(async (request) => {
+      return {
+        organisationId: "org-123",
+        teacherId: "teacher-456",
+      };
+    });
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -158,5 +176,17 @@ describe("API routes", () => {
       "http://localhost:3000",
     );
     expect(response.headers.get("Access-Control-Allow-Methods")).toBe("POST, OPTIONS");
+  });
+  it("returns  401 Unauthorized when the request is not authenticated", async () => {
+    vi.mocked(requestAuthenticator).mockImplementation(async (request) => {
+      return null;
+    });
+
+    const response = await getCapabilities(capabilitiesRequest(lesson));
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toMatchObject([
+      { error: { data: { code: "UNAUTHORIZED" } } },
+    ]);
   });
 });

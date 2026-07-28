@@ -76,7 +76,7 @@ export const authenticatedProcedure = versionedProcedure.use(({ ctx, next }) => 
  */
 export const appRouterV1 = t.router({
   capabilities: t.router({
-    get: versionedProcedure
+    get: authenticatedProcedure
       .input(lessonContextSchema)
       .output(resourceAdapterCapabilitiesResponseSchema)
       .query(({ ctx, input }) => ctx.capabilities.getCapabilities(input)),

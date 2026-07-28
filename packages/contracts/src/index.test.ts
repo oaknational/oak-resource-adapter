@@ -69,7 +69,10 @@ describe("Resource Adapter API contracts", () => {
   it("calls the capabilities service through the typed router", async () => {
     const caller = appRouterV1.createCaller({
       apiContractVersion: resourceAdapterApiContractVersion,
-      authenticatedTeacher: null,
+      authenticatedTeacher: {
+        organisationId: "org-123",
+        teacherId: "teacher-456",
+      },
       capabilities: {
         getCapabilities: () => ({
           capabilities: [
@@ -114,5 +117,26 @@ describe("Resource Adapter API contracts", () => {
         availableResources: ["worksheet"],
       }),
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+  });
+
+  it("rejects an unauthenticated request with UNAUTHORIZED", async () => {
+    const caller = appRouterV1.createCaller({
+      apiContractVersion: resourceAdapterApiContractVersion,
+      authenticatedTeacher: null,
+      capabilities: {
+        getCapabilities: () => ({ capabilities: [] }),
+      },
+    });
+
+    await expect(
+      caller.capabilities.get({
+        lessonSlug: "adding-fractions",
+        programmeSlug: "ks2-maths",
+        title: "Adding fractions",
+        subjectSlug: "maths",
+        keyStageSlug: "ks2",
+        availableResources: ["worksheet"],
+      }),
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 });

@@ -7,6 +7,7 @@ import {
   type LessonContext,
   type ResourceAdapterCapability,
 } from "@oaknational/resource-adapter";
+import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 import { OakSecondaryButton } from "@oaknational/oak-components";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { useCallback, useEffect, useState } from "react";
@@ -30,8 +31,6 @@ const trpcEndpoint =
   process.env.NEXT_PUBLIC_RESOURCE_ADAPTER_TRPC_ENDPOINT ??
   "http://localhost:3001/trpc/v1";
 
-const getToken = async (): Promise<string | null> => null;
-
 type ApiHealthState = "checking" | "healthy" | "unavailable";
 type TestJobStatus = "FAILED" | "QUEUED" | "RUNNING" | "SUCCEEDED";
 type TestJobResponse = {
@@ -54,6 +53,7 @@ const testJobStatusLabels: Record<TestJobStatus, string> = {
 };
 
 export default function HarnessPage() {
+  const { getToken, isSignedIn } = useAuth();
   const [capabilities, setCapabilities] = useState<
     readonly ResourceAdapterCapability[]
   >([]);
@@ -85,7 +85,7 @@ export default function HarnessPage() {
       setCapabilities([]);
       setCapabilitiesState("error");
     }
-  }, []);
+  }, [getToken, isSignedIn]);
 
   useEffect(() => {
     void loadCapabilities();
@@ -221,6 +221,7 @@ export default function HarnessPage() {
           <span aria-hidden="true" className={styles.healthDot} />
           API /health: {apiHealthLabels[apiHealthState]}
         </p>
+        {isSignedIn ? <UserButton /> : <SignInButton mode="modal" />}
         <nav aria-label="Lesson navigation">
           <a href="#lesson">Lesson</a>
         </nav>
