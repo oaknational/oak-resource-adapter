@@ -148,27 +148,40 @@ try {
     }
   }
 
-  // App-router hosts need the directive on the UI bundle, while the client
-  // bundle must stay free of it so it remains importable from server code.
-  if (!readPackedFile(uiTarball, "package/dist/index.js").startsWith('"use client";')) {
-    throw new Error('Published UI bundle is missing the "use client" directive.');
+  // "use client" must sit exactly on the component modules: app-router hosts
+  // need it there, and every other module must stay callable from server code.
+  const clientModules = ["ResourceAdapterButton.js", "ResourceAdapterDialog.js"];
+  const serverSafeModules = [
+    "index.js",
+    "client.js",
+    "getResourceAdapterCapabilities.js",
+    "capabilities.js",
+    "publicTypes.js",
+  ];
+
+  for (const file of clientModules) {
+    if (
+      !readPackedFile(uiTarball, `package/dist/${file}`).startsWith('"use client";')
+    ) {
+      throw new Error(`dist/${file} is missing the "use client" directive.`);
+    }
   }
 
-  if (readPackedFile(uiTarball, "package/dist/client.js").startsWith('"use client";')) {
-    throw new Error(
-      'Published client bundle must not carry the "use client" directive.',
-    );
+  for (const file of serverSafeModules) {
+    if (readPackedFile(uiTarball, `package/dist/${file}`).startsWith('"use client";')) {
+      throw new Error(`dist/${file} must not carry the "use client" directive.`);
+    }
   }
 
-  const clientEntryPoint = join(
+  const capabilitiesEntryPoint = join(
     temporaryDirectory,
-    "node_modules/@oaknational/resource-adapter/dist/client.js",
+    "node_modules/@oaknational/resource-adapter/dist/getResourceAdapterCapabilities.js",
   );
-  const clientExports = await import(pathToFileURL(clientEntryPoint).href);
+  const capabilitiesExports = await import(pathToFileURL(capabilitiesEntryPoint).href);
 
-  if (typeof clientExports.createResourceAdapterClient !== "function") {
+  if (typeof capabilitiesExports.getResourceAdapterCapabilities !== "function") {
     throw new Error(
-      "Published client entry point is missing createResourceAdapterClient.",
+      "Published package is missing a callable getResourceAdapterCapabilities.",
     );
   }
 

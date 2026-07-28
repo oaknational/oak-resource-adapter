@@ -27,9 +27,11 @@ transpilePackages: ["@oaknational/resource-adapter"],
 
 ## Usage
 
-The root entry is bundled with a `"use client"` directive, so the components
-can be rendered directly from React Server Component trees in the Next.js app
-router:
+The package ships one module per source file, and only the two component
+modules carry a `"use client"` directive. In the Next.js app router the
+components can be rendered directly from React Server Component trees, while
+everything else, including `getResourceAdapterCapabilities`, stays callable
+from server code:
 
 ```ts
 import { getResourceAdapterCapabilities } from "@oaknational/resource-adapter";
