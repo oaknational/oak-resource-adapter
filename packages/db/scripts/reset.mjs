@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { Client } from "pg";
 
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -26,31 +26,35 @@ if (!databaseUrl) {
   process.exit(1);
 }
 
-let hostname;
+let client;
 try {
-  ({ hostname } = new URL(databaseUrl));
+  const { protocol } = new URL(databaseUrl);
+  if (protocol !== "postgres:" && protocol !== "postgresql:") {
+    throw new Error("Unsupported database protocol.");
+  }
+  client = new Client({ connectionString: databaseUrl });
 } catch {
   console.error("DATABASE_URL is not a valid connection URL.");
   process.exit(1);
 }
 
 // Bracketed IPv6 hosts arrive as "[::1]".
-const bareHostname = hostname.replace(/^\[|\]$/g, "");
+const hostname = client.connectionParameters.host.replace(/^\[|\]$/g, "");
 
-if (!LOCAL_HOSTNAMES.has(bareHostname)) {
+if (!LOCAL_HOSTNAMES.has(hostname)) {
   console.error(
-    `Refusing to reset a non-local database (host: ${bareHostname}).\n` +
-      "This command drops every table. Deployed databases are only ever changed " +
+    "Refusing to reset a non-local database.\n" +
+      "This command drops every table. Deployed databases must only be changed " +
       "by applying migrations forward with db:migrate:deploy.",
   );
   process.exit(1);
 }
 
-const pool = new Pool({ connectionString: databaseUrl });
-const database = drizzle({ client: pool });
+await client.connect();
+const database = drizzle({ client });
 
 try {
-  console.log(`Dropping and recreating the schema on ${bareHostname}…`);
+  console.log("Dropping and recreating the local database schema…");
   await database.execute(sql`DROP SCHEMA IF EXISTS public CASCADE`);
   // Drizzle's migration journal lives in its own `drizzle` schema. Dropping only
   // `public` leaves it claiming everything is applied, so the migrator does
@@ -62,7 +66,7 @@ try {
   console.error(error);
   process.exitCode = 1;
 } finally {
-  await pool.end();
+  await client.end();
 }
 
 if (process.exitCode) {

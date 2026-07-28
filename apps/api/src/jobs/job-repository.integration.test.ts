@@ -69,11 +69,16 @@ describeWithDatabase("job repository integration", () => {
       kind: "test.echo",
       outcome: "claimed",
     });
+    await expect(claimJob(created.job.id, "wrun_winner")).resolves.toEqual({
+      kind: "test.echo",
+      outcome: "claimed",
+    });
     await expect(claimJob(created.job.id, "wrun_duplicate")).resolves.toEqual({
       outcome: "ignored",
     });
 
     await completeJob(created.job.id, "wrun_winner");
+    await expect(completeJob(created.job.id, "wrun_winner")).resolves.toBeUndefined();
 
     await expect(getJob(created.job.id)).resolves.toMatchObject({
       status: JobStatus.SUCCEEDED,
