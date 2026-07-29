@@ -94,8 +94,8 @@ export default function HarnessPage() {
     } catch (error: unknown) {
       setCapabilities([]);
 
-      if (error instanceof ResourceAdapterApiError) {
-        error.status === 401 && setCapabilitiesState("signedOut");
+      if (error instanceof ResourceAdapterApiError && error.status === 401) {
+        setCapabilitiesState("signedOut");
         return;
       }
 
