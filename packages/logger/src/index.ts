@@ -8,7 +8,7 @@ const debugBase = debug("ra");
 // By default debug logs to stderr, we want to use stdout
 debugBase.log = console.log.bind(console);
 
-export type LoggerKey = "capabilities" | "harness";
+export type LoggerKey = "ai" | "capabilities" | "harness";
 
 /**
  * A pluggable error reporter (e.g. `Sentry.captureException`). The logger stays

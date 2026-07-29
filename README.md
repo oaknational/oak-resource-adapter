@@ -15,6 +15,11 @@ an OWA-like host, along with a skeleton API.
 
 Contributor documentation is indexed in [docs/README.md](docs/README.md).
 
+## Architecture notes
+
+- [Background jobs](docs/background-jobs.md)
+- [Model invocation](docs/model-invocation.md)
+
 ## Prerequisites
 
 - Node.js 24 LTS (see `.nvmrc`)
