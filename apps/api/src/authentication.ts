@@ -1,6 +1,7 @@
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { raLogger } from "@oaknational/resource-adapter-logger";
+import { getAllowedOrigins } from "./cors";
 
 const log = raLogger("auth");
 
@@ -16,7 +17,9 @@ export const requestAuthenticator: RequestAuthenticator = async (request) => {
   try {
     const client = await clerkClient();
 
-    const requestState = await client.authenticateRequest(request);
+    const requestState = await client.authenticateRequest(request, {
+      authorizedParties: getAllowedOrigins(),
+    });
     if (!requestState.isAuthenticated) {
       return null;
     }
@@ -30,8 +33,8 @@ export const requestAuthenticator: RequestAuthenticator = async (request) => {
       teacherId: auth.userId,
       organisationId: auth.orgId ?? null,
     };
-  } catch {
-    log.error(new Error("Clerk request verification failed unexpectedly"), {
+  } catch (error: unknown) {
+    log.error(error, {
       report: true,
     });
     return null;
