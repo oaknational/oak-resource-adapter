@@ -1,17 +1,27 @@
 {
   "name": "@oaknational/resource-adapter",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "React UI for Oak National Academy Resource Adapter",
   "license": "MIT",
   "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oaknational/oak-resource-adapter.git",
+    "directory": "packages/ui"
+  },
+  "homepage": "https://github.com/oaknational/oak-resource-adapter/tree/main/packages/ui#readme",
+  "bugs": {
+    "url": "https://github.com/oaknational/oak-resource-adapter/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./client": {
-      "types": "./dist/client.d.ts",
-      "import": "./dist/client.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -22,16 +32,18 @@
     "dev": "tsup --watch",
     "lint": "eslint src --max-warnings=0",
     "lint:fix": "eslint src --fix",
+    "prepublishOnly": "pnpm build",
+    "publish:local": "pnpm build && yalc publish --no-scripts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
     "type-check": "tsc --noEmit"
   },
   "peerDependencies": {
     "@oaknational/oak-components": "^3.0.0",
-    "next": ">=16.0.0",
+    "next": ">=14.2.12",
     "next-cloudinary": ">=6.16.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": ">=18.2.0",
+    "react-dom": ">=18.2.0",
     "styled-components": ">=5.3.11"
   },
   "devDependencies": {

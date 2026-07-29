@@ -6,7 +6,7 @@
     ["@oaknational/resource-adapter", "@oaknational/resource-adapter-contracts"]
   ],
   "linked": [],
-  "access": "restricted",
+  "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [

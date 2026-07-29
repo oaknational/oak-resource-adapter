@@ -12,4 +12,8 @@ Do not report security vulnerabilities in a public issue. Follow the
 ## Development
 
 Repository development and release-operational notes are in
-[docs/development.md](docs/development.md).
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
+Commit messages must follow
+[Conventional Commits](https://www.conventionalcommits.org); a commitlint
+hook rejects messages that do not.
