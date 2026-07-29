@@ -15,6 +15,8 @@
     "changeset": "changeset",
     "changeset:status": "changeset status",
     "changeset:version": "changeset version",
+    "ci:publish": "turbo run build --filter=@oaknational/resource-adapter... && changeset publish",
+    "ci:version": "changeset version && pnpm install --lockfile-only",
     "dev": "node --env-file-if-exists=.env node_modules/turbo/bin/turbo run dev --parallel",
     "db:generate": "pnpm --filter @oaknational/resource-adapter-db db:generate",
     "db:migrate:dev": "pnpm --filter @oaknational/resource-adapter-db db:migrate:dev",
@@ -37,6 +39,8 @@
   "devDependencies": {
     "@changesets/cli": "2.31.0",
     "@clerk/testing": "^2.2.14",
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.58.0",
     "@types/node": "^24.0.0",
@@ -48,5 +52,13 @@
     "turbo": "^2.5.8",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-eslint": "^8.65.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "esbuild",
+      "prisma",
+      "sharp"
+    ]
   }
 }

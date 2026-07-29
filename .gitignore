@@ -19,6 +19,9 @@ packages/db/generated/
 *.tsbuildinfo
 .DS_Store
 
+.yalc/
+yalc.lock
+
 # Local working draft retained outside the initial repository baseline.
 initial_proposals.md
 RELEASE_PROCESS_DRAFT.md

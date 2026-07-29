@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -23,6 +23,16 @@ async function findTarball(matches) {
   }
 
   return join(temporaryDirectory, tarball);
+}
+
+// Pin peers to the workspace-resolved versions so the check cannot break
+// when a peer publishes a new version outside our lockfile.
+async function installedVersion(packageName) {
+  const manifest = await readFile(
+    join(repositoryRoot, "packages/ui/node_modules", packageName, "package.json"),
+    "utf8",
+  );
+  return JSON.parse(manifest).version;
 }
 
 function readPackedManifest(tarball) {
@@ -103,14 +113,16 @@ try {
         private: true,
         type: "module",
         dependencies: {
-          "@oaknational/oak-components": "^3.0.0",
+          "@oaknational/oak-components": await installedVersion(
+            "@oaknational/oak-components",
+          ),
           "@oaknational/resource-adapter-contracts": `file:${contractsTarball}`,
           "@oaknational/resource-adapter": `file:${uiTarball}`,
-          next: "^16.1.0",
-          "next-cloudinary": "^6.16.0",
-          react: "^19.0.0",
-          "react-dom": "^19.0.0",
-          "styled-components": "^6.1.0",
+          next: await installedVersion("next"),
+          "next-cloudinary": await installedVersion("next-cloudinary"),
+          react: await installedVersion("react"),
+          "react-dom": await installedVersion("react-dom"),
+          "styled-components": await installedVersion("styled-components"),
         },
         pnpm: {
           overrides: {
@@ -130,22 +142,46 @@ try {
     "getResourceAdapterCapabilities",
     "ResourceAdapterButton",
     "ResourceAdapterDialog",
-    "createResourceAdapterClient",
   ]) {
     if (!rootDeclaration.includes(exportName)) {
       throw new Error(`Published package is missing ${exportName}.`);
     }
   }
 
-  const clientEntryPoint = join(
-    temporaryDirectory,
-    "node_modules/@oaknational/resource-adapter/dist/client.js",
-  );
-  const clientExports = await import(pathToFileURL(clientEntryPoint).href);
+  // "use client" must sit exactly on the component modules: app-router hosts
+  // need it there, and every other module must stay callable from server code.
+  const clientModules = ["ResourceAdapterButton.js", "ResourceAdapterDialog.js"];
+  const serverSafeModules = [
+    "index.js",
+    "client.js",
+    "getResourceAdapterCapabilities.js",
+    "capabilities.js",
+    "publicTypes.js",
+  ];
 
-  if (typeof clientExports.createResourceAdapterClient !== "function") {
+  for (const file of clientModules) {
+    if (
+      !readPackedFile(uiTarball, `package/dist/${file}`).startsWith('"use client";')
+    ) {
+      throw new Error(`dist/${file} is missing the "use client" directive.`);
+    }
+  }
+
+  for (const file of serverSafeModules) {
+    if (readPackedFile(uiTarball, `package/dist/${file}`).startsWith('"use client";')) {
+      throw new Error(`dist/${file} must not carry the "use client" directive.`);
+    }
+  }
+
+  const capabilitiesEntryPoint = join(
+    temporaryDirectory,
+    "node_modules/@oaknational/resource-adapter/dist/getResourceAdapterCapabilities.js",
+  );
+  const capabilitiesExports = await import(pathToFileURL(capabilitiesEntryPoint).href);
+
+  if (typeof capabilitiesExports.getResourceAdapterCapabilities !== "function") {
     throw new Error(
-      "Published client entry point is missing createResourceAdapterClient.",
+      "Published package is missing a callable getResourceAdapterCapabilities.",
     );
   }
 
