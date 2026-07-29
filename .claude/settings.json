@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm test)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm type-check)",
+      "Bash(pnpm type-check *)",
+      "Bash(pnpm format)",
+      "Bash(pnpm format *)",
+      "Bash(pnpm --filter * test *)",
+      "Bash(pnpm --filter * lint *)",
+      "Bash(pnpm --filter * type-check *)",
+      "Bash(pnpm db:check)",
+      "Bash(pnpm db:check *)",
+      "Bash(pnpm test:coverage)",
+      "Bash(pnpm test:coverage *)",
+      "Bash(git fetch *)",
+      "Bash(npm show *)",
+      "Bash(npm view *)",
+      "Bash(pg_isready)",
+      "Bash(pg_isready *)"
+    ]
+  }
+}

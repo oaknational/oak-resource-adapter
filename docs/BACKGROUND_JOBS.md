@@ -32,8 +32,10 @@ an original row that was persisted but still has no Workflow run ID.
 
 ## Durable outputs
 
-Job outcomes belong in their (future) domain tables: generated resources, exports,
-or another future entity should have a database relationship to the originating job.
+Job outcomes belong in their domain tables, not on the job. A `generation_attempts`
+row references exactly one job while the job remains independent of product
+tables. Its input, invocation, document and artifact relationships are described
+in [database](DATABASE.md).
 
 ## Adding a job kind
 
@@ -52,10 +54,10 @@ Unknown kinds fail safely rather than being guessed or silently accepted.
 
 ## Local smoke test
 
-Apply the migration, start the repository, then create a dummy job:
+Build the schema, start the repository, then create a dummy job:
 
 ```sh
-pnpm db:migrate:dev
+pnpm db:reset
 pnpm dev
 
 curl --request POST http://localhost:3001/dev/jobs/test-echo \

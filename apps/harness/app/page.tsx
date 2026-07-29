@@ -33,7 +33,7 @@ const trpcEndpoint =
 const getToken = async (): Promise<string | null> => null;
 
 type ApiHealthState = "checking" | "healthy" | "unavailable";
-type TestJobStatus = "FAILED" | "QUEUED" | "RUNNING" | "SUCCEEDED";
+type TestJobStatus = "failed" | "queued" | "running" | "succeeded";
 type TestJobResponse = {
   failure: { message: string } | null;
   id: string;
@@ -47,11 +47,37 @@ const apiHealthLabels: Record<ApiHealthState, string> = {
 };
 
 const testJobStatusLabels: Record<TestJobStatus, string> = {
-  FAILED: "Failed",
-  QUEUED: "Queued",
-  RUNNING: "Running",
-  SUCCEEDED: "Succeeded",
+  failed: "Failed",
+  queued: "Queued",
+  running: "Running",
+  succeeded: "Succeeded",
 };
+
+/** Rejects unknown statuses so a wire-format change cannot silently stop polling. */
+function parseTestJobResponse(body: unknown): TestJobResponse {
+  if (
+    typeof body !== "object" ||
+    body === null ||
+    !("id" in body) ||
+    typeof body.id !== "string" ||
+    !("status" in body) ||
+    typeof body.status !== "string" ||
+    !Object.hasOwn(testJobStatusLabels, body.status)
+  ) {
+    throw new Error("The API returned a test job in an unrecognised shape.");
+  }
+
+  const failure =
+    "failure" in body &&
+    typeof body.failure === "object" &&
+    body.failure !== null &&
+    "message" in body.failure &&
+    typeof body.failure.message === "string"
+      ? { message: body.failure.message }
+      : null;
+
+  return { failure, id: body.id, status: body.status as TestJobStatus };
+}
 
 export default function HarnessPage() {
   const [capabilities, setCapabilities] = useState<
@@ -138,7 +164,7 @@ export default function HarnessPage() {
         throw new Error(`The API returned HTTP ${response.status}.`);
       }
 
-      setTestJob((await response.json()) as TestJobResponse);
+      setTestJob(parseTestJobResponse(await response.json()));
     } catch (error) {
       log.error(error, { report: true });
       setTestJobError("Could not create the test job.");
@@ -147,7 +173,7 @@ export default function HarnessPage() {
     }
   }, []);
 
-  const testJobIsActive = testJob?.status === "QUEUED" || testJob?.status === "RUNNING";
+  const testJobIsActive = testJob?.status === "queued" || testJob?.status === "running";
 
   useEffect(() => {
     if (!testJob || !testJobIsActive) {
@@ -174,7 +200,7 @@ export default function HarnessPage() {
           throw new Error(`The API returned HTTP ${response.status}.`);
         }
 
-        setTestJob((await response.json()) as TestJobResponse);
+        setTestJob(parseTestJobResponse(await response.json()));
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
           return;
