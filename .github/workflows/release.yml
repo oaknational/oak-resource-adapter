@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  # Only after CI has gone green on main, so a release can never start from a
+  # red main. GitHub reads this trigger from the default branch, so a change to
+  # it takes effect once merged, not from a branch.
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    # Dormant until the repository variable ENABLE_NPM_RELEASES is exactly
+    # "true". Without it, every qualifying run would attempt a publish, because
+    # the changesets action treats "no changesets pending" as "publish anything
+    # unpublished". See docs/DEVELOPMENT.md for when to enable it.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      vars.ENABLE_NPM_RELEASES == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the version commit, tags, and GitHub releases
+      pull-requests: write # open and update the version packages PR
+      id-token: write # npm OIDC trusted publishing
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # No version input: the action reads it from the root packageManager
+      # field, so there is one pin to keep up to date rather than two.
+      - name: Set up pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # Load-bearing under pnpm: `pnpm publish` delegates the upload to the npm
+      # CLI it finds on PATH, and trusted publishing needs npm >= 11.5.1. Pin
+      # the major so it cannot silently jump to a new one.
+      - name: Ensure npm supports trusted publishing
+        run: |
+          npm install -g npm@11
+          npm --version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Checks registry signatures and provenance attestations of the installed
+      # tree before this job publishes anything. Must be npm, not pnpm: pnpm
+      # ignores the "signatures" argument and runs a vulnerability audit
+      # instead, which fails on any open advisory.
+      - name: Verify dependency signatures and attestations
+        run: npm audit signatures
+
+      - name: Create release pull request or publish
+        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        with:
+          version: pnpm ci:version
+          publish: pnpm ci:publish
+          commit: "chore: version packages"
+          title: "chore: version packages"
+          # Commit and push the version PR through the GitHub API, so the run
+          # needs no git credentials and persist-credentials: false above stays
+          # meaningful. Commits are signed with GitHub's key.
+          commitMode: github-api
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          HUSKY: "0"

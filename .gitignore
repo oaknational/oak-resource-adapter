@@ -19,3 +19,6 @@ test-results/
 
 *.tsbuildinfo
 .DS_Store
+
+.yalc/
+yalc.lock

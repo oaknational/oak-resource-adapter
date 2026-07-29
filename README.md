@@ -14,6 +14,8 @@ an OWA-like host, along with a skeleton API.
 - [Oak branding and documentation notice](NOTICE.md)
 - [Database](docs/database.md)
 
+Contributor documentation is indexed in [docs/README.md](docs/README.md).
+
 ## Architecture notes
 
 - [Background jobs](docs/background-jobs.md)
@@ -49,6 +51,7 @@ pnpm test:coverage
 pnpm test:artifact
 pnpm test:e2e
 pnpm secrets:scan
+pnpm changeset
 ```
 
 Run `pnpm exec playwright install chromium` once before the first browser test.
@@ -73,17 +76,18 @@ job and durable-output conventions.
 
 ## API client
 
-The service API uses tRPC. The published UI package includes its typed
-client, which can also be used directly by OWA or another host, such as the harness:
+The service API uses tRPC. The typed client is internal to the UI package;
+hosts such as OWA or the harness call `getResourceAdapterCapabilities`, which
+wraps it, so they never depend on `@trpc/client` themselves:
 
 ```ts
-import { createResourceAdapterClient } from "@oaknational/resource-adapter/client";
+import { getResourceAdapterCapabilities } from "@oaknational/resource-adapter";
 
-const api = createResourceAdapterClient({
+const capabilities = await getResourceAdapterCapabilities({
   getToken,
+  lesson,
   trpcEndpoint: "https://resource-adapter.example/trpc/v1",
 });
-const capabilities = await api.capabilities.get.query(lesson);
 ```
 
 ## Local database
@@ -113,8 +117,10 @@ retention implications of storing prompts and worksheet content.
 
 ## Release Versioning
 
-`@oaknational/resource-adapter` and its contracts package are preconfigured to
-release as a fixed version group; OWA will depend only on the UI package. Until
-the first publish, contributors do not need to add Changesets. See [release
-management](.changeset/README.md) for the later release steps, including the
-single repository setting that enables enforcement.
+`@oaknational/resource-adapter` and its contracts package release together as
+a fixed version group on public npm, versioned with Changesets and published
+automatically by [`release.yml`](.github/workflows/release.yml). The step-by-step
+pipeline is described in the [release workflow](docs/RELEASE_WORKFLOW.md), the
+policy and one-time setup in [development notes](docs/DEVELOPMENT.md), and
+testing local changes inside a host app in the
+[UI local development workflow](docs/UI_LOCAL_DEVELOPMENT.md).
