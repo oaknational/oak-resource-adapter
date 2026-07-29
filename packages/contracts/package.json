@@ -27,7 +27,6 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.5.22",
     "@trpc/server": "11.18.0",
     "zod": "^4.4.3"
   },
