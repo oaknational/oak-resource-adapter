@@ -31,3 +31,26 @@ test("shows the API state, a capability-based trigger, and the adapter sidebar",
   await expect(sidebar).toContainText("Hello, World!");
   await expect(sidebar).toContainText("Adapt worksheet");
 });
+
+test("offers signed-out visitors sign-in rather than the Aila trigger", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const signInPrompt = page.getByRole("region", {
+    name: "Sign in to create more with Aila",
+  });
+
+  await expect(signInPrompt).toBeVisible();
+  await expect(signInPrompt.getByRole("button", { name: "Sign in" })).toBeVisible();
+  await expect(
+    page.getByRole("banner").getByRole("button", { name: "Sign in" }),
+  ).toBeVisible();
+
+  await expect(
+    page.getByRole("heading", { exact: true, name: "Create more with Aila" }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Create more with AI" })).toHaveCount(
+    0,
+  );
+});
