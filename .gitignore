@@ -14,16 +14,11 @@ test-results/
 .env.*
 !.env.example
 
-packages/db/generated/
+# Personal Claude Code overrides. The checked-in settings.json is shared.
+.claude/settings.local.json
 
 *.tsbuildinfo
 .DS_Store
 
 .yalc/
 yalc.lock
-
-# Local working draft retained outside the initial repository baseline.
-initial_proposals.md
-RELEASE_PROCESS_DRAFT.md
-
-.serena

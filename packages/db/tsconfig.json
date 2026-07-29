@@ -5,5 +5,5 @@
     "noEmit": true,
     "rootDir": "."
   },
-  "include": ["generated/**/*.ts", "src/**/*.ts"]
+  "include": ["drizzle.config.ts", "src/**/*.ts"]
 }

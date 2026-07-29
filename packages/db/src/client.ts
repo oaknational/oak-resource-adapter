@@ -1,8 +1,9 @@
-import { PrismaPg } from "@prisma/adapter-pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 
-import { PrismaClient } from "../generated/prisma/client.ts";
+import * as schema from "./schema/index.ts";
 
-type DatabaseClient = InstanceType<typeof PrismaClient>;
+type DatabaseClient = ReturnType<typeof createDatabaseClient>;
 
 const globalDatabase = globalThis as typeof globalThis & {
   resourceAdapterDatabaseClient?: DatabaseClient;
@@ -20,11 +21,10 @@ function requireDatabaseUrl(): string {
 }
 
 /** Creates an independent client, primarily for integration tests and scripts. */
-export function createDatabaseClient(
-  connectionString = requireDatabaseUrl(),
-): DatabaseClient {
-  return new PrismaClient({
-    adapter: new PrismaPg({ connectionString }),
+export function createDatabaseClient(connectionString = requireDatabaseUrl()) {
+  return drizzle({
+    client: new Pool({ connectionString }),
+    schema,
   });
 }
 

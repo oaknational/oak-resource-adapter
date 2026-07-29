@@ -3,9 +3,10 @@ import { isDeepStrictEqual } from "node:util";
 import {
   getDatabaseClient,
   JobStatus,
-  Prisma,
+  jobs,
   type Job,
 } from "@oaknational/resource-adapter-db";
+import { and, eq, inArray, isNull, or } from "drizzle-orm";
 
 import type { JobFailure, JobJsonValue } from "./domain";
 
@@ -14,21 +15,6 @@ export class IdempotencyConflictError extends Error {
 }
 
 export type ClaimedJob = { outcome: "claimed"; kind: string } | { outcome: "ignored" };
-
-function isUniqueConstraintError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    error.code === "P2002"
-  );
-}
-
-function toPrismaJson(
-  value: JobJsonValue,
-): Prisma.JsonNullValueInput | Prisma.InputJsonValue {
-  return value === null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
-}
 
 function matchesRequest(
   job: Job,
@@ -44,49 +30,62 @@ export async function createOrGetJob(request: {
 }): Promise<{ job: Job; created: boolean }> {
   const database = getDatabaseClient();
 
-  try {
-    const job = await database.job.create({
-      data: {
-        idempotencyKey: request.idempotencyKey,
-        input: toPrismaJson(request.input),
-        kind: request.kind,
-      },
-    });
-    return { created: true, job };
-  } catch (error) {
-    if (!isUniqueConstraintError(error)) {
-      throw error;
-    }
+  // Let PostgreSQL arbitrate the race on the idempotency key. An insert that
+  // loses returns no row rather than raising, so the duplicate path is ordinary
+  // control flow instead of an exception carrying a driver error code.
+  const [created] = await database
+    .insert(jobs)
+    .values({
+      idempotencyKey: request.idempotencyKey,
+      input: request.input,
+      kind: request.kind,
+    })
+    .onConflictDoNothing({ target: jobs.idempotencyKey })
+    .returning();
+
+  if (created) {
+    return { created: true, job: created };
   }
 
-  const job = await database.job.findUniqueOrThrow({
-    where: { idempotencyKey: request.idempotencyKey },
-  });
+  const [existing] = await database
+    .select()
+    .from(jobs)
+    .where(eq(jobs.idempotencyKey, request.idempotencyKey))
+    .limit(1);
 
-  if (!matchesRequest(job, request)) {
+  if (!existing) {
+    throw new Error(
+      `Job with idempotency key ${request.idempotencyKey} was neither inserted nor found.`,
+    );
+  }
+
+  if (!matchesRequest(existing, request)) {
     throw new IdempotencyConflictError(
       "The idempotency key is already attached to a different job request.",
     );
   }
 
-  return { created: false, job };
+  return { created: false, job: existing };
 }
 
 export async function getJob(id: string): Promise<Job | null> {
-  return getDatabaseClient().job.findUnique({ where: { id } });
+  const [job] = await getDatabaseClient()
+    .select()
+    .from(jobs)
+    .where(eq(jobs.id, id))
+    .limit(1);
+
+  return job ?? null;
 }
 
 export async function recordWorkflowRun(
   jobId: string,
   workflowRunId: string,
 ): Promise<void> {
-  await getDatabaseClient().job.updateMany({
-    data: { workflowRunId },
-    where: {
-      id: jobId,
-      workflowRunId: null,
-    },
-  });
+  await getDatabaseClient()
+    .update(jobs)
+    .set({ workflowRunId })
+    .where(and(eq(jobs.id, jobId), isNull(jobs.workflowRunId)));
 }
 
 export async function claimJob(
@@ -94,26 +93,38 @@ export async function claimJob(
   workflowRunId: string,
 ): Promise<ClaimedJob> {
   const database = getDatabaseClient();
-  const claimed = await database.job.updateMany({
-    data: {
+
+  // One atomic statement decides the winner: the run whose UPDATE returns a row
+  // holds the job.
+  const [claimed] = await database
+    .update(jobs)
+    .set({
       startedAt: new Date(),
       status: JobStatus.RUNNING,
       workflowRunId,
-    },
-    where: {
-      id: jobId,
-      status: JobStatus.QUEUED,
-      OR: [{ workflowRunId: null }, { workflowRunId }],
-    },
-  });
+    })
+    .where(
+      and(
+        eq(jobs.id, jobId),
+        eq(jobs.status, JobStatus.QUEUED),
+        or(isNull(jobs.workflowRunId), eq(jobs.workflowRunId, workflowRunId)),
+      ),
+    )
+    .returning({ kind: jobs.kind });
 
-  const job = await database.job.findUnique({ where: { id: jobId } });
+  if (claimed) {
+    return { kind: claimed.kind, outcome: "claimed" };
+  }
 
-  if (
-    (claimed.count === 1 ||
-      (job?.status === JobStatus.RUNNING && job.workflowRunId === workflowRunId)) &&
-    job
-  ) {
+  // A redelivery of the run that already holds the job must still proceed, so
+  // its own claim counts as successful rather than as a duplicate.
+  const [job] = await database
+    .select({ kind: jobs.kind, status: jobs.status, workflowRunId: jobs.workflowRunId })
+    .from(jobs)
+    .where(eq(jobs.id, jobId))
+    .limit(1);
+
+  if (job?.status === JobStatus.RUNNING && job.workflowRunId === workflowRunId) {
     return { kind: job.kind, outcome: "claimed" };
   }
 
@@ -122,25 +133,35 @@ export async function claimJob(
 
 export async function completeJob(jobId: string, workflowRunId: string): Promise<void> {
   const database = getDatabaseClient();
-  const completed = await database.job.updateMany({
-    data: {
+  const [completed] = await database
+    .update(jobs)
+    .set({
       completedAt: new Date(),
       failureCode: null,
       failureMessage: null,
       status: JobStatus.SUCCEEDED,
-    },
-    where: {
-      id: jobId,
-      status: JobStatus.RUNNING,
-      workflowRunId,
-    },
-  });
+    })
+    .where(
+      and(
+        eq(jobs.id, jobId),
+        eq(jobs.status, JobStatus.RUNNING),
+        eq(jobs.workflowRunId, workflowRunId),
+      ),
+    )
+    .returning({ id: jobs.id });
 
-  if (completed.count === 1) {
+  if (completed) {
     return;
   }
 
-  const job = await database.job.findUnique({ where: { id: jobId } });
+  // Completing twice is not an error: a redelivered final step finds the job
+  // already succeeded under its own run.
+  const [job] = await database
+    .select({ status: jobs.status, workflowRunId: jobs.workflowRunId })
+    .from(jobs)
+    .where(eq(jobs.id, jobId))
+    .limit(1);
+
   if (job?.status === JobStatus.SUCCEEDED && job.workflowRunId === workflowRunId) {
     return;
   }
@@ -153,20 +174,21 @@ export async function failJob(
   workflowRunId: string | null,
   failure: JobFailure,
 ): Promise<void> {
-  const database = getDatabaseClient();
-  await database.job.updateMany({
-    data: {
+  await getDatabaseClient()
+    .update(jobs)
+    .set({
       completedAt: new Date(),
       failureCode: failure.code,
       failureMessage: failure.message,
       status: JobStatus.FAILED,
-    },
-    where: {
-      id: jobId,
-      status: { in: [JobStatus.QUEUED, JobStatus.RUNNING] },
-      ...(workflowRunId === null
-        ? { workflowRunId: null }
-        : { OR: [{ workflowRunId: null }, { workflowRunId }] }),
-    },
-  });
+    })
+    .where(
+      and(
+        eq(jobs.id, jobId),
+        inArray(jobs.status, [JobStatus.QUEUED, JobStatus.RUNNING]),
+        workflowRunId === null
+          ? isNull(jobs.workflowRunId)
+          : or(isNull(jobs.workflowRunId), eq(jobs.workflowRunId, workflowRunId)),
+      ),
+    );
 }

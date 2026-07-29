@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Job inputs must stay portable between PostgreSQL, Prisma, and the workflow
+ * Job inputs must stay portable between PostgreSQL, the ORM, and the workflow
  * event log.
  */
 export const jobJsonSchema = z.json();

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
-import { getDatabaseClient, JobStatus } from "@oaknational/resource-adapter-db";
+import { getDatabaseClient, JobStatus, jobs } from "@oaknational/resource-adapter-db";
+import { inArray } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -20,9 +21,11 @@ describeWithDatabase("job repository integration", () => {
   const createdJobIds: string[] = [];
 
   afterEach(async () => {
-    await getDatabaseClient().job.deleteMany({
-      where: { id: { in: createdJobIds.splice(0) } },
-    });
+    const ids = createdJobIds.splice(0);
+
+    if (ids.length > 0) {
+      await getDatabaseClient().delete(jobs).where(inArray(jobs.id, ids));
+    }
   });
 
   it("deduplicates requests and rejects reuse with different input", async () => {
@@ -66,17 +69,18 @@ describeWithDatabase("job repository integration", () => {
       kind: "test.echo",
       outcome: "claimed",
     });
+    await expect(claimJob(created.job.id, "wrun_winner")).resolves.toEqual({
+      kind: "test.echo",
+      outcome: "claimed",
+    });
     await expect(claimJob(created.job.id, "wrun_duplicate")).resolves.toEqual({
       outcome: "ignored",
     });
 
     await completeJob(created.job.id, "wrun_winner");
+    await expect(completeJob(created.job.id, "wrun_winner")).resolves.toBeUndefined();
 
-    await expect(
-      getDatabaseClient().job.findUniqueOrThrow({
-        where: { id: created.job.id },
-      }),
-    ).resolves.toMatchObject({
+    await expect(getJob(created.job.id)).resolves.toMatchObject({
       status: JobStatus.SUCCEEDED,
       workflowRunId: "wrun_winner",
     });

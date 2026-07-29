@@ -6,14 +6,6 @@
       "env": ["DEBUG", "SENTRY_DSN", "SENTRY_ORG", "SENTRY_PROJECT"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
-    "@oaknational/resource-adapter-db#build": {
-      "env": ["DATABASE_URL"],
-      "outputs": ["generated/**"]
-    },
-    "@oaknational/resource-adapter-db#type-check": {
-      "dependsOn": ["build"],
-      "outputs": []
-    },
     "dev": {
       "cache": false,
       "env": ["DATABASE_URL"],
