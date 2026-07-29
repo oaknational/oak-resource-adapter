@@ -36,7 +36,7 @@
     "test:integration": "node --env-file-if-exists=.env node_modules/turbo/bin/turbo run test:integration",
     "test:artifact": "node scripts/check-package-artifact.mjs",
     "test:e2e": "pnpm build && node --env-file-if-exists=.env node_modules/@playwright/test/cli.js test",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check && tsc --noEmit"
   },
   "devDependencies": {
     "@changesets/cli": "2.31.0",
