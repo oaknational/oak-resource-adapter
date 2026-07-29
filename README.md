@@ -12,14 +12,14 @@ an OWA-like host, along with a skeleton API.
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
 - [Oak branding and documentation notice](NOTICE.md)
-- [Database](docs/database.md)
+- [Database](docs/DATABASE.md)
 
 Contributor documentation is indexed in [docs/README.md](docs/README.md).
 
 ## Architecture notes
 
-- [Background jobs](docs/background-jobs.md)
-- [Model invocation](docs/model-invocation.md)
+- [Background jobs](docs/BACKGROUND_JOBS.md)
+- [Model invocation](docs/MODEL_INVOCATION.md)
 
 ## Prerequisites
 
@@ -71,7 +71,7 @@ mirrors the OWA/package composition boundary.
 
 The API dev server also runs background jobs through Workflow's local runtime,
 using the same workflow and step code intended for Vercel. See
-[background jobs](docs/background-jobs.md) for the dummy job smoke test and the
+[background jobs](docs/BACKGROUND_JOBS.md) for the dummy job smoke test and the
 job and durable-output conventions.
 
 ## API client
@@ -112,7 +112,7 @@ Note that `db:generate` writes a migration file; it does not create a database.
 Migration SQL is committed and reviewed alongside the code that needs it, and CI
 fails if a schema change arrives without one.
 
-See [database](docs/database.md) for the schema, the migration workflow, and the
+See [database](docs/DATABASE.md) for the schema, the migration workflow, and the
 retention implications of storing prompts and worksheet content.
 
 ## Release Versioning
