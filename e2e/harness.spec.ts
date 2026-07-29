@@ -1,15 +1,12 @@
 import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
 import { expect, test } from "@playwright/test";
 
-const emailAddress = process.env.E2E_CLERK_USER_EMAIL;
+// Presence is verified by the setup project, which this project depends on.
+const emailAddress = process.env.E2E_CLERK_USER_EMAIL as string;
 
 test("shows the API state, a capability-based trigger, and the adapter sidebar", async ({
   page,
 }) => {
-  if (!emailAddress) {
-    throw new Error("E2E_CLERK_USER_EMAIL must be set for Playwright tests.");
-  }
-
   await setupClerkTestingToken({ page });
   await page.goto("/");
 
