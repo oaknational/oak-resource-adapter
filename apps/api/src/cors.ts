@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 
 const defaultAllowedOrigins = ["http://localhost:3000"];
 
-function getAllowedOrigins(): string[] {
+export function getAllowedOrigins(): string[] {
   const configuredOrigins = process.env.RESOURCE_ADAPTER_ALLOWED_ORIGINS;
 
   if (!configuredOrigins) {

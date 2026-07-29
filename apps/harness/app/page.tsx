@@ -2,12 +2,14 @@
 
 import {
   getResourceAdapterCapabilities,
+  ResourceAdapterApiError,
   ResourceAdapterButton,
   ResourceAdapterDialog,
   type LessonContext,
   type ResourceAdapterCapability,
 } from "@oaknational/resource-adapter";
-import { OakSecondaryButton } from "@oaknational/oak-components";
+import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
+import { OakPrimaryButton, OakSecondaryButton } from "@oaknational/oak-components";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { useCallback, useEffect, useState } from "react";
 
@@ -29,8 +31,6 @@ const apiBaseUrl =
 const trpcEndpoint =
   process.env.NEXT_PUBLIC_RESOURCE_ADAPTER_TRPC_ENDPOINT ??
   "http://localhost:3001/trpc/v1";
-
-const getToken = async (): Promise<string | null> => null;
 
 type ApiHealthState = "checking" | "healthy" | "unavailable";
 type TestJobStatus = "failed" | "queued" | "running" | "succeeded";
@@ -80,11 +80,12 @@ function parseTestJobResponse(body: unknown): TestJobResponse {
 }
 
 export default function HarnessPage() {
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [capabilities, setCapabilities] = useState<
     readonly ResourceAdapterCapability[]
   >([]);
   const [capabilitiesState, setCapabilitiesState] = useState<
-    "error" | "loading" | "ready"
+    "error" | "loading" | "ready" | "signedOut"
   >("loading");
   const [apiHealthState, setApiHealthState] = useState<ApiHealthState>("checking");
   const [isResourceAdapterOpen, setIsResourceAdapterOpen] = useState(false);
@@ -93,6 +94,16 @@ export default function HarnessPage() {
   const [testJobError, setTestJobError] = useState<string | null>(null);
 
   const loadCapabilities = useCallback(async () => {
+    if (!isLoaded) {
+      return;
+    }
+
+    if (!isSignedIn) {
+      setCapabilities([]);
+      setCapabilitiesState("signedOut");
+      return;
+    }
+
     setCapabilitiesState("loading");
     log.info("Loading capabilities for lesson %s", lesson.lessonSlug);
 
@@ -106,12 +117,18 @@ export default function HarnessPage() {
       setCapabilities(response.capabilities);
       setCapabilitiesState("ready");
       log.info("Loaded %d capabilities", response.capabilities.length);
-    } catch (error) {
-      log.error(error, { report: true });
+    } catch (error: unknown) {
       setCapabilities([]);
+
+      if (error instanceof ResourceAdapterApiError && error.status === 401) {
+        setCapabilitiesState("signedOut");
+        return;
+      }
+
+      log.error(error);
       setCapabilitiesState("error");
     }
-  }, []);
+  }, [getToken, isLoaded, isSignedIn]);
 
   useEffect(() => {
     void loadCapabilities();
@@ -166,7 +183,7 @@ export default function HarnessPage() {
 
       setTestJob(parseTestJobResponse(await response.json()));
     } catch (error) {
-      log.error(error, { report: true });
+      log.error(error);
       setTestJobError("Could not create the test job.");
     } finally {
       setIsCreatingTestJob(false);
@@ -206,7 +223,7 @@ export default function HarnessPage() {
           return;
         }
 
-        log.error(error, { report: true });
+        log.error(error);
         setTestJob(null);
         setTestJobError("Could not read the test job status.");
       } finally {
@@ -247,6 +264,7 @@ export default function HarnessPage() {
           <span aria-hidden="true" className={styles.healthDot} />
           API /health: {apiHealthLabels[apiHealthState]}
         </p>
+        {isSignedIn ? <UserButton /> : <SignInButton mode="modal" />}
         <nav aria-label="Lesson navigation">
           <a href="#lesson">Lesson</a>
         </nav>
@@ -288,6 +306,23 @@ export default function HarnessPage() {
               <p>Use AI to adapt this lesson&apos;s available resources.</p>
 
               <ResourceAdapterButton onClick={() => setIsResourceAdapterOpen(true)} />
+            </section>
+          )}
+          {capabilitiesState === "signedOut" && (
+            <section
+              aria-labelledby="resource-adapter-sign-in-heading"
+              className={styles.createMore}
+            >
+              <h2 id="resource-adapter-sign-in-heading">
+                Sign in to create more with Aila
+              </h2>
+              <p>
+                Adapting this lesson&apos;s resources with AI is available to signed-in
+                teachers.
+              </p>
+              <SignInButton mode="modal">
+                <OakPrimaryButton>Sign in</OakPrimaryButton>
+              </SignInButton>
             </section>
           )}
           {capabilitiesState === "error" && (

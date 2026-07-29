@@ -8,7 +8,7 @@ const debugBase = debug("ra");
 // By default debug logs to stderr, we want to use stdout
 debugBase.log = console.log.bind(console);
 
-export type LoggerKey = "ai" | "capabilities" | "harness";
+export type LoggerKey = "ai" | "capabilities" | "harness" | "auth";
 
 /**
  * A pluggable error reporter (e.g. `Sentry.captureException`). The logger stays
@@ -56,6 +56,11 @@ export function raLogger(childKey: LoggerKey) {
     warn: debugLogger,
     error: (error: unknown, opts?: { report?: boolean }) => {
       console.error(error);
+      // `report: true` only forwards to a reporter when an app has registered
+      // one via `setErrorReporter` at boot. Today that is only the API (see
+      // apps/api/src/sentry/init.ts); apps such as the harness register no
+      // reporter, so `report: true` there is a no-op beyond the console.error
+      // above.
       if (opts?.report && g.__raErrorReporter) {
         // A broken reporter must never mask the original error path.
         try {

@@ -4,16 +4,13 @@ import {
 } from "@oaknational/resource-adapter-contracts";
 import type { ResourceAdapterApiContext } from "@oaknational/resource-adapter-contracts/server";
 
-import {
-  type RequestAuthenticator,
-  unauthenticatedRequestAuthenticator,
-} from "./authentication";
+import { requestAuthenticator, type RequestAuthenticator } from "./authentication";
 import { getCapabilities } from "./capabilities";
 
 /** Creates request-scoped API dependencies for tRPC procedures. */
 export async function createContext(
   request: Request,
-  authenticateRequest: RequestAuthenticator = unauthenticatedRequestAuthenticator,
+  authenticateRequest: RequestAuthenticator = requestAuthenticator,
 ): Promise<ResourceAdapterApiContext> {
   return {
     apiContractVersion: parseResourceAdapterApiContractVersion(
