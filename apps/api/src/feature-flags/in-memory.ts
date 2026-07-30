@@ -1,9 +1,9 @@
-import type { FeatureFlagServiceType } from "@oaknational/resource-adapter-contracts/server";
 import { featureFlagCatalogue, type FeatureFlagKey } from "./catalogue";
+import type { FeatureFlagServiceType } from "./service";
 
 export function createInMemoryFeatureFlags(
   overrides: Partial<Record<FeatureFlagKey, boolean>> = {},
-): FeatureFlagServiceType<FeatureFlagKey> {
+): FeatureFlagServiceType {
   return {
     isEnabled: (flag) => overrides[flag] ?? featureFlagCatalogue[flag].default,
   };

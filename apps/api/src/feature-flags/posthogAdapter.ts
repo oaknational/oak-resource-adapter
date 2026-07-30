@@ -3,10 +3,8 @@ import { raLogger } from "@oaknational/resource-adapter-logger";
 const log = raLogger("feature-flags");
 import { PostHog } from "posthog-node";
 import { type FeatureFlagKey } from "./catalogue";
-import type {
-  FeatureFlagServiceType,
-  ResourceAdapterAuthenticatedTeacher,
-} from "@oaknational/resource-adapter-contracts/server";
+import type { FeatureFlagServiceType } from "./service";
+import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 
 let client: PostHog | null = null;
 function getClient(): PostHog {
@@ -18,7 +16,7 @@ function getClient(): PostHog {
   return client;
 }
 
-export class PostHogFeatureFlagAdapter implements FeatureFlagServiceType<FeatureFlagKey> {
+export class PostHogFeatureFlagAdapter implements FeatureFlagServiceType {
   private client: PostHog;
 
   constructor() {

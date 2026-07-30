@@ -48,11 +48,6 @@ const teacherInOrganisation: ResourceAdapterAuthenticatedTeacher = {
   organisationId: "org_456",
 };
 
-const teacherWithoutOrganisation: ResourceAdapterAuthenticatedTeacher = {
-  teacherId: "teacher_789",
-  organisationId: null,
-};
-
 function providerAnswers(value: boolean) {
   isEnabledMock.mockReturnValue(value);
   evaluateFlagsMock.mockResolvedValue({

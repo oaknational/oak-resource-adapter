@@ -3,11 +3,10 @@ import type {
   ResourceAdapterCapabilitiesResponse,
 } from "@oaknational/resource-adapter-contracts";
 import type {
-  FeatureFlagServiceType,
   ResourceAdapterAuthenticatedTeacher,
   ResourceAdapterCapabilitiesService,
 } from "@oaknational/resource-adapter-contracts/server";
-import type { FeatureFlagKey } from "./feature-flags/catalogue";
+import type { FeatureFlagServiceType } from "./feature-flags/service";
 
 const capabilitiesResponse: ResourceAdapterCapabilitiesResponse = {
   capabilities: [
@@ -48,7 +47,7 @@ async function applySmokeTestLabels(
 }
 
 export function buildCapabilitiesService(
-  featureFlags: FeatureFlagServiceType<FeatureFlagKey>,
+  featureFlags: FeatureFlagServiceType,
   authenticatedTeacher: ResourceAdapterAuthenticatedTeacher | null,
   getBaseCapabilities: (
     lesson: LessonContext,
