@@ -71,6 +71,9 @@ Poll the `id` returned by that request:
 curl http://localhost:3001/dev/jobs/<job-id>
 ```
 
-These convenience routes support the development and staging harnesses. They
-are not a public API contract and can be replaced by the authenticated
-generation API when that contract is designed.
+These convenience routes support the development and staging harnesses. They are
+not a public API contract and can be replaced by the authenticated generation API
+when that contract is designed.
+
+Every route under `/dev` returns 404 unless `ENABLE_DEV_ROUTES` is set, so the
+smoke test above needs it in your `.env`.

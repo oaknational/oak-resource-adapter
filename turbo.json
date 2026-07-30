@@ -3,12 +3,26 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "env": ["DEBUG", "SENTRY_DSN", "SENTRY_ORG", "SENTRY_PROJECT"],
+      "env": [
+        "DEBUG",
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "NEXT_PUBLIC_RESOURCE_ADAPTER_API_BASE_URL",
+        "NEXT_PUBLIC_RESOURCE_ADAPTER_TRPC_ENDPOINT",
+        "SENTRY_AUTH_TOKEN",
+        "SENTRY_DSN",
+        "SENTRY_ORG",
+        "SENTRY_PROJECT"
+      ],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "dev": {
       "cache": false,
-      "env": ["DATABASE_URL"],
+      "env": [
+        "DATABASE_URL",
+        "ENABLE_DEV_ROUTES",
+        "RESOURCE_ADAPTER_ALLOWED_ORIGINS",
+        "SENTRY_ENVIRONMENT"
+      ],
       "persistent": true
     },
     "lint": {

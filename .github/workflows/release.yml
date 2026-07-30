@@ -6,7 +6,11 @@ on:
   # it takes effect once merged, not from a branch.
   workflow_run:
     workflows: [CI]
-    branches: [main]
+    # Not main: main runs ahead of production, and OWA pins whatever is
+    # published, so a package must only carry code production has. `production`
+    # is not created yet, so nothing can publish until it is — see
+    # docs/DEVELOPMENT.md before setting ENABLE_NPM_RELEASES.
+    branches: [production]
     types: [completed]
 
 permissions:
@@ -27,6 +31,7 @@ jobs:
       github.event.workflow_run.conclusion == 'success' &&
       vars.ENABLE_NPM_RELEASES == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write # push the version commit, tags, and GitHub releases
       pull-requests: write # open and update the version packages PR
