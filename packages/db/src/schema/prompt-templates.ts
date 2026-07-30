@@ -10,7 +10,7 @@ export const promptTemplates = pgTable(
       .defaultNow(),
     /** The commit the template was compiled from. */
     gitSha: text("git_sha"),
-    /** Content hash of the compiled body; the upsert target. */
+    /** The upsert target: a hash over the identifier, version and body together. */
     hash: text("hash").notNull().unique(),
     id: uuid("id")
       .primaryKey()

@@ -14,6 +14,7 @@ function baseLogFields(invocation: ModelInvocationStarted) {
   return {
     invocationId: invocation.invocationId,
     correlationKey: invocation.correlationKey,
+    promptTemplateId: invocation.promptTemplateId,
     role: invocation.role,
     provider: invocation.provider,
     transport: invocation.transport,

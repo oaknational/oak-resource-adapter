@@ -4,8 +4,9 @@
 AI models. It separates the stable role used by generation code from the
 physical model and transport used to fulfil the request.
 
-The package is currently infrastructure only. It contains no production model
-role bindings, provider clients, credentials, or network calls.
+The package contains no production model role bindings, provider clients,
+credentials, or network calls. It does own prompt templates and invocation
+persistence, described below.
 
 ## Vocabulary
 
@@ -82,6 +83,75 @@ client.
 such as a workflow step ID, so recorded spend can be traced to its origin.
 
 It grants no idempotency.
+
+## Prompt templates
+
+A template is defined in source and identified by its content:
+
+```ts
+const LOWER_READING_AGE = definePromptTemplate({
+  identifier: "lower-reading-age",
+  template: "Rewrite for reading age {{readingAge}}.\n\n{{text}}",
+  version: 1,
+});
+```
+
+The body is the single source of truth for its variables: its placeholders
+become the required keys of the `variables` argument, so a template and its call
+sites cannot drift apart unnoticed. Rendering is strict in both directions — a
+missing variable and an unused one both throw.
+
+`preparePrompt` renders the template and registers it in one step, returning the
+text to send and the ID to record against the invocation:
+
+```ts
+const prompt = await preparePrompt({
+  template: LOWER_READING_AGE,
+  variables: { readingAge: "9", text: sourceText },
+});
+
+const response = await ai.invoke({
+  promptTemplateId: prompt.promptTemplateId,
+  request: { input: prompt.text },
+  role: "rewriter",
+});
+```
+
+### Versioning
+
+`version` must be bumped whenever a body changes. Editing a body while leaving
+its version alone is refused on first use, with a bump-the-version error, because
+`prompt_templates` is unique on identifier and version.
+
+Templates are registered on first use and reused by hash thereafter. Only
+templates that were actually used reach the database; one defined in source but
+never invoked is never stored.
+
+`renderPromptTemplate` renders without registering, for a preview that is never
+sent to a model.
+
+## Persisting invocations
+
+`createDatabaseInvocationRecorder` writes each physical call to
+`model_invocations`. It is scoped to one generation attempt:
+
+```ts
+const ai = createModelInvoker({
+  roleBindings,
+  recorder: createDatabaseInvocationRecorder({ generationAttemptId }),
+  transports,
+});
+```
+
+The attempt is fixed for the lifetime of the work being recorded, so it is
+configured once rather than passed per call — the invoker never learns that
+persistence is attempt-shaped. Only `promptTemplateId`, which varies between
+calls within an attempt, travels on the invocation itself.
+
+The row is written in two steps: an insert before the provider call, then an
+update to complete it. An invocation abandoned mid-flight therefore still leaves
+a row with a null `completed_at`. Retries are not deduplicated, because a
+retried step is a second paid call and must read as a second row.
 
 ## Adding a transport
 

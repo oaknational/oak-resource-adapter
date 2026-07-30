@@ -17,6 +17,11 @@ export type ResolvedModelInvocation = Readonly<{
   correlationKey?: string;
   invocationId: string;
   model: ModelId;
+  /**
+   * The registered prompt template this request was rendered from. Omitted for a
+   * call built without one, such as a repair retry.
+   */
+  promptTemplateId?: string;
   provider: ModelProvider;
   request: ModelInvocationRequest;
   role: string;

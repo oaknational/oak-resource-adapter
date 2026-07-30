@@ -76,9 +76,14 @@ attempt. Input usage is therefore recorded separately in
 `attempt_input_resource_documents`.
 
 **Prompt templates live in source-controlled code, not in the database.** The
-database keeps an immutable copy of each compiled prompt that was actually used,
-allowing every model invocation to reference its exact prompt. Identical compiled
-prompts are reused by content hash.
+database keeps an immutable copy of each template that was actually used, so
+every model invocation can reference the exact prompt it was rendered from.
+Templates are reused by content hash, which covers the identifier and version
+alongside the body.
+
+The stored template is the body with its `{{placeholders}}` intact, not the text
+that was sent. The rendered text, with the teacher's content substituted in,
+lives in `model_invocations.request`.
 
 ## Deletion
 
