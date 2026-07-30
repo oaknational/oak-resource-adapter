@@ -86,14 +86,20 @@ describe("definePromptTemplate", () => {
     ).toThrow(/empty body/);
   });
 
-  it("rejects a malformed placeholder", () => {
+  it.each([
+    ["whitespace inside", "Rewrite for {{ readingAge }}."],
+    ["an unclosed opening delimiter", "Rewrite for {{readingAge."],
+    ["an unmatched closing delimiter", "Rewrite for readingAge}}."],
+    ["an extra opening brace", "Rewrite for {{{readingAge}}."],
+    ["an extra closing brace", "Rewrite for {{readingAge}}}."],
+  ])("rejects a malformed placeholder with %s", (_case, malformedTemplate) => {
     expect(() =>
       definePromptTemplate({
         identifier: "lower-reading-age",
-        template: "Rewrite for {{ reading age }}.",
+        template: malformedTemplate,
         version: 1,
       }),
-    ).toThrow(/malformed placeholder/);
+    ).toThrow(/malformed placeholder syntax/);
   });
 });
 

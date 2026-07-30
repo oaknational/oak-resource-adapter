@@ -2,9 +2,6 @@ import { createHash } from "node:crypto";
 
 const PLACEHOLDER_PATTERN = /\{\{(\w+)\}\}/g;
 
-/** Any `{{...}}` occurrence, used only to reject malformed placeholders. */
-const LOOSE_PLACEHOLDER_PATTERN = /\{\{([^{}]*)\}\}/g;
-
 const IDENTIFIER_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** Extracts the placeholder names from a template's literal type. */
@@ -55,14 +52,16 @@ function validate(definition: PromptTemplateDefinition): void {
     throw new Error(`Prompt template "${definition.identifier}" has an empty body.`);
   }
 
-  for (const [placeholder, name] of definition.template.matchAll(
-    LOOSE_PLACEHOLDER_PATTERN,
-  )) {
-    if (!/^\w+$/.test(name ?? "")) {
-      throw new Error(
-        `Prompt template "${definition.identifier}" has a malformed placeholder ${placeholder}. Use {{variableName}}.`,
-      );
-    }
+  const withoutPlaceholders = definition.template.replace(PLACEHOLDER_PATTERN, "");
+  if (
+    definition.template.includes("{{{") ||
+    definition.template.includes("}}}") ||
+    withoutPlaceholders.includes("{{") ||
+    withoutPlaceholders.includes("}}")
+  ) {
+    throw new Error(
+      `Prompt template "${definition.identifier}" has malformed placeholder syntax. Use {{variableName}}.`,
+    );
   }
 }
 
