@@ -1,8 +1,8 @@
 import { sql } from "drizzle-orm";
 import { integer, pgTable, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
-import { generations } from "./generations.ts";
-import { jobs } from "./jobs.ts";
+import { generations } from "./generations.js";
+import { jobs } from "./jobs.js";
 
 /** One execution of a generation: its initial run or a retry. */
 export const generationAttempts = pgTable(

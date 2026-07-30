@@ -8,8 +8,8 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-import { generationAttempts } from "./generation-attempts.ts";
-import { promptTemplates } from "./prompt-templates.ts";
+import { generationAttempts } from "./generation-attempts.js";
+import { promptTemplates } from "./prompt-templates.js";
 
 /**
  * One physical model call made during an attempt.

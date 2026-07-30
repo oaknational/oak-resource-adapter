@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { getDatabaseClient } from "./client.ts";
+import { getDatabaseClient } from "./client.js";
 import {
   attemptInputResourceDocuments,
   generationAttempts,
@@ -13,7 +13,7 @@ import {
   promptTemplates,
   resourceArtifacts,
   resourceDocuments,
-} from "./schema/index.ts";
+} from "./schema/index.js";
 
 const describeWithDatabase =
   process.env.RUN_DATABASE_INTEGRATION_TESTS === "1" ? describe : describe.skip;

@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { bigint, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-import { resourceDocuments } from "./resource-documents.ts";
+import { resourceDocuments } from "./resource-documents.js";
 
 /** An exported file, identified by an immutable private storage key. */
 export const resourceArtifacts = pgTable(

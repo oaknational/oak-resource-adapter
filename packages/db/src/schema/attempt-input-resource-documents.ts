@@ -11,8 +11,8 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-import { generationAttempts } from "./generation-attempts.ts";
-import { resourceDocuments } from "./resource-documents.ts";
+import { generationAttempts } from "./generation-attempts.js";
+import { resourceDocuments } from "./resource-documents.js";
 
 /** Documents read by an attempt, shared by all outputs from that attempt. */
 export const attemptInputResourceDocuments = pgTable(

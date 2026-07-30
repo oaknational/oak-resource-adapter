@@ -12,7 +12,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-import { generationAttempts } from "./generation-attempts.ts";
+import { generationAttempts } from "./generation-attempts.js";
 
 /** Document provenance; input usage is represented by attempt relationships. */
 export const resourceDocumentOriginEnum = pgEnum("resource_document_origin", [
