@@ -29,6 +29,14 @@ and fails if that produces anything uncommitted.
 Do not edit a migration that has been applied to a shared environment. Where a
 change needs more than one release, make it additive.
 
+A migration must also be safe for the code already deployed: the old code meets
+the new schema while a deployment is in progress, and again if it is rolled back.
+Dropping or renaming a column, or tightening one to `NOT NULL`, breaks a live
+application. Expand first and contract in a later release.
+
+Previews share the staging database, so a migration reaches them only once it is
+merged and staging is migrated.
+
 ## Migrating a live database
 
 `db:migrate:deploy` applies what is pending and is otherwise a no-op.

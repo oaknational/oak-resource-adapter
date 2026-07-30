@@ -12,9 +12,39 @@ secret:
 2. If any `turbo run` task reads it, declare it in that task's `env` (or
    `globalEnv`) in [`turbo.json`](../turbo.json). Turbo hashes caches on declared
    env vars only — an undeclared secret means stale or cross-environment cache.
-3. Supply it through the deployment environment in CI. Locally,
-   `pnpm doppler:pull:dev` refreshes the gitignored `.env` read by repository
-   tooling.
+   Declare it on `build` only if it is read while building: the `NEXT_PUBLIC_*`
+   values are baked into the client bundle, so a build belongs to one environment.
+3. Nothing to do for CI: jobs fetch what they need from Doppler at run time.
+   Locally, `pnpm doppler:pull:dev` refreshes the gitignored `.env` read by
+   repository tooling.
+
+## How CI reads secrets
+
+`DOPPLER_TOKEN` is the only secret CI holds. There is no `DATABASE_URL` secret at
+repository or Environment level, and no workflow carries a database credential.
+
+The same name at every scope is deliberate: GitHub resolves an Environment secret
+over the repository one for any job declaring that `environment:`.
+
+| Scope                    | Doppler config | Used by                                                                 |
+| ------------------------ | -------------- | ----------------------------------------------------------------------- |
+| Repository secret        | `stg_github`   | pull request CI, for the Clerk test credentials                         |
+| `staging` Environment    | `stg_github`   | [`db-migrate.yml`](../.github/workflows/db-migrate.yml) against staging |
+| `production` Environment | `prd_github`   | the same workflow against production                                    |
+
+Each token is read-only and scoped to one Doppler config, so a staging job cannot
+reach production values. `stg_github` and `prd_github` are branch configs
+inheriting from the `stg` and `prd` roots; Vercel will get its own.
+
+## Applying migrations
+
+[`db-migrate.yml`](../.github/workflows/db-migrate.yml) is the only way migrations
+reach a deployed database — `workflow_dispatch` to run one by hand, `workflow_call`
+for a promotion workflow to gate on. It takes an `environment` and returns nothing;
+its job conclusion is the signal.
+
+Migrations must be backwards compatible: see
+[database](DATABASE.md#changing-the-schema).
 
 ## Package release enforcement
 
@@ -33,17 +63,20 @@ to exactly `true`:
 - `ENABLE_NPM_RELEASES` gates the whole [Release
   workflow](../.github/workflows/release.yml) job. It matters because the
   changesets action treats "no changesets pending" as "publish anything not yet
-  on npm", so without this gate every push to `main` would attempt a publish.
+  on npm", so without this gate every qualifying run on the release branch would
+  attempt a publish.
 
 When the first real package release is being prepared, we will:
 
 1. Add one `v1` changeset covering both packages.
 2. Do the manual first publish of each package (see below), then configure its
    trusted publisher on npmjs.com.
-3. Set `ENFORCE_CHANGESETS=true` and `ENABLE_NPM_RELEASES=true` together, so the
+3. Create the `production` branch. The Release workflow triggers on CI passing
+   there, so nothing publishes until it exists.
+4. Set `ENFORCE_CHANGESETS=true` and `ENABLE_NPM_RELEASES=true` together, so the
    two halves of the policy cannot drift apart.
-4. From then on, require a changeset for every UI or contracts package change; CI enforces this.
-5. Merge to `main`; once CI passes there the Release workflow opens a
+5. From then on, require a changeset for every UI or contracts package change; CI enforces this.
+6. Release to `production`; once CI passes there the Release workflow opens a
    "chore: version packages" PR, and merging that PR publishes both packages via
    npm OIDC trusted publishing.
 

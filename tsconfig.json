@@ -1,0 +1,11 @@
+{
+  // The root-level TypeScript that belongs to no workspace package: the
+  // Playwright config and the browser specs. Without this they are in no project,
+  // so neither `pnpm type-check` nor an editor type-checks them.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["playwright.config.ts", "e2e/**/*.ts"]
+}
