@@ -1,5 +1,5 @@
 {
-  "enabledMcpjsonServers": ["playwright"],
+  "enabledMcpjsonServers": ["linear", "playwright"],
   "permissions": {
     "allow": [
       "Bash(pnpm test)",
