@@ -16,9 +16,18 @@ export type ResourceAdapterCapabilitiesService = Readonly<{
     Promise<ResourceAdapterCapabilitiesResponse> | ResourceAdapterCapabilitiesResponse;
 }>;
 
+export type FeatureFlagServiceType<T extends string> = {
+  isEnabled: (
+    flag: T,
+    target: ResourceAdapterAuthenticatedTeacher,
+  ) => Promise<boolean> | boolean;
+};
+
 /**
  * The API application creates this context for every request. Future slices
- * will add verified teacher identity, feature flags, and job services here.
+ * will add job services here.
+ *
+
  */
 export type ResourceAdapterApiContext = Readonly<{
   apiContractVersion: number | null;
