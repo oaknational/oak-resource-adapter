@@ -21,5 +21,7 @@ How the service works:
   protection implications of what it stores.
 - [Background jobs](BACKGROUND_JOBS.md): how the API and worker divide
   responsibility, and where durable output belongs.
+- [Feature flags](FEATURE_FLAGS.md): how flags are named, owned, defaulted and
+  retired, and why they control rollout rather than authorisation.
 - [Model invocation](MODEL_INVOCATION.md): how generation code reaches an AI
   model without naming one, through roles, transports and recorders.
