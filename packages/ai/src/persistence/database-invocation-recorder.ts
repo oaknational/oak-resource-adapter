@@ -11,7 +11,7 @@ import type { InvocationRecorder } from "../invocation-recorder.js";
 export type DatabaseInvocationRecorderConfig = Readonly<{
   database?: DatabaseClient;
   /** The attempt every invocation from this recorder belongs to. */
-  generationAttemptId: string;
+  transformationAttemptId: string;
 }>;
 
 /**
@@ -31,7 +31,6 @@ export function createDatabaseInvocationRecorder(
         .insert(modelInvocations)
         .values({
           correlationKey: invocation.correlationKey ?? null,
-          generationAttemptId: config.generationAttemptId,
           id: invocation.invocationId,
           model: invocation.model,
           promptTemplateId: invocation.promptTemplateId ?? null,
@@ -39,6 +38,7 @@ export function createDatabaseInvocationRecorder(
           request: invocation.request,
           role: invocation.role,
           startedAt: invocation.startedAt,
+          transformationAttemptId: config.transformationAttemptId,
           transport: invocation.transport,
         });
     },

@@ -1,12 +1,13 @@
 import { randomUUID } from "node:crypto";
 
 import {
-  generationAttempts,
-  generations,
+  adaptations,
   getDatabaseClient,
   jobs,
   modelInvocations,
   promptTemplates,
+  transformationAttempts,
+  transformations,
 } from "@oaknational/resource-adapter-db";
 import { eq, inArray } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -51,18 +52,18 @@ function responseFixture(): ModelInvocationResponse {
 }
 
 describeWithDatabase("model invocation persistence", () => {
-  const createdGenerationIds: string[] = [];
+  const createdAdaptationIds: string[] = [];
   const createdJobIds: string[] = [];
   const createdTemplateIdentifiers: string[] = [];
 
   afterEach(async () => {
     // Order matters: the attempt CASCADE removes its invocations, which must go
     // before the templates they RESTRICT, and before the jobs they reference.
-    const generationIds = createdGenerationIds.splice(0);
-    if (generationIds.length > 0) {
+    const adaptationIds = createdAdaptationIds.splice(0);
+    if (adaptationIds.length > 0) {
       await database()
-        .delete(generations)
-        .where(inArray(generations.id, generationIds));
+        .delete(adaptations)
+        .where(inArray(adaptations.id, adaptationIds));
     }
 
     const jobIds = createdJobIds.splice(0);
@@ -84,34 +85,49 @@ describeWithDatabase("model invocation persistence", () => {
       .values({
         idempotencyKey: `ai-integration-${randomUUID()}`,
         input: {},
-        kind: "generation.worksheetAdapter",
+        kind: "transformation.apply",
       })
       .returning({ id: jobs.id });
 
-    const [generation] = await database()
-      .insert(generations)
+    const [adaptation] = await database()
+      .insert(adaptations)
       .values({
         capabilityId: "worksheetAdapter",
         clerkUserId: `user_test_${randomUUID().replaceAll("-", "")}`,
-        idempotencyKey: `request-${randomUUID()}`,
-        request: { targetReadingAge: 9 },
       })
-      .returning({ id: generations.id });
+      .returning({ id: adaptations.id });
 
-    if (!job || !generation) {
+    if (!job || !adaptation) {
       throw new Error("Failed to insert the attempt fixture.");
     }
 
     createdJobIds.push(job.id);
-    createdGenerationIds.push(generation.id);
+    createdAdaptationIds.push(adaptation.id);
+
+    const [transformation] = await database()
+      .insert(transformations)
+      .values({
+        adaptationId: adaptation.id,
+        idempotencyKey: `request-${randomUUID()}`,
+        kind: "lower-reading-age",
+      })
+      .returning({ id: transformations.id });
+
+    if (!transformation) {
+      throw new Error("Failed to insert the transformation fixture.");
+    }
 
     const [attempt] = await database()
-      .insert(generationAttempts)
-      .values({ attemptNumber: 1, generationId: generation.id, jobId: job.id })
-      .returning({ id: generationAttempts.id });
+      .insert(transformationAttempts)
+      .values({
+        attemptNumber: 1,
+        jobId: job.id,
+        transformationId: transformation.id,
+      })
+      .returning({ id: transformationAttempts.id });
 
     if (!attempt) {
-      throw new Error("Failed to insert the generation attempt fixture.");
+      throw new Error("Failed to insert the transformation attempt fixture.");
     }
 
     return attempt.id;
@@ -122,7 +138,7 @@ describeWithDatabase("model invocation persistence", () => {
   }
 
   it("records a successful invocation against its prompt template", async () => {
-    const generationAttemptId = await insertAttempt();
+    const transformationAttemptId = await insertAttempt();
     vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "abc123");
     trackTemplate(template.identifier);
 
@@ -130,7 +146,7 @@ describeWithDatabase("model invocation persistence", () => {
     const response = responseFixture();
     const invoker = createModelInvoker({
       roleBindings,
-      recorder: createDatabaseInvocationRecorder({ generationAttemptId }),
+      recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
       transports: { primary: { invoke: async () => response } },
     });
 
@@ -144,7 +160,7 @@ describeWithDatabase("model invocation persistence", () => {
     const [row] = await database()
       .select()
       .from(modelInvocations)
-      .where(eq(modelInvocations.generationAttemptId, generationAttemptId));
+      .where(eq(modelInvocations.transformationAttemptId, transformationAttemptId));
 
     expect(row).toMatchObject({
       correlationKey: "workflow-step-1",
@@ -177,14 +193,14 @@ describeWithDatabase("model invocation persistence", () => {
   });
 
   it("records classified metadata rather than the raw error when a call fails", async () => {
-    const generationAttemptId = await insertAttempt();
+    const transformationAttemptId = await insertAttempt();
     const failure = Object.assign(new Error("Prompt content must not be persisted"), {
       code: "rate_limit_exceeded",
       status: 429,
     });
     const invoker = createModelInvoker({
       roleBindings,
-      recorder: createDatabaseInvocationRecorder({ generationAttemptId }),
+      recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
       transports: {
         primary: {
           invoke: async () => {
@@ -201,7 +217,7 @@ describeWithDatabase("model invocation persistence", () => {
     const [row] = await database()
       .select()
       .from(modelInvocations)
-      .where(eq(modelInvocations.generationAttemptId, generationAttemptId));
+      .where(eq(modelInvocations.transformationAttemptId, transformationAttemptId));
 
     expect(row).toMatchObject({
       errorCode: "rate_limit_exceeded",
@@ -218,7 +234,9 @@ describeWithDatabase("model invocation persistence", () => {
     const invoker = createModelInvoker({
       roleBindings,
       // No such attempt, so the insert violates its foreign key.
-      recorder: createDatabaseInvocationRecorder({ generationAttemptId: randomUUID() }),
+      recorder: createDatabaseInvocationRecorder({
+        transformationAttemptId: randomUUID(),
+      }),
       transports: { primary: transport },
     });
 

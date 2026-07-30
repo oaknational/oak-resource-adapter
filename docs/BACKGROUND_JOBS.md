@@ -32,7 +32,7 @@ an original row that was persisted but still has no Workflow run ID.
 
 ## Durable outputs
 
-Job outcomes belong in their domain tables, not on the job. A `generation_attempts`
+Job outcomes belong in their domain tables, not on the job. A `transformation_attempts`
 row references exactly one job while the job remains independent of product
 tables. Its input, invocation, document and artifact relationships are described
 in [database](DATABASE.md).

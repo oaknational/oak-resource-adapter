@@ -1,5 +1,13 @@
 import { sql } from "drizzle-orm";
-import { bigint, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  bigint,
+  foreignKey,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 import { resourceDocuments } from "./resource-documents.js";
 
@@ -17,13 +25,16 @@ export const resourceArtifacts = pgTable(
       .primaryKey()
       .default(sql`gen_random_uuid()`),
     mimeType: text("mime_type").notNull(),
-    resourceDocumentId: uuid("resource_document_id")
-      .notNull()
-      .references(() => resourceDocuments.id, { onDelete: "cascade" }),
+    resourceDocumentId: uuid("resource_document_id").notNull(),
     storageKey: text("storage_key").notNull().unique(),
   },
   (table) => [
-    index("resource_artifacts_resource_document_id_idx").on(table.resourceDocumentId),
+    foreignKey({
+      columns: [table.resourceDocumentId],
+      foreignColumns: [resourceDocuments.id],
+      name: "resource_artifacts_document_fk",
+    }).onDelete("cascade"),
+    index("resource_artifacts_document_idx").on(table.resourceDocumentId),
   ],
 );
 

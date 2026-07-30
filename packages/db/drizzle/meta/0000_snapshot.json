@@ -1,181 +1,11 @@
 {
-  "id": "6b2ed099-ba46-47ea-bebc-2d6d5bc26f26",
+  "id": "6f030fbf-867a-47b0-b848-b46ae53aef68",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.attempt_input_resource_documents": {
-      "name": "attempt_input_resource_documents",
-      "schema": "",
-      "columns": {
-        "generation_attempt_id": {
-          "name": "generation_attempt_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "input_role": {
-          "name": "input_role",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "position": {
-          "name": "position",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "resource_document_id": {
-          "name": "resource_document_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "attempt_input_resource_documents_document_idx": {
-          "name": "attempt_input_resource_documents_document_idx",
-          "columns": [
-            {
-              "expression": "resource_document_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "attempt_input_resource_documents_attempt_fk": {
-          "name": "attempt_input_resource_documents_attempt_fk",
-          "tableFrom": "attempt_input_resource_documents",
-          "tableTo": "generation_attempts",
-          "columnsFrom": ["generation_attempt_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "attempt_input_resource_documents_document_fk": {
-          "name": "attempt_input_resource_documents_document_fk",
-          "tableFrom": "attempt_input_resource_documents",
-          "tableTo": "resource_documents",
-          "columnsFrom": ["resource_document_id"],
-          "columnsTo": ["id"],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "attempt_input_resource_documents_pkey": {
-          "name": "attempt_input_resource_documents_pkey",
-          "columns": ["generation_attempt_id", "resource_document_id"]
-        }
-      },
-      "uniqueConstraints": {
-        "attempt_input_resource_documents_attempt_position_key": {
-          "name": "attempt_input_resource_documents_attempt_position_key",
-          "nullsNotDistinct": false,
-          "columns": ["generation_attempt_id", "position"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {
-        "attempt_input_resource_documents_position_check": {
-          "name": "attempt_input_resource_documents_position_check",
-          "value": "\"attempt_input_resource_documents\".\"position\" >= 0"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.generation_attempts": {
-      "name": "generation_attempts",
-      "schema": "",
-      "columns": {
-        "attempt_number": {
-          "name": "attempt_number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (3) with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "generation_id": {
-          "name": "generation_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "job_id": {
-          "name": "job_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp (3) with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "generation_attempts_generation_id_generations_id_fk": {
-          "name": "generation_attempts_generation_id_generations_id_fk",
-          "tableFrom": "generation_attempts",
-          "tableTo": "generations",
-          "columnsFrom": ["generation_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "generation_attempts_job_id_jobs_id_fk": {
-          "name": "generation_attempts_job_id_jobs_id_fk",
-          "tableFrom": "generation_attempts",
-          "tableTo": "jobs",
-          "columnsFrom": ["job_id"],
-          "columnsTo": ["id"],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "generation_attempts_job_id_unique": {
-          "name": "generation_attempts_job_id_unique",
-          "nullsNotDistinct": false,
-          "columns": ["job_id"]
-        },
-        "generation_attempts_generation_id_attempt_number_key": {
-          "name": "generation_attempts_generation_id_attempt_number_key",
-          "nullsNotDistinct": false,
-          "columns": ["generation_id", "attempt_number"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.generations": {
-      "name": "generations",
+    "public.adaptations": {
+      "name": "adaptations",
       "schema": "",
       "columns": {
         "capability_id": {
@@ -197,18 +27,18 @@
           "notNull": true,
           "default": "now()"
         },
+        "head_resource_document_id": {
+          "name": "head_resource_document_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "id": {
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
-        },
-        "idempotency_key": {
-          "name": "idempotency_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
         },
         "lesson_slug": {
           "name": "lesson_slug",
@@ -222,12 +52,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "request": {
-          "name": "request",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp (3) with time zone",
@@ -237,8 +61,8 @@
         }
       },
       "indexes": {
-        "generations_clerk_user_id_created_at_idx": {
-          "name": "generations_clerk_user_id_created_at_idx",
+        "adaptations_clerk_user_id_created_at_idx": {
+          "name": "adaptations_clerk_user_id_created_at_idx",
           "columns": [
             {
               "expression": "clerk_user_id",
@@ -259,15 +83,19 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "generations_idempotency_key_unique": {
-          "name": "generations_idempotency_key_unique",
-          "nullsNotDistinct": false,
-          "columns": ["idempotency_key"]
+      "foreignKeys": {
+        "adaptations_head_document_fk": {
+          "name": "adaptations_head_document_fk",
+          "tableFrom": "adaptations",
+          "tableTo": "resource_documents",
+          "columnsFrom": ["head_resource_document_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -442,12 +270,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "generation_attempt_id": {
-          "name": "generation_attempt_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "id": {
           "name": "id",
           "type": "uuid",
@@ -514,6 +336,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "transformation_attempt_id": {
+          "name": "transformation_attempt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "transport": {
           "name": "transport",
           "type": "text",
@@ -522,11 +350,11 @@
         }
       },
       "indexes": {
-        "model_invocations_generation_attempt_id_idx": {
-          "name": "model_invocations_generation_attempt_id_idx",
+        "model_invocations_attempt_idx": {
+          "name": "model_invocations_attempt_idx",
           "columns": [
             {
-              "expression": "generation_attempt_id",
+              "expression": "transformation_attempt_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -537,8 +365,8 @@
           "method": "btree",
           "with": {}
         },
-        "model_invocations_prompt_template_id_idx": {
-          "name": "model_invocations_prompt_template_id_idx",
+        "model_invocations_prompt_template_idx": {
+          "name": "model_invocations_prompt_template_idx",
           "columns": [
             {
               "expression": "prompt_template_id",
@@ -554,17 +382,17 @@
         }
       },
       "foreignKeys": {
-        "model_invocations_generation_attempt_id_generation_attempts_id_fk": {
-          "name": "model_invocations_generation_attempt_id_generation_attempts_id_fk",
+        "model_invocations_attempt_fk": {
+          "name": "model_invocations_attempt_fk",
           "tableFrom": "model_invocations",
-          "tableTo": "generation_attempts",
-          "columnsFrom": ["generation_attempt_id"],
+          "tableTo": "transformation_attempts",
+          "columnsFrom": ["transformation_attempt_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "model_invocations_prompt_template_id_prompt_templates_id_fk": {
-          "name": "model_invocations_prompt_template_id_prompt_templates_id_fk",
+        "model_invocations_prompt_template_fk": {
+          "name": "model_invocations_prompt_template_fk",
           "tableFrom": "model_invocations",
           "tableTo": "prompt_templates",
           "columnsFrom": ["prompt_template_id"],
@@ -703,8 +531,8 @@
         }
       },
       "indexes": {
-        "resource_artifacts_resource_document_id_idx": {
-          "name": "resource_artifacts_resource_document_id_idx",
+        "resource_artifacts_document_idx": {
+          "name": "resource_artifacts_document_idx",
           "columns": [
             {
               "expression": "resource_document_id",
@@ -720,8 +548,8 @@
         }
       },
       "foreignKeys": {
-        "resource_artifacts_resource_document_id_resource_documents_id_fk": {
-          "name": "resource_artifacts_resource_document_id_resource_documents_id_fk",
+        "resource_artifacts_document_fk": {
+          "name": "resource_artifacts_document_fk",
           "tableFrom": "resource_artifacts",
           "tableTo": "resource_documents",
           "columnsFrom": ["resource_document_id"],
@@ -758,12 +586,6 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true
-        },
-        "generation_attempt_id": {
-          "name": "generation_attempt_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
         },
         "id": {
           "name": "id",
@@ -802,14 +624,20 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
+        },
+        "transformation_attempt_id": {
+          "name": "transformation_attempt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
-        "resource_documents_generation_attempt_id_idx": {
-          "name": "resource_documents_generation_attempt_id_idx",
+        "resource_documents_attempt_idx": {
+          "name": "resource_documents_attempt_idx",
           "columns": [
             {
-              "expression": "generation_attempt_id",
+              "expression": "transformation_attempt_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -838,11 +666,11 @@
         }
       },
       "foreignKeys": {
-        "resource_documents_generation_attempt_id_generation_attempts_id_fk": {
-          "name": "resource_documents_generation_attempt_id_generation_attempts_id_fk",
+        "resource_documents_attempt_fk": {
+          "name": "resource_documents_attempt_fk",
           "tableFrom": "resource_documents",
-          "tableTo": "generation_attempts",
-          "columnsFrom": ["generation_attempt_id"],
+          "tableTo": "transformation_attempts",
+          "columnsFrom": ["transformation_attempt_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -850,19 +678,422 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "resource_documents_generation_attempt_id_position_key": {
-          "name": "resource_documents_generation_attempt_id_position_key",
+        "resource_documents_attempt_position_key": {
+          "name": "resource_documents_attempt_position_key",
           "nullsNotDistinct": false,
-          "columns": ["generation_attempt_id", "position"]
+          "columns": ["transformation_attempt_id", "position"]
         }
       },
       "policies": {},
       "checkConstraints": {
         "resource_documents_generated_has_attempt_and_position": {
           "name": "resource_documents_generated_has_attempt_and_position",
-          "value": "(\"resource_documents\".\"origin\" = 'generated'\n            AND \"resource_documents\".\"generation_attempt_id\" IS NOT NULL\n            AND \"resource_documents\".\"position\" IS NOT NULL\n            AND \"resource_documents\".\"position\" >= 0)\n       OR (\"resource_documents\".\"origin\" <> 'generated'\n            AND \"resource_documents\".\"generation_attempt_id\" IS NULL\n            AND \"resource_documents\".\"position\" IS NULL)"
+          "value": "(\"resource_documents\".\"origin\" = 'generated'\n            AND \"resource_documents\".\"transformation_attempt_id\" IS NOT NULL\n            AND \"resource_documents\".\"position\" IS NOT NULL\n            AND \"resource_documents\".\"position\" >= 0)\n       OR (\"resource_documents\".\"origin\" <> 'generated'\n            AND \"resource_documents\".\"transformation_attempt_id\" IS NULL\n            AND \"resource_documents\".\"position\" IS NULL)"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.suggested_transformations": {
+      "name": "suggested_transformations",
+      "schema": "",
+      "columns": {
+        "accepted_transformation_id": {
+          "name": "accepted_transformation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "params": {
+          "name": "params",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resource_document_id": {
+          "name": "resource_document_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_block_id": {
+          "name": "target_block_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "transformation_attempt_id": {
+          "name": "transformation_attempt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "suggested_transformations_document_idx": {
+          "name": "suggested_transformations_document_idx",
+          "columns": [
+            {
+              "expression": "resource_document_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "suggested_transformations_document_fk": {
+          "name": "suggested_transformations_document_fk",
+          "tableFrom": "suggested_transformations",
+          "tableTo": "resource_documents",
+          "columnsFrom": ["resource_document_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "suggested_transformations_attempt_fk": {
+          "name": "suggested_transformations_attempt_fk",
+          "tableFrom": "suggested_transformations",
+          "tableTo": "transformation_attempts",
+          "columnsFrom": ["transformation_attempt_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "suggested_transformations_accepted_fk": {
+          "name": "suggested_transformations_accepted_fk",
+          "tableFrom": "suggested_transformations",
+          "tableTo": "transformations",
+          "columnsFrom": ["accepted_transformation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "suggested_transformations_attempt_position_key": {
+          "name": "suggested_transformations_attempt_position_key",
+          "nullsNotDistinct": false,
+          "columns": ["transformation_attempt_id", "position"]
+        },
+        "suggested_transformations_accepted_key": {
+          "name": "suggested_transformations_accepted_key",
+          "nullsNotDistinct": false,
+          "columns": ["accepted_transformation_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "suggested_transformations_position_check": {
+          "name": "suggested_transformations_position_check",
+          "value": "\"suggested_transformations\".\"position\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.transformation_attempts": {
+      "name": "transformation_attempts",
+      "schema": "",
+      "columns": {
+        "attempt_number": {
+          "name": "attempt_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "job_id": {
+          "name": "job_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transformation_id": {
+          "name": "transformation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "transformation_attempts_transformation_fk": {
+          "name": "transformation_attempts_transformation_fk",
+          "tableFrom": "transformation_attempts",
+          "tableTo": "transformations",
+          "columnsFrom": ["transformation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "transformation_attempts_job_fk": {
+          "name": "transformation_attempts_job_fk",
+          "tableFrom": "transformation_attempts",
+          "tableTo": "jobs",
+          "columnsFrom": ["job_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "transformation_attempts_job_id_unique": {
+          "name": "transformation_attempts_job_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["job_id"]
+        },
+        "transformation_attempts_number_key": {
+          "name": "transformation_attempts_number_key",
+          "nullsNotDistinct": false,
+          "columns": ["transformation_id", "attempt_number"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.transformation_inputs": {
+      "name": "transformation_inputs",
+      "schema": "",
+      "columns": {
+        "input_role": {
+          "name": "input_role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resource_document_id": {
+          "name": "resource_document_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transformation_id": {
+          "name": "transformation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "transformation_inputs_document_idx": {
+          "name": "transformation_inputs_document_idx",
+          "columns": [
+            {
+              "expression": "resource_document_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "transformation_inputs_transformation_fk": {
+          "name": "transformation_inputs_transformation_fk",
+          "tableFrom": "transformation_inputs",
+          "tableTo": "transformations",
+          "columnsFrom": ["transformation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "transformation_inputs_document_fk": {
+          "name": "transformation_inputs_document_fk",
+          "tableFrom": "transformation_inputs",
+          "tableTo": "resource_documents",
+          "columnsFrom": ["resource_document_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "transformation_inputs_pkey": {
+          "name": "transformation_inputs_pkey",
+          "columns": ["transformation_id", "resource_document_id"]
+        }
+      },
+      "uniqueConstraints": {
+        "transformation_inputs_position_key": {
+          "name": "transformation_inputs_position_key",
+          "nullsNotDistinct": false,
+          "columns": ["transformation_id", "position"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "transformation_inputs_position_check": {
+          "name": "transformation_inputs_position_check",
+          "value": "\"transformation_inputs\".\"position\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.transformations": {
+      "name": "transformations",
+      "schema": "",
+      "columns": {
+        "adaptation_id": {
+          "name": "adaptation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "params": {
+          "name": "params",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "target_block_id": {
+          "name": "target_block_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "transformations_adaptation_id_created_at_idx": {
+          "name": "transformations_adaptation_id_created_at_idx",
+          "columns": [
+            {
+              "expression": "adaptation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "transformations_adaptation_id_adaptations_id_fk": {
+          "name": "transformations_adaptation_id_adaptations_id_fk",
+          "tableFrom": "transformations",
+          "tableTo": "adaptations",
+          "columnsFrom": ["adaptation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "transformations_idempotency_key_unique": {
+          "name": "transformations_idempotency_key_unique",
+          "nullsNotDistinct": false,
+          "columns": ["idempotency_key"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     }
   },

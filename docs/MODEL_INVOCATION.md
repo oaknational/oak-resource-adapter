@@ -133,12 +133,12 @@ sent to a model.
 ## Persisting invocations
 
 `createDatabaseInvocationRecorder` writes each physical call to
-`model_invocations`. It is scoped to one generation attempt:
+`model_invocations`. It is scoped to one transformation attempt:
 
 ```ts
 const ai = createModelInvoker({
   roleBindings,
-  recorder: createDatabaseInvocationRecorder({ generationAttemptId }),
+  recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
   transports,
 });
 ```
