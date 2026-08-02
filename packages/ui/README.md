@@ -48,6 +48,53 @@ const capabilities = await getResourceAdapterCapabilities({
 The helper wraps the package's internal typed tRPC client, so hosts never
 depend on `@trpc/client` themselves.
 
+## Error handling and reporting
+
+The components isolate their own render failures with a
+`ResourceAdapterErrorBoundary`, so a crash inside the adapter cannot take down
+the host lesson page. The dialog shows an accessible, Oak-styled unavailable
+state (with a Try again control) in place of the crashed content; the button
+hides itself.
+
+To have caught errors reported, pass the dialog the same `getToken` and
+`trpcEndpoint` used for `getResourceAdapterCapabilities`, plus an optional
+`onError` for the host's own observability:
+
+```tsx
+<ResourceAdapterDialog
+  capabilities={capabilities}
+  getToken={getToken}
+  isOpen={isOpen}
+  lesson={lesson}
+  onClose={close}
+  onError={(error, info) => reportError(error, { componentStack: info.componentStack })}
+  trpcEndpoint={trpcEndpoint}
+/>
+```
+
+- **What gets reported to the Resource Adapter API**: the error name, its
+  message (truncated to 500 characters) and the React component stack, nothing
+  else. Tokens, lesson contents, prompts and personal data are excluded by
+  construction: the strict wire schema has no field they could travel in. The
+  call is authenticated with the host token, capped at five reports per page
+  load, and failures in reporting are swallowed; they never affect the host
+  page and are never themselves re-reported.
+- **`onError` contract**: `(error: Error, info: { componentStack: string | null })`.
+  Both arguments are plain serialisable values, never React types. The package
+  never relies on it being called (consent-gated host reporters may no-op), and
+  a throwing `onError` cannot break the fallback or the API report.
+- **Reset semantics**: the boundary clears automatically when the dialog is
+  closed or the lesson changes, and the fallback's Try again re-renders in
+  place. `ResourceAdapterErrorBoundary` is also exported for hosts that want to
+  wrap a larger surface; it accepts `resetKeys` (shallow-compared, any change
+  clears the error), `fallback`, `onError` and `reporting` props.
+
+**What error boundaries do not catch**: failed requests and other async
+rejections, errors thrown in event handlers (including `ResourceAdapterButton`'s
+`onClick`), server-side rendering errors, and errors inside the fallback
+itself. Those paths keep their explicit error states, like
+`getResourceAdapterCapabilities` throwing `ResourceAdapterApiError`.
+
 ## Testing local changes inside a host app like OWA
 
 Sometimes it isn't enough to develop against the local harness and you need to

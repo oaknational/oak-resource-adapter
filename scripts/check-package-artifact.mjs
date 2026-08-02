@@ -142,6 +142,7 @@ try {
     "getResourceAdapterCapabilities",
     "ResourceAdapterButton",
     "ResourceAdapterDialog",
+    "ResourceAdapterErrorBoundary",
   ]) {
     if (!rootDeclaration.includes(exportName)) {
       throw new Error(`Published package is missing ${exportName}.`);
@@ -150,13 +151,18 @@ try {
 
   // "use client" must sit exactly on the component modules: app-router hosts
   // need it there, and every other module must stay callable from server code.
-  const clientModules = ["ResourceAdapterButton.js", "ResourceAdapterDialog.js"];
+  const clientModules = [
+    "ResourceAdapterButton.js",
+    "ResourceAdapterDialog.js",
+    "ResourceAdapterErrorBoundary.js",
+  ];
   const serverSafeModules = [
     "index.js",
     "client.js",
     "getResourceAdapterCapabilities.js",
     "capabilities.js",
     "publicTypes.js",
+    "reportClientError.js",
   ];
 
   for (const file of clientModules) {

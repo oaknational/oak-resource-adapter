@@ -2,6 +2,8 @@ export { ResourceAdapterButton } from "./ResourceAdapterButton.js";
 export type { ResourceAdapterButtonProps } from "./ResourceAdapterButton.js";
 export { ResourceAdapterDialog } from "./ResourceAdapterDialog.js";
 export type { ResourceAdapterDialogProps } from "./ResourceAdapterDialog.js";
+export { ResourceAdapterErrorBoundary } from "./ResourceAdapterErrorBoundary.js";
+export type { ResourceAdapterErrorBoundaryProps } from "./ResourceAdapterErrorBoundary.js";
 export {
   getResourceAdapterCapabilities,
   ResourceAdapterApiError,
@@ -14,5 +16,8 @@ export type {
   ResourceAdapterCapability,
   ResourceAdapterCapabilityId,
   ResourceAdapterCapabilitiesResponse,
+  ResourceAdapterErrorHandler,
+  ResourceAdapterErrorInfo,
   ResourceAdapterHostProps,
+  ResourceAdapterReportingProps,
 } from "./publicTypes.js";
