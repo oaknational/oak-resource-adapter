@@ -54,7 +54,8 @@ The components isolate their own render failures with a
 `ResourceAdapterErrorBoundary`, so a crash inside the adapter cannot take down
 the host lesson page. The dialog shows an accessible, Oak-styled unavailable
 state (with a Try again control) in place of the crashed content; the button
-hides itself.
+hides itself, and because it takes no reporting props, a crash there is not
+reported anywhere.
 
 To have caught errors reported, pass the dialog the same `getToken` and
 `trpcEndpoint` used for `getResourceAdapterCapabilities`, plus an optional
