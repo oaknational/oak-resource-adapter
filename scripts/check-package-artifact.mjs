@@ -151,19 +151,28 @@ try {
 
   // "use client" must sit exactly on the component modules: app-router hosts
   // need it there, and every other module must stay callable from server code.
-  const clientModules = [
-    "ResourceAdapterButton.js",
-    "ResourceAdapterDialog.js",
-    "ResourceAdapterErrorBoundary.js",
-  ];
-  const serverSafeModules = [
-    "index.js",
-    "client.js",
-    "getResourceAdapterCapabilities.js",
-    "capabilities.js",
-    "publicTypes.js",
-    "reportClientError.js",
-  ];
+  //
+  // The expected modules are derived from `src` rather than hand-listed: a
+  // hardcoded allowlist silently ignores any module nobody remembered to add,
+  // which is how a compiled `.d.ts` importing a devDependency once shipped.
+  // `bundle: false` in tsup.config.ts makes the src-to-dist mapping one to one.
+  const sourceDirectory = join(repositoryRoot, "packages/ui/src");
+  const sourceFiles = (await readdir(sourceDirectory)).filter(
+    (file) =>
+      /\.tsx?$/.test(file) && !file.includes(".test.") && !file.endsWith(".d.ts"),
+  );
+
+  const clientModules = [];
+  const serverSafeModules = [];
+  for (const file of sourceFiles) {
+    const source = await readFile(join(sourceDirectory, file), "utf8");
+    const module = file.replace(/\.tsx?$/, ".js");
+    if (source.startsWith('"use client"')) {
+      clientModules.push(module);
+    } else {
+      serverSafeModules.push(module);
+    }
+  }
 
   for (const file of clientModules) {
     if (
@@ -177,6 +186,23 @@ try {
     if (readPackedFile(uiTarball, `package/dist/${file}`).startsWith('"use client";')) {
       throw new Error(`dist/${file} must not carry the "use client" directive.`);
     }
+  }
+
+  // Nothing beyond those sources may ship: an unexpected module is either dead
+  // weight or, as above, a build artefact pulling in packages hosts lack.
+  const packedModules = execFileSync("tar", ["-tf", uiTarball], { encoding: "utf8" })
+    .split("\n")
+    .filter((path) => /^package\/dist\/[^/]+\.js$/.test(path))
+    .map((path) => basename(path));
+  const expectedModules = new Set([...clientModules, ...serverSafeModules]);
+  const unexpectedModules = packedModules.filter(
+    (module) => !expectedModules.has(module),
+  );
+
+  if (unexpectedModules.length > 0) {
+    throw new Error(
+      `Published package ships modules with no source counterpart: ${unexpectedModules.join(", ")}.`,
+    );
   }
 
   const capabilitiesEntryPoint = join(

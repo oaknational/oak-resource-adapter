@@ -7,7 +7,9 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   bundle: false,
   clean: true,
-  entry: ["src/**/*.ts", "src/**/*.tsx", "!src/**/*.test.*"],
+  // Declaration files carry no runtime code, and compiling them emits a module
+  // importing test-only packages that hosts do not install.
+  entry: ["src/**/*.ts", "src/**/*.tsx", "!src/**/*.test.*", "!src/**/*.d.ts"],
   format: ["esm"],
   sourcemap: true,
 });
