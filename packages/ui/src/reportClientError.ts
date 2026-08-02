@@ -1,3 +1,5 @@
+import { clientErrorReportLimits } from "@oaknational/resource-adapter-contracts";
+
 import { createResourceAdapterClient } from "./client.js";
 import type { ResourceAdapterReportingProps } from "./publicTypes.js";
 
@@ -6,15 +8,6 @@ import type { ResourceAdapterReportingProps } from "./publicTypes.js";
  * goes quiet for the rest of the page load. Boundary resets do not restart it.
  */
 const MAX_REPORTS_PER_PAGE_LOAD = 5;
-
-/*
- * These mirror `clientErrorReportSchema` in the contracts package. Truncating
- * client-side keeps an oversized honest error deliverable; the server limits
- * then only ever reject hostile input.
- */
-const MAX_ERROR_NAME_LENGTH = 100;
-const MAX_ERROR_MESSAGE_LENGTH = 500;
-const MAX_COMPONENT_STACK_LENGTH = 4000;
 
 let reportsSent = 0;
 
@@ -40,21 +33,27 @@ export async function reportClientError({
   }
   reportsSent += 1;
 
-  const errorName = String(error.name ?? "")
-    .trim()
-    .slice(0, MAX_ERROR_NAME_LENGTH);
-  const errorMessage = String(error.message ?? "")
-    .trim()
-    .slice(0, MAX_ERROR_MESSAGE_LENGTH);
-  const truncatedStack = componentStack?.slice(0, MAX_COMPONENT_STACK_LENGTH);
-
   try {
+    // Truncating to the contract's own limits keeps an oversized honest error
+    // deliverable, so the server bounds only ever reject hostile input.
+    const errorName = String(error.name ?? "")
+      .trim()
+      .slice(0, clientErrorReportLimits.errorName);
+    const errorMessage = String(error.message ?? "")
+      .trim()
+      .slice(0, clientErrorReportLimits.errorMessage);
+    const truncatedStack = componentStack?.slice(
+      0,
+      clientErrorReportLimits.componentStack,
+    );
+
     await createResourceAdapterClient(reporting).clientErrors.report.mutate({
       errorName: errorName || "Error",
       errorMessage,
       ...(truncatedStack ? { componentStack: truncatedStack } : {}),
     });
   } catch {
-    // Swallow: a failed report must never surface or be re-reported.
+    // Swallow: a failed report must never surface or be re-reported. Reading
+    // the error's own fields is inside the try so this can never reject.
   }
 }

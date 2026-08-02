@@ -84,10 +84,22 @@ export type ResourceAdapterCapabilitiesResponse = z.infer<
  * even by accident. The UI truncates client-side to these same limits, so the
  * server bounds only ever reject hostile input, not oversized honest errors.
  */
+export const clientErrorReportLimits = {
+  componentStack: 4000,
+  errorMessage: 500,
+  errorName: 100,
+} as const;
+
 export const clientErrorReportSchema = z.strictObject({
-  errorName: z.string().check(z.trim(), z.minLength(1), z.maxLength(100)),
-  errorMessage: z.string().check(z.trim(), z.maxLength(500)),
-  componentStack: z.optional(z.string().check(z.maxLength(4000))),
+  errorName: z
+    .string()
+    .check(z.trim(), z.minLength(1), z.maxLength(clientErrorReportLimits.errorName)),
+  errorMessage: z
+    .string()
+    .check(z.trim(), z.maxLength(clientErrorReportLimits.errorMessage)),
+  componentStack: z.optional(
+    z.string().check(z.maxLength(clientErrorReportLimits.componentStack)),
+  ),
 });
 
 export const clientErrorReportReceiptSchema = z.strictObject({
