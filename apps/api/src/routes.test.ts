@@ -54,11 +54,13 @@ function request(url: string, init?: RequestInit): NextRequest {
   return new Request(url, init) as NextRequest;
 }
 
-function capabilitiesRequest(
+/** Builds the tRPC batch wire format the httpBatchLink client sends. */
+function trpcRequest(
+  procedure: string,
   input: unknown,
   apiContractVersion: number | null = resourceAdapterApiContractVersion,
 ): NextRequest {
-  return request("http://localhost:3001/trpc/v1/capabilities.get?batch=1", {
+  return request(`http://localhost:3001/trpc/v1/${procedure}?batch=1`, {
     body: JSON.stringify({ "0": input }),
     headers: {
       "Content-Type": "application/json",
@@ -73,18 +75,15 @@ function capabilitiesRequest(
   });
 }
 
+function capabilitiesRequest(
+  input: unknown,
+  apiContractVersion: number | null = resourceAdapterApiContractVersion,
+): NextRequest {
+  return trpcRequest("capabilities.get", input, apiContractVersion);
+}
+
 function clientErrorRequest(input: unknown): NextRequest {
-  return request("http://localhost:3001/trpc/v1/clientErrors.report?batch=1", {
-    body: JSON.stringify({ "0": input }),
-    headers: {
-      "Content-Type": "application/json",
-      Origin: "http://localhost:3000",
-      [resourceAdapterApiContractVersionHeader]: String(
-        resourceAdapterApiContractVersion,
-      ),
-    },
-    method: "POST",
-  });
+  return trpcRequest("clientErrors.report", input);
 }
 
 describe("API routes", () => {
