@@ -13,17 +13,14 @@ export type ResourceAdapterErrorBoundaryProps = Readonly<{
   children: ReactNode;
   /** Replaces the default Oak-styled unavailable state. */
   fallback?: (props: { onTryAgain: () => void }) => ReactNode;
-  /**
-   * Move keyboard focus to the default fallback when it appears. Needed when
-   * the crash unmounts a focus trap (e.g. the dialog), which drops focus on
-   * `body`; unnecessary when the fallback renders inside intact UI, where
-   * `role="alert"` already announces it.
-   */
-  moveFocusToFallback?: boolean;
   onError?: ResourceAdapterErrorHandler;
   /** When absent, caught errors are not reported to the Resource Adapter API. */
   reporting?: ResourceAdapterReportingProps;
-  /** Shallow-compared each render; any change clears a caught error. */
+  /**
+   * Shallow-compared each render; any change clears a caught error. Pass
+   * primitives: a value rebuilt each render (an object or array literal) looks
+   * changed every time, so a persistent crash would reset and re-catch in a loop.
+   */
   resetKeys?: readonly unknown[];
 }>;
 
@@ -68,7 +65,7 @@ export class ResourceAdapterErrorBoundary extends Component<
   }
 
   override componentDidCatch(
-    thrown: Error,
+    thrown: unknown,
     errorInfo: { componentStack?: string | null },
   ): void {
     if (thrown === this.lastCaught) {
@@ -80,17 +77,14 @@ export class ResourceAdapterErrorBoundary extends Component<
     const componentStack = errorInfo.componentStack ?? null;
 
     // The two reporting paths are deliberately independent: a throwing host
-    // callback must not stop the API report, and vice versa.
+    // callback must not stop the API report, and vice versa. reportClientError
+    // never rejects, so the fire-and-forget call needs no guard of its own.
     if (this.props.reporting) {
-      try {
-        void reportClientError({
-          componentStack,
-          error,
-          reporting: this.props.reporting,
-        });
-      } catch {
-        // reportClientError never throws; belt and braces.
-      }
+      void reportClientError({
+        componentStack,
+        error,
+        reporting: this.props.reporting,
+      });
     }
 
     try {
@@ -110,6 +104,9 @@ export class ResourceAdapterErrorBoundary extends Component<
   }
 
   private readonly reset = (): void => {
+    // Clearing this lets a genuine second crash of the same error object after
+    // a reset report again, while still collapsing one crash seen twice.
+    this.lastCaught = null;
     this.setState({ error: null });
   };
 
@@ -123,80 +120,80 @@ export class ResourceAdapterErrorBoundary extends Component<
     }
 
     return (
-      <ResourceAdapterErrorFallback
-        moveFocus={this.props.moveFocusToFallback ?? false}
+      <ResourceAdapterUnavailableMessage
         onTryAgain={this.reset}
+        testId="resource-adapter-error-fallback"
       />
     );
   }
 }
 
-type ResourceAdapterErrorFallbackProps = Readonly<{
-  moveFocus: boolean;
+type ResourceAdapterUnavailableMessageProps = Readonly<{
+  /** Rendered beside Try again, e.g. the dialog's Dismiss control. */
+  extraAction?: ReactNode;
+  /**
+   * Take keyboard focus on mount. Needed when the crash unmounted a focus trap
+   * (the dialog), which drops focus on `body`; unwanted when the message
+   * appears inside intact UI, where `role="alert"` announces it without
+   * stealing focus.
+   */
+  focusOnMount?: boolean;
+  message?: string;
   onTryAgain: () => void;
+  testId: string;
 }>;
 
 /**
- * The default unavailable state. Composed from primitives rather than
- * `OakInlineBanner`, which renders its title as an `h1`: the host page owns
- * the `h1`, and a second one would break its heading structure. This is a
- * status message, so it carries no heading at all and is announced by
- * `role="alert"` with `aria-atomic`.
+ * The unavailable state shared by every boundary in the package.
+ *
+ * Composed from primitives rather than `OakInlineBanner`, which renders its
+ * title as an `h1`: the host page owns the `h1`, and a second one would break
+ * its heading structure. This is a status message, so it carries no heading at
+ * all and is announced by `role="alert"` with `aria-atomic`.
  *
  * No icon, deliberately: oak-components resolves icons through Cloudinary, so
  * an icon here would render broken in any host that has not configured it.
  */
-function ResourceAdapterErrorFallback({
-  moveFocus,
+export function ResourceAdapterUnavailableMessage({
+  extraAction,
+  focusOnMount = false,
+  message = "An unexpected problem stopped this feature. The rest of the page still works.",
   onTryAgain,
-}: ResourceAdapterErrorFallbackProps) {
+  testId,
+}: ResourceAdapterUnavailableMessageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (moveFocus) {
+    if (focusOnMount) {
       containerRef.current?.focus();
     }
-  }, [moveFocus]);
+  }, [focusOnMount]);
 
   return (
     <div
       aria-atomic="true"
-      data-testid="resource-adapter-error-fallback"
+      data-testid={testId}
       ref={containerRef}
       role="alert"
       tabIndex={-1}
     >
-      <ResourceAdapterUnavailableMessage onTryAgain={onTryAgain} />
-    </div>
-  );
-}
-
-type ResourceAdapterUnavailableMessageProps = Readonly<{
-  message?: string;
-  onTryAgain: () => void;
-}>;
-
-/** The shared visual treatment for both unavailable states. */
-export function ResourceAdapterUnavailableMessage({
-  message = "An unexpected problem stopped this feature. The rest of the page still works.",
-  onTryAgain,
-}: ResourceAdapterUnavailableMessageProps) {
-  return (
-    <OakFlex
-      $ba="border-solid-m"
-      $borderColor="border-error"
-      $borderRadius="border-radius-m"
-      $flexDirection="column"
-      $gap="spacing-8"
-      $pa="spacing-16"
-    >
-      <OakP $color="text-error" $font="body-2-bold">
-        Create more with Aila is unavailable
-      </OakP>
-      <OakP $font="body-3">{message}</OakP>
-      <OakFlex>
-        <OakSecondaryButton onClick={onTryAgain}>Try again</OakSecondaryButton>
+      <OakFlex
+        $ba="border-solid-m"
+        $borderColor="border-error"
+        $borderRadius="border-radius-m"
+        $flexDirection="column"
+        $gap="spacing-8"
+        $pa="spacing-16"
+      >
+        <OakP $color="text-error" $font="body-2-bold">
+          Create more with Aila is unavailable
+        </OakP>
+        <OakP $font="body-3">{message}</OakP>
+        <OakFlex $gap="spacing-8">
+          <OakSecondaryButton onClick={onTryAgain}>Try again</OakSecondaryButton>
+          {extraAction}
+        </OakFlex>
       </OakFlex>
-    </OakFlex>
+    </div>
   );
 }

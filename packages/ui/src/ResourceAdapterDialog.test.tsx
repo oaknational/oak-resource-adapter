@@ -49,9 +49,17 @@ function shellCrashingCapabilities(): readonly ResourceAdapterCapability[] {
 }
 
 function renderWithTheme(children: ReactNode) {
-  return render(
+  const result = render(
     <OakThemeProvider theme={oakDefaultTheme}>{children}</OakThemeProvider>,
   );
+
+  return {
+    ...result,
+    rerenderWithTheme: (next: ReactNode) =>
+      result.rerender(
+        <OakThemeProvider theme={oakDefaultTheme}>{next}</OakThemeProvider>,
+      ),
+  };
 }
 
 describe("ResourceAdapterDialog", () => {
@@ -102,7 +110,7 @@ describe("ResourceAdapterDialog", () => {
     const flag = { crash: true };
     const crashable = crashableLesson(flag);
 
-    const { rerender } = renderWithTheme(
+    const { rerenderWithTheme } = renderWithTheme(
       <ResourceAdapterDialog
         capabilities={[capability]}
         isOpen={true}
@@ -113,25 +121,21 @@ describe("ResourceAdapterDialog", () => {
     expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
 
     flag.crash = false;
-    rerender(
-      <OakThemeProvider theme={oakDefaultTheme}>
-        <ResourceAdapterDialog
-          capabilities={[capability]}
-          isOpen={false}
-          lesson={crashable}
-          onClose={() => {}}
-        />
-      </OakThemeProvider>,
+    rerenderWithTheme(
+      <ResourceAdapterDialog
+        capabilities={[capability]}
+        isOpen={false}
+        lesson={crashable}
+        onClose={() => {}}
+      />,
     );
-    rerender(
-      <OakThemeProvider theme={oakDefaultTheme}>
-        <ResourceAdapterDialog
-          capabilities={[capability]}
-          isOpen={true}
-          lesson={crashable}
-          onClose={() => {}}
-        />
-      </OakThemeProvider>,
+    rerenderWithTheme(
+      <ResourceAdapterDialog
+        capabilities={[capability]}
+        isOpen={true}
+        lesson={crashable}
+        onClose={() => {}}
+      />,
     );
 
     expect(
@@ -143,7 +147,7 @@ describe("ResourceAdapterDialog", () => {
   it("recovers when the lesson changes", () => {
     const flag = { crash: true };
 
-    const { rerender } = renderWithTheme(
+    const { rerenderWithTheme } = renderWithTheme(
       <ResourceAdapterDialog
         capabilities={[capability]}
         isOpen={true}
@@ -153,15 +157,13 @@ describe("ResourceAdapterDialog", () => {
     );
     expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
 
-    rerender(
-      <OakThemeProvider theme={oakDefaultTheme}>
-        <ResourceAdapterDialog
-          capabilities={[capability]}
-          isOpen={true}
-          lesson={{ ...lesson, lessonSlug: "subtracting-fractions" }}
-          onClose={() => {}}
-        />
-      </OakThemeProvider>,
+    rerenderWithTheme(
+      <ResourceAdapterDialog
+        capabilities={[capability]}
+        isOpen={true}
+        lesson={{ ...lesson, lessonSlug: "subtracting-fractions" }}
+        onClose={() => {}}
+      />,
     );
 
     expect(

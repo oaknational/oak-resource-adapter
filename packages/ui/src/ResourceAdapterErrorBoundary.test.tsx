@@ -17,9 +17,17 @@ const reporting = {
 };
 
 function renderWithTheme(children: ReactNode) {
-  return render(
+  const result = render(
     <OakThemeProvider theme={oakDefaultTheme}>{children}</OakThemeProvider>,
   );
+
+  return {
+    ...result,
+    rerenderWithTheme: (next: ReactNode) =>
+      result.rerender(
+        <OakThemeProvider theme={oakDefaultTheme}>{next}</OakThemeProvider>,
+      ),
+  };
 }
 
 function Bomb({ message = "Deterministic test crash" }: { message?: string }): never {
@@ -28,6 +36,16 @@ function Bomb({ message = "Deterministic test crash" }: { message?: string }): n
 
 function ThrowsString(): never {
   throw "a string, not an Error";
+}
+
+/** Throws until `crash.active` is cleared, for the recovery tests. */
+const crash = { active: true };
+
+function MaybeBomb() {
+  if (crash.active) {
+    throw new Error("transient crash");
+  }
+  return <p>recovered content</p>;
 }
 
 describe("ResourceAdapterErrorBoundary", () => {
@@ -156,13 +174,7 @@ describe("ResourceAdapterErrorBoundary", () => {
   });
 
   it("recovers via the Try again button once the cause is gone", () => {
-    let shouldThrow = true;
-    function MaybeBomb() {
-      if (shouldThrow) {
-        throw new Error("transient crash");
-      }
-      return <p>recovered content</p>;
-    }
+    crash.active = true;
 
     renderWithTheme(
       <ResourceAdapterErrorBoundary>
@@ -171,7 +183,7 @@ describe("ResourceAdapterErrorBoundary", () => {
     );
     expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
 
-    shouldThrow = false;
+    crash.active = false;
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
 
     expect(screen.getByText("recovered content")).toBeVisible();
@@ -181,28 +193,20 @@ describe("ResourceAdapterErrorBoundary", () => {
   });
 
   it("recovers when a reset key changes", () => {
-    let shouldThrow = true;
-    function MaybeBomb() {
-      if (shouldThrow) {
-        throw new Error("transient crash");
-      }
-      return <p>recovered content</p>;
-    }
+    crash.active = true;
 
-    const { rerender } = renderWithTheme(
+    const { rerenderWithTheme } = renderWithTheme(
       <ResourceAdapterErrorBoundary resetKeys={["lesson-one"]}>
         <MaybeBomb />
       </ResourceAdapterErrorBoundary>,
     );
     expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
 
-    shouldThrow = false;
-    rerender(
-      <OakThemeProvider theme={oakDefaultTheme}>
-        <ResourceAdapterErrorBoundary resetKeys={["lesson-two"]}>
-          <MaybeBomb />
-        </ResourceAdapterErrorBoundary>
-      </OakThemeProvider>,
+    crash.active = false;
+    rerenderWithTheme(
+      <ResourceAdapterErrorBoundary resetKeys={["lesson-two"]}>
+        <MaybeBomb />
+      </ResourceAdapterErrorBoundary>,
     );
 
     expect(screen.getByText("recovered content")).toBeVisible();
@@ -234,17 +238,10 @@ describe("ResourceAdapterErrorBoundary", () => {
     expect(within(fallback).queryAllByRole("heading")).toHaveLength(0);
   });
 
-  it("moves focus to the fallback when asked to", () => {
-    renderWithTheme(
-      <ResourceAdapterErrorBoundary moveFocusToFallback={true}>
-        <Bomb />
-      </ResourceAdapterErrorBoundary>,
-    );
-
-    expect(screen.getByTestId("resource-adapter-error-fallback")).toHaveFocus();
-  });
-
-  it("does not move focus by default", () => {
+  // The dialog's shell fallback is the case that does take focus, covered in
+  // ResourceAdapterDialog.test.tsx: here the surrounding UI is intact, so
+  // role="alert" announces the message without moving the teacher's focus.
+  it("does not move focus, leaving the host page's focus alone", () => {
     renderWithTheme(
       <ResourceAdapterErrorBoundary>
         <Bomb />

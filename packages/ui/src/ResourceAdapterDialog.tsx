@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import {
   OakFlex,
   OakHeading,
@@ -55,37 +54,55 @@ function toReporting(
 export function ResourceAdapterDialog(props: ResourceAdapterDialogProps) {
   const { getToken, isOpen, lesson, onClose, onError, trpcEndpoint } = props;
   const reporting = toReporting(getToken, trpcEndpoint);
+  // isOpen is a reset key because the modal only unmounts its children after
+  // the exit transition completes; an explicit reset on close is immediate and
+  // does not depend on animation timing. Both boundaries share the keys.
+  const resetKeys = [isOpen, lesson.lessonSlug];
 
   return (
     <ResourceAdapterErrorBoundary
       fallback={({ onTryAgain }) =>
         isOpen ? (
-          <ResourceAdapterDialogShellFallback
-            onDismiss={onClose}
+          <ResourceAdapterUnavailableMessage
+            extraAction={
+              <OakSecondaryButton onClick={onClose}>Dismiss</OakSecondaryButton>
+            }
+            focusOnMount={true}
+            message="An unexpected problem closed this dialog. The rest of the page still works."
             onTryAgain={onTryAgain}
+            testId="resource-adapter-dialog-fallback"
           />
         ) : null
       }
       {...(onError ? { onError } : {})}
       {...(reporting ? { reporting } : {})}
-      resetKeys={[isOpen, lesson.lessonSlug]}
+      resetKeys={resetKeys}
     >
-      <ResourceAdapterDialogInner {...props} />
+      <ResourceAdapterDialogInner
+        {...props}
+        reporting={reporting}
+        resetKeys={resetKeys}
+      />
     </ResourceAdapterErrorBoundary>
   );
 }
 
+type ResourceAdapterDialogInnerProps = ResourceAdapterDialogProps &
+  Readonly<{
+    reporting: ResourceAdapterReportingProps | undefined;
+    resetKeys: readonly unknown[];
+  }>;
+
 function ResourceAdapterDialogInner({
   capabilities,
-  getToken,
   isOpen,
   lesson,
   onClose,
   onError,
-  trpcEndpoint,
-}: ResourceAdapterDialogProps) {
+  reporting,
+  resetKeys,
+}: ResourceAdapterDialogInnerProps) {
   const capability = capabilities[0];
-  const reporting = toReporting(getToken, trpcEndpoint);
 
   return (
     <OakInformativeModal
@@ -101,15 +118,10 @@ function ResourceAdapterDialogInner({
           <OakHeading $font="heading-4" tag="h2">
             Create more with Aila
           </OakHeading>
-          {/*
-            isOpen is a reset key because the modal only unmounts its children
-            after the exit transition completes; an explicit reset on close is
-            immediate and does not depend on animation timing.
-          */}
           <ResourceAdapterErrorBoundary
             {...(onError ? { onError } : {})}
             {...(reporting ? { reporting } : {})}
-            resetKeys={[isOpen, lesson.lessonSlug]}
+            resetKeys={resetKeys}
           >
             <ResourceAdapterDialogContent capability={capability} lesson={lesson} />
           </ResourceAdapterErrorBoundary>
@@ -146,45 +158,5 @@ function ResourceAdapterDialogContent({
         </OakP>
       )}
     </>
-  );
-}
-
-type ResourceAdapterDialogShellFallbackProps = Readonly<{
-  onDismiss: () => void;
-  onTryAgain: () => void;
-}>;
-
-/**
- * Shown when the dialog shell itself crashes: the modal and its focus trap
- * have unmounted, so this renders inline where the dialog was mounted, takes
- * focus, and lets the teacher retry or dismiss (which tells the host to treat
- * the dialog as closed).
- */
-function ResourceAdapterDialogShellFallback({
-  onDismiss,
-  onTryAgain,
-}: ResourceAdapterDialogShellFallbackProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    containerRef.current?.focus();
-  }, []);
-
-  return (
-    <div
-      aria-atomic="true"
-      data-testid="resource-adapter-dialog-fallback"
-      ref={containerRef}
-      role="alert"
-      tabIndex={-1}
-    >
-      <ResourceAdapterUnavailableMessage
-        message="An unexpected problem closed this dialog. The rest of the page still works."
-        onTryAgain={onTryAgain}
-      />
-      <OakFlex $mt="spacing-8">
-        <OakSecondaryButton onClick={onDismiss}>Dismiss</OakSecondaryButton>
-      </OakFlex>
-    </div>
   );
 }
