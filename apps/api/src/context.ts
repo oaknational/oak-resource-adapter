@@ -6,6 +6,7 @@ import type { ResourceAdapterApiContext } from "@oaknational/resource-adapter-co
 
 import { requestAuthenticator, type RequestAuthenticator } from "./authentication";
 import { getCapabilities } from "./capabilities";
+import { reportClientError } from "./client-error-reports";
 
 /** Creates request-scoped API dependencies for tRPC procedures. */
 export async function createContext(
@@ -19,6 +20,9 @@ export async function createContext(
     authenticatedTeacher: await authenticateRequest(request),
     capabilities: {
       getCapabilities,
+    },
+    clientErrorReports: {
+      report: reportClientError,
     },
   };
 }

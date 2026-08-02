@@ -75,3 +75,24 @@ export type ResourceAdapterCapability = z.infer<typeof resourceAdapterCapability
 export type ResourceAdapterCapabilitiesResponse = z.infer<
   typeof resourceAdapterCapabilitiesResponseSchema
 >;
+
+/**
+ * A render failure reported by the UI package's error boundary.
+ *
+ * Deliberately strict and size-limited: no arbitrary metadata field exists, so
+ * tokens, lesson contents, prompts, and other sensitive data cannot transit
+ * even by accident. The UI truncates client-side to these same limits, so the
+ * server bounds only ever reject hostile input, not oversized honest errors.
+ */
+export const clientErrorReportSchema = z.strictObject({
+  errorName: z.string().check(z.trim(), z.minLength(1), z.maxLength(100)),
+  errorMessage: z.string().check(z.trim(), z.maxLength(500)),
+  componentStack: z.optional(z.string().check(z.maxLength(4000))),
+});
+
+export const clientErrorReportReceiptSchema = z.strictObject({
+  received: z.literal(true),
+});
+
+export type ClientErrorReport = z.infer<typeof clientErrorReportSchema>;
+export type ClientErrorReportReceipt = z.infer<typeof clientErrorReportReceiptSchema>;
