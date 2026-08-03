@@ -152,27 +152,22 @@ try {
   // "use client" must sit exactly on the component modules: app-router hosts
   // need it there, and every other module must stay callable from server code.
   //
-  // The expected modules are derived from `src` rather than hand-listed: a
-  // hardcoded allowlist silently ignores any module nobody remembered to add,
-  // which is how a compiled `.d.ts` importing a devDependency once shipped.
-  // `bundle: false` in tsup.config.ts makes the src-to-dist mapping one to one.
-  const sourceDirectory = join(repositoryRoot, "packages/ui/src");
-  const sourceFiles = (await readdir(sourceDirectory)).filter(
-    (file) =>
-      /\.tsx?$/.test(file) && !file.includes(".test.") && !file.endsWith(".d.ts"),
-  );
-
-  const clientModules = [];
-  const serverSafeModules = [];
-  for (const file of sourceFiles) {
-    const source = await readFile(join(sourceDirectory, file), "utf8");
-    const module = file.replace(/\.tsx?$/, ".js");
-    if (source.startsWith('"use client"')) {
-      clientModules.push(module);
-    } else {
-      serverSafeModules.push(module);
-    }
-  }
+  // Listed by hand on purpose. Deriving them from `src` would make this agree
+  // with whatever the source says, so a directive added to a server-safe module
+  // by mistake would pass. Adding a module means choosing a list for it.
+  const clientModules = [
+    "ResourceAdapterButton.js",
+    "ResourceAdapterDialog.js",
+    "ResourceAdapterErrorBoundary.js",
+  ];
+  const serverSafeModules = [
+    "index.js",
+    "client.js",
+    "getResourceAdapterCapabilities.js",
+    "capabilities.js",
+    "publicTypes.js",
+    "reportClientError.js",
+  ];
 
   for (const file of clientModules) {
     if (
@@ -188,8 +183,8 @@ try {
     }
   }
 
-  // Nothing beyond those sources may ship: an unexpected module is either dead
-  // weight or, as above, a build artefact pulling in packages hosts lack.
+  // Nothing beyond those lists may ship. This catches both a module nobody
+  // listed above and a build artefact importing packages hosts do not install
   const packedModules = execFileSync("tar", ["-tf", uiTarball], { encoding: "utf8" })
     .split("\n")
     .filter((path) => /^package\/dist\/[^/]+\.js$/.test(path))

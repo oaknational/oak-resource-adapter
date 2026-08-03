@@ -29,8 +29,7 @@ transpilePackages: ["@oaknational/resource-adapter"],
 
 ## Usage
 
-The package ships one module per source file, and only the two component
-modules carry a `"use client"` directive. In the Next.js app router the
+The package ships one module per source file. In the Next.js app router the
 components can be rendered directly from React Server Component trees, while
 everything else, including `getResourceAdapterCapabilities`, stays callable
 from server code:
