@@ -36,9 +36,8 @@ test(
   },
 );
 
-// Untagged, so this runs only against CI's throwaway environment: it fires a
-// real error report, which would put a synthetic event into a deployed
-// environment's Sentry.
+// Untagged on purpose: it fires a real error report, so it must not run against
+// a deployed environment's Sentry.
 test("contains a simulated adapter crash and reports it to the API", async ({
   page,
 }) => {
@@ -47,10 +46,8 @@ test("contains a simulated adapter crash and reports it to the API", async ({
   await clerk.signIn({ page, emailAddress });
   await page.goto("/");
 
-  // The report is authenticated, so wait for the restored session rather than
-  // racing it: without a token the API would answer 401 instead of a receipt.
-  // The header swaps its sign-in button for the user menu once Clerk reports a
-  // signed-in session, so its absence is that signal.
+  // Wait for the session, or the report would get a 401 instead of a receipt.
+  // The sign-in button disappearing is the signal that Clerk has restored it.
   await expect(
     page.getByRole("banner").getByRole("button", { name: "Sign in" }),
   ).toHaveCount(0);
@@ -58,7 +55,7 @@ test("contains a simulated adapter crash and reports it to the API", async ({
   const section = page.getByRole("region", { name: "Error boundary test" });
   await expect(section).toContainText("The adapter surface renders normally.");
 
-  // Register the listener before the click so the report cannot race past it.
+  // Listen before clicking so the report cannot slip past.
   const reportResponse = page.waitForResponse(
     (response) =>
       response.url().includes("/trpc/v1/clientErrors.report") &&
@@ -67,23 +64,23 @@ test("contains a simulated adapter crash and reports it to the API", async ({
 
   await section.getByRole("button", { name: "Simulate adapter crash" }).click();
 
-  // The fallback appears where the crashed content was...
+  // The fallback replaces the crashed content...
   const fallback = section.getByTestId("resource-adapter-error-fallback");
   await expect(fallback).toBeVisible();
   await expect(fallback).toContainText("Create more with Aila is unavailable");
-  // ...and the crash stays contained: the lesson page around it is intact.
+  // ...and the page around it is untouched.
   await expect(
     page.getByRole("heading", { level: 1, name: "Adding fractions" }),
   ).toBeVisible();
 
-  // The signed-in session reports the caught error to the API for Sentry.
+  // The caught error reaches the API.
   const response = await reportResponse;
   expect(response.status()).toBe(200);
   expect(await response.json()).toMatchObject([
     { result: { data: { received: true } } },
   ]);
 
-  // Try again re-catches while the simulated crash is still active.
+  // Try again re-catches while the crash is still simulated.
   await fallback.getByRole("button", { name: "Try again" }).click();
   await expect(section.getByTestId("resource-adapter-error-fallback")).toBeVisible();
 

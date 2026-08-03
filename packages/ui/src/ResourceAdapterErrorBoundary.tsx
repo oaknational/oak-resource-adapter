@@ -17,9 +17,8 @@ export type ResourceAdapterErrorBoundaryProps = Readonly<{
   /** When absent, caught errors are not reported to the Resource Adapter API. */
   reporting?: ResourceAdapterReportingProps;
   /**
-   * Shallow-compared each render; any change clears a caught error. Pass
-   * primitives: a value rebuilt each render (an object or array literal) looks
-   * changed every time, so a persistent crash would reset and re-catch in a loop.
+   * Any change clears a caught error. Use primitives: a new object each render
+   * always looks changed, which would reset and re-catch in a loop.
    */
   resetKeys?: readonly unknown[];
 }>;
@@ -44,12 +43,11 @@ function resetKeysChanged(
 }
 
 /**
- * Catches render failures in the Resource Adapter surface so they cannot take
- * down the host lesson page. A class because React provides no function
- * equivalent of `getDerivedStateFromError`/`componentDidCatch`.
+ * Catches render failures in the adapter so they cannot take down the host
+ * lesson page. A class because React offers no function equivalent.
  *
- * Boundaries only catch errors thrown during render: failed requests,
- * event-handler errors, and async rejections keep their explicit error states.
+ * Only render failures. Failed requests, event-handler errors and async
+ * rejections keep their own error states.
  */
 export class ResourceAdapterErrorBoundary extends Component<
   ResourceAdapterErrorBoundaryProps,
@@ -79,9 +77,8 @@ export class ResourceAdapterErrorBoundary extends Component<
     const error = toError(thrown);
     const componentStack = errorInfo.componentStack ?? null;
 
-    // The two reporting paths are deliberately independent: a throwing host
-    // callback must not stop the API report, and vice versa. reportClientError
-    // never rejects, so the fire-and-forget call needs no guard of its own.
+    // The two reporting paths are independent, so a throwing host callback
+    // cannot stop the API report. reportClientError never rejects.
     if (this.props.reporting) {
       void reportClientError({
         componentStack,
@@ -122,11 +119,8 @@ export class ResourceAdapterErrorBoundary extends Component<
   }
 
   /**
-   * Records where focus sits while the tree is healthy, so it can be handed
-   * back after a crash. Only a commit is early enough: by the time a fallback
-   * mounts, a crash that unmounted a focus trap has already left focus on
-   * `body`. The dialog's opening commit still has the host's trigger focused,
-   * which is the element a teacher expects to return to.
+   * Records where focus sits while the tree is healthy. Recording it later is
+   * too late: once a crash unmounts a focus trap, focus is already on `body`.
    */
   private rememberFocusTarget(): void {
     const active = document.activeElement;
@@ -136,9 +130,8 @@ export class ResourceAdapterErrorBoundary extends Component<
   }
 
   /**
-   * Hands focus back once the fallback has gone, but only when nothing else
-   * holds it: recovering the dialog remounts a modal that focuses its own trap,
-   * and that deliberate placement must win over this one.
+   * Hands focus back once the fallback has gone, but only if nothing else holds
+   * it. A recovered dialog focuses its own modal, and that should win.
    */
   private restoreFocus(): void {
     const active = document.activeElement;
@@ -151,8 +144,7 @@ export class ResourceAdapterErrorBoundary extends Component<
   }
 
   private readonly reset = (): void => {
-    // Clearing this lets a genuine second crash of the same error object after
-    // a reset report again, while still collapsing one crash seen twice.
+    // Cleared so a real second crash of the same error reports again.
     this.lastCaught = null;
     this.setState({ error: null });
   };
@@ -179,10 +171,8 @@ type ResourceAdapterUnavailableMessageProps = Readonly<{
   /** Rendered beside Try again, e.g. the dialog's Dismiss control. */
   extraAction?: ReactNode;
   /**
-   * Take keyboard focus on mount. Needed when the crash unmounted a focus trap
-   * (the dialog), which drops focus on `body`; unwanted when the message
-   * appears inside intact UI, where `role="alert"` announces it without
-   * stealing focus.
+   * Take keyboard focus on mount. Needed when the crash unmounted a focus trap,
+   * unwanted inside intact UI where `role="alert"` announces it anyway.
    */
   focusOnMount?: boolean;
   message?: string;
@@ -193,13 +183,9 @@ type ResourceAdapterUnavailableMessageProps = Readonly<{
 /**
  * The unavailable state shared by every boundary in the package.
  *
- * Composed from primitives rather than `OakInlineBanner`, which renders its
- * title as an `h1`: the host page owns the `h1`, and a second one would break
- * its heading structure. This is a status message, so it carries no heading at
- * all and is announced by `role="alert"` with `aria-atomic`.
- *
- * No icon, deliberately: oak-components resolves icons through Cloudinary, so
- * an icon here would render broken in any host that has not configured it.
+ * Built from primitives, not `OakInlineBanner`, because that renders its title
+ * as an `h1` and the host page owns the `h1`. No heading here, and no icon:
+ * oak-components loads icons from Cloudinary, which hosts may not have set up.
  */
 export function ResourceAdapterUnavailableMessage({
   extraAction,

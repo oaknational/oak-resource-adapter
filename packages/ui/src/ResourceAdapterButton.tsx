@@ -12,9 +12,7 @@ export type ResourceAdapterButtonProps = Readonly<{
  * The lesson-page trigger. OWA decides where to place it after it has resolved
  * the available capabilities for the current lesson and teacher.
  *
- * A render crash hides the trigger rather than reaching the host page. There
- * is nothing useful to show in its place, and no credentials are available
- * here to report with; the dialog carries the reporting wiring.
+ * A render crash hides the trigger rather than reaching the host page.
  */
 export function ResourceAdapterButton({ onClick }: ResourceAdapterButtonProps) {
   return (

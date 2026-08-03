@@ -26,19 +26,16 @@ export type ResourceAdapterHostProps = Readonly<{
 }>;
 
 /**
- * Deliberately a plain serialisable object rather than React's `ErrorInfo`:
- * the host may resolve a different React copy than this package was built
- * against, so no React types cross the boundary. React 19 types
- * `componentStack` as possibly undefined; it is normalised to null here.
+ * A plain object rather than React's `ErrorInfo`, because the host may resolve a
+ * different copy of React. `componentStack` is normalised to null when absent.
  */
 export type ResourceAdapterErrorInfo = Readonly<{
   componentStack: string | null;
 }>;
 
 /**
- * Host callback invoked when the error boundary catches a render failure,
- * e.g. wiring OWA's `errorReporter` in. It may silently no-op (consent-gated
- * reporters do); the package's own API reporting never depends on it.
+ * Called when the boundary catches a render failure, for the host's own
+ * reporting. It may do nothing; the package's API reporting is independent.
  */
 export type ResourceAdapterErrorHandler = (
   error: Error,

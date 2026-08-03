@@ -44,19 +44,17 @@ function toReporting(
  * The package-owned adapter sidebar. Generation controls, progress, preview and
  * download flow will be added here without requiring OWA layout changes.
  *
- * Two error boundaries isolate it from the host page. The inner one wraps the
- * dialog content, so a content crash shows the unavailable state inside the
- * still-open modal, and closing or switching lesson resets it. The outer one
- * wraps the modal itself, so even a crash in the dialog shell cannot take down
- * the host page; its fallback renders inline at the mount point and takes
- * focus, because the modal's focus trap has just unmounted.
+ * Two boundaries isolate it from the host page. The inner one wraps the dialog
+ * content, so a content crash shows the unavailable state inside the still-open
+ * modal. The outer one wraps the modal itself, so a crash in the dialog shell
+ * still cannot reach the host page; its fallback renders inline and takes focus,
+ * because the modal's focus trap has gone.
  */
 export function ResourceAdapterDialog(props: ResourceAdapterDialogProps) {
   const { getToken, isOpen, lesson, onClose, onError, trpcEndpoint } = props;
   const reporting = toReporting(getToken, trpcEndpoint);
-  // isOpen is a reset key because the modal only unmounts its children after
-  // the exit transition completes; an explicit reset on close is immediate and
-  // does not depend on animation timing. Both boundaries share the keys.
+  // isOpen is a reset key because the modal unmounts its children only after the
+  // exit animation, and resetting on close should not wait for that.
   const resetKeys = [isOpen, lesson.lessonSlug];
 
   return (
@@ -139,10 +137,8 @@ type ResourceAdapterDialogContentProps = Readonly<{
 }>;
 
 /**
- * A component of its own (rather than inline JSX in the dialog body) so that
- * rendering it happens inside the inner error boundary: React elements are
- * created by the parent's render, so a crash in inline children would bypass
- * the boundary meant to catch it.
+ * Its own component, not inline JSX, so it renders inside the inner boundary.
+ * Inline children are created by the parent's render and would bypass it.
  */
 function ResourceAdapterDialogContent({
   capability,

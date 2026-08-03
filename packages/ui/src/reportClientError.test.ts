@@ -9,8 +9,7 @@ const error = Object.assign(new Error("Something broke while rendering"), {
   name: "TypeError",
 });
 
-// The module counts reports sent per page load, so each test loads a fresh
-// copy rather than sharing that state.
+// The module keeps a per-page-load count, so each test gets a fresh copy.
 async function loadFresh() {
   vi.resetModules();
   const { reportClientError } = await import("./reportClientError.js");

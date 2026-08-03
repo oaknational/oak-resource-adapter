@@ -20,9 +20,8 @@ export type ResourceAdapterCapabilitiesService = Readonly<{
 }>;
 
 /**
- * The service boundary required by the client-error reporting procedure.
- * Implementations must swallow their own failures: reporting is observability
- * and must never turn into a client-visible error.
+ * The service the client-error procedure needs. Implementations must swallow
+ * their own failures, so reporting never becomes a client-visible error.
  */
 export type ResourceAdapterClientErrorReportService = Readonly<{
   report: (report: ClientErrorReport) => Promise<void> | void;

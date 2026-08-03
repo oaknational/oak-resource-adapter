@@ -8,8 +8,7 @@ import { ResourceAdapterButton } from "./ResourceAdapterButton.js";
 
 const buttonCrash = vi.hoisted(() => ({ active: false }));
 
-// Passthrough mock with one override: a stand-in trigger that can be told to
-// crash, since the real OakPrimaryButton has no failure mode to switch on.
+// Swaps in a trigger that can be made to crash, which the real one cannot.
 vi.mock("@oaknational/oak-components", async (importOriginal) => {
   const original = await importOriginal<typeof import("@oaknational/oak-components")>();
   const { createElement } = await import("react");

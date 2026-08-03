@@ -38,7 +38,7 @@ function ThrowsString(): never {
   throw "a string, not an Error";
 }
 
-/** Throws until `crash.active` is cleared, for the recovery tests. */
+/** Throws until `crash.active` is cleared. */
 const crash = { active: true };
 
 function MaybeBomb() {
@@ -50,7 +50,7 @@ function MaybeBomb() {
 
 describe("ResourceAdapterErrorBoundary", () => {
   beforeEach(() => {
-    // React logs every caught boundary error; keep test output readable.
+    // React logs every caught error; keep the output readable.
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -232,15 +232,13 @@ describe("ResourceAdapterErrorBoundary", () => {
       </ResourceAdapterErrorBoundary>,
     );
 
-    // OakInlineBanner renders its title as an h1, which would give a host
-    // lesson page a second one.
+    // OakInlineBanner's title is an h1, which would give the host a second one.
     const fallback = screen.getByTestId("resource-adapter-error-fallback");
     expect(within(fallback).queryAllByRole("heading")).toHaveLength(0);
   });
 
-  // The dialog's shell fallback is the case that does take focus, covered in
-  // ResourceAdapterDialog.test.tsx: here the surrounding UI is intact, so
-  // role="alert" announces the message without moving the teacher's focus.
+  // The surrounding UI is intact here, so role="alert" is enough. The case that
+  // does take focus is the dialog's shell fallback, tested in its own file.
   it("does not move focus, leaving the host page's focus alone", () => {
     renderWithTheme(
       <ResourceAdapterErrorBoundary>
@@ -258,8 +256,7 @@ describe("ResourceAdapterErrorBoundary", () => {
       </ResourceAdapterErrorBoundary>,
     );
 
-    // oak-components renders a bare `button`, which defaults to submit inside a
-    // host form: recovering from a crash would post the teacher's form.
+    // oak-components renders a bare `button`, which would submit a host form.
     expect(screen.getByRole("button", { name: "Try again" })).toHaveAttribute(
       "type",
       "button",

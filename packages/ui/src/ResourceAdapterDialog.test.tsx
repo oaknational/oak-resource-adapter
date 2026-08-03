@@ -26,7 +26,7 @@ const capability: ResourceAdapterCapability = {
   resourceType: "worksheet",
 };
 
-/** A lesson whose title explodes on read, while the crash flag is set. */
+/** A lesson whose title throws when the flag is set. */
 function crashableLesson(flag: { crash: boolean }): LessonContext {
   return {
     ...lesson,
@@ -39,7 +39,7 @@ function crashableLesson(flag: { crash: boolean }): LessonContext {
   };
 }
 
-/** Crashes the dialog shell: the first capability read happens in its render. */
+/** Crashes the shell, which reads the first capability during its render. */
 function shellCrashingCapabilities(): readonly ResourceAdapterCapability[] {
   return new Proxy([] as ResourceAdapterCapability[], {
     get() {
@@ -220,8 +220,7 @@ describe("ResourceAdapterDialog", () => {
       />,
     );
 
-    // oak-components renders a bare `button`, which defaults to submit inside a
-    // host form: dismissing a crash would post the teacher's form.
+    // oak-components renders a bare `button`, which would submit a host form.
     const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
     for (const name of ["Try again", "Dismiss"]) {
       expect(within(fallback).getByRole("button", { name })).toHaveAttribute(
@@ -234,8 +233,7 @@ describe("ResourceAdapterDialog", () => {
   it("returns focus to the host's trigger when the shell fallback is dismissed", () => {
     const healthy = [capability];
 
-    // Mirrors the real sequence: the teacher's focus is on the host trigger as
-    // the dialog opens, then a later render crashes the shell.
+    // The real sequence: focus on the trigger as the dialog opens, then a crash.
     const { rerenderWithTheme } = renderWithTheme(
       <>
         <button type="button">Create more with AI</button>
@@ -271,7 +269,7 @@ describe("ResourceAdapterDialog", () => {
     const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
     expect(fallback).toHaveFocus();
 
-    // Dismiss tells the host to close, which is what clears the boundary.
+    // Dismiss tells the host to close, and that clears the boundary.
     fireEvent.click(within(fallback).getByRole("button", { name: "Dismiss" }));
     rerenderWithTheme(dialog(healthy, false));
 
@@ -291,8 +289,6 @@ describe("ResourceAdapterDialog", () => {
       />,
     );
 
-    // OakInlineBanner renders its title as an h1, which would give a host
-    // lesson page a second one.
     const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
     expect(within(fallback).queryAllByRole("heading")).toHaveLength(0);
   });

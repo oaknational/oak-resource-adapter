@@ -27,8 +27,6 @@ vi.mock("./capabilities", async (importOriginal) =>
   importOriginal<typeof import("./capabilities")>(),
 );
 
-// Mock only the external boundary (Sentry) so the real client-error-reports
-// service runs against a spy, as in sentry/init.test.ts.
 vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
 }));
@@ -54,7 +52,6 @@ function request(url: string, init?: RequestInit): NextRequest {
   return new Request(url, init) as NextRequest;
 }
 
-/** Builds the tRPC batch wire format the httpBatchLink client sends. */
 function trpcRequest(
   procedure: string,
   input: unknown,
@@ -262,8 +259,6 @@ describe("API routes", () => {
     };
 
     beforeEach(() => {
-      // Factory mocks (Sentry.captureException) keep call history across
-      // tests; restoreAllMocks does not touch them.
       vi.mocked(Sentry.captureException).mockClear();
     });
 

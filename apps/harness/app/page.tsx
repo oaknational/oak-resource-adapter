@@ -54,7 +54,6 @@ const testJobStatusLabels: Record<TestJobStatus, string> = {
   succeeded: "Succeeded",
 };
 
-/** The deterministic development failure demonstrating the error boundary. */
 function CrashOnRender(): never {
   throw new Error("Simulated Resource Adapter render failure");
 }
@@ -323,7 +322,6 @@ export default function HarnessPage() {
                 ? "Clear simulated crash"
                 : "Simulate adapter crash"}
             </button>
-            {/* Keyed so toggling mounts a fresh boundary: one catch, one report. */}
             <ResourceAdapterErrorBoundary
               key={String(simulateAdapterCrash)}
               onError={(error) => log.error(error)}

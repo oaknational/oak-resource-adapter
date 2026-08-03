@@ -79,10 +79,8 @@ export type ResourceAdapterCapabilitiesResponse = z.infer<
 /**
  * A render failure reported by the UI package's error boundary.
  *
- * Deliberately strict and size-limited: no arbitrary metadata field exists, so
- * tokens, lesson contents, prompts, and other sensitive data cannot transit
- * even by accident. The UI truncates client-side to these same limits, so the
- * server bounds only ever reject hostile input, not oversized honest errors.
+ * There is no free-form metadata field, so tokens, lesson contents and prompts
+ * have nowhere to travel. The UI truncates to these same limits before sending.
  */
 export const clientErrorReportLimits = {
   componentStack: 4000,
