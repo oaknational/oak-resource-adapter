@@ -1,18 +1,11 @@
 import { sql } from "drizzle-orm";
-import {
-  bigint,
-  foreignKey,
-  index,
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { bigint, foreignKey, index, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
+import { resourceAdapterSchema } from "./pg-schema.js";
 import { resourceDocuments } from "./resource-documents.js";
 
 /** An exported file, identified by an immutable private storage key. */
-export const resourceArtifacts = pgTable(
+export const resourceArtifacts = resourceAdapterSchema.table(
   "resource_artifacts",
   {
     byteSize: bigint("byte_size", { mode: "number" }).notNull(),

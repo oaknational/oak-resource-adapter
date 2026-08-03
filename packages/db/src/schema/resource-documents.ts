@@ -5,21 +5,20 @@ import {
   index,
   integer,
   jsonb,
-  pgEnum,
-  pgTable,
   text,
   timestamp,
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
+import { resourceAdapterSchema } from "./pg-schema.js";
 import { transformationAttempts } from "./transformation-attempts.js";
 
 /** Document provenance; input usage is represented by transformation inputs. */
-export const resourceDocumentOriginEnum = pgEnum("resource_document_origin", [
-  "oak_resource",
-  "generated",
-]);
+export const resourceDocumentOriginEnum = resourceAdapterSchema.enum(
+  "resource_document_origin",
+  ["oak_resource", "generated"],
+);
 
 export const ResourceDocumentOrigin = {
   GENERATED: "generated",
@@ -30,7 +29,7 @@ export type ResourceDocumentOriginValue =
   (typeof ResourceDocumentOrigin)[keyof typeof ResourceDocumentOrigin];
 
 /** A persisted resource document, either externally sourced or generated. */
-export const resourceDocuments = pgTable(
+export const resourceDocuments = resourceAdapterSchema.table(
   "resource_documents",
   {
     createdAt: timestamp("created_at", { precision: 3, withTimezone: true })

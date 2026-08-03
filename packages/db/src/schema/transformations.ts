@@ -2,7 +2,6 @@ import { sql } from "drizzle-orm";
 import {
   index,
   jsonb,
-  pgTable,
   text,
   timestamp,
   uuid,
@@ -10,12 +9,13 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { adaptations } from "./adaptations.js";
+import { resourceAdapterSchema } from "./pg-schema.js";
 
 /**
  * One change a teacher asked for: a click, or the single request of a one-shot
  * capability. `kind` keys into the TypeScript transformation registry.
  */
-export const transformations = pgTable(
+export const transformations = resourceAdapterSchema.table(
   "transformations",
   {
     /**

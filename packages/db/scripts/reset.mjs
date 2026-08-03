@@ -1,5 +1,5 @@
 /**
- * Drops and recreates the local database schema, then applies every migration.
+ * Drops and recreates the local database schemas, then applies every migration.
  *
  * Destructive, so it refuses any host but localhost, with no override: a deployed
  * database is only ever changed by applying migrations forward.
@@ -54,12 +54,16 @@ await client.connect();
 const database = drizzle({ client });
 
 try {
-  console.log("Dropping and recreating the local database schema…");
-  await database.execute(sql`DROP SCHEMA IF EXISTS public CASCADE`);
+  console.log("Dropping and recreating the local database schemas…");
+  // Our tables live in `resource_adapter`, which the first migration recreates.
+  await database.execute(sql`DROP SCHEMA IF EXISTS resource_adapter CASCADE`);
   // Drizzle's migration journal lives in its own `drizzle` schema. Dropping only
-  // `public` leaves it claiming everything is applied, so the migrator does
+  // our tables leaves it claiming everything is applied, so the migrator does
   // nothing and reports success against an empty database.
   await database.execute(sql`DROP SCHEMA IF EXISTS drizzle CASCADE`);
+  // Nothing of ours is in `public` any more, but a database created before the
+  // move still holds our old tables there, and reset promises a clean slate.
+  await database.execute(sql`DROP SCHEMA IF EXISTS public CASCADE`);
   await database.execute(sql`CREATE SCHEMA public`);
 } catch (error) {
   console.error("Failed to recreate the schema.");

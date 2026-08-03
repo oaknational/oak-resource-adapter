@@ -5,19 +5,19 @@ import {
   index,
   integer,
   jsonb,
-  pgTable,
   text,
   timestamp,
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
+import { resourceAdapterSchema } from "./pg-schema.js";
 import { resourceDocuments } from "./resource-documents.js";
 import { transformationAttempts } from "./transformation-attempts.js";
 import { transformations } from "./transformations.js";
 
 /** A change the model offered the teacher for one document version. */
-export const suggestedTransformations = pgTable(
+export const suggestedTransformations = resourceAdapterSchema.table(
   "suggested_transformations",
   {
     /** Set when the teacher accepts. Null while the offer stands. */

@@ -4,18 +4,18 @@ import {
   foreignKey,
   index,
   integer,
-  pgTable,
   primaryKey,
   text,
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
+import { resourceAdapterSchema } from "./pg-schema.js";
 import { resourceDocuments } from "./resource-documents.js";
 import { transformations } from "./transformations.js";
 
 /** Documents a transformation reads, shared by all of its attempts. */
-export const transformationInputs = pgTable(
+export const transformationInputs = resourceAdapterSchema.table(
   "transformation_inputs",
   {
     /** The resource being adapted, or wider lesson material for context. */
