@@ -103,6 +103,45 @@ describe("createModelInvoker", () => {
     expect(recorder.recordFailed).not.toHaveBeenCalled();
   });
 
+  it("carries the prompt template ID through to the recorder", async () => {
+    const recorder = recorderFixture();
+    const transport: ModelTransport = { invoke: vi.fn(async () => responseFixture()) };
+    const invoker = createModelInvoker({
+      roleBindings,
+      recorder,
+      transports: { primary: transport },
+    });
+
+    await invoker.invoke({
+      promptTemplateId: "template-1",
+      request: { input: "Classify this resource" },
+      role: "quick-classifier",
+    });
+
+    expect(recorder.recordStarted).toHaveBeenCalledWith(
+      expect.objectContaining({ promptTemplateId: "template-1" }),
+    );
+  });
+
+  it("omits the prompt template ID for a call made without a template", async () => {
+    const recorder = recorderFixture();
+    const transport: ModelTransport = { invoke: vi.fn(async () => responseFixture()) };
+    const invoker = createModelInvoker({
+      roleBindings,
+      recorder,
+      transports: { primary: transport },
+    });
+
+    await invoker.invoke({
+      request: { input: "Classify this resource" },
+      role: "quick-classifier",
+    });
+
+    expect(recorder.recordStarted.mock.calls[0]?.[0]).not.toHaveProperty(
+      "promptTemplateId",
+    );
+  });
+
   it("derives the provider from the model rather than the binding", async () => {
     const recorder = recorderFixture();
     const transport: ModelTransport = { invoke: vi.fn(async () => responseFixture()) };

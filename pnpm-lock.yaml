@@ -160,9 +160,15 @@ importers:
 
   packages/ai:
     dependencies:
+      '@oaknational/resource-adapter-db':
+        specifier: workspace:*
+        version: link:../db
       '@oaknational/resource-adapter-logger':
         specifier: workspace:*
         version: link:../logger
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.22.0)
       openai:
         specifier: 6.49.0
         version: 6.49.0(@smithy/signature-v4@5.6.8)(zod@4.4.3)

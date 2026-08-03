@@ -20,6 +20,18 @@ export {
   type ModelInvokerConfig,
 } from "./model-invoker.js";
 export type { ModelTransport, ModelTransportOptions } from "./model-transport.js";
+export {
+  createDatabaseInvocationRecorder,
+  type DatabaseInvocationRecorderConfig,
+} from "./persistence/database-invocation-recorder.js";
+export { preparePrompt, type PreparedPrompt } from "./persistence/prepare-prompt.js";
+export {
+  definePromptTemplate,
+  renderPromptTemplate,
+  type PromptTemplate,
+  type PromptTemplateDefinition,
+  type PromptVariables,
+} from "./prompt-template.js";
 export type { ModelInvocationRequest, ModelInvocationResponse } from "./protocol.js";
 export type {
   RecorderErrorHandler,

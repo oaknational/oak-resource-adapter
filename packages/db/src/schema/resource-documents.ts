@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -12,9 +13,9 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-import { generationAttempts } from "./generation-attempts.ts";
+import { transformationAttempts } from "./transformation-attempts.js";
 
-/** Document provenance; input usage is represented by attempt relationships. */
+/** Document provenance; input usage is represented by transformation inputs. */
 export const resourceDocumentOriginEnum = pgEnum("resource_document_origin", [
   "oak_resource",
   "generated",
@@ -37,10 +38,6 @@ export const resourceDocuments = pgTable(
       .defaultNow(),
     /** The versioned document envelope. */
     document: jsonb("document").notNull(),
-    generationAttemptId: uuid("generation_attempt_id").references(
-      () => generationAttempts.id,
-      { onDelete: "cascade" },
-    ),
     id: uuid("id")
       .primaryKey()
       .default(sql`gen_random_uuid()`),
@@ -54,24 +51,30 @@ export const resourceDocuments = pgTable(
     /** Identifier supplied by the origin system. */
     sourceId: text("source_id"),
     sourceReference: jsonb("source_reference"),
+    transformationAttemptId: uuid("transformation_attempt_id"),
   },
   (table) => [
     /** Generated documents have one producer and position; other documents have neither. */
     check(
       "resource_documents_generated_has_attempt_and_position",
       sql`(${table.origin} = 'generated'
-            AND ${table.generationAttemptId} IS NOT NULL
+            AND ${table.transformationAttemptId} IS NOT NULL
             AND ${table.position} IS NOT NULL
             AND ${table.position} >= 0)
        OR (${table.origin} <> 'generated'
-            AND ${table.generationAttemptId} IS NULL
+            AND ${table.transformationAttemptId} IS NULL
             AND ${table.position} IS NULL)`,
     ),
-    unique("resource_documents_generation_attempt_id_position_key").on(
-      table.generationAttemptId,
+    unique("resource_documents_attempt_position_key").on(
+      table.transformationAttemptId,
       table.position,
     ),
-    index("resource_documents_generation_attempt_id_idx").on(table.generationAttemptId),
+    foreignKey({
+      columns: [table.transformationAttemptId],
+      foreignColumns: [transformationAttempts.id],
+      name: "resource_documents_attempt_fk",
+    }).onDelete("cascade"),
+    index("resource_documents_attempt_idx").on(table.transformationAttemptId),
     index("resource_documents_source_id_idx")
       .on(table.sourceId)
       .where(sql`${table.origin} <> 'generated'`),
