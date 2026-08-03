@@ -60,6 +60,9 @@ export class ResourceAdapterErrorBoundary extends Component<
   /** Dev StrictMode can surface one throw twice; report it once. */
   private lastCaught: unknown = null;
 
+  /** The element to hand focus back to once a caught error clears. */
+  private focusBeforeError: HTMLElement | null = null;
+
   static getDerivedStateFromError(thrown: unknown): ResourceAdapterErrorBoundaryState {
     return { error: toError(thrown) };
   }
@@ -94,12 +97,56 @@ export class ResourceAdapterErrorBoundary extends Component<
     }
   }
 
-  override componentDidUpdate(prevProps: ResourceAdapterErrorBoundaryProps): void {
+  override componentDidMount(): void {
+    this.rememberFocusTarget();
+  }
+
+  override componentDidUpdate(
+    prevProps: ResourceAdapterErrorBoundaryProps,
+    prevState: ResourceAdapterErrorBoundaryState,
+  ): void {
     if (
       this.state.error !== null &&
       resetKeysChanged(prevProps.resetKeys, this.props.resetKeys)
     ) {
       this.reset();
+      return;
+    }
+
+    if (this.state.error === null) {
+      if (prevState.error !== null) {
+        this.restoreFocus();
+      }
+      this.rememberFocusTarget();
+    }
+  }
+
+  /**
+   * Records where focus sits while the tree is healthy, so it can be handed
+   * back after a crash. Only a commit is early enough: by the time a fallback
+   * mounts, a crash that unmounted a focus trap has already left focus on
+   * `body`. The dialog's opening commit still has the host's trigger focused,
+   * which is the element a teacher expects to return to.
+   */
+  private rememberFocusTarget(): void {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active !== document.body) {
+      this.focusBeforeError = active;
+    }
+  }
+
+  /**
+   * Hands focus back once the fallback has gone, but only when nothing else
+   * holds it: recovering the dialog remounts a modal that focuses its own trap,
+   * and that deliberate placement must win over this one.
+   */
+  private restoreFocus(): void {
+    const active = document.activeElement;
+    const focusIsAdrift =
+      active === null || active === document.body || !active.isConnected;
+
+    if (focusIsAdrift && this.focusBeforeError?.isConnected === true) {
+      this.focusBeforeError.focus();
     }
   }
 
@@ -190,7 +237,14 @@ export function ResourceAdapterUnavailableMessage({
         </OakP>
         <OakP $font="body-3">{message}</OakP>
         <OakFlex $gap="spacing-8">
-          <OakSecondaryButton onClick={onTryAgain}>Try again</OakSecondaryButton>
+          {/*
+            An explicit type, because oak-components renders a bare `button`
+            with none: inside a host `form` the default would be submit, so
+            recovering from a crash would post the teacher's form.
+          */}
+          <OakSecondaryButton onClick={onTryAgain} type="button">
+            Try again
+          </OakSecondaryButton>
           {extraAction}
         </OakFlex>
       </OakFlex>

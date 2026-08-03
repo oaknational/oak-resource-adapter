@@ -250,4 +250,46 @@ describe("ResourceAdapterErrorBoundary", () => {
 
     expect(screen.getByTestId("resource-adapter-error-fallback")).not.toHaveFocus();
   });
+
+  it("gives the fallback's Try again an explicit button type", () => {
+    renderWithTheme(
+      <ResourceAdapterErrorBoundary>
+        <Bomb />
+      </ResourceAdapterErrorBoundary>,
+    );
+
+    // oak-components renders a bare `button`, which defaults to submit inside a
+    // host form: recovering from a crash would post the teacher's form.
+    expect(screen.getByRole("button", { name: "Try again" })).toHaveAttribute(
+      "type",
+      "button",
+    );
+  });
+
+  it("leaves focus alone when recovery happens with the page still focused", () => {
+    crash.active = true;
+    const { rerenderWithTheme } = renderWithTheme(
+      <>
+        <button type="button">host control</button>
+        <ResourceAdapterErrorBoundary resetKeys={["first"]}>
+          <MaybeBomb />
+        </ResourceAdapterErrorBoundary>
+      </>,
+    );
+    const hostControl = screen.getByRole("button", { name: "host control" });
+    hostControl.focus();
+
+    crash.active = false;
+    rerenderWithTheme(
+      <>
+        <button type="button">host control</button>
+        <ResourceAdapterErrorBoundary resetKeys={["second"]}>
+          <MaybeBomb />
+        </ResourceAdapterErrorBoundary>
+      </>,
+    );
+
+    expect(screen.getByText("recovered content")).toBeVisible();
+    expect(hostControl).toHaveFocus();
+  });
 });

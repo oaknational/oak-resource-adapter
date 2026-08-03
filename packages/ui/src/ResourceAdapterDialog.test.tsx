@@ -210,6 +210,77 @@ describe("ResourceAdapterDialog", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it("gives both shell fallback actions an explicit button type", () => {
+    renderWithTheme(
+      <ResourceAdapterDialog
+        capabilities={shellCrashingCapabilities()}
+        isOpen={true}
+        lesson={lesson}
+        onClose={() => {}}
+      />,
+    );
+
+    // oak-components renders a bare `button`, which defaults to submit inside a
+    // host form: dismissing a crash would post the teacher's form.
+    const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
+    for (const name of ["Try again", "Dismiss"]) {
+      expect(within(fallback).getByRole("button", { name })).toHaveAttribute(
+        "type",
+        "button",
+      );
+    }
+  });
+
+  it("returns focus to the host's trigger when the shell fallback is dismissed", () => {
+    const healthy = [capability];
+
+    // Mirrors the real sequence: the teacher's focus is on the host trigger as
+    // the dialog opens, then a later render crashes the shell.
+    const { rerenderWithTheme } = renderWithTheme(
+      <>
+        <button type="button">Create more with AI</button>
+        <ResourceAdapterDialog
+          capabilities={healthy}
+          isOpen={false}
+          lesson={lesson}
+          onClose={() => {}}
+        />
+      </>,
+    );
+    const trigger = screen.getByRole("button", { name: "Create more with AI" });
+    trigger.focus();
+
+    const dialog = (
+      capabilities: readonly ResourceAdapterCapability[],
+      isOpen: boolean,
+    ) => (
+      <>
+        <button type="button">Create more with AI</button>
+        <ResourceAdapterDialog
+          capabilities={capabilities}
+          isOpen={isOpen}
+          lesson={lesson}
+          onClose={() => {}}
+        />
+      </>
+    );
+
+    rerenderWithTheme(dialog(healthy, true));
+    rerenderWithTheme(dialog(shellCrashingCapabilities(), true));
+
+    const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
+    expect(fallback).toHaveFocus();
+
+    // Dismiss tells the host to close, which is what clears the boundary.
+    fireEvent.click(within(fallback).getByRole("button", { name: "Dismiss" }));
+    rerenderWithTheme(dialog(healthy, false));
+
+    expect(
+      screen.queryByTestId("resource-adapter-dialog-fallback"),
+    ).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
   it("adds no heading of its own, leaving the host page's structure intact", () => {
     renderWithTheme(
       <ResourceAdapterDialog

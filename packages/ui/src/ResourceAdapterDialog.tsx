@@ -65,7 +65,9 @@ export function ResourceAdapterDialog(props: ResourceAdapterDialogProps) {
         isOpen ? (
           <ResourceAdapterUnavailableMessage
             extraAction={
-              <OakSecondaryButton onClick={onClose}>Dismiss</OakSecondaryButton>
+              <OakSecondaryButton onClick={onClose} type="button">
+                Dismiss
+              </OakSecondaryButton>
             }
             focusOnMount={true}
             message="An unexpected problem closed this dialog. The rest of the page still works."
