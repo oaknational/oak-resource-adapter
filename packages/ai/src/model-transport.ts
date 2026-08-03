@@ -1,20 +1,37 @@
-import type { ModelInvocationResponse } from "./protocol.js";
-import type { ResolvedModelInvocation } from "./resolved-invocation.js";
+import type { ModelOutputRequirement } from "./model-output.js";
+import type { ModelInvocationError } from "./model-invocation-error.js";
+import type {
+  ModelInvocationResponse,
+  ModelProviderRequest,
+  ModelResponseRecord,
+} from "./protocol.js";
+import type { ModelTransportInvocation } from "./resolved-invocation.js";
 
 export type ModelTransportOptions = Readonly<{
   signal: AbortSignal;
 }>;
 
+export type ModelTransportResult =
+  | Readonly<{
+      kind: "FAILURE";
+      error: ModelInvocationError;
+      response: ModelResponseRecord;
+    }>
+  | Readonly<{ kind: "SUCCESS"; response: ModelInvocationResponse }>;
+
+export type PreparedModelInvocation = Readonly<{
+  execute(options: ModelTransportOptions): Promise<ModelTransportResult>;
+  request: ModelProviderRequest;
+}>;
+
 /**
- * Executes one model invocation using a configured direct provider, external
- * gateway, or internal model service.
- *
- * Implementations must forward `options.signal` to the underlying client so
- * that callers and invocation timeouts can abort in-flight work.
+ * `prepare` must not call the provider: its exact request is recorded before
+ * `execute`. Returned failures carry a response to audit; failures without one
+ * are thrown.
  */
 export interface ModelTransport {
-  invoke(
-    invocation: ResolvedModelInvocation,
-    options: ModelTransportOptions,
-  ): Promise<ModelInvocationResponse>;
+  prepare(
+    invocation: ModelTransportInvocation,
+    output: ModelOutputRequirement,
+  ): PreparedModelInvocation;
 }

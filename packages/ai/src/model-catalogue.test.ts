@@ -6,7 +6,8 @@ import { providerForModel, SUPPORTED_MODELS } from "./index.js";
 describe("model catalogue", () => {
   it("constrains model IDs to the supported catalogue", () => {
     expectTypeOf<ModelId>().toEqualTypeOf<keyof typeof SUPPORTED_MODELS>();
-    expectTypeOf<"gpt-5.4-2026-03-05">().toExtend<ModelId>();
+    expectTypeOf<"gpt-5.6-luna">().toExtend<ModelId>();
+    expectTypeOf<"gpt-5.6-terra">().toExtend<ModelId>();
     // @ts-expect-error an unlisted model is not a valid ModelId
     expectTypeOf<"totally-not-a-real-model">().toExtend<ModelId>();
   });

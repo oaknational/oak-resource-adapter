@@ -11,13 +11,16 @@ import {
 } from "@oaknational/resource-adapter-db";
 import { eq, inArray } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 
 import {
   createDatabaseInvocationRecorder,
   createModelInvoker,
   definePromptTemplate,
   defineRoleBindings,
+  ModelInvocationError,
   preparePrompt,
+  type JsonObject,
   type ModelInvocationResponse,
   type ModelTransport,
 } from "../index.js";
@@ -26,7 +29,7 @@ const describeWithDatabase =
   process.env.RUN_DATABASE_INTEGRATION_TESTS === "1" ? describe : describe.skip;
 
 const roleBindings = defineRoleBindings({
-  "quick-classifier": { model: "gpt-5.4-2026-03-05", transport: "primary" },
+  "quick-classifier": { model: "gpt-5.6-luna", transport: "primary" },
 });
 
 const template = definePromptTemplate({
@@ -43,12 +46,26 @@ function database() {
   return getDatabaseClient();
 }
 
-function responseFixture(): ModelInvocationResponse {
+function responseFixture(text = "classified"): ModelInvocationResponse {
   return {
-    id: "resp_integration_1",
-    output_text: "classified",
-    usage: { input_tokens: 12, output_tokens: 3, total_tokens: 15 },
-  } as unknown as ModelInvocationResponse;
+    output: { kind: "TEXT", text },
+    providerResponseId: "resp_integration_1",
+    rawResponse: { id: "resp_integration_1", output_text: text },
+    usage: { inputTokens: 12, outputTokens: 3, totalTokens: 15 },
+  };
+}
+
+function transportFixture(
+  execute: () => Promise<ModelInvocationResponse>,
+): ModelTransport {
+  return {
+    prepare(invocation) {
+      return {
+        execute: async () => ({ kind: "SUCCESS", response: await execute() }),
+        request: invocation.request as unknown as JsonObject,
+      };
+    },
+  };
 }
 
 describeWithDatabase("model invocation persistence", () => {
@@ -147,7 +164,7 @@ describeWithDatabase("model invocation persistence", () => {
     const invoker = createModelInvoker({
       roleBindings,
       recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
-      transports: { primary: { invoke: async () => response } },
+      transports: { primary: transportFixture(async () => response) },
     });
 
     await invoker.invoke({
@@ -166,8 +183,9 @@ describeWithDatabase("model invocation persistence", () => {
       correlationKey: "workflow-step-1",
       errorName: null,
       inputTokens: 12,
-      model: "gpt-5.4-2026-03-05",
+      model: "gpt-5.6-luna",
       outputTokens: 3,
+      outputValidationStatus: null,
       promptTemplateId: prompt.promptTemplateId,
       provider: "openai",
       providerResponseId: "resp_integration_1",
@@ -202,17 +220,15 @@ describeWithDatabase("model invocation persistence", () => {
       roleBindings,
       recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
       transports: {
-        primary: {
-          invoke: async () => {
-            throw failure;
-          },
-        },
+        primary: transportFixture(async () => {
+          throw failure;
+        }),
       },
     });
 
     await expect(
       invoker.invoke({ request: { input: "Classify" }, role: "quick-classifier" }),
-    ).rejects.toBe(failure);
+    ).rejects.toMatchObject({ code: "RATE_LIMITED", cause: failure });
 
     const [row] = await database()
       .select()
@@ -220,8 +236,8 @@ describeWithDatabase("model invocation persistence", () => {
       .where(eq(modelInvocations.transformationAttemptId, transformationAttemptId));
 
     expect(row).toMatchObject({
-      errorCode: "rate_limit_exceeded",
-      errorName: "Error",
+      errorCode: "RATE_LIMITED",
+      errorName: "ModelInvocationError",
       errorStatus: 429,
       promptTemplateId: null,
       response: null,
@@ -229,8 +245,88 @@ describeWithDatabase("model invocation persistence", () => {
     expect(JSON.stringify(row)).not.toContain("must not be persisted");
   });
 
+  it("records provider data when a call returns a failure response", async () => {
+    const transformationAttemptId = await insertAttempt();
+    const error = new ModelInvocationError({
+      code: "PROVIDER_UNAVAILABLE",
+      providerCode: "server_error",
+    });
+    const response = {
+      providerResponseId: "resp_failed_1",
+      rawResponse: {
+        error: { code: "server_error", message: "Provider unavailable" },
+        id: "resp_failed_1",
+        status: "failed",
+      },
+      usage: { inputTokens: 12, outputTokens: 1, totalTokens: 13 },
+    } as const;
+    const transport: ModelTransport = {
+      prepare(invocation) {
+        return {
+          execute: async () => ({ error, kind: "FAILURE", response }),
+          request: invocation.request as unknown as JsonObject,
+        };
+      },
+    };
+    const invoker = createModelInvoker({
+      roleBindings,
+      recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
+      transports: { primary: transport },
+    });
+
+    await expect(
+      invoker.invoke({ request: { input: "Classify" }, role: "quick-classifier" }),
+    ).rejects.toBe(error);
+
+    const [row] = await database()
+      .select()
+      .from(modelInvocations)
+      .where(eq(modelInvocations.transformationAttemptId, transformationAttemptId));
+
+    expect(row).toMatchObject({
+      errorCode: "PROVIDER_UNAVAILABLE",
+      inputTokens: 12,
+      outputTokens: 1,
+      providerResponseId: "resp_failed_1",
+      response: response.rawResponse,
+    });
+  });
+
+  it.each([
+    ['{"value":{"label":"worksheet"}}', "VALID"],
+    ["not json", "INVALID_JSON"],
+    ['{"value":{"label":42}}', "SCHEMA_MISMATCH"],
+  ] as const)(
+    "records application-side output validation status %s as %s",
+    async (text, outputValidationStatus) => {
+      const transformationAttemptId = await insertAttempt();
+      const invoker = createModelInvoker({
+        roleBindings,
+        recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
+        transports: {
+          primary: transportFixture(async () => responseFixture(text)),
+        },
+      });
+
+      await invoker.invokeStructured({
+        request: { input: "Classify" },
+        role: "quick-classifier",
+        schema: z.object({ label: z.string() }),
+        schemaName: "classification",
+      });
+
+      const [row] = await database()
+        .select()
+        .from(modelInvocations)
+        .where(eq(modelInvocations.transformationAttemptId, transformationAttemptId));
+
+      expect(row?.outputValidationStatus).toBe(outputValidationStatus);
+    },
+  );
+
   it("prevents the model call when the invocation cannot be recorded", async () => {
-    const transport: ModelTransport = { invoke: vi.fn(async () => responseFixture()) };
+    const execute = vi.fn(async () => responseFixture());
+    const transport = transportFixture(execute);
     const invoker = createModelInvoker({
       roleBindings,
       // No such attempt, so the insert violates its foreign key.
@@ -243,7 +339,7 @@ describeWithDatabase("model invocation persistence", () => {
     await expect(
       invoker.invoke({ request: { input: "Classify" }, role: "quick-classifier" }),
     ).rejects.toThrow();
-    expect(transport.invoke).not.toHaveBeenCalled();
+    expect(execute).not.toHaveBeenCalled();
   });
 
   it("reuses one row for a template used repeatedly", async () => {

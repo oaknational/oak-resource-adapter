@@ -267,7 +267,7 @@ describeWithDatabase("schema integration", () => {
     return {
       correlationKey: `step_${randomUUID()}`,
       id: randomUUID(),
-      model: "gpt-5.4-2026-03-05",
+      model: "gpt-5.6-luna",
       provider: "openai",
       request: { input: "Rewrite this.", instructions: "You adapt worksheets." },
       role: "high-quality-rewrite",
@@ -313,6 +313,7 @@ describeWithDatabase("schema integration", () => {
           correlationKey: sharedStep,
           inputTokens: 1200,
           outputTokens: 340,
+          outputValidationStatus: "VALID",
         },
         {
           ...invocation({
@@ -394,9 +395,12 @@ describeWithDatabase("schema integration", () => {
     expect(new Set(invocations.map((record) => record.correlationKey))).toEqual(
       new Set([sharedStep]),
     );
+    expect(
+      invocations.find((record) => record.role === "quick-classifier"),
+    ).toMatchObject({ outputValidationStatus: "VALID" });
     const rewrite = invocations.find((record) => record.promptTemplateId !== null);
     expect(rewrite).toMatchObject({
-      model: "gpt-5.4-2026-03-05",
+      model: "gpt-5.6-luna",
       promptTemplateId: template.id,
       provider: "openai",
       request: { input: "Rewrite this.", instructions: "You adapt worksheets." },
