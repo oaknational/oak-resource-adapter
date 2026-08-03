@@ -71,10 +71,12 @@ To have caught errors reported, give the dialog the same `getToken` and
 ```
 
 - **What we send**: the error name, its message (cut to 500 characters) and the
-  React component stack. Nothing else can be sent, because the schema has no
-  other fields, so tokens, lesson contents, prompts and personal data have
-  nowhere to travel. The call uses your token, stops after five reports per page
-  load, and ignores its own failures rather than surfacing them to you.
+  React component stack, and nothing else. The schema has no field for metadata,
+  so there is nowhere for us to put a token, lesson contents or a prompt. Note
+  the message itself is passed through untouched, so anything your code
+  interpolates into an error message does reach us. The call uses your token,
+  stops after five reports per page load, and ignores its own failures rather
+  than surfacing them to you.
 - **`onError`**: `(error: Error, info: { componentStack: string | null })`. Both
   arguments are plain values, never React types, so you can pass them straight
   to your own reporter. You can no-op it, and if it throws, neither the message

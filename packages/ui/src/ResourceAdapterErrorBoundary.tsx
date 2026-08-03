@@ -88,7 +88,10 @@ export class ResourceAdapterErrorBoundary extends Component<
     }
 
     try {
-      this.props.onError?.(error, { componentStack });
+      // Promise.resolve so an async onError's rejection is swallowed too.
+      void Promise.resolve(this.props.onError?.(error, { componentStack })).catch(
+        () => {},
+      );
     } catch {
       // A broken host callback must not affect the fallback render.
     }

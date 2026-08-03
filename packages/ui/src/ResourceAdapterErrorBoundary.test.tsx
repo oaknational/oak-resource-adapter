@@ -38,6 +38,14 @@ function ThrowsString(): never {
   throw "a string, not an Error";
 }
 
+// jsdom does not fire `unhandledrejection`, so the rejection has to be observed
+// on the node process. Declared locally because this package deliberately keeps
+// node types out of scope for its browser-facing source.
+declare const process: {
+  on(event: "unhandledRejection", listener: () => void): void;
+  off(event: "unhandledRejection", listener: () => void): void;
+};
+
 /** Throws until `crash.active` is cleared. */
 const crash = { active: true };
 
@@ -142,6 +150,33 @@ describe("ResourceAdapterErrorBoundary", () => {
 
     expect(reportClientError).toHaveBeenCalledOnce();
     expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
+  });
+
+  it("swallows a rejection from an async onError", async () => {
+    const unhandled = vi.fn();
+    process.on("unhandledRejection", unhandled);
+
+    try {
+      renderWithTheme(
+        <ResourceAdapterErrorBoundary
+          onError={async () => {
+            throw new Error("broken async host callback");
+          }}
+          reporting={reporting}
+        >
+          <Bomb />
+        </ResourceAdapterErrorBoundary>,
+      );
+
+      // Rejections surface a tick later, so let the microtask queue drain.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(unhandled).not.toHaveBeenCalled();
+      expect(reportClientError).toHaveBeenCalledOnce();
+      expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
+    } finally {
+      process.off("unhandledRejection", unhandled);
+    }
   });
 
   it("reports one crash exactly once under StrictMode", () => {
