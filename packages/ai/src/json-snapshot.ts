@@ -1,6 +1,6 @@
 import type { JsonObject, JsonValue } from "./protocol.js";
 
-/** Captures the provider payload exactly as JSON will serialise it. */
+/** Serialises rather than clones, so `structuredClone` is not a substitute. */
 export function jsonSnapshot(value: unknown): JsonValue {
   return JSON.parse(JSON.stringify(value)) as JsonValue;
 }

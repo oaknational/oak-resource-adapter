@@ -225,11 +225,14 @@ export function createModelInvoker<const TBindings extends RoleBindings>(
     throw error;
   }
 
-  async function invokeWithOutput<TOutcome>(
+  /** Everything that can be settled, and rejected, before anything is recorded. */
+  function resolveInvocation(
     params: InvokeModelParams<ModelRole<TBindings>>,
-    output: ModelOutputRequirement,
-    interpret: InterpretOutput<TOutcome>,
-  ): Promise<Readonly<{ meta: ModelInvocationMeta; outcome: TOutcome }>> {
+  ): Readonly<{
+    invocation: ModelTransportInvocation;
+    timeoutMs: number;
+    transport: ModelTransport;
+  }> {
     const binding = config.roleBindings[params.role];
     if (!binding) {
       throw invalidConfiguration(new Error(`Unknown model role: ${params.role}`));
@@ -252,31 +255,42 @@ export function createModelInvoker<const TBindings extends RoleBindings>(
       throw normaliseModelInvocationError(params.signal.reason, params.signal);
     }
 
-    const invocationId = randomUUID();
-    const logicalInvocation: ModelTransportInvocation = {
-      ...(params.correlationKey === undefined
-        ? {}
-        : { correlationKey: params.correlationKey }),
-      invocationId,
-      model: binding.model,
-      ...(params.promptTemplateId === undefined
-        ? {}
-        : { promptTemplateId: params.promptTemplateId }),
-      provider: providerForModel(binding.model),
-      request: params.request,
-      role: params.role,
-      transport: binding.transport,
+    return {
+      invocation: {
+        ...(params.correlationKey === undefined
+          ? {}
+          : { correlationKey: params.correlationKey }),
+        invocationId: randomUUID(),
+        model: binding.model,
+        ...(params.promptTemplateId === undefined
+          ? {}
+          : { promptTemplateId: params.promptTemplateId }),
+        provider: providerForModel(binding.model),
+        request: params.request,
+        role: params.role,
+        transport: binding.transport,
+      },
+      timeoutMs,
+      transport,
     };
+  }
+
+  async function invokeWithOutput<TOutcome>(
+    params: InvokeModelParams<ModelRole<TBindings>>,
+    output: ModelOutputRequirement,
+    interpret: InterpretOutput<TOutcome>,
+  ): Promise<Readonly<{ meta: ModelInvocationMeta; outcome: TOutcome }>> {
+    const { invocation, timeoutMs, transport } = resolveInvocation(params);
 
     let prepared;
     try {
-      prepared = transport.prepare(logicalInvocation, output);
+      prepared = transport.prepare(invocation, output);
     } catch (error) {
       throw isModelInvocationError(error) ? error : invalidConfiguration(error);
     }
 
     const resolvedInvocation: ResolvedModelInvocation = {
-      ...logicalInvocation,
+      ...invocation,
       request: prepared.request,
     };
     const started: ModelInvocationStarted = {
@@ -342,7 +356,7 @@ export function createModelInvoker<const TBindings extends RoleBindings>(
 
     return {
       meta: {
-        invocationId,
+        invocationId: invocation.invocationId,
         ...(response.providerResponseId === undefined
           ? {}
           : { providerResponseId: response.providerResponseId }),
