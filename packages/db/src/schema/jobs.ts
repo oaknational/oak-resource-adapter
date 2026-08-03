@@ -1,16 +1,9 @@
 import { sql } from "drizzle-orm";
-import {
-  index,
-  jsonb,
-  pgEnum,
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { index, jsonb, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
-export const jobStatusEnum = pgEnum("job_status", [
+import { resourceAdapterSchema } from "./pg-schema.js";
+
+export const jobStatusEnum = resourceAdapterSchema.enum("job_status", [
   "queued",
   "running",
   "succeeded",
@@ -27,7 +20,7 @@ export const JobStatus = {
 export type JobStatusValue = (typeof JobStatus)[keyof typeof JobStatus];
 
 /** Product-facing lifecycle state for generic durable background work. */
-export const jobs = pgTable(
+export const jobs = resourceAdapterSchema.table(
   "jobs",
   {
     completedAt: timestamp("completed_at", { precision: 3, withTimezone: true }),

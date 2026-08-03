@@ -1,13 +1,14 @@
 import { sql } from "drizzle-orm";
-import { foreignKey, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { foreignKey, index, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
+import { resourceAdapterSchema } from "./pg-schema.js";
 import { resourceDocuments } from "./resource-documents.js";
 
 /**
  * A teacher's ongoing work on one resource: the container for every
  * transformation they request, and the pointer to what they currently see.
  */
-export const adaptations = pgTable(
+export const adaptations = resourceAdapterSchema.table(
   "adaptations",
   {
     /** Stable ID of the teacher-facing workflow this adaptation belongs to. */

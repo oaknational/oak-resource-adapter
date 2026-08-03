@@ -3,13 +3,13 @@ import {
   index,
   integer,
   jsonb,
-  pgTable,
   text,
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
 
 import { promptTemplates } from "./prompt-templates.js";
+import { resourceAdapterSchema } from "./pg-schema.js";
 import { transformationAttempts } from "./transformation-attempts.js";
 
 /**
@@ -18,7 +18,7 @@ import { transformationAttempts } from "./transformation-attempts.js";
  * An append-only log, deliberately not deduplicated: a retried workflow step that
  * calls the model again is two paid calls and must read as two rows.
  */
-export const modelInvocations = pgTable(
+export const modelInvocations = resourceAdapterSchema.table(
   "model_invocations",
   {
     completedAt: timestamp("completed_at", { precision: 3, withTimezone: true }),

@@ -3,18 +3,26 @@
 PostgreSQL, accessed through [Drizzle](https://orm.drizzle.team). Schema,
 migrations and the shared client live in [`packages/db`](../packages/db/).
 
+Every table and enum lives in the `resource_adapter` schema rather than `public`.
+That name is a contract with Terraform in Oak's `Cloud-Config` repository, which
+creates the schema, owns it with the migration user, and grants the application
+roles on it. `public` could not be used: since PostgreSQL 15 it grants `CREATE`
+only to the database owner, so the migration user would be refused when creating
+tables. Drizzle's migration journal lives in `drizzle`, which Terraform also
+provisions.
+
 ## Commands
 
 Note that `db:generate` writes a migration file; it does not create a database.
 
-| Command                  | What it does                                         |
-| ------------------------ | ---------------------------------------------------- |
-| `pnpm db:reset`          | Drops and recreates the local schema, then migrates. |
-| `pnpm db:generate`       | Diffs the schema and writes a new migration.         |
-| `pnpm db:migrate:dev`    | Applies pending migrations locally.                  |
-| `pnpm db:migrate:deploy` | Applies pending migrations to a deployed database.   |
-| `pnpm db:check`          | Checks the migration history for collisions.         |
-| `pnpm db:studio`         | Opens Drizzle Studio.                                |
+| Command                  | What it does                                          |
+| ------------------------ | ----------------------------------------------------- |
+| `pnpm db:reset`          | Drops and recreates the local schemas, then migrates. |
+| `pnpm db:generate`       | Diffs the schema and writes a new migration.          |
+| `pnpm db:migrate:dev`    | Applies pending migrations locally.                   |
+| `pnpm db:migrate:deploy` | Applies pending migrations to a deployed database.    |
+| `pnpm db:check`          | Checks the migration history for collisions.          |
+| `pnpm db:studio`         | Opens Drizzle Studio.                                 |
 
 `DATABASE_URL` is read from the process environment or the root `.env`.
 `db:reset` refuses any host but localhost.
@@ -25,6 +33,10 @@ Edit [`packages/db/src/schema/`](../packages/db/src/schema/), run
 `pnpm db:generate`, read the SQL, then `pnpm db:migrate:dev`. Commit the schema
 change and the generated `drizzle/` files together — CI regenerates migrations
 and fails if that produces anything uncommitted.
+
+Declare a new table with `resourceAdapterSchema.table` rather than `pgTable`, and
+a new enum with `resourceAdapterSchema.enum`. A bare `pgTable` silently targets
+`public`, where the application has no privileges, so it fails only on deploy.
 
 Do not edit a migration that has been applied to a shared environment. Where a
 change needs more than one release, make it additive.

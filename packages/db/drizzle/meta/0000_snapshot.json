@@ -1,12 +1,12 @@
 {
-  "id": "6f030fbf-867a-47b0-b848-b46ae53aef68",
+  "id": "7a4e5c58-63b9-4929-a165-e30c5808268a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.adaptations": {
+    "resource_adapter.adaptations": {
       "name": "adaptations",
-      "schema": "",
+      "schema": "resource_adapter",
       "columns": {
         "capability_id": {
           "name": "capability_id",
@@ -88,6 +88,7 @@
           "name": "adaptations_head_document_fk",
           "tableFrom": "adaptations",
           "tableTo": "resource_documents",
+          "schemaTo": "resource_adapter",
           "columnsFrom": ["head_resource_document_id"],
           "columnsTo": ["id"],
           "onDelete": "restrict",
@@ -100,9 +101,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.jobs": {
+    "resource_adapter.jobs": {
       "name": "jobs",
-      "schema": "",
+      "schema": "resource_adapter",
       "columns": {
         "completed_at": {
           "name": "completed_at",
@@ -163,7 +164,7 @@
         "status": {
           "name": "status",
           "type": "job_status",
-          "typeSchema": "public",
+          "typeSchema": "resource_adapter",
           "primaryKey": false,
           "notNull": true,
           "default": "'queued'"
@@ -223,9 +224,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.model_invocations": {
+    "resource_adapter.model_invocations": {
       "name": "model_invocations",
-      "schema": "",
+      "schema": "resource_adapter",
       "columns": {
         "completed_at": {
           "name": "completed_at",
@@ -386,6 +387,7 @@
           "name": "model_invocations_attempt_fk",
           "tableFrom": "model_invocations",
           "tableTo": "transformation_attempts",
+          "schemaTo": "resource_adapter",
           "columnsFrom": ["transformation_attempt_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -395,6 +397,7 @@
           "name": "model_invocations_prompt_template_fk",
           "tableFrom": "model_invocations",
           "tableTo": "prompt_templates",
+          "schemaTo": "resource_adapter",
           "columnsFrom": ["prompt_template_id"],
           "columnsTo": ["id"],
           "onDelete": "restrict",
@@ -407,9 +410,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.prompt_templates": {
+    "resource_adapter.prompt_templates": {
       "name": "prompt_templates",
-      "schema": "",
+      "schema": "resource_adapter",
       "columns": {
         "created_at": {
           "name": "created_at",
@@ -475,9 +478,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.resource_artifacts": {
+    "resource_adapter.resource_artifacts": {
       "name": "resource_artifacts",
-      "schema": "",
+      "schema": "resource_adapter",
       "columns": {
         "byte_size": {
           "name": "byte_size",
@@ -552,6 +555,7 @@
           "name": "resource_artifacts_document_fk",
           "tableFrom": "resource_artifacts",
           "tableTo": "resource_documents",
+          "schemaTo": "resource_adapter",
           "columnsFrom": ["resource_document_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -570,9 +574,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.resource_documents": {
+    "resource_adapter.resource_documents": {
       "name": "resource_documents",
-      "schema": "",
+      "schema": "resource_adapter",
       "columns": {
         "created_at": {
           "name": "created_at",
@@ -597,7 +601,7 @@
         "origin": {
           "name": "origin",
           "type": "resource_document_origin",
-          "typeSchema": "public",
+          "typeSchema": "resource_adapter",
           "primaryKey": false,
           "notNull": true
         },
@@ -659,7 +663,7 @@
             }
           ],
           "isUnique": false,
-          "where": "\"resource_documents\".\"origin\" <> 'generated'",
+          "where": "\"resource_adapter\".\"resource_documents\".\"origin\" <> 'generated'",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -670,6 +674,7 @@
           "name": "resource_documents_attempt_fk",
           "tableFrom": "resource_documents",
           "tableTo": "transformation_attempts",
+          "schemaTo": "resource_adapter",
           "columnsFrom": ["transformation_attempt_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -688,14 +693,14 @@
       "checkConstraints": {
         "resource_documents_generated_has_attempt_and_position": {
           "name": "resource_documents_generated_has_attempt_and_position",
-          "value": "(\"resource_documents\".\"origin\" = 'generated'\n            AND \"resource_documents\".\"transformation_attempt_id\" IS NOT NULL\n            AND \"resource_documents\".\"position\" IS NOT NULL\n            AND \"resource_documents\".\"position\" >= 0)\n       OR (\"resource_documents\".\"origin\" <> 'generated'\n            AND \"resource_documents\".\"transformation_attempt_id\" IS NULL\n            AND \"resource_documents\".\"position\" IS NULL)"
+          "value": "(\"resource_adapter\".\"resource_documents\".\"origin\" = 'generated'\n            AND \"resource_adapter\".\"resource_documents\".\"transformation_attempt_id\" IS NOT NULL\n            AND \"resource_adapter\".\"resource_documents\".\"position\" IS NOT NULL\n            AND \"resource_adapter\".\"resource_documents\".\"position\" >= 0)\n       OR (\"resource_adapter\".\"resource_documents\".\"origin\" <> 'generated'\n            AND \"resource_adapter\".\"resource_documents\".\"transformation_attempt_id\" IS NULL\n            AND \"resource_adapter\".\"resource_documents\".\"position\" IS NULL)"
         }
       },
       "isRLSEnabled": false
     },
-    "public.suggested_transformations": {
+    "resource_adapter.suggested_transformations": {
       "name": "suggested_transformations",
-      "schema": "",
+      "schema": "resource_adapter",
       "columns": {
         "accepted_transformation_id": {
           "name": "accepted_transformation_id",
@@ -777,6 +782,7 @@
           "name": "suggested_transformations_document_fk",
           "tableFrom": "suggested_transformations",
           "tableTo": "resource_documents",
+          "schemaTo": "resource_adapter",
           "columnsFrom": ["resource_document_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -786,6 +792,7 @@
           "name": "suggested_transformations_attempt_fk",
           "tableFrom": "suggested_transformations",
           "tableTo": "transformation_attempts",
+          "schemaTo": "resource_adapter",
           "columnsFrom": ["transformation_attempt_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -795,6 +802,7 @@
           "name": "suggested_transformations_accepted_fk",
           "tableFrom": "suggested_transformations",
           "tableTo": "transformations",
+          "schemaTo": "resource_adapter",
           "columnsFrom": ["accepted_transformation_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
@@ -818,14 +826,14 @@
       "checkConstraints": {
         "suggested_transformations_position_check": {
           "name": "suggested_transformations_position_check",
-          "value": "\"suggested_transformations\".\"position\" >= 0"
+          "value": "\"resource_adapter\".\"suggested_transformations\".\"position\" >= 0"
         }
       },
       "isRLSEnabled": false
     },
-    "public.transformation_attempts": {
+    "resource_adapter.transformation_attempts": {
       "name": "transformation_attempts",
-      "schema": "",
+      "schema": "resource_adapter",
       "columns": {
         "attempt_number": {
           "name": "attempt_number",
@@ -873,6 +881,7 @@
           "name": "transformation_attempts_transformation_fk",
           "tableFrom": "transformation_attempts",
           "tableTo": "transformations",
+          "schemaTo": "resource_adapter",
           "columnsFrom": ["transformation_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -882,6 +891,7 @@
           "name": "transformation_attempts_job_fk",
           "tableFrom": "transformation_attempts",
           "tableTo": "jobs",
+          "schemaTo": "resource_adapter",
           "columnsFrom": ["job_id"],
           "columnsTo": ["id"],
           "onDelete": "restrict",
@@ -905,9 +915,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.transformation_inputs": {
+    "resource_adapter.transformation_inputs": {
       "name": "transformation_inputs",
-      "schema": "",
+      "schema": "resource_adapter",
       "columns": {
         "input_role": {
           "name": "input_role",
@@ -956,6 +966,7 @@
           "name": "transformation_inputs_transformation_fk",
           "tableFrom": "transformation_inputs",
           "tableTo": "transformations",
+          "schemaTo": "resource_adapter",
           "columnsFrom": ["transformation_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -965,6 +976,7 @@
           "name": "transformation_inputs_document_fk",
           "tableFrom": "transformation_inputs",
           "tableTo": "resource_documents",
+          "schemaTo": "resource_adapter",
           "columnsFrom": ["resource_document_id"],
           "columnsTo": ["id"],
           "onDelete": "restrict",
@@ -988,14 +1000,14 @@
       "checkConstraints": {
         "transformation_inputs_position_check": {
           "name": "transformation_inputs_position_check",
-          "value": "\"transformation_inputs\".\"position\" >= 0"
+          "value": "\"resource_adapter\".\"transformation_inputs\".\"position\" >= 0"
         }
       },
       "isRLSEnabled": false
     },
-    "public.transformations": {
+    "resource_adapter.transformations": {
       "name": "transformations",
-      "schema": "",
+      "schema": "resource_adapter",
       "columns": {
         "adaptation_id": {
           "name": "adaptation_id",
@@ -1078,6 +1090,7 @@
           "name": "transformations_adaptation_id_adaptations_id_fk",
           "tableFrom": "transformations",
           "tableTo": "adaptations",
+          "schemaTo": "resource_adapter",
           "columnsFrom": ["adaptation_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1098,18 +1111,20 @@
     }
   },
   "enums": {
-    "public.job_status": {
+    "resource_adapter.job_status": {
       "name": "job_status",
-      "schema": "public",
+      "schema": "resource_adapter",
       "values": ["queued", "running", "succeeded", "failed"]
     },
-    "public.resource_document_origin": {
+    "resource_adapter.resource_document_origin": {
       "name": "resource_document_origin",
-      "schema": "public",
+      "schema": "resource_adapter",
       "values": ["oak_resource", "generated"]
     }
   },
-  "schemas": {},
+  "schemas": {
+    "resource_adapter": "resource_adapter"
+  },
   "sequences": {},
   "roles": {},
   "policies": {},

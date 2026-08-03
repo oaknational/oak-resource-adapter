@@ -1,6 +1,7 @@
 export * from "./adaptations.js";
 export * from "./jobs.js";
 export * from "./model-invocations.js";
+export * from "./pg-schema.js";
 export * from "./prompt-templates.js";
 export * from "./resource-artifacts.js";
 export * from "./resource-documents.js";

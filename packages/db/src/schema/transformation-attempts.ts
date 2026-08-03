@@ -1,18 +1,12 @@
 import { sql } from "drizzle-orm";
-import {
-  foreignKey,
-  integer,
-  pgTable,
-  timestamp,
-  unique,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { foreignKey, integer, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 import { jobs } from "./jobs.js";
+import { resourceAdapterSchema } from "./pg-schema.js";
 import { transformations } from "./transformations.js";
 
 /** One execution of a transformation: its initial run or a retry. */
-export const transformationAttempts = pgTable(
+export const transformationAttempts = resourceAdapterSchema.table(
   "transformation_attempts",
   {
     /** Starts at 1 and is unique within a transformation to prevent duplicate retries. */
