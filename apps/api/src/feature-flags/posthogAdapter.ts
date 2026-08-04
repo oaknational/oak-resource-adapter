@@ -1,10 +1,13 @@
 import { raLogger } from "@oaknational/resource-adapter-logger";
+import {
+  featureFlagCatalogue,
+  type FeatureFlagKey,
+  type FeatureFlagServiceType,
+  type ResourceAdapterAuthenticatedTeacher,
+} from "@oaknational/resource-adapter-contracts/server";
+import { PostHog } from "posthog-node";
 
 const log = raLogger("feature-flags");
-import { PostHog } from "posthog-node";
-import { type FeatureFlagKey } from "./catalogue";
-import type { FeatureFlagServiceType } from "./service";
-import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 
 let client: PostHog | null = null;
 function getClient(): PostHog {
@@ -36,6 +39,23 @@ export class PostHogFeatureFlagAdapter implements FeatureFlagServiceType {
     } catch (error) {
       log.error(error, { report: true });
       return false;
+    }
+  }
+
+  public async getEnabledFlags(
+    target: ResourceAdapterAuthenticatedTeacher,
+  ): Promise<FeatureFlagKey[]> {
+    try {
+      const featureFlagEvaluationsSnapshot = await this.client.evaluateFlags(
+        target.teacherId,
+      );
+
+      return Object.keys(featureFlagCatalogue).filter((flag) =>
+        featureFlagEvaluationsSnapshot.isEnabled(flag as FeatureFlagKey),
+      ) as FeatureFlagKey[];
+    } catch (error) {
+      log.error(error, { report: true });
+      return [];
     }
   }
 }

@@ -1,8 +1,5 @@
 # Feature flags
 
-`apps/api/src/feature-flags` is the only place this service reads a feature
-flag.
-
 PostHog evaluates flags in production and `createInMemoryFeatureFlags` serves
 development and tests, with `service.ts` choosing between them on `NODE_ENV` and
 `USE_POSTHOG`.
@@ -43,13 +40,13 @@ exceptional path rather than the existing one.
 
 ## The catalogue owns the list
 
-`catalogue.ts` is the register of record. Its keys generate `FeatureFlagKey`, so
+`feature-flags.ts` is the register of record. Its keys generate `FeatureFlagKey`, so
 reading an unregistered flag is a compile error rather than a silent `false`:
 
 ```ts
 export const featureFlagCatalogue = {
-  "capabilities-smoke-test": {
-    purpose: "Proves PostHog evaluation for unit tests.",
+  "feature-flags-smoke-test-enabled": {
+    purpose: "Verifies feature-flag evaluation wiring across environments.",
     owner: "@person",
     default: false,
   },
@@ -66,7 +63,7 @@ export const featureFlagCatalogue = {
 
 ## Adding a flag
 
-1. Register the key in `catalogue.ts` with its `purpose`, `owner`, and a `false`
+1. Register the key in `feature-flags.ts` with its `purpose`, `owner`, and a `false`
    default.
 2. Create the flag in PostHog under the same key before the code reading it
    ships. A key absent from PostHog evaluates `false`.

@@ -123,7 +123,7 @@ describe("PostHogFeatureFlagAdapter", () => {
       const adapter = await loadFreshAdapter();
 
       await expect(
-        adapter.isEnabled("capabilities-smoke-test", teacherInOrganisation),
+        adapter.isEnabled("feature-flags-smoke-test-enabled", teacherInOrganisation),
       ).resolves.toBe(true);
     });
 
@@ -132,8 +132,24 @@ describe("PostHogFeatureFlagAdapter", () => {
       const adapter = await loadFreshAdapter();
 
       await expect(
-        adapter.isEnabled("capabilities-smoke-test", teacherInOrganisation),
+        adapter.isEnabled("feature-flags-smoke-test-enabled", teacherInOrganisation),
       ).resolves.toBe(false);
+    });
+
+    it("returns all enabled flags for a teacher", async () => {
+      providerAnswers(true);
+      const adapter = await loadFreshAdapter();
+
+      await expect(adapter.getEnabledFlags(teacherInOrganisation)).resolves.toEqual([
+        "feature-flags-smoke-test-enabled",
+      ]);
+    });
+
+    it("returns an empty list when no flags are enabled", async () => {
+      providerAnswers(false);
+      const adapter = await loadFreshAdapter();
+
+      await expect(adapter.getEnabledFlags(teacherInOrganisation)).resolves.toEqual([]);
     });
   });
 
@@ -144,7 +160,7 @@ describe("PostHogFeatureFlagAdapter", () => {
       const adapter = await loadFreshAdapter();
 
       await expect(
-        adapter.isEnabled("capabilities-smoke-test", teacherInOrganisation),
+        adapter.isEnabled("feature-flags-smoke-test-enabled", teacherInOrganisation),
       ).resolves.toBe(false);
       expect(loggerErrorMock).toHaveBeenCalledWith(providerError, { report: true });
     });
@@ -157,8 +173,17 @@ describe("PostHogFeatureFlagAdapter", () => {
       const adapter = await loadFreshAdapter();
 
       await expect(
-        adapter.isEnabled("capabilities-smoke-test", teacherInOrganisation),
+        adapter.isEnabled("feature-flags-smoke-test-enabled", teacherInOrganisation),
       ).resolves.toBe(false);
+      expect(loggerErrorMock).toHaveBeenCalledWith(providerError, { report: true });
+    });
+
+    it("returns an empty list when fetching all enabled flags fails", async () => {
+      const providerError = new Error("posthog unavailable");
+      evaluateFlagsMock.mockRejectedValue(providerError);
+      const adapter = await loadFreshAdapter();
+
+      await expect(adapter.getEnabledFlags(teacherInOrganisation)).resolves.toEqual([]);
       expect(loggerErrorMock).toHaveBeenCalledWith(providerError, { report: true });
     });
   });

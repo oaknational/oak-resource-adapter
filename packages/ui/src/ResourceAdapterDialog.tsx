@@ -8,10 +8,16 @@ import {
   OakP,
 } from "@oaknational/oak-components";
 
-import type { LessonContext, ResourceAdapterCapability } from "./publicTypes.js";
+import { FeatureFlag } from "./FeatureFlag.js";
+import type {
+  FeatureFlagKey,
+  LessonContext,
+  ResourceAdapterCapability,
+} from "./publicTypes.js";
 
 export type ResourceAdapterDialogProps = Readonly<{
   capabilities: readonly ResourceAdapterCapability[];
+  enabledFlags?: readonly FeatureFlagKey[];
   isOpen: boolean;
   lesson: LessonContext;
   onClose: () => void;
@@ -23,6 +29,7 @@ export type ResourceAdapterDialogProps = Readonly<{
  */
 export function ResourceAdapterDialog({
   capabilities,
+  enabledFlags,
   isOpen,
   lesson,
   onClose,
@@ -52,6 +59,15 @@ export function ResourceAdapterDialog({
               Available capability: <strong>{capability.label}</strong>.
             </OakP>
           )}
+          <FeatureFlag
+            enabledFlags={enabledFlags ?? []}
+            flag="feature-flags-smoke-test-enabled"
+          >
+            <OakP>
+              Feature flag <strong>feature-flags-smoke-test-enabled</strong> is enabled.
+              New Resource Adapter UI can be rendered here.
+            </OakP>
+          </FeatureFlag>
         </OakFlex>
       </OakInformativeModalBody>
     </OakInformativeModal>

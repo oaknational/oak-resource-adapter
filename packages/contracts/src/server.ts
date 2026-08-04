@@ -7,6 +7,13 @@ import {
   type LessonContext,
   type ResourceAdapterCapabilitiesResponse,
 } from "./v1.js";
+import type { FeatureFlagServiceType } from "./feature-flags.js";
+
+export {
+  featureFlagCatalogue,
+  type FeatureFlagKey,
+  type FeatureFlagServiceType,
+} from "./feature-flags.js";
 
 /** The service boundary required by the capabilities procedure. */
 export type ResourceAdapterCapabilitiesService = Readonly<{
@@ -24,6 +31,7 @@ export type ResourceAdapterApiContext = Readonly<{
   apiContractVersion: number | null;
   authenticatedTeacher: ResourceAdapterAuthenticatedTeacher | null;
   capabilities: ResourceAdapterCapabilitiesService;
+  featureFlags: FeatureFlagServiceType;
 }>;
 
 /**
@@ -80,6 +88,11 @@ export const appRouterV1 = t.router({
       .input(lessonContextSchema)
       .output(resourceAdapterCapabilitiesResponseSchema)
       .query(({ ctx, input }) => ctx.capabilities.getCapabilities(input)),
+  }),
+  featureFlags: t.router({
+    get: authenticatedProcedure.query(({ ctx }) =>
+      ctx.featureFlags.getEnabledFlags(ctx.authenticatedTeacher),
+    ),
   }),
 });
 

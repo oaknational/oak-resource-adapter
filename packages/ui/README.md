@@ -2,8 +2,8 @@
 
 React UI for Oak National Academy's Resource Adapter: the lesson-page entry
 point (`ResourceAdapterButton`, `ResourceAdapterDialog`) and the
-`getResourceAdapterCapabilities` helper for resolving what the service can do
-for a lesson.
+`getResourceAdapterCapabilities` and `getResourceAdapterFeatureFlags` helpers
+for resolving what the service can do for a lesson.
 
 ## Installation
 
@@ -32,15 +32,23 @@ transpilePackages: ["@oaknational/resource-adapter"],
 The package ships one module per source file, and only the two component
 modules carry a `"use client"` directive. In the Next.js app router the
 components can be rendered directly from React Server Component trees, while
-everything else, including `getResourceAdapterCapabilities`, stays callable
-from server code:
+everything else, including `getResourceAdapterCapabilities` and
+`getResourceAdapterFeatureFlags`, stays callable from server code:
 
 ```ts
-import { getResourceAdapterCapabilities } from "@oaknational/resource-adapter";
+import {
+  getResourceAdapterCapabilities,
+  getResourceAdapterFeatureFlags,
+} from "@oaknational/resource-adapter";
 
 const capabilities = await getResourceAdapterCapabilities({
   getToken,
   lesson,
+  trpcEndpoint: "https://resource-adapter.example/trpc/v1",
+});
+
+const enabledFlags = await getResourceAdapterFeatureFlags({
+  getToken,
   trpcEndpoint: "https://resource-adapter.example/trpc/v1",
 });
 ```
