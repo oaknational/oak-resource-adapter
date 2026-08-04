@@ -7,7 +7,7 @@
     "moduleResolution": "NodeNext",
     "noEmit": true,
     "rootDir": "src",
-    "types": ["react"]
+    "types": ["react", "@testing-library/jest-dom/vitest"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"]
 }

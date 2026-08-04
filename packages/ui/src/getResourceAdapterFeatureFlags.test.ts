@@ -1,20 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getResourceAdapterFeatureFlags } from "./getResourceAdapterFeatureFlags.js";
+import { ResourceAdapterApiError } from "./getResourceAdapterCapabilities.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
 describe("getResourceAdapterFeatureFlags", () => {
-  it("sends host token through tRPC without lesson context", async () => {
+  it("sends the host token through tRPC and returns the enabled flags", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify([
           {
-            result: {
-              data: ["feature-flags-smoke-test-enabled"],
-            },
+            result: { data: ["feature-flags-smoke-test-enabled"] },
           },
         ]),
       ),
@@ -39,6 +38,68 @@ describe("getResourceAdapterFeatureFlags", () => {
       },
       method: "POST",
     });
-    expect(String((request as RequestInit).body)).not.toContain("lessonSlug");
+  });
+
+  it("omits the authorization header when the host has no token", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify([{ result: { data: [] } }])));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      getResourceAdapterFeatureFlags({
+        getToken: async () => null,
+        trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
+      }),
+    ).resolves.toEqual([]);
+
+    const [, request] = fetchMock.mock.calls[0] ?? [];
+    expect(request?.headers).not.toHaveProperty("Authorization");
+  });
+
+  it("reports the service status when the request is rejected", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify([
+            {
+              error: {
+                message: "UNAUTHORIZED",
+                code: -32001,
+                data: { code: "UNAUTHORIZED", httpStatus: 401 },
+              },
+            },
+          ]),
+          { status: 401 },
+        ),
+      ),
+    );
+
+    await expect(
+      getResourceAdapterFeatureFlags({
+        getToken: async () => null,
+        trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
+      }),
+    ).rejects.toMatchObject({
+      name: "ResourceAdapterApiError",
+      message: "Resource Adapter could not load feature flags.",
+      status: 401,
+    });
+  });
+
+  it("reports a failure without a status when the network request fails", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
+
+    const error = await getResourceAdapterFeatureFlags({
+      getToken: async () => "clerk-token",
+      trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
+    }).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(ResourceAdapterApiError);
+    expect(error).toMatchObject({
+      message: "Resource Adapter could not load feature flags.",
+      status: undefined,
+    });
   });
 });

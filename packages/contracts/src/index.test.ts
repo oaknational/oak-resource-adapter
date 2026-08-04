@@ -84,6 +84,10 @@ describe("Resource Adapter API contracts", () => {
           ],
         }),
       },
+      featureFlags: {
+        isEnabled: () => false,
+        getEnabledFlags: () => [],
+      },
     });
 
     await expect(
@@ -105,6 +109,10 @@ describe("Resource Adapter API contracts", () => {
       capabilities: {
         getCapabilities: () => ({ capabilities: [] }),
       },
+      featureFlags: {
+        isEnabled: () => false,
+        getEnabledFlags: () => [],
+      },
     });
 
     await expect(
@@ -125,6 +133,10 @@ describe("Resource Adapter API contracts", () => {
       authenticatedTeacher: null,
       capabilities: {
         getCapabilities: () => ({ capabilities: [] }),
+      },
+      featureFlags: {
+        isEnabled: () => false,
+        getEnabledFlags: () => [],
       },
     });
 
