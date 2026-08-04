@@ -1,5 +1,5 @@
 import { TRPCClientError } from "@trpc/client";
-import type { FeatureFlagKey } from "@oaknational/resource-adapter-contracts/server";
+import type { ResourceAdapterFeatureFlagsResponse } from "@oaknational/resource-adapter-contracts/internal";
 
 import type { ResourceAdapterHostProps } from "./publicTypes.js";
 import { createResourceAdapterClient } from "./client.js";
@@ -16,7 +16,7 @@ type ResourceAdapterFeatureFlagsHostProps = Pick<
 export async function getResourceAdapterFeatureFlags({
   getToken,
   trpcEndpoint,
-}: ResourceAdapterFeatureFlagsHostProps): Promise<readonly FeatureFlagKey[]> {
+}: ResourceAdapterFeatureFlagsHostProps): Promise<ResourceAdapterFeatureFlagsResponse> {
   try {
     return await createResourceAdapterClient({
       getToken,

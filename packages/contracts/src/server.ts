@@ -7,13 +7,10 @@ import {
   type LessonContext,
   type ResourceAdapterCapabilitiesResponse,
 } from "./v1.js";
-import type { FeatureFlagServiceType } from "./feature-flags.js";
-
-export {
-  featureFlagCatalogue,
-  type FeatureFlagKey,
-  type FeatureFlagServiceType,
-} from "./feature-flags.js";
+import {
+  resourceAdapterFeatureFlagsResponseSchema,
+  type ResourceAdapterFeatureFlagsResponse,
+} from "./internal.js";
 
 /** The service boundary required by the capabilities procedure. */
 export type ResourceAdapterCapabilitiesService = Readonly<{
@@ -21,6 +18,14 @@ export type ResourceAdapterCapabilitiesService = Readonly<{
     lesson: LessonContext,
   ) =>
     Promise<ResourceAdapterCapabilitiesResponse> | ResourceAdapterCapabilitiesResponse;
+}>;
+
+/** The service boundary required by the feature flags procedure. */
+export type ResourceAdapterFeatureFlagService = Readonly<{
+  getEnabledFlags: (
+    target: ResourceAdapterAuthenticatedTeacher,
+  ) =>
+    Promise<ResourceAdapterFeatureFlagsResponse> | ResourceAdapterFeatureFlagsResponse;
 }>;
 
 /**
@@ -31,7 +36,7 @@ export type ResourceAdapterApiContext = Readonly<{
   apiContractVersion: number | null;
   authenticatedTeacher: ResourceAdapterAuthenticatedTeacher | null;
   capabilities: ResourceAdapterCapabilitiesService;
-  featureFlags: FeatureFlagServiceType;
+  featureFlags: ResourceAdapterFeatureFlagService;
 }>;
 
 /**
@@ -90,9 +95,9 @@ export const appRouterV1 = t.router({
       .query(({ ctx, input }) => ctx.capabilities.getCapabilities(input)),
   }),
   featureFlags: t.router({
-    get: authenticatedProcedure.query(({ ctx }) =>
-      ctx.featureFlags.getEnabledFlags(ctx.authenticatedTeacher),
-    ),
+    get: authenticatedProcedure
+      .output(resourceAdapterFeatureFlagsResponseSchema)
+      .query(({ ctx }) => ctx.featureFlags.getEnabledFlags(ctx.authenticatedTeacher)),
   }),
 });
 

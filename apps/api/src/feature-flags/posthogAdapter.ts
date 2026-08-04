@@ -1,11 +1,9 @@
 import { raLogger } from "@oaknational/resource-adapter-logger";
-import {
-  featureFlagCatalogue,
-  type FeatureFlagKey,
-  type FeatureFlagServiceType,
-  type ResourceAdapterAuthenticatedTeacher,
-} from "@oaknational/resource-adapter-contracts/server";
+import { type ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 import { PostHog } from "posthog-node";
+
+import { featureFlagCatalogue, type FeatureFlagKey } from "./catalogue";
+import type { FeatureFlagServiceType } from "./service";
 
 const log = raLogger("feature-flags");
 

@@ -1,27 +1,31 @@
 # Feature flags
 
-PostHog evaluates flags in production and `createInMemoryFeatureFlags` serves
-development and tests, with `service.ts` choosing between them on `NODE_ENV` and
+In production, flags are evaluated by PostHog.
+
+In development and tests, we use `createInMemoryFeatureFlags`.
+
+`service.ts` chooses which implementation to use based on `NODE_ENV` and
 `USE_POSTHOG`.
 
 ## Flags control rollout, not authorisation
 
-Rollout decides when a behaviour reaches a teacher. Authorisation decides
-whether a request may act at all, and belongs in `authentication.ts` and the
-`authenticatedProcedure` wrapping every route.
+Flags are for rollout decisions, not access control.
 
-The separation is structural rather than conventional:
+Access control belongs in `authentication.ts` and in the
+`authenticatedProcedure` used by the API routes.
 
-- **A flag is read only after authentication has passed.** The PostHog adapter
-  requires a `teacherId` to evaluate anything.
-- **Evaluation fails closed.** Any error from PostHog is reported and returns
-  `false`, so an unreachable flag leaves the product behaving as it did before
-  the flag existed.
+Two practical rules:
+
+- We only evaluate a flag after auth has passed. The PostHog adapter needs a
+  `teacherId`.
+- If PostHog fails, evaluation returns `false` and we log the error. That keeps
+  behaviour on the safe/default path.
 
 ## Naming
 
-Lower-case and hyphenated, `<area>-<behaviour>`, phrased so the name reads as a
-true statement when the flag is on:
+Use lower-case, hyphenated names: `<area>-<behaviour>`.
+
+Write the name so it reads like a true statement when the flag is on:
 
 ```text
 capabilities-worksheet-adapter    offers a capability to a teacher
@@ -29,8 +33,8 @@ generation-word-export            adds an artifact format alongside PDF
 model-invocation-paused           stops invocation entirely
 ```
 
-`false` is always current production behaviour, so the name describes the new or
-exceptional path rather than the existing one.
+`false` should represent current production behaviour. Name flags for the new or
+exceptional path, not the existing one.
 
 | Avoid                      | Why                                        |
 | -------------------------- | ------------------------------------------ |
@@ -40,8 +44,9 @@ exceptional path rather than the existing one.
 
 ## The catalogue owns the list
 
-`feature-flags.ts` is the register of record. Its keys generate `FeatureFlagKey`, so
-reading an unregistered flag is a compile error rather than a silent `false`:
+`apps/api/src/feature-flags/catalogue.ts` is the register of record. Its keys
+generate `FeatureFlagKey`, so reading an unregistered flag is a compile error
+rather than a silent `false`:
 
 ```ts
 export const featureFlagCatalogue = {
@@ -53,18 +58,15 @@ export const featureFlagCatalogue = {
 } as const satisfies Readonly<Record<string, FeatureFlagCatalogueEntry>>;
 ```
 
-- **`purpose`** states what the flag guards, so whoever retires it knows what
-  they are deleting.
-- **`owner`** is the GitHub handle of one person rather than a team, accountable
-  for both the rollout and the removal. It is a required field rather than a
-  comment, so a flag cannot be registered without one.
-- **`default`** is the value used wherever PostHog is not consulted, and stays
-  `false`.
+- `purpose`: what the flag is guarding.
+- `owner`: one GitHub handle (not a team alias), responsible for rollout and
+  cleanup.
+- `default`: fallback when PostHog is not used. Keep this `false`.
 
 ## Adding a flag
 
-1. Register the key in `feature-flags.ts` with its `purpose`, `owner`, and a `false`
-   default.
+1. Register the key in `apps/api/src/feature-flags/catalogue.ts` with its
+   `purpose`, `owner`, and a `false` default.
 2. Create the flag in PostHog under the same key before the code reading it
    ships. A key absent from PostHog evaluates `false`.
 
@@ -76,9 +78,9 @@ export const featureFlagCatalogue = {
 2. Ship that change.
 3. Delete the flag in PostHog.
 
-Deleting the PostHog flag first is a silent rollback: evaluation falls to `false`
-while the code still branches on it, reverting every teacher to the old
-behaviour until the removal ships.
+Do not delete the PostHog flag first. If you do, evaluation falls back to
+`false` while the code still branches, which silently rolls teachers back to
+the old path until code removal is deployed.
 
 ## Local development
 
@@ -86,3 +88,13 @@ The in-memory implementation is used unless `NODE_ENV=production` or
 `USE_POSTHOG=true`, so developing either side of a flag needs no PostHog
 credentials. `POSTHOG_API_KEY` and `POSTHOG_HOST` (defaulting to the EU host)
 configure the adapter when it is used.
+
+## Contract boundary
+
+Flag names are service-owned and intentionally not part of the published
+package API.
+
+The contracts package only exposes the internal wire shape for enabled flag
+names (`readonly string[]`).
+
+See [API boundaries](API_BOUNDARIES.md).

@@ -1,5 +1,3 @@
-import type { ResourceAdapterAuthenticatedTeacher } from "./server.js";
-
 /** GitHub handle of one person, never a team or a distribution list. */
 type FeatureFlagOwner = `@${string}`;
 
@@ -18,16 +16,3 @@ export const featureFlagCatalogue = {
 } as const satisfies Readonly<Record<string, FeatureFlagCatalogueEntry>>;
 
 export type FeatureFlagKey = keyof typeof featureFlagCatalogue;
-
-/**
- * Service boundary for evaluating feature flags against authenticated teachers.
- */
-export type FeatureFlagServiceType = {
-  isEnabled: (
-    flag: FeatureFlagKey,
-    target: ResourceAdapterAuthenticatedTeacher,
-  ) => Promise<boolean> | boolean;
-  getEnabledFlags: (
-    target: ResourceAdapterAuthenticatedTeacher,
-  ) => Promise<FeatureFlagKey[]> | FeatureFlagKey[];
-};

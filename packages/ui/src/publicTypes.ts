@@ -2,7 +2,6 @@ import type {
   LessonContext,
   LessonResourceType,
 } from "@oaknational/resource-adapter-contracts";
-import type { FeatureFlagKey } from "@oaknational/resource-adapter-contracts/server";
 import type {
   ResourceAdapterCapabilitiesResponse,
   ResourceAdapterCapability,
@@ -11,7 +10,6 @@ import type {
 
 /** Public host and capability types shipped with the UI package. */
 export type {
-  FeatureFlagKey,
   LessonContext,
   LessonResourceType,
   ResourceAdapterCapabilitiesResponse,

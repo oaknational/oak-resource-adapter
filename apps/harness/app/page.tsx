@@ -1,12 +1,10 @@
 "use client";
 
 import {
-  getResourceAdapterFeatureFlags,
   getResourceAdapterCapabilities,
   ResourceAdapterApiError,
   ResourceAdapterButton,
   ResourceAdapterDialog,
-  type FeatureFlagKey,
   type LessonContext,
   type ResourceAdapterCapability,
 } from "@oaknational/resource-adapter";
@@ -86,7 +84,6 @@ export default function HarnessPage() {
   const [capabilities, setCapabilities] = useState<
     readonly ResourceAdapterCapability[]
   >([]);
-  const [enabledFlags, setEnabledFlags] = useState<readonly FeatureFlagKey[]>([]);
   const [capabilitiesState, setCapabilitiesState] = useState<
     "error" | "loading" | "ready" | "signedOut"
   >("loading");
@@ -103,7 +100,6 @@ export default function HarnessPage() {
 
     if (!isSignedIn) {
       setCapabilities([]);
-      setEnabledFlags([]);
       setCapabilitiesState("signedOut");
       return;
     }
@@ -112,29 +108,17 @@ export default function HarnessPage() {
     log.info("Loading capabilities for lesson %s", lesson.lessonSlug);
 
     try {
-      const [capabilitiesResponse, flagsResponse] = await Promise.all([
-        getResourceAdapterCapabilities({
-          getToken,
-          lesson,
-          trpcEndpoint,
-        }),
-        getResourceAdapterFeatureFlags({
-          getToken,
-          trpcEndpoint,
-        }),
-      ]);
+      const capabilitiesResponse = await getResourceAdapterCapabilities({
+        getToken,
+        lesson,
+        trpcEndpoint,
+      });
 
       setCapabilities(capabilitiesResponse.capabilities);
-      setEnabledFlags(flagsResponse);
       setCapabilitiesState("ready");
-      log.info(
-        "Loaded %d capabilities and %d feature flags",
-        capabilitiesResponse.capabilities.length,
-        flagsResponse.length,
-      );
+      log.info("Loaded %d capabilities", capabilitiesResponse.capabilities.length);
     } catch (error: unknown) {
       setCapabilities([]);
-      setEnabledFlags([]);
 
       if (error instanceof ResourceAdapterApiError && error.status === 401) {
         setCapabilitiesState("signedOut");
@@ -358,10 +342,11 @@ export default function HarnessPage() {
         </article>
         <ResourceAdapterDialog
           capabilities={capabilities}
-          enabledFlags={enabledFlags}
+          getToken={getToken}
           isOpen={isResourceAdapterOpen}
           lesson={lesson}
           onClose={() => setIsResourceAdapterOpen(false)}
+          trpcEndpoint={trpcEndpoint}
         />
       </main>
     </>

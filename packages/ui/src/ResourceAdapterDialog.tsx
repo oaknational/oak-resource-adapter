@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import {
   OakFlex,
   OakHeading,
@@ -9,18 +11,20 @@ import {
 } from "@oaknational/oak-components";
 
 import { FeatureFlag } from "./FeatureFlag.js";
+import { getResourceAdapterFeatureFlags } from "./getResourceAdapterFeatureFlags.js";
 import type {
-  FeatureFlagKey,
+  GetToken,
   LessonContext,
   ResourceAdapterCapability,
 } from "./publicTypes.js";
 
 export type ResourceAdapterDialogProps = Readonly<{
   capabilities: readonly ResourceAdapterCapability[];
-  enabledFlags?: readonly FeatureFlagKey[];
+  getToken: GetToken;
   isOpen: boolean;
   lesson: LessonContext;
   onClose: () => void;
+  trpcEndpoint: string;
 }>;
 
 /**
@@ -29,12 +33,45 @@ export type ResourceAdapterDialogProps = Readonly<{
  */
 export function ResourceAdapterDialog({
   capabilities,
-  enabledFlags,
+  getToken,
   isOpen,
   lesson,
   onClose,
+  trpcEndpoint,
 }: ResourceAdapterDialogProps) {
+  const [enabledFlags, setEnabledFlags] = useState<readonly string[]>([]);
   const capability = capabilities[0];
+
+  useEffect(() => {
+    let canceled = false;
+
+    async function loadFlags() {
+      if (!isOpen) {
+        setEnabledFlags([]);
+        return;
+      }
+
+      try {
+        const flags = await getResourceAdapterFeatureFlags({
+          getToken,
+          trpcEndpoint,
+        });
+        if (!canceled) {
+          setEnabledFlags(flags);
+        }
+      } catch {
+        if (!canceled) {
+          setEnabledFlags([]);
+        }
+      }
+    }
+
+    void loadFlags();
+
+    return () => {
+      canceled = true;
+    };
+  }, [getToken, isOpen, trpcEndpoint]);
 
   return (
     <OakInformativeModal

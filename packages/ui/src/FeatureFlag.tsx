@@ -2,12 +2,10 @@
 
 import { type ReactNode } from "react";
 
-import type { FeatureFlagKey } from "./publicTypes.js";
-
 export type FeatureFlagProps = Readonly<{
   children: ReactNode;
-  enabledFlags?: readonly FeatureFlagKey[];
-  flag: FeatureFlagKey;
+  enabledFlags?: readonly string[];
+  flag: string;
 }>;
 
 /**

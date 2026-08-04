@@ -15,6 +15,9 @@ receive this one transitively; it rarely needs installing directly.
 // Browser-safe schemas, types, and the API contract version helpers.
 import { lessonContextSchema } from "@oaknational/resource-adapter-contracts";
 
+// Browser-safe, internal-only wire contracts for Resource Adapter-owned clients.
+import { resourceAdapterFeatureFlagsResponseSchema } from "@oaknational/resource-adapter-contracts/internal";
+
 // Server-only: the tRPC v1 router and API context types.
 import { appRouterV1 } from "@oaknational/resource-adapter-contracts/server";
 ```

@@ -6,6 +6,7 @@ import {
   resourceAdapterApiContractVersion,
   resourceAdapterCapabilitiesResponseSchema,
 } from "./index.js";
+import { resourceAdapterFeatureFlagsResponseSchema } from "./internal.js";
 import { appRouterV1 } from "./server.js";
 
 describe("Resource Adapter API contracts", () => {
@@ -85,7 +86,6 @@ describe("Resource Adapter API contracts", () => {
         }),
       },
       featureFlags: {
-        isEnabled: () => false,
         getEnabledFlags: () => [],
       },
     });
@@ -102,6 +102,26 @@ describe("Resource Adapter API contracts", () => {
     ).resolves.toMatchObject({ capabilities: [{ id: "worksheetAdapter" }] });
   });
 
+  it("calls the feature flags service through the typed router", async () => {
+    const caller = appRouterV1.createCaller({
+      apiContractVersion: resourceAdapterApiContractVersion,
+      authenticatedTeacher: {
+        organisationId: "org-123",
+        teacherId: "teacher-456",
+      },
+      capabilities: {
+        getCapabilities: () => ({ capabilities: [] }),
+      },
+      featureFlags: {
+        getEnabledFlags: () => ["feature-flags-smoke-test-enabled"],
+      },
+    });
+
+    await expect(caller.featureFlags.get()).resolves.toEqual([
+      "feature-flags-smoke-test-enabled",
+    ]);
+  });
+
   it("rejects an unsupported API contract version", async () => {
     const caller = appRouterV1.createCaller({
       apiContractVersion: 999,
@@ -110,7 +130,6 @@ describe("Resource Adapter API contracts", () => {
         getCapabilities: () => ({ capabilities: [] }),
       },
       featureFlags: {
-        isEnabled: () => false,
         getEnabledFlags: () => [],
       },
     });
@@ -135,7 +154,6 @@ describe("Resource Adapter API contracts", () => {
         getCapabilities: () => ({ capabilities: [] }),
       },
       featureFlags: {
-        isEnabled: () => false,
         getEnabledFlags: () => [],
       },
     });
