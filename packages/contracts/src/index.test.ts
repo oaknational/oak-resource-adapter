@@ -6,7 +6,6 @@ import {
   resourceAdapterApiContractVersion,
   resourceAdapterCapabilitiesResponseSchema,
 } from "./index.js";
-import { resourceAdapterFeatureFlagsResponseSchema } from "./internal.js";
 import { appRouterV1 } from "./server.js";
 
 describe("Resource Adapter API contracts", () => {
