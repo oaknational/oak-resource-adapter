@@ -50,9 +50,11 @@ function getAllowedOriginPatterns(): RegExp[] {
 // `*` excludes dots, so a pattern cannot match a longer host that merely ends
 // with the expected suffix.
 function toOriginPattern(pattern: string): RegExp {
-  const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+  const source = pattern
+    .replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
+    .replaceAll(String.raw`\*`, "[a-z0-9-]+");
 
-  return new RegExp(`^${escaped.replaceAll(String.raw`\*`, "[a-z0-9-]+")}$`, "i");
+  return new RegExp(`^${source}$`, "i");
 }
 
 export function isAllowedOrigin(origin: string): boolean {
