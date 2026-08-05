@@ -137,6 +137,8 @@ describe("ResourceAdapterErrorBoundary", () => {
     }
   });
 
+  // React invokes componentDidCatch once per crash, StrictMode included, so
+  // the boundary needs no dedupe of its own. This fails if that ever changes.
   it("reports one crash exactly once under StrictMode", () => {
     const onError = vi.fn();
 
@@ -193,7 +195,6 @@ describe("ResourceAdapterErrorBoundary", () => {
       </ResourceAdapterErrorBoundary>,
     );
 
-    // null must not read as "nothing caught yet" to the StrictMode guard.
     expect(onError).toHaveBeenCalledOnce();
     expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
   });

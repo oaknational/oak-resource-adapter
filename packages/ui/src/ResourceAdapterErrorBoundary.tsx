@@ -17,7 +17,7 @@ export type ResourceAdapterErrorBoundaryProps = Readonly<{
 }>;
 
 type ResourceAdapterErrorBoundaryState = Readonly<{
-  error: Error | null;
+  hasError: boolean;
 }>;
 
 /** React reports whatever was thrown, which is not necessarily an Error. */
@@ -34,12 +34,6 @@ function toError(thrown: unknown): Error {
     return new Error("Unstringifiable value thrown during render");
   }
 }
-
-/**
- * Distinct from every possible thrown value, so `throw null` is not mistaken
- * for "nothing caught yet" by the dedupe guard.
- */
-const nothingCaught = Symbol("nothingCaught");
 
 function resetKeysChanged(
   previous: readonly unknown[] = [],
@@ -59,27 +53,19 @@ export class ResourceAdapterErrorBoundary extends Component<
   ResourceAdapterErrorBoundaryProps,
   ResourceAdapterErrorBoundaryState
 > {
-  override state: ResourceAdapterErrorBoundaryState = { error: null };
-
-  /** Dev StrictMode can surface one throw twice; report it once. */
-  private lastCaught: unknown = nothingCaught;
+  override state: ResourceAdapterErrorBoundaryState = { hasError: false };
 
   /** The element to hand focus back to once a caught error clears. */
   private focusBeforeError: HTMLElement | null = null;
 
-  static getDerivedStateFromError(thrown: unknown): ResourceAdapterErrorBoundaryState {
-    return { error: toError(thrown) };
+  static getDerivedStateFromError(): ResourceAdapterErrorBoundaryState {
+    return { hasError: true };
   }
 
   override componentDidCatch(
     thrown: unknown,
     errorInfo: { componentStack?: string | null },
   ): void {
-    if (thrown === this.lastCaught) {
-      return;
-    }
-    this.lastCaught = thrown;
-
     const componentStack = errorInfo.componentStack ?? null;
 
     try {
@@ -101,15 +87,15 @@ export class ResourceAdapterErrorBoundary extends Component<
     prevState: ResourceAdapterErrorBoundaryState,
   ): void {
     if (
-      this.state.error !== null &&
+      this.state.hasError &&
       resetKeysChanged(prevProps.resetKeys, this.props.resetKeys)
     ) {
       this.reset();
       return;
     }
 
-    if (this.state.error === null) {
-      if (prevState.error !== null) {
+    if (!this.state.hasError) {
+      if (prevState.hasError) {
         this.restoreFocus();
       }
       this.rememberFocusTarget();
@@ -138,13 +124,11 @@ export class ResourceAdapterErrorBoundary extends Component<
   }
 
   private readonly reset = (): void => {
-    // Cleared so a real second crash of the same error reports again.
-    this.lastCaught = nothingCaught;
-    this.setState({ error: null });
+    this.setState({ hasError: false });
   };
 
   override render(): ReactNode {
-    if (this.state.error === null) {
+    if (!this.state.hasError) {
       return this.props.children;
     }
 
