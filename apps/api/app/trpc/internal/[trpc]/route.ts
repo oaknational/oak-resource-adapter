@@ -1,4 +1,4 @@
-import { internalRouter } from "@oaknational/resource-adapter-contracts/server";
+import { internalRouter } from "@oaknational/resource-adapter-contracts/internal/server";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 
 import { createContextInternal } from "../../../../src/context";

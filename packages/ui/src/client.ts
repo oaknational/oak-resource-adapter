@@ -3,10 +3,8 @@ import {
   resourceAdapterApiContractVersion,
   resourceAdapterApiContractVersionHeader,
 } from "@oaknational/resource-adapter-contracts";
-import type {
-  HostRouter,
-  InternalRouter,
-} from "@oaknational/resource-adapter-contracts/server";
+import type { InternalRouter } from "@oaknational/resource-adapter-contracts/internal/server";
+import type { HostRouter } from "@oaknational/resource-adapter-contracts/server";
 
 import type { GetToken } from "./publicTypes.js";
 

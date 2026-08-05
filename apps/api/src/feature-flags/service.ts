@@ -19,13 +19,9 @@ export type FeatureFlagServiceType = Readonly<{
   ) => Promise<readonly FeatureFlagKey[]> | readonly FeatureFlagKey[];
 }>;
 
-if (process.env.NODE_ENV === "production" && !process.env.POSTHOG_API_KEY) {
-  throw new Error("POSTHOG_API_KEY is required in production.");
+export function getFeatureFlagService(): FeatureFlagServiceType {
+  const usePostHog =
+    process.env.USE_POSTHOG === "true" || process.env.NODE_ENV === "production";
+
+  return usePostHog ? new PostHogFeatureFlagAdapter() : createInMemoryFeatureFlags();
 }
-
-const usePostHog =
-  process.env.USE_POSTHOG === "true" || process.env.NODE_ENV === "production";
-
-export const FeatureFlagService = usePostHog
-  ? new PostHogFeatureFlagAdapter()
-  : createInMemoryFeatureFlags();

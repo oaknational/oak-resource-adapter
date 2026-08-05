@@ -6,7 +6,8 @@ import {
   resourceAdapterApiContractVersion,
   resourceAdapterCapabilitiesResponseSchema,
 } from "./index.js";
-import { hostRouter, internalRouter } from "./server.js";
+import { internalRouter } from "./internal-server.js";
+import { hostRouter } from "./server.js";
 
 describe("Resource Adapter API contracts", () => {
   it.each([

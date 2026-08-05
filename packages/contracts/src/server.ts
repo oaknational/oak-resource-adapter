@@ -7,10 +7,9 @@ import {
   type LessonContext,
   type ResourceAdapterCapabilitiesResponse,
 } from "./v1.js";
-import {
-  resourceAdapterFeatureFlagsResponseSchema,
-  type ResourceAdapterFeatureFlagsResponse,
-} from "./internal.js";
+import type { ResourceAdapterAuthenticatedTeacher } from "./authentication.js";
+
+export type { ResourceAdapterAuthenticatedTeacher } from "./authentication.js";
 
 /** The service boundary required by the capabilities procedure. */
 export type ResourceAdapterCapabilitiesService = Readonly<{
@@ -18,23 +17,6 @@ export type ResourceAdapterCapabilitiesService = Readonly<{
     lesson: LessonContext,
   ) =>
     Promise<ResourceAdapterCapabilitiesResponse> | ResourceAdapterCapabilitiesResponse;
-}>;
-
-/** The service boundary required by the feature flags procedure. */
-export type ResourceAdapterFeatureFlagService = Readonly<{
-  getEnabledFlags: (
-    target: ResourceAdapterAuthenticatedTeacher,
-  ) =>
-    Promise<ResourceAdapterFeatureFlagsResponse> | ResourceAdapterFeatureFlagsResponse;
-}>;
-
-/**
- * The application derives this only after verifying the host's bearer token.
- * It deliberately contains the small set of claims service procedures need.
- */
-export type ResourceAdapterAuthenticatedTeacher = Readonly<{
-  organisationId: string | null;
-  teacherId: string;
 }>;
 
 /**
@@ -47,18 +29,7 @@ export type ResourceAdapterApiContextHost = Readonly<{
   capabilities: ResourceAdapterCapabilitiesService;
 }>;
 
-/**
- * Internal API context (served from `/trpc/internal`).
- * Contains private infrastructure needed by the UI component.
- */
-export type ResourceAdapterApiContextInternal = Readonly<{
-  authenticatedTeacher: ResourceAdapterAuthenticatedTeacher | null;
-  featureFlags: ResourceAdapterFeatureFlagService;
-}>;
-
-// Initialize separate tRPC instances for each router with their own context types
 const t_host = initTRPC.context<ResourceAdapterApiContextHost>().create();
-const t_internal = initTRPC.context<ResourceAdapterApiContextInternal>().create();
 
 const versionedProcedure = t_host.procedure.use(({ ctx, next }) => {
   if (ctx.apiContractVersion !== resourceAdapterApiContractVersionV1) {
@@ -92,28 +63,6 @@ export const authenticatedProcedure = versionedProcedure.use(({ ctx, next }) => 
 });
 
 /**
- * Use for every teacher-facing procedure on the internal API.
- * No version checking; internal endpoints are unversioned and can evolve freely.
- */
-export const internalAuthenticatedProcedure = t_internal.procedure.use(
-  ({ ctx, next }) => {
-    if (ctx.authenticatedTeacher === null) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "Authentication is required.",
-      });
-    }
-
-    return next({
-      ctx: {
-        ...ctx,
-        authenticatedTeacher: ctx.authenticatedTeacher,
-      },
-    });
-  },
-);
-
-/**
  * The immutable v1 API router served from `/trpc/v1`.
  * Public contract for external hosts (OWA).
  *
@@ -131,18 +80,3 @@ export const hostRouter = t_host.router({
 });
 
 export type HostRouter = typeof hostRouter;
-
-/**
- * The internal API router served from `/trpc/internal`.
- * Private infrastructure for the UI component. Can evolve freely without versioning.
- * Future UI-specific features (analytics, caching, debug info) will live here.
- */
-export const internalRouter = t_internal.router({
-  featureFlags: t_internal.router({
-    get: internalAuthenticatedProcedure
-      .output(resourceAdapterFeatureFlagsResponseSchema)
-      .query(({ ctx }) => ctx.featureFlags.getEnabledFlags(ctx.authenticatedTeacher)),
-  }),
-});
-
-export type InternalRouter = typeof internalRouter;

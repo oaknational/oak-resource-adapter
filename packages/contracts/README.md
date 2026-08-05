@@ -1,8 +1,8 @@
 # @oaknational/resource-adapter-contracts
 
 Shared tRPC contracts for Oak National Academy's Resource Adapter: the
-browser-safe schemas and types (root entry) and the versioned tRPC router
-definitions (`./server` subpath, for the API service).
+browser-safe schemas and types (root and `./internal` entries) and the tRPC
+router definitions (`./server` and `./internal/server`, for the API service).
 
 This package is published as a fixed version pair with
 [`@oaknational/resource-adapter`](https://www.npmjs.com/package/@oaknational/resource-adapter),
@@ -23,8 +23,8 @@ import { hostRouter } from "@oaknational/resource-adapter-contracts/server";
 import type { ResourceAdapterApiContextHost } from "@oaknational/resource-adapter-contracts/server";
 
 // Server-only: the internal tRPC router and context type (UI component private infrastructure).
-import { internalRouter } from "@oaknational/resource-adapter-contracts/server";
-import type { ResourceAdapterApiContextInternal } from "@oaknational/resource-adapter-contracts/server";
+import { internalRouter } from "@oaknational/resource-adapter-contracts/internal/server";
+import type { ResourceAdapterApiContextInternal } from "@oaknational/resource-adapter-contracts/internal/server";
 ```
 
 ## Releasing

@@ -1,13 +1,14 @@
 # API boundaries
 
-This repository has three API boundaries. Place code at the lowest boundary
+The contracts package has four entry points. Place code at the lowest boundary
 that still serves the caller.
 
-| Entry point                                        | Contents                                                   | Re-exportable to OWA |
-| -------------------------------------------------- | ---------------------------------------------------------- | -------------------- |
-| `@oaknational/resource-adapter-contracts`          | Host-facing schemas and types                              | Yes                  |
-| `@oaknational/resource-adapter-contracts/internal` | Browser-safe wire types for Resource Adapter-owned clients | No                   |
-| `@oaknational/resource-adapter-contracts/server`   | Router, context, service boundaries                        | No                   |
+| Entry point                                               | Contents                                                   | Re-exportable to OWA |
+| --------------------------------------------------------- | ---------------------------------------------------------- | -------------------- |
+| `@oaknational/resource-adapter-contracts`                 | Host-facing schemas and types                              | Yes                  |
+| `@oaknational/resource-adapter-contracts/internal`        | Browser-safe wire types for Resource Adapter-owned clients | No                   |
+| `@oaknational/resource-adapter-contracts/server`          | Host router, context, service boundaries                   | No                   |
+| `@oaknational/resource-adapter-contracts/internal/server` | Internal router, context, service boundaries               | No                   |
 
 ## Placement rule
 
@@ -16,7 +17,10 @@ Pick the lowest boundary that needs the type or schema:
 1. If OWA needs it, publish it from the root contracts entry point.
 2. If only Resource Adapter-owned browser code needs it, place it in
    `contracts/internal`.
-3. If only API runtime code needs it, place it in `contracts/server` or in
+3. If only the public API runtime needs it, place it in `contracts/server`.
+4. If only the internal API runtime needs it, place it in
+   `contracts/internal/server`.
+5. If it is an implementation detail rather than a contract, keep it in
    `apps/api`.
 
 ## UI package public API
@@ -44,7 +48,7 @@ Served by `hostRouter` from `@oaknational/resource-adapter-contracts/server`.
 
 ### Internal API: `/trpc/internal` (UI Component Private)
 
-Served by `internalRouter` from `@oaknational/resource-adapter-contracts/server`.
+Served by `internalRouter` from `@oaknational/resource-adapter-contracts/internal/server`.
 
 - **Purpose**: Private infrastructure for UI component; never called by external hosts
 - **Versioning**: Unversioned by default; can evolve freely
@@ -62,3 +66,13 @@ The UI component automatically derives the internal endpoint from the public end
 - Derived: `https://api.example.com/resource-adapter/trpc/internal`
 
 This keeps the public interface stable while allowing the internal implementation to evolve independently.
+
+## Deployment and consumer model
+
+OWA is the only host consumer. It calls the versioned public API through the
+published UI package; it does not call the internal API directly.
+
+The internal API is consumed only by Resource Adapter-owned UI code and remains
+unversioned on the assumption that compatible UI and API changes are deployed
+together in OWA. If another consumer or an independent deployment lifecycle is
+introduced, revisit this decision and add an internal compatibility version.

@@ -2,12 +2,12 @@ import {
   parseResourceAdapterApiContractVersion,
   resourceAdapterApiContractVersionHeader,
 } from "@oaknational/resource-adapter-contracts";
-import type { ResourceAdapterApiContextHost } from "@oaknational/resource-adapter-contracts/server";
-import type { ResourceAdapterApiContextInternal } from "@oaknational/resource-adapter-contracts/server";
 
 import { requestAuthenticator, type RequestAuthenticator } from "./authentication";
 import { getCapabilities } from "./capabilities";
-import { FeatureFlagService } from "./feature-flags/service";
+import { getFeatureFlagService } from "./feature-flags/service";
+import type { ResourceAdapterApiContextHost } from "@oaknational/resource-adapter-contracts/server";
+import type { ResourceAdapterApiContextInternal } from "@oaknational/resource-adapter-contracts/internal/server";
 
 /** Creates request-scoped dependencies for the public host API (`/trpc/v1`). */
 export async function createContextHost(
@@ -32,6 +32,6 @@ export async function createContextInternal(
 ): Promise<ResourceAdapterApiContextInternal> {
   return {
     authenticatedTeacher: await authenticateRequest(request),
-    featureFlags: FeatureFlagService,
+    featureFlags: getFeatureFlagService(),
   };
 }
