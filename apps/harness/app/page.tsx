@@ -26,11 +26,11 @@ const lesson: LessonContext = {
   availableResources: ["worksheet"],
 };
 
-const apiBaseUrl =
-  process.env.NEXT_PUBLIC_RESOURCE_ADAPTER_API_BASE_URL ?? "http://localhost:3001";
-const trpcEndpoint =
-  process.env.NEXT_PUBLIC_RESOURCE_ADAPTER_TRPC_ENDPOINT ??
-  "http://localhost:3001/trpc/v1";
+// Relative on purpose: these hit the harness's own proxy route, which forwards
+// to the API server-side. An absolute URL would be baked in at build time,
+// pinning this bundle to one API deployment. See app/adapter-proxy.
+const adapterProxyPath = "/adapter-proxy";
+const trpcEndpoint = `${adapterProxyPath}/trpc/v1`;
 
 type ApiHealthState = "checking" | "healthy" | "unavailable";
 type TestJobStatus = "failed" | "queued" | "running" | "succeeded";
@@ -139,7 +139,7 @@ export default function HarnessPage() {
 
     async function loadHealth() {
       try {
-        const response = await fetch(new URL("/health", apiBaseUrl));
+        const response = await fetch(`${adapterProxyPath}/health`);
         const body: unknown = await response.json();
         const isHealthy =
           response.ok &&
@@ -171,7 +171,7 @@ export default function HarnessPage() {
     setTestJobError(null);
 
     try {
-      const response = await fetch(new URL("/dev/jobs/test-echo", apiBaseUrl), {
+      const response = await fetch(`${adapterProxyPath}/dev/jobs/test-echo`, {
         body: JSON.stringify({ message: "Hello from the harness" }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
@@ -209,7 +209,7 @@ export default function HarnessPage() {
       requestInFlight = true;
 
       try {
-        const response = await fetch(new URL(`/dev/jobs/${testJobId}`, apiBaseUrl), {
+        const response = await fetch(`${adapterProxyPath}/dev/jobs/${testJobId}`, {
           signal: controller.signal,
         });
 

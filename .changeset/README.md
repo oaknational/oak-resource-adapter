@@ -11,7 +11,11 @@ published package:
 pnpm changeset
 ```
 
-On merge to `main`, the [Release workflow](../.github/workflows/release.yml)
-turns pending changesets into a "chore: version packages" PR; merging that PR
-publishes both packages to npm. The step-by-step journey is described in the
-[release workflow](../docs/RELEASE_WORKFLOW.md).
+Changesets accumulate on `main`. After QA merges a tested release branch into
+`production`, the [Release workflow](../.github/workflows/release.yml) turns them
+into a "chore: version packages" pull request against `production`. Merging that
+pull request publishes both packages to npm.
+
+See the [release process](../docs/RELEASE_PROCESS.md) for the operational
+sequence and the [development notes](../docs/DEVELOPMENT.md) for contributor
+guidance.

@@ -4,7 +4,7 @@ Shared tRPC contracts for Oak National Academy's Resource Adapter: the
 browser-safe schemas and types (root entry) and the versioned tRPC router
 definition (`./server` subpath, for the API service).
 
-This package is published as a fixed version pair with
+Once releases are enabled, this package is published as a fixed version pair with
 [`@oaknational/resource-adapter`](https://www.npmjs.com/package/@oaknational/resource-adapter),
 which depends on it at runtime. Hosts such as OWA install the UI package and
 receive this one transitively; it rarely needs installing directly.

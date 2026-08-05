@@ -10,6 +10,7 @@
     "dev": "dotenv -e ../../.env -- next dev --port 3000",
     "lint": "eslint . --max-warnings=0",
     "start": "dotenv -e ../../.env -- next start --port 3000",
+    "test": "vitest run",
     "type-check": "next typegen && tsc --noEmit"
   },
   "dependencies": {
@@ -28,6 +29,7 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "dotenv-cli": "^11.0.0"
+    "dotenv-cli": "^11.0.0",
+    "vitest": "^4.1.10"
   }
 }

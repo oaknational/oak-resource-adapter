@@ -94,11 +94,13 @@ UI package's pinned contracts dependency must also point at the local copy:
 
 ## Releasing
 
-Releases are automated with
-[Changesets](https://github.com/changesets/changesets). Run `pnpm changeset`
-at the repo root in any PR that changes this package or the contracts package,
-describing the change and picking a semver bump; the two packages always
-release together at the same version. On merge to `main`, CI opens (or
-updates) a "chore: version packages" PR; merging that PR publishes to npm via
-OIDC trusted publishing with provenance. No npm tokens are involved. See
-[docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md) for the release policy.
+Release automation uses [Changesets](https://github.com/changesets/changesets).
+Run `pnpm changeset` at the repo root in any PR that changes this package or the contracts package
+once Changesets enforcement is enabled. Describe the change and choose a semver
+bump; the two packages always release together at the same version. After a
+tested release reaches `production`, CI opens or updates a "chore: version
+packages" PR against `production`; merging that PR publishes to npm using OIDC
+trusted publishing with provenance once release automation is enabled. No npm
+token is involved. See the
+[release process](../../docs/RELEASE_PROCESS.md) and the contributor guidance in
+[development notes](../../docs/DEVELOPMENT.md).

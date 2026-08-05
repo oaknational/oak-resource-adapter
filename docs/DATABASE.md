@@ -38,16 +38,34 @@ Declare a new table with `resourceAdapterSchema.table` rather than `pgTable`, an
 a new enum with `resourceAdapterSchema.enum`. A bare `pgTable` silently targets
 `public`, where the application has no privileges, so it fails only on deploy.
 
-Do not edit a migration that has been applied to a shared environment. Where a
-change needs more than one release, make it additive.
+Preview deployments apply their included migrations to the shared staging
+database before deploying the application. A failed migration blocks the
+Preview. The workflow concurrency control and the migrator's advisory lock
+serialise migration runs.
+
+An open release pull request never migrates production. QA first tests its
+`release/YYYY-MM-DD` branch against staging. Merging that reviewed branch into
+`production` starts the production workflow, whose first state-changing step
+applies the included migrations to the production database. A failure stops the
+rollout and leaves the current production deployment live.
+
+Drizzle orders pending migrations by their generated timestamps. Two branches
+with independent migrations therefore don't form a safe shared history: a newer
+migration can cause an older one to be skipped. Test only one schema-changing PR
+at a time, create it from the latest `main`, and merge it before testing another.
+
+Don't edit a migration after a Preview has applied it. If its feature is
+abandoned, merge the additive schema change without the feature or rebuild the
+staging database from `main`; closing the PR doesn't roll the migration back.
 
 A migration must also be safe for the code already deployed: the old code meets
 the new schema while a deployment is in progress, and again if it is rolled back.
 Dropping or renaming a column, or tightening one to `NOT NULL`, breaks a live
 application. Expand first and contract in a later release.
 
-Previews share the staging database, so a migration reaches them only once it is
-merged and staging is migrated.
+All Previews, including the durable `main` Preview used as staging, see schema
+changes applied by any schema-changing PR. Their code must continue to work while
+the shared schema runs ahead of `main`.
 
 ## Migrating a live database
 
