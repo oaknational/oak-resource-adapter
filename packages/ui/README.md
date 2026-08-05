@@ -47,50 +47,39 @@ const capabilities = await getResourceAdapterCapabilities({
 The helper wraps the package's internal typed tRPC client, so hosts never
 depend on `@trpc/client` themselves.
 
-## Error handling and reporting
+## Error handling
 
-Each component catches its own render failures, so a crash inside the adapter
-cannot take down your lesson page. The dialog replaces the crashed content with
-an Oak-styled message and a Try again button. The button simply hides itself,
-and since it takes no reporting props, a crash there is not reported anywhere.
+The dialog catches its own render failures, so a crash inside the adapter cannot
+take down your lesson page. It replaces the crashed content with a plain message
+and a Try again button, styled without oak-components so a broken install cannot
+break the message too.
 
-To have caught errors reported, give the dialog the same `getToken` and
-`trpcEndpoint` you pass to `getResourceAdapterCapabilities`, plus an optional
-`onError` if you want them in your own tooling too:
+Nothing is reported to us. Pass `onError` to send caught errors to your own
+tooling:
 
 ```tsx
 <ResourceAdapterDialog
   capabilities={capabilities}
-  getToken={getToken}
   isOpen={isOpen}
   lesson={lesson}
   onClose={close}
   onError={(error, info) => reportError(error, { componentStack: info.componentStack })}
-  trpcEndpoint={trpcEndpoint}
 />
 ```
 
-- **What we send**: the error name, its message (cut to 500 characters) and the
-  React component stack, and nothing else. The schema has no field for metadata,
-  so there is nowhere for us to put a token, lesson contents or a prompt. Note
-  the message itself is passed through untouched, so anything your code
-  interpolates into an error message does reach us. The call uses your token,
-  stops after five reports per page load, and ignores its own failures rather
-  than surfacing them to you.
 - **`onError`**: `(error: Error, info: { componentStack: string | null })`. Both
-  arguments are plain values, never React types, so you can pass them straight
-  to your own reporter. You can no-op it, and if it throws, neither the message
-  nor our reporting is affected.
+  arguments are plain values, never React types, so you can pass them straight to
+  your own reporter. You can leave it off, and if it throws or rejects, the
+  message still renders.
 - **When it clears**: automatically when the dialog closes or the lesson changes,
   and when someone clicks Try again. `ResourceAdapterErrorBoundary` is exported
   too, if you want to wrap more of your page. It takes `resetKeys` (any change
-  clears the error), `fallback`, `onError` and `reporting`.
-
-**What this does not cover.** React boundaries only see failures during
-rendering. Failed requests, errors in event handlers (including the button's
-`onClick`), server-rendering errors, and errors in the message itself all get
-past them. Those keep their own error handling: `getResourceAdapterCapabilities`
-throws `ResourceAdapterApiError` for you to catch, for example.
+  clears the error), `fallback` and `onError`.
+- **What it does not cover**: React boundaries only see failures during
+  rendering. Failed requests, errors in event handlers, server-rendering errors
+  and errors in the message itself all get past them, and keep their own error
+  handling. `getResourceAdapterCapabilities` throws `ResourceAdapterApiError` for
+  you to catch, for example.
 
 ## Testing local changes inside a host app like OWA
 
