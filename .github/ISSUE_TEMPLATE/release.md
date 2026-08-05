@@ -1,6 +1,6 @@
 ---
 name: Release
-about: Track a Resource Adapter release from staging approval to close
+about: Track a Resource Adapter release from candidate approval to close
 title: "Release: YYYY-MM-DD"
 labels: ""
 assignees: ""
@@ -21,17 +21,21 @@ Replace `TBC` and delete anything that doesn't apply.
 - Package release and OWA update needed: yes/no
 - Scope and known limitations: TBC
 
-## Staging approval
+## Candidate approval
 
-On the release pull request:
+On the release pull request, in its own Preview — not the staging `main`
+environment:
 
 - [ ] All checks pass. They cover CI, the staging migrations, the paired
-      candidate deployments, the contract versions the live OWA still needs, and
-      the deployment-safe browser tests.
+      candidate deployments, the frozen v1 wire contract, and the
+      deployment-safe browser tests.
 - [ ] QA tested the lesson contexts and workflows this release affects.
+- [ ] If this release changes the contract, QA confirmed the OWA release
+      currently in production still works against the candidate. CI freezes the
+      v1 shape but knows nothing about which version OWA is on.
 - [ ] QA merged the release branch into `production`.
 
-Staging evidence and notes: TBC
+Candidate evidence and notes: TBC
 
 ## Production
 

@@ -1,9 +1,9 @@
 # Resource Adapter release process
 
 QA coordinates every release, from cutting a candidate to syncing `production`
-back into `main`. A release takes a known-good `main` commit through staging,
-into `production`, onto the production domain and — when packages change — out
-to npm and the Oak Web Application (OWA).
+back into `main`. A release takes a known-good `main` commit through a candidate
+Preview, into `production`, onto the production domain and — when packages
+change — out to npm and the Oak Web Application (OWA).
 
 Keep one candidate active at a time. Development can continue on `main`
 throughout. Parts of this process describe deployment automation that is still
@@ -11,12 +11,12 @@ being built.
 
 ## Branches
 
-| Branch               | Purpose                                                                                  |
-| -------------------- | ---------------------------------------------------------------------------------------- |
-| Feature branches     | Temporary Preview deployments. Currently share the staging database.                     |
-| `main`               | Integration branch. Its durable Preview is staging and shares the same staging database. |
-| `release/YYYY-MM-DD` | Release candidate cut from a known-good `main` commit and tested by QA.                  |
-| `production`         | Reviewed production deployments and package releases.                                    |
+| Branch               | Purpose                                                                                 |
+| -------------------- | --------------------------------------------------------------------------------------- |
+| Feature branches     | Temporary Preview deployments, tested by QA before merge. Share the staging database.   |
+| `main`               | Integration branch. Deploys to the durable `staging` environment, on the same database. |
+| `release/YYYY-MM-DD` | Release candidate cut from a known-good `main` commit and tested by QA.                 |
+| `production`         | Reviewed production deployments and package releases.                                   |
 
 Hotfixes branch from `production`, open back into `production`, take the same
 checks, then sync into `main`.
@@ -51,10 +51,12 @@ Each one guards something on the other side that is hard to undo.
 
 Open a ticket from the
 [release template](../.github/ISSUE_TEMPLATE/release.md) and record the scope
-and whether packages and OWA need updating. Confirm `main` is green and its
-changes work in staging; every package change needs a Changeset. Cut
-`release/YYYY-MM-DD` from the chosen commit and open a pull request into
-`production`.
+and whether packages and OWA need updating. Every change in the candidate was
+already tested in its own pull request Preview before it merged, so this step
+confirms `main` is green and the scope is understood rather than testing it
+again; staging is there to spot-check how the changes sit together. Every
+package change needs a Changeset. Cut `release/YYYY-MM-DD` from the chosen
+commit and open a pull request into `production`.
 
 ### 2. Test and approve
 
@@ -70,9 +72,12 @@ QA merges into `production`. Direct pushes aren't allowed, so the merge is what
 authorises production changes.
 
 The production workflow then applies that commit's migrations, builds a
-deployment that holds no traffic, and checks it against production configuration
-with `/health` and the deployment-safe tests. Only if those pass does it move the
-production domain. A failure at any point leaves the live deployment untouched.
+deployment that holds no traffic, and checks it against production
+configuration. Only if those checks pass does it move the production domain. A
+failure at any point leaves the live deployment untouched.
+
+Those checks confirm the deployment is serving; they do not exercise a signed-in
+journey, which is why QA's confirmation through OWA below is the real gate.
 
 QA confirms production through OWA once it is live. A failing release is rolled
 back by restoring the previous deployment, and a failing candidate is fixed

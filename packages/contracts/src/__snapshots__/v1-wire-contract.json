@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "versionHeader": "x-resource-adapter-contract-version",
+  "request": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "lessonSlug": {
+        "type": "string",
+        "minLength": 1
+      },
+      "programmeSlug": {
+        "type": "string",
+        "minLength": 1
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1
+      },
+      "subjectSlug": {
+        "type": "string",
+        "minLength": 1
+      },
+      "keyStageSlug": {
+        "type": "string",
+        "minLength": 1
+      },
+      "availableResources": {
+        "readOnly": true,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "worksheet",
+            "starter-quiz"
+          ]
+        }
+      }
+    },
+    "required": [
+      "lessonSlug",
+      "programmeSlug",
+      "title",
+      "subjectSlug",
+      "keyStageSlug",
+      "availableResources"
+    ],
+    "additionalProperties": false
+  },
+  "response": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "capabilities": {
+        "readOnly": true,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "resourceType": {
+              "type": "string",
+              "enum": [
+                "worksheet",
+                "starter-quiz"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "label",
+            "resourceType"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "capabilities"
+    ],
+    "additionalProperties": false
+  }
+}

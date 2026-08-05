@@ -33,7 +33,10 @@ async function proxy(
     }
   }
 
-  const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  // Not VERCEL_AUTOMATION_BYPASS_SECRET: Vercel injects that name into every
+  // project with the project's *own* secret, and the harness's own secret opens
+  // nothing on the API. The deploy workflow sets this one from the API project.
+  const bypassSecret = process.env.RESOURCE_ADAPTER_API_BYPASS_SECRET;
   if (bypassSecret) {
     headers.set("x-vercel-protection-bypass", bypassSecret);
   }

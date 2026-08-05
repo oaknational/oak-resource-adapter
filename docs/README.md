@@ -11,6 +11,8 @@ How the repository is developed and released:
   Changesets guidance.
 - [Release process](RELEASE_PROCESS.md): how to release the API and packages and
   update OWA, plus the temporary first-release checklist.
+- [Deployment](DEPLOYMENT.md): the two Vercel projects, how a Preview pair is
+  wired, and how a release reaches the production domain.
 - [UI local development workflow](UI_LOCAL_DEVELOPMENT.md): how to test
   local, unpublished package changes inside a host app such as OWA using
   yalc.

@@ -20,21 +20,30 @@ secret:
 
 ## How CI reads secrets
 
-`DOPPLER_TOKEN` is the only secret CI holds. There is no `DATABASE_URL` secret at
-repository or Environment level, and no workflow carries a database credential.
+`DOPPLER_TOKEN` is the only credential CI holds for anything Oak runs itself:
+there is no `DATABASE_URL` secret at repository or Environment level, and no
+workflow carries a database credential. The deploy workflows additionally hold
+Vercel's own credentials, listed in
+[deployment](DEPLOYMENT.md#secrets-the-workflows-need).
 
 The same name at every scope is deliberate: GitHub resolves an Environment secret
 over the repository one for any job declaring that `environment:`.
 
 | Scope                    | Doppler config | Used by                                                                 |
 | ------------------------ | -------------- | ----------------------------------------------------------------------- |
-| Repository secret        | `stg_github`   | pull request CI, for the Clerk test credentials                         |
+| Repository secret        | `stg_github`   | pull request CI and preview deployments, for the Clerk test credentials |
 | `staging` Environment    | `stg_github`   | [`db-migrate.yml`](../.github/workflows/db-migrate.yml) against staging |
 | `production` Environment | `prd_github`   | the same workflow against production                                    |
 
 Each token is read-only and scoped to one Doppler config, so a staging job cannot
 reach production values. `stg_github` and `prd_github` are branch configs
 inheriting from the `stg` and `prd` roots.
+
+Vercel gets its own branch configs, split by project, because only the API has
+database and Clerk secret-key access. Doppler is the sole owner of Vercel
+environment variables and Terraform passes none; see
+[deployment](DEPLOYMENT.md#who-owns-which-environment-variable) for the naming
+and the reasoning.
 
 ## Applying migrations
 
@@ -59,12 +68,18 @@ accepts only the current version, which is right while `v1` is the only one.
 Adding `v2` means widening that check as well, because a deployed API has to
 keep serving the OWA release already in production until it moves.
 
+[`v1.wire.test.ts`](../packages/contracts/src/v1.wire.test.ts) freezes what v1
+puts on the wire against a committed JSON Schema snapshot, so a change to it has
+to be argued for in review rather than noticed after a release. Additive,
+optional fields are safe; anything else needs a v2. Updating the snapshot to get
+CI green is almost always the wrong fix.
+
 ## Testing a deployed candidate
 
 Run the deployment-safe browser tests against a deployed harness Preview:
 
 ```sh
-E2E_BASE_URL=https://example-harness.vercel.app pnpm test:e2e:deployment
+E2E_BASE_URL=https://oak-resource-adapter-harness-abc123.vercel.thenational.academy pnpm test:e2e:deployment
 ```
 
 The harness must point to the API candidate under test. The command reads the
