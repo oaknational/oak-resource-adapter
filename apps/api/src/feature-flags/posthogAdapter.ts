@@ -10,7 +10,12 @@ const log = raLogger("feature-flags");
 let client: PostHog | null = null;
 function getClient(): PostHog {
   if (!client) {
-    client = new PostHog(process.env.POSTHOG_API_KEY!, {
+    if (!process.env.POSTHOG_API_KEY) {
+      throw new Error(
+        "POSTHOG_API_KEY is required when PostHog feature flags are enabled. Set NODE_ENV=development or USE_POSTHOG=false to use in-memory flags instead.",
+      );
+    }
+    client = new PostHog(process.env.POSTHOG_API_KEY, {
       host: process.env.POSTHOG_HOST ?? "https://eu.i.posthog.com",
     });
   }

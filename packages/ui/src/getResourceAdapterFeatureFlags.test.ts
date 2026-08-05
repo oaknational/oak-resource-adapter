@@ -8,6 +8,29 @@ afterEach(() => {
 });
 
 describe("getResourceAdapterFeatureFlags", () => {
+  it("derives the internal endpoint from the public endpoint", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          {
+            result: { data: ["feature-flags-smoke-test-enabled"] },
+          },
+        ]),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getResourceAdapterFeatureFlags({
+      getToken: async () => "clerk-token",
+      trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
+    });
+
+    const [url] = fetchMock.mock.calls[0] ?? [];
+    expect(String(url)).toContain(
+      "https://resource-adapter-api.example/trpc/internal/featureFlags.get?batch=1",
+    );
+  });
+
   it("sends the host token through tRPC and returns the enabled flags", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
@@ -27,17 +50,35 @@ describe("getResourceAdapterFeatureFlags", () => {
       }),
     ).resolves.toEqual(["feature-flags-smoke-test-enabled"]);
 
-    const [url, request] = fetchMock.mock.calls[0] ?? [];
-    expect(String(url)).toContain(
-      "https://resource-adapter-api.example/trpc/v1/featureFlags.get?batch=1",
-    );
+    const [, request] = fetchMock.mock.calls[0] ?? [];
     expect(request).toMatchObject({
       headers: {
         Authorization: "Bearer clerk-token",
-        "x-resource-adapter-contract-version": "1",
       },
       method: "POST",
     });
+  });
+
+  it("does not send the version header to the internal endpoint", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          {
+            result: { data: [] },
+          },
+        ]),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getResourceAdapterFeatureFlags({
+      getToken: async () => "clerk-token",
+      trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
+    });
+
+    const [, request] = fetchMock.mock.calls[0] ?? [];
+    // The internal API should not require or validate the version header
+    expect(request?.headers).not.toHaveProperty("x-resource-adapter-contract-version");
   });
 
   it("omits the authorization header when the host has no token", async () => {
@@ -100,6 +141,31 @@ describe("getResourceAdapterFeatureFlags", () => {
     expect(error).toMatchObject({
       message: "Resource Adapter could not load feature flags.",
       status: undefined,
+    });
+  });
+
+  describe("endpoint derivation", () => {
+    it.each([
+      ["https://api.example/trpc/v1", "https://api.example/trpc/internal"],
+      [
+        "https://api.example/resource-adapter/trpc/v1",
+        "https://api.example/resource-adapter/trpc/internal",
+      ],
+      ["http://localhost:3001/trpc/v1", "http://localhost:3001/trpc/internal"],
+      ["https://api.example/trpc/v2", "https://api.example/trpc/internal"],
+    ])("transforms %s to %s", async (publicEndpoint, expectedInternalEndpoint) => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(new Response(JSON.stringify([{ result: { data: [] } }])));
+      vi.stubGlobal("fetch", fetchMock);
+
+      await getResourceAdapterFeatureFlags({
+        getToken: async () => "token",
+        trpcEndpoint: publicEndpoint,
+      });
+
+      const [actualUrl] = fetchMock.mock.calls[0] ?? [];
+      expect(String(actualUrl)).toContain(expectedInternalEndpoint);
     });
   });
 });

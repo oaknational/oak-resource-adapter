@@ -38,7 +38,7 @@ from server code:
 ```ts
 import {
   getResourceAdapterCapabilities,
-   ResourceAdapterDialog,
+  ResourceAdapterDialog,
 } from "@oaknational/resource-adapter";
 
 const capabilities = await getResourceAdapterCapabilities({
@@ -48,12 +48,12 @@ const capabilities = await getResourceAdapterCapabilities({
 });
 
 <ResourceAdapterDialog
-   capabilities={capabilities.capabilities}
-   getToken={getToken}
-   isOpen={true}
-   lesson={lesson}
-   onClose={() => {}}
-   trpcEndpoint="https://resource-adapter.example/trpc/v1"
+  capabilities={capabilities.capabilities}
+  getToken={getToken}
+  isOpen={true}
+  lesson={lesson}
+  onClose={() => {}}
+  trpcEndpoint="https://resource-adapter.example/trpc/v1"
 />;
 ```
 

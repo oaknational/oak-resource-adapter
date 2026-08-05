@@ -3,41 +3,74 @@ import {
   resourceAdapterApiContractVersion,
   resourceAdapterApiContractVersionHeader,
 } from "@oaknational/resource-adapter-contracts";
-import type { AppRouterV1 } from "@oaknational/resource-adapter-contracts/server";
+import type {
+  HostRouter,
+  InternalRouter,
+} from "@oaknational/resource-adapter-contracts/server";
 
 import type { GetToken } from "./publicTypes.js";
 
-export type ResourceAdapterApiClient = TRPCClient<AppRouterV1>;
+export type ResourceAdapterPublicApiClient = TRPCClient<HostRouter>;
+export type ResourceAdapterInternalApiClient = TRPCClient<InternalRouter>;
 
 export type CreateResourceAdapterClientOptions = Readonly<{
   getToken: GetToken;
   trpcEndpoint: string;
 }>;
 
-/**
- * Creates the supported typed client for Resource Adapter service calls from
- * the published UI package, OWA, or the local harness.
- */
-export function createResourceAdapterClient({
+type CreateClientOptions = CreateResourceAdapterClientOptions &
+  Readonly<{ extraHeaders?: Readonly<Record<string, string>> }>;
+
+function createLinkOptions({
+  extraHeaders,
   getToken,
   trpcEndpoint,
-}: CreateResourceAdapterClientOptions): ResourceAdapterApiClient {
-  return createTRPCClient<AppRouterV1>({
-    links: [
-      httpBatchLink({
-        headers: async () => {
-          const token = await getToken();
+}: CreateClientOptions) {
+  return {
+    headers: async () => {
+      const token = await getToken();
 
-          return {
+      return {
+        ...extraHeaders,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+    },
+    methodOverride: "POST" as const,
+    url: trpcEndpoint,
+  };
+}
+
+/**
+ * Creates a typed tRPC client for the public API (capabilities).
+ * Includes the contract version header.
+ */
+export function createResourceAdapterClient(
+  options: CreateResourceAdapterClientOptions,
+): ResourceAdapterPublicApiClient {
+  return createTRPCClient<HostRouter>({
+    links: [
+      httpBatchLink(
+        createLinkOptions({
+          ...options,
+          extraHeaders: {
             [resourceAdapterApiContractVersionHeader]: String(
               resourceAdapterApiContractVersion,
             ),
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          };
-        },
-        methodOverride: "POST",
-        url: trpcEndpoint,
-      }),
+          },
+        }),
+      ),
     ],
+  });
+}
+
+/**
+ * Creates a typed tRPC client for the internal API (feature flags and other UI-private procedures).
+ * Does not include the contract version header (internal APIs are unversioned).
+ */
+export function createResourceAdapterInternalClient(
+  options: CreateResourceAdapterClientOptions,
+): ResourceAdapterInternalApiClient {
+  return createTRPCClient<InternalRouter>({
+    links: [httpBatchLink(createLinkOptions(options))],
   });
 }

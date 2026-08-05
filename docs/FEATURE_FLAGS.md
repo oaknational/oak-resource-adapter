@@ -1,5 +1,13 @@
 # Feature flags
 
+## Accessing feature flags
+
+Feature flags are retrieved via the **internal API** (`/trpc/internal/featureFlags.get`), which is private to the Resource Adapter UI component. External hosts like OWA never call this endpoint directly — the UI component manages feature flag evaluation internally.
+
+See [API boundaries](API_BOUNDARIES.md) for details on public vs. internal routers.
+
+## Implementation
+
 In production, flags are evaluated by PostHog.
 
 In development and tests, we use `createInMemoryFeatureFlags`.
