@@ -166,7 +166,6 @@ try {
     "getResourceAdapterCapabilities.js",
     "capabilities.js",
     "publicTypes.js",
-    "reportClientError.js",
   ];
 
   for (const file of clientModules) {

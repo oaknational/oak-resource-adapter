@@ -1,34 +1,12 @@
 // @vitest-environment jsdom
-import { StrictMode, type ReactNode } from "react";
+import { StrictMode } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { OakThemeProvider, oakDefaultTheme } from "@oaknational/oak-components";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ResourceAdapterErrorBoundary } from "./ResourceAdapterErrorBoundary.js";
-import { reportClientError } from "./reportClientError.js";
 
-vi.mock("./reportClientError.js", () => ({
-  reportClientError: vi.fn().mockResolvedValue(undefined),
-}));
-
-const reporting = {
-  getToken: async () => "clerk-token",
-  trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
-};
-
-function renderWithTheme(children: ReactNode) {
-  const result = render(
-    <OakThemeProvider theme={oakDefaultTheme}>{children}</OakThemeProvider>,
-  );
-
-  return {
-    ...result,
-    rerenderWithTheme: (next: ReactNode) =>
-      result.rerender(
-        <OakThemeProvider theme={oakDefaultTheme}>{next}</OakThemeProvider>,
-      ),
-  };
-}
+// No OakThemeProvider anywhere in this file: the fallback must render without
+// oak-components, since a broken install is a reason the boundary catches.
 
 function Bomb({ message = "Deterministic test crash" }: { message?: string }): never {
   throw new Error(message);
@@ -36,6 +14,15 @@ function Bomb({ message = "Deterministic test crash" }: { message?: string }): n
 
 function ThrowsString(): never {
   throw "a string, not an Error";
+}
+
+/** Throws a null-prototype object, which `String()` cannot convert. */
+function ThrowsUnstringifiable(): never {
+  throw Object.create(null);
+}
+
+function ThrowsNull(): never {
+  throw null;
 }
 
 // jsdom does not fire `unhandledrejection`, so the rejection has to be observed
@@ -64,11 +51,10 @@ describe("ResourceAdapterErrorBoundary", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-    vi.mocked(reportClientError).mockClear();
   });
 
   it("renders its children when nothing throws", () => {
-    renderWithTheme(
+    render(
       <ResourceAdapterErrorBoundary>
         <p>healthy content</p>
       </ResourceAdapterErrorBoundary>,
@@ -81,7 +67,7 @@ describe("ResourceAdapterErrorBoundary", () => {
   });
 
   it("catches a child crash and shows the fallback while siblings survive", () => {
-    renderWithTheme(
+    render(
       <>
         <p>host page content</p>
         <ResourceAdapterErrorBoundary>
@@ -100,7 +86,7 @@ describe("ResourceAdapterErrorBoundary", () => {
   it("invokes the host onError once with the error and component stack", () => {
     const onError = vi.fn();
 
-    renderWithTheme(
+    render(
       <ResourceAdapterErrorBoundary onError={onError}>
         <Bomb message="dialog exploded" />
       </ResourceAdapterErrorBoundary>,
@@ -112,43 +98,17 @@ describe("ResourceAdapterErrorBoundary", () => {
     );
   });
 
-  it("reports to the API when reporting credentials are provided", () => {
-    renderWithTheme(
-      <ResourceAdapterErrorBoundary reporting={reporting}>
-        <Bomb />
-      </ResourceAdapterErrorBoundary>,
-    );
-
-    expect(reportClientError).toHaveBeenCalledExactlyOnceWith({
-      componentStack: expect.stringContaining("Bomb"),
-      error: expect.objectContaining({ message: "Deterministic test crash" }),
-      reporting,
-    });
-  });
-
-  it("skips API reporting when no credentials are provided", () => {
-    renderWithTheme(
-      <ResourceAdapterErrorBoundary>
-        <Bomb />
-      </ResourceAdapterErrorBoundary>,
-    );
-
-    expect(reportClientError).not.toHaveBeenCalled();
-  });
-
-  it("still reports to the API and renders the fallback when onError throws", () => {
-    renderWithTheme(
+  it("still renders the fallback when onError throws", () => {
+    render(
       <ResourceAdapterErrorBoundary
         onError={() => {
           throw new Error("broken host callback");
         }}
-        reporting={reporting}
       >
         <Bomb />
       </ResourceAdapterErrorBoundary>,
     );
 
-    expect(reportClientError).toHaveBeenCalledOnce();
     expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
   });
 
@@ -157,12 +117,11 @@ describe("ResourceAdapterErrorBoundary", () => {
     process.on("unhandledRejection", unhandled);
 
     try {
-      renderWithTheme(
+      render(
         <ResourceAdapterErrorBoundary
           onError={async () => {
             throw new Error("broken async host callback");
           }}
-          reporting={reporting}
         >
           <Bomb />
         </ResourceAdapterErrorBoundary>,
@@ -172,7 +131,6 @@ describe("ResourceAdapterErrorBoundary", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
 
       expect(unhandled).not.toHaveBeenCalled();
-      expect(reportClientError).toHaveBeenCalledOnce();
       expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
     } finally {
       process.off("unhandledRejection", unhandled);
@@ -182,22 +140,21 @@ describe("ResourceAdapterErrorBoundary", () => {
   it("reports one crash exactly once under StrictMode", () => {
     const onError = vi.fn();
 
-    renderWithTheme(
+    render(
       <StrictMode>
-        <ResourceAdapterErrorBoundary onError={onError} reporting={reporting}>
+        <ResourceAdapterErrorBoundary onError={onError}>
           <Bomb />
         </ResourceAdapterErrorBoundary>
       </StrictMode>,
     );
 
     expect(onError).toHaveBeenCalledOnce();
-    expect(reportClientError).toHaveBeenCalledOnce();
   });
 
-  it("coerces a non-Error throw into an Error for both reporting paths", () => {
+  it("coerces a non-Error throw into an Error before handing it to the host", () => {
     const onError = vi.fn();
 
-    renderWithTheme(
+    render(
       <ResourceAdapterErrorBoundary onError={onError}>
         <ThrowsString />
       </ResourceAdapterErrorBoundary>,
@@ -208,10 +165,43 @@ describe("ResourceAdapterErrorBoundary", () => {
     expect((caught as Error).message).toContain("a string, not an Error");
   });
 
+  it("contains a throw that cannot be converted to a string", () => {
+    const onError = vi.fn();
+
+    render(
+      <>
+        <p>host page content</p>
+        <ResourceAdapterErrorBoundary onError={onError}>
+          <ThrowsUnstringifiable />
+        </ResourceAdapterErrorBoundary>
+      </>,
+    );
+
+    // Coercing this throw is what would break the boundary itself, letting the
+    // crash escape to the host.
+    expect(screen.getByText("host page content")).toBeVisible();
+    expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
+    expect(onError).toHaveBeenCalledOnce();
+  });
+
+  it("tells the host about a null throw", () => {
+    const onError = vi.fn();
+
+    render(
+      <ResourceAdapterErrorBoundary onError={onError}>
+        <ThrowsNull />
+      </ResourceAdapterErrorBoundary>,
+    );
+
+    // null must not read as "nothing caught yet" to the StrictMode guard.
+    expect(onError).toHaveBeenCalledOnce();
+    expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
+  });
+
   it("recovers via the Try again button once the cause is gone", () => {
     crash.active = true;
 
-    renderWithTheme(
+    render(
       <ResourceAdapterErrorBoundary>
         <MaybeBomb />
       </ResourceAdapterErrorBoundary>,
@@ -230,7 +220,7 @@ describe("ResourceAdapterErrorBoundary", () => {
   it("recovers when a reset key changes", () => {
     crash.active = true;
 
-    const { rerenderWithTheme } = renderWithTheme(
+    const { rerender } = render(
       <ResourceAdapterErrorBoundary resetKeys={["lesson-one"]}>
         <MaybeBomb />
       </ResourceAdapterErrorBoundary>,
@@ -238,7 +228,7 @@ describe("ResourceAdapterErrorBoundary", () => {
     expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
 
     crash.active = false;
-    rerenderWithTheme(
+    rerender(
       <ResourceAdapterErrorBoundary resetKeys={["lesson-two"]}>
         <MaybeBomb />
       </ResourceAdapterErrorBoundary>,
@@ -248,7 +238,7 @@ describe("ResourceAdapterErrorBoundary", () => {
   });
 
   it("renders a custom fallback instead of the default", () => {
-    renderWithTheme(
+    render(
       <ResourceAdapterErrorBoundary fallback={() => <p>custom fallback</p>}>
         <Bomb />
       </ResourceAdapterErrorBoundary>,
@@ -261,13 +251,12 @@ describe("ResourceAdapterErrorBoundary", () => {
   });
 
   it("adds no heading of its own, leaving the host page's structure intact", () => {
-    renderWithTheme(
+    render(
       <ResourceAdapterErrorBoundary>
         <Bomb />
       </ResourceAdapterErrorBoundary>,
     );
 
-    // OakInlineBanner's title is an h1, which would give the host a second one.
     const fallback = screen.getByTestId("resource-adapter-error-fallback");
     expect(within(fallback).queryAllByRole("heading")).toHaveLength(0);
   });
@@ -275,7 +264,7 @@ describe("ResourceAdapterErrorBoundary", () => {
   // The surrounding UI is intact here, so role="alert" is enough. The case that
   // does take focus is the dialog's shell fallback, tested in its own file.
   it("does not move focus, leaving the host page's focus alone", () => {
-    renderWithTheme(
+    render(
       <ResourceAdapterErrorBoundary>
         <Bomb />
       </ResourceAdapterErrorBoundary>,
@@ -285,13 +274,13 @@ describe("ResourceAdapterErrorBoundary", () => {
   });
 
   it("gives the fallback's Try again an explicit button type", () => {
-    renderWithTheme(
+    render(
       <ResourceAdapterErrorBoundary>
         <Bomb />
       </ResourceAdapterErrorBoundary>,
     );
 
-    // oak-components renders a bare `button`, which would submit a host form.
+    // Without it the default inside a host form would be submit.
     expect(screen.getByRole("button", { name: "Try again" })).toHaveAttribute(
       "type",
       "button",
@@ -300,7 +289,7 @@ describe("ResourceAdapterErrorBoundary", () => {
 
   it("leaves focus alone when recovery happens with the page still focused", () => {
     crash.active = true;
-    const { rerenderWithTheme } = renderWithTheme(
+    const { rerender } = render(
       <>
         <button type="button">host control</button>
         <ResourceAdapterErrorBoundary resetKeys={["first"]}>
@@ -312,7 +301,7 @@ describe("ResourceAdapterErrorBoundary", () => {
     hostControl.focus();
 
     crash.active = false;
-    rerenderWithTheme(
+    rerender(
       <>
         <button type="button">host control</button>
         <ResourceAdapterErrorBoundary resetKeys={["second"]}>

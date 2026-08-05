@@ -1,21 +1,14 @@
 "use client";
 
 import { Component, useEffect, useRef, type ReactNode } from "react";
-import { OakFlex, OakP, OakSecondaryButton } from "@oaknational/oak-components";
 
-import { reportClientError } from "./reportClientError.js";
-import type {
-  ResourceAdapterErrorHandler,
-  ResourceAdapterReportingProps,
-} from "./publicTypes.js";
+import type { ResourceAdapterErrorHandler } from "./publicTypes.js";
 
 export type ResourceAdapterErrorBoundaryProps = Readonly<{
   children: ReactNode;
-  /** Replaces the default Oak-styled unavailable state. */
+  /** Replaces the default unavailable state. */
   fallback?: (props: { onTryAgain: () => void }) => ReactNode;
   onError?: ResourceAdapterErrorHandler;
-  /** When absent, caught errors are not reported to the Resource Adapter API. */
-  reporting?: ResourceAdapterReportingProps;
   /**
    * Any change clears a caught error. Use primitives: a new object each render
    * always looks changed, which would reset and re-catch in a loop.
@@ -29,8 +22,24 @@ type ResourceAdapterErrorBoundaryState = Readonly<{
 
 /** React reports whatever was thrown, which is not necessarily an Error. */
 function toError(thrown: unknown): Error {
-  return thrown instanceof Error ? thrown : new Error(String(thrown));
+  if (thrown instanceof Error) {
+    return thrown;
+  }
+
+  try {
+    return new Error(String(thrown));
+  } catch {
+    // String() throws on a null-prototype object, and throwing here would
+    // unmount the boundary and let the crash reach the host.
+    return new Error("Unstringifiable value thrown during render");
+  }
 }
+
+/**
+ * Distinct from every possible thrown value, so `throw null` is not mistaken
+ * for "nothing caught yet" by the dedupe guard.
+ */
+const nothingCaught = Symbol("nothingCaught");
 
 function resetKeysChanged(
   previous: readonly unknown[] = [],
@@ -45,9 +54,6 @@ function resetKeysChanged(
 /**
  * Catches render failures in the adapter so they cannot take down the host
  * lesson page. A class because React offers no function equivalent.
- *
- * Only render failures. Failed requests, event-handler errors and async
- * rejections keep their own error states.
  */
 export class ResourceAdapterErrorBoundary extends Component<
   ResourceAdapterErrorBoundaryProps,
@@ -56,7 +62,7 @@ export class ResourceAdapterErrorBoundary extends Component<
   override state: ResourceAdapterErrorBoundaryState = { error: null };
 
   /** Dev StrictMode can surface one throw twice; report it once. */
-  private lastCaught: unknown = null;
+  private lastCaught: unknown = nothingCaught;
 
   /** The element to hand focus back to once a caught error clears. */
   private focusBeforeError: HTMLElement | null = null;
@@ -74,24 +80,13 @@ export class ResourceAdapterErrorBoundary extends Component<
     }
     this.lastCaught = thrown;
 
-    const error = toError(thrown);
     const componentStack = errorInfo.componentStack ?? null;
-
-    // The two reporting paths are independent, so a throwing host callback
-    // cannot stop the API report. reportClientError never rejects.
-    if (this.props.reporting) {
-      void reportClientError({
-        componentStack,
-        error,
-        reporting: this.props.reporting,
-      });
-    }
 
     try {
       // Promise.resolve so an async onError's rejection is swallowed too.
-      void Promise.resolve(this.props.onError?.(error, { componentStack })).catch(
-        () => {},
-      );
+      void Promise.resolve(
+        this.props.onError?.(toError(thrown), { componentStack }),
+      ).catch(() => {});
     } catch {
       // A broken host callback must not affect the fallback render.
     }
@@ -121,10 +116,8 @@ export class ResourceAdapterErrorBoundary extends Component<
     }
   }
 
-  /**
-   * Records where focus sits while the tree is healthy. Recording it later is
-   * too late: once a crash unmounts a focus trap, focus is already on `body`.
-   */
+  // Recorded while healthy: once a crash unmounts a focus trap it is too late,
+  // because focus is already on `body`.
   private rememberFocusTarget(): void {
     const active = document.activeElement;
     if (active instanceof HTMLElement && active !== document.body) {
@@ -132,10 +125,8 @@ export class ResourceAdapterErrorBoundary extends Component<
     }
   }
 
-  /**
-   * Hands focus back once the fallback has gone, but only if nothing else holds
-   * it. A recovered dialog focuses its own modal, and that should win.
-   */
+  // Only when nothing else holds focus: a recovered dialog focuses its own
+  // modal, and that should win.
   private restoreFocus(): void {
     const active = document.activeElement;
     const focusIsAdrift =
@@ -148,7 +139,7 @@ export class ResourceAdapterErrorBoundary extends Component<
 
   private readonly reset = (): void => {
     // Cleared so a real second crash of the same error reports again.
-    this.lastCaught = null;
+    this.lastCaught = nothingCaught;
     this.setState({ error: null });
   };
 
@@ -171,29 +162,48 @@ export class ResourceAdapterErrorBoundary extends Component<
 }
 
 type ResourceAdapterUnavailableMessageProps = Readonly<{
-  /** Rendered beside Try again, e.g. the dialog's Dismiss control. */
-  extraAction?: ReactNode;
-  /**
-   * Take keyboard focus on mount. Needed when the crash unmounted a focus trap,
-   * unwanted inside intact UI where `role="alert"` announces it anyway.
-   */
+  /** Adds a Dismiss action, for a crash the host has to close around. */
+  onDismiss?: () => void;
+  /** Take focus on mount, for a crash that unmounted a focus trap. */
   focusOnMount?: boolean;
   message?: string;
   onTryAgain: () => void;
   testId: string;
 }>;
 
-/**
- * The unavailable state shared by every boundary in the package.
- *
- * Built from primitives, not `OakInlineBanner`, because that renders its title
- * as an `h1` and the host page owns the `h1`. No heading here, and no icon:
- * oak-components loads icons from Cloudinary, which hosts may not have set up.
- */
+const errorRed = "#dd0035";
+const bodyBlack = "#222222";
+
+const containerStyle = {
+  background: "#ffffff",
+  border: `2px solid ${errorRed}`,
+  borderRadius: "8px",
+  color: bodyBlack,
+  display: "flex",
+  flexDirection: "column",
+  gap: "8px",
+  padding: "16px",
+} as const;
+
+const titleStyle = { color: errorRed, fontWeight: 700, margin: 0 } as const;
+const messageStyle = { color: bodyBlack, margin: 0 } as const;
+const actionsStyle = { display: "flex", gap: "8px" } as const;
+
+const buttonStyle = {
+  background: "#ffffff",
+  border: `2px solid ${bodyBlack}`,
+  borderRadius: "8px",
+  color: bodyBlack,
+  cursor: "pointer",
+  font: "inherit",
+  padding: "8px 16px",
+} as const;
+
+/** Shared by both boundaries. No heading, because the host page owns those. */
 export function ResourceAdapterUnavailableMessage({
-  extraAction,
   focusOnMount = false,
   message = "An unexpected problem stopped this feature. The rest of the page still works.",
+  onDismiss,
   onTryAgain,
   testId,
 }: ResourceAdapterUnavailableMessageProps) {
@@ -211,32 +221,22 @@ export function ResourceAdapterUnavailableMessage({
       data-testid={testId}
       ref={containerRef}
       role="alert"
+      style={containerStyle}
       tabIndex={-1}
     >
-      <OakFlex
-        $ba="border-solid-m"
-        $borderColor="border-error"
-        $borderRadius="border-radius-m"
-        $flexDirection="column"
-        $gap="spacing-8"
-        $pa="spacing-16"
-      >
-        <OakP $color="text-error" $font="body-2-bold">
-          Create more with Aila is unavailable
-        </OakP>
-        <OakP $font="body-3">{message}</OakP>
-        <OakFlex $gap="spacing-8">
-          {/*
-            An explicit type, because oak-components renders a bare `button`
-            with none: inside a host `form` the default would be submit, so
-            recovering from a crash would post the teacher's form.
-          */}
-          <OakSecondaryButton onClick={onTryAgain} type="button">
-            Try again
-          </OakSecondaryButton>
-          {extraAction}
-        </OakFlex>
-      </OakFlex>
+      <p style={titleStyle}>Create more with Aila is unavailable</p>
+      <p style={messageStyle}>{message}</p>
+      <div style={actionsStyle}>
+        {/* An explicit type, so recovering inside a host form cannot submit it. */}
+        <button onClick={onTryAgain} style={buttonStyle} type="button">
+          Try again
+        </button>
+        {onDismiss && (
+          <button onClick={onDismiss} style={buttonStyle} type="button">
+            Dismiss
+          </button>
+        )}
+      </div>
     </div>
   );
 }

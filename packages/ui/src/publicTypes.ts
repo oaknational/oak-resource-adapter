@@ -33,17 +33,8 @@ export type ResourceAdapterErrorInfo = Readonly<{
   componentStack: string | null;
 }>;
 
-/**
- * Called when the boundary catches a render failure, for the host's own
- * reporting. It may do nothing; the package's API reporting is independent.
- */
+/** Called when the boundary catches a render failure, for the host to report. */
 export type ResourceAdapterErrorHandler = (
   error: Error,
   info: ResourceAdapterErrorInfo,
 ) => void;
-
-/** Credentials the boundary needs to report caught errors to the API. */
-export type ResourceAdapterReportingProps = Readonly<{
-  getToken: GetToken;
-  trpcEndpoint: string;
-}>;

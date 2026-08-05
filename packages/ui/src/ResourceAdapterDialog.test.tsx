@@ -7,10 +7,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ResourceAdapterDialog } from "./ResourceAdapterDialog.js";
 import type { LessonContext, ResourceAdapterCapability } from "./publicTypes.js";
 
-vi.mock("./reportClientError.js", () => ({
-  reportClientError: vi.fn().mockResolvedValue(undefined),
-}));
-
 const lesson: LessonContext = {
   lessonSlug: "adding-fractions",
   programmeSlug: "ks2-maths",
@@ -71,7 +67,7 @@ describe("ResourceAdapterDialog", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders unchanged without the optional reporting props", () => {
+  it("renders the lesson and its capability while nothing throws", () => {
     renderWithTheme(
       <ResourceAdapterDialog
         capabilities={[capability]}
@@ -220,7 +216,7 @@ describe("ResourceAdapterDialog", () => {
       />,
     );
 
-    // oak-components renders a bare `button`, which would submit a host form.
+    // Without it the default inside a host form would be submit.
     const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
     for (const name of ["Try again", "Dismiss"]) {
       expect(within(fallback).getByRole("button", { name })).toHaveAttribute(

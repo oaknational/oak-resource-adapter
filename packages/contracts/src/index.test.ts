@@ -1,7 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
-  clientErrorReportSchema,
   lessonContextSchema,
   parseResourceAdapterApiContractVersion,
   resourceAdapterApiContractVersion,
@@ -85,7 +84,6 @@ describe("Resource Adapter API contracts", () => {
           ],
         }),
       },
-      clientErrorReports: { report: vi.fn() },
     });
 
     await expect(
@@ -107,7 +105,6 @@ describe("Resource Adapter API contracts", () => {
       capabilities: {
         getCapabilities: () => ({ capabilities: [] }),
       },
-      clientErrorReports: { report: vi.fn() },
     });
 
     await expect(
@@ -129,7 +126,6 @@ describe("Resource Adapter API contracts", () => {
       capabilities: {
         getCapabilities: () => ({ capabilities: [] }),
       },
-      clientErrorReports: { report: vi.fn() },
     });
 
     await expect(
@@ -142,84 +138,5 @@ describe("Resource Adapter API contracts", () => {
         availableResources: ["worksheet"],
       }),
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-  });
-});
-
-describe("client error reporting", () => {
-  const validReport = {
-    errorName: "TypeError",
-    errorMessage: "Cannot read properties of undefined (reading 'label')",
-    componentStack: "at CapabilityList\nat ResourceAdapterDialogInner",
-  };
-
-  function createCallerWith(
-    report: (input: unknown) => Promise<void> | void,
-    authenticatedTeacher: {
-      organisationId: string | null;
-      teacherId: string;
-    } | null = {
-      organisationId: "org-123",
-      teacherId: "teacher-456",
-    },
-  ) {
-    return appRouterV1.createCaller({
-      apiContractVersion: resourceAdapterApiContractVersion,
-      authenticatedTeacher,
-      capabilities: {
-        getCapabilities: () => ({ capabilities: [] }),
-      },
-      clientErrorReports: { report },
-    });
-  }
-
-  it("trims report fields when parsing", () => {
-    expect(
-      clientErrorReportSchema.parse({
-        errorName: "  TypeError  ",
-        errorMessage: "  boom  ",
-      }),
-    ).toMatchObject({ errorName: "TypeError", errorMessage: "boom" });
-  });
-
-  it("delegates a valid report to the service and returns a receipt", async () => {
-    const report = vi.fn();
-
-    await expect(
-      createCallerWith(report).clientErrors.report(validReport),
-    ).resolves.toEqual({ received: true });
-    expect(report).toHaveBeenCalledExactlyOnceWith(validReport);
-  });
-
-  it("rejects an unauthenticated report with UNAUTHORIZED", async () => {
-    const report = vi.fn();
-
-    await expect(
-      createCallerWith(report, null).clientErrors.report(validReport),
-    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    expect(report).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    ["an unknown field", { ...validReport, lessonContent: "sensitive" }],
-    ["a missing errorName", { errorMessage: "boom" }],
-    ["an empty errorName", { ...validReport, errorName: "   " }],
-    ["an oversize errorName", { ...validReport, errorName: "E".repeat(101) }],
-    ["an oversize errorMessage", { ...validReport, errorMessage: "m".repeat(501) }],
-    [
-      "an oversize componentStack",
-      { ...validReport, componentStack: "s".repeat(4001) },
-    ],
-    ["a non-string errorName", { ...validReport, errorName: 42 }],
-  ])("rejects a report with %s as BAD_REQUEST", async (_label, input) => {
-    const report = vi.fn();
-
-    await expect(
-      createCallerWith(report).clientErrors.report(
-        input as Parameters<
-          ReturnType<typeof createCallerWith>["clientErrors"]["report"]
-        >[0],
-      ),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(report).not.toHaveBeenCalled();
   });
 });

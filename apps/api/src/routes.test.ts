@@ -10,14 +10,12 @@ import { GET as getHealth } from "../app/health/route";
 import {
   GET as getCapabilities,
   OPTIONS as options,
-  POST as postClientError,
 } from "../app/trpc/v1/[trpc]/route";
 import { GET as getJobStatus } from "../app/dev/jobs/[id]/route";
 import {
   OPTIONS as testJobOptions,
   POST as postTestJob,
 } from "../app/dev/jobs/test-echo/route";
-import * as Sentry from "@sentry/nextjs";
 import * as capabilities from "./capabilities";
 import { requestAuthenticator } from "./authentication";
 
@@ -26,10 +24,6 @@ import { requestAuthenticator } from "./authentication";
 vi.mock("./capabilities", async (importOriginal) =>
   importOriginal<typeof import("./capabilities")>(),
 );
-
-vi.mock("@sentry/nextjs", () => ({
-  captureException: vi.fn(),
-}));
 
 vi.mock("./authentication", async (importOriginal) => {
   const original = await importOriginal<typeof import("./authentication")>();
@@ -52,12 +46,11 @@ function request(url: string, init?: RequestInit): NextRequest {
   return new Request(url, init) as NextRequest;
 }
 
-function trpcRequest(
-  procedure: string,
+function capabilitiesRequest(
   input: unknown,
   apiContractVersion: number | null = resourceAdapterApiContractVersion,
 ): NextRequest {
-  return request(`http://localhost:3001/trpc/v1/${procedure}?batch=1`, {
+  return request("http://localhost:3001/trpc/v1/capabilities.get?batch=1", {
     body: JSON.stringify({ "0": input }),
     headers: {
       "Content-Type": "application/json",
@@ -70,17 +63,6 @@ function trpcRequest(
     },
     method: "POST",
   });
-}
-
-function capabilitiesRequest(
-  input: unknown,
-  apiContractVersion: number | null = resourceAdapterApiContractVersion,
-): NextRequest {
-  return trpcRequest("capabilities.get", input, apiContractVersion);
-}
-
-function clientErrorRequest(input: unknown): NextRequest {
-  return trpcRequest("clientErrors.report", input);
 }
 
 describe("API routes", () => {
@@ -249,69 +231,5 @@ describe("API routes", () => {
     await expect(response.json()).resolves.toMatchObject([
       { error: { data: { code: "UNAUTHORIZED" } } },
     ]);
-  });
-
-  describe("client error reporting", () => {
-    const clientErrorReport = {
-      errorName: "TypeError",
-      errorMessage: "Cannot read properties of undefined (reading 'label')",
-      componentStack: "at CapabilityList",
-    };
-
-    beforeEach(() => {
-      vi.mocked(Sentry.captureException).mockClear();
-    });
-
-    it("accepts a valid report and forwards it to Sentry tagged client-ui", async () => {
-      const response = await postClientError(clientErrorRequest(clientErrorReport));
-
-      expect(response.status).toBe(200);
-      await expect(response.json()).resolves.toMatchObject([
-        { result: { data: { received: true } } },
-      ]);
-      expect(Sentry.captureException).toHaveBeenCalledExactlyOnceWith(
-        expect.objectContaining({ name: "TypeError" }),
-        expect.objectContaining({ tags: { source: "client-ui" } }),
-      );
-    });
-
-    it("rejects a malformed report without reporting anything", async () => {
-      const report = vi.fn();
-      setErrorReporter(report);
-
-      const response = await postClientError(
-        clientErrorRequest({ ...clientErrorReport, lessonContent: "sensitive" }),
-      );
-
-      expect(response.status).toBe(400);
-      await expect(response.json()).resolves.toMatchObject([
-        { error: { data: { code: "BAD_REQUEST" } } },
-      ]);
-      expect(report).not.toHaveBeenCalled();
-      expect(Sentry.captureException).not.toHaveBeenCalled();
-    });
-
-    it("rejects an unauthenticated report with 401", async () => {
-      vi.mocked(requestAuthenticator).mockImplementation(async () => null);
-
-      const response = await postClientError(clientErrorRequest(clientErrorReport));
-
-      expect(response.status).toBe(401);
-      expect(Sentry.captureException).not.toHaveBeenCalled();
-    });
-
-    it("still returns a receipt when Sentry itself fails", async () => {
-      vi.spyOn(console, "error").mockImplementation(() => {});
-      vi.mocked(Sentry.captureException).mockImplementation(() => {
-        throw new Error("Sentry unreachable");
-      });
-
-      const response = await postClientError(clientErrorRequest(clientErrorReport));
-
-      expect(response.status).toBe(200);
-      await expect(response.json()).resolves.toMatchObject([
-        { result: { data: { received: true } } },
-      ]);
-    });
   });
 });

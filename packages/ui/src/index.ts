@@ -19,5 +19,4 @@ export type {
   ResourceAdapterErrorHandler,
   ResourceAdapterErrorInfo,
   ResourceAdapterHostProps,
-  ResourceAdapterReportingProps,
 } from "./publicTypes.js";

@@ -1,12 +1,9 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 
 import {
-  clientErrorReportReceiptSchema,
-  clientErrorReportSchema,
   lessonContextSchema,
   resourceAdapterApiContractVersionV1,
   resourceAdapterCapabilitiesResponseSchema,
-  type ClientErrorReport,
   type LessonContext,
   type ResourceAdapterCapabilitiesResponse,
 } from "./v1.js";
@@ -20,14 +17,6 @@ export type ResourceAdapterCapabilitiesService = Readonly<{
 }>;
 
 /**
- * The service the client-error procedure needs. Implementations must swallow
- * their own failures, so reporting never becomes a client-visible error.
- */
-export type ResourceAdapterClientErrorReportService = Readonly<{
-  report: (report: ClientErrorReport) => Promise<void> | void;
-}>;
-
-/**
  * The API application creates this context for every request. Future slices
  * will add verified teacher identity, feature flags, and job services here.
  */
@@ -35,7 +24,6 @@ export type ResourceAdapterApiContext = Readonly<{
   apiContractVersion: number | null;
   authenticatedTeacher: ResourceAdapterAuthenticatedTeacher | null;
   capabilities: ResourceAdapterCapabilitiesService;
-  clientErrorReports: ResourceAdapterClientErrorReportService;
 }>;
 
 /**
@@ -92,15 +80,6 @@ export const appRouterV1 = t.router({
       .input(lessonContextSchema)
       .output(resourceAdapterCapabilitiesResponseSchema)
       .query(({ ctx, input }) => ctx.capabilities.getCapabilities(input)),
-  }),
-  clientErrors: t.router({
-    report: authenticatedProcedure
-      .input(clientErrorReportSchema)
-      .output(clientErrorReportReceiptSchema)
-      .mutation(async ({ ctx, input }) => {
-        await ctx.clientErrorReports.report(input);
-        return { received: true } as const;
-      }),
   }),
 });
 

@@ -309,8 +309,8 @@ export default function HarnessPage() {
           >
             <h2 id="error-boundary-test-heading">Error boundary test</h2>
             <p>
-              Simulating a crash renders the package&apos;s fallback below and, when
-              signed in, reports the error to the API. Try again re-catches while the
+              Simulating a crash renders the package&apos;s fallback below and hands the
+              error to the host&apos;s own logger. Try again re-catches while the
               simulated crash is active.
             </p>
             <button
@@ -325,7 +325,6 @@ export default function HarnessPage() {
             <ResourceAdapterErrorBoundary
               key={String(simulateAdapterCrash)}
               onError={(error) => log.error(error)}
-              reporting={{ getToken, trpcEndpoint }}
             >
               {simulateAdapterCrash ? (
                 <CrashOnRender />
@@ -379,12 +378,10 @@ export default function HarnessPage() {
         </article>
         <ResourceAdapterDialog
           capabilities={capabilities}
-          getToken={getToken}
           isOpen={isResourceAdapterOpen}
           lesson={lesson}
           onClose={() => setIsResourceAdapterOpen(false)}
           onError={(error) => log.error(error)}
-          trpcEndpoint={trpcEndpoint}
         />
       </main>
     </>

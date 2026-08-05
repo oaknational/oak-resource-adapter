@@ -36,58 +36,39 @@ test(
   },
 );
 
-// Untagged on purpose: it fires a real error report, so it must not run against
-// a deployed environment's Sentry.
-test("contains a simulated adapter crash and reports it to the API", async ({
-  page,
-}) => {
-  await setupClerkTestingToken({ page });
-  await page.goto("/");
-  await clerk.signIn({ page, emailAddress });
-  await page.goto("/");
+// The crash section is not gated on authentication and the caught error goes no
+// further than the harness logger, so this needs no session and writes nothing.
+test(
+  "contains a simulated adapter crash",
+  {
+    tag: "@deployment-safe",
+  },
+  async ({ page }) => {
+    await page.goto("/");
 
-  // Wait for the session, or the report would get a 401 instead of a receipt.
-  // The sign-in button disappearing is the signal that Clerk has restored it.
-  await expect(
-    page.getByRole("banner").getByRole("button", { name: "Sign in" }),
-  ).toHaveCount(0);
+    const section = page.getByRole("region", { name: "Error boundary test" });
+    await expect(section).toContainText("The adapter surface renders normally.");
 
-  const section = page.getByRole("region", { name: "Error boundary test" });
-  await expect(section).toContainText("The adapter surface renders normally.");
+    await section.getByRole("button", { name: "Simulate adapter crash" }).click();
 
-  // Listen before clicking so the report cannot slip past.
-  const reportResponse = page.waitForResponse(
-    (response) =>
-      response.url().includes("/trpc/v1/clientErrors.report") &&
-      response.request().method() === "POST",
-  );
+    // The fallback replaces the crashed content...
+    const fallback = section.getByTestId("resource-adapter-error-fallback");
+    await expect(fallback).toBeVisible();
+    await expect(fallback).toContainText("Create more with Aila is unavailable");
+    // ...and the page around it is untouched.
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Adding fractions" }),
+    ).toBeVisible();
 
-  await section.getByRole("button", { name: "Simulate adapter crash" }).click();
+    // Try again re-catches while the crash is still simulated.
+    await fallback.getByRole("button", { name: "Try again" }).click();
+    await expect(section.getByTestId("resource-adapter-error-fallback")).toBeVisible();
 
-  // The fallback replaces the crashed content...
-  const fallback = section.getByTestId("resource-adapter-error-fallback");
-  await expect(fallback).toBeVisible();
-  await expect(fallback).toContainText("Create more with Aila is unavailable");
-  // ...and the page around it is untouched.
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Adding fractions" }),
-  ).toBeVisible();
-
-  // The caught error reaches the API.
-  const response = await reportResponse;
-  expect(response.status()).toBe(200);
-  expect(await response.json()).toMatchObject([
-    { result: { data: { received: true } } },
-  ]);
-
-  // Try again re-catches while the crash is still simulated.
-  await fallback.getByRole("button", { name: "Try again" }).click();
-  await expect(section.getByTestId("resource-adapter-error-fallback")).toBeVisible();
-
-  await section.getByRole("button", { name: "Clear simulated crash" }).click();
-  await expect(section).toContainText("The adapter surface renders normally.");
-  await expect(section.getByTestId("resource-adapter-error-fallback")).toHaveCount(0);
-});
+    await section.getByRole("button", { name: "Clear simulated crash" }).click();
+    await expect(section).toContainText("The adapter surface renders normally.");
+    await expect(section.getByTestId("resource-adapter-error-fallback")).toHaveCount(0);
+  },
+);
 
 test(
   "offers signed-out visitors sign-in rather than the Aila trigger",
