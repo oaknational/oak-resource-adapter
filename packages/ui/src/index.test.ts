@@ -1,6 +1,3 @@
-// @vitest-environment node
-// The suite default is jsdom, where `import.meta.url` is an http URL that
-// `readFile` rejects. This file reads source text and touches no DOM.
 import { readFile } from "node:fs/promises";
 
 import { describe, expect, it } from "vitest";
@@ -21,6 +18,10 @@ const EXPECTED_PUBLIC_API = [
   "ResourceAdapterCapabilityId",
   "ResourceAdapterDialog",
   "ResourceAdapterDialogProps",
+  "ResourceAdapterErrorBoundary",
+  "ResourceAdapterErrorBoundaryProps",
+  "ResourceAdapterErrorHandler",
+  "ResourceAdapterErrorInfo",
   "ResourceAdapterHostProps",
   "getResourceAdapterCapabilities",
 ];

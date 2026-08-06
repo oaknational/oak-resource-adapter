@@ -4,7 +4,7 @@ import type { ResourceAdapterFeatureFlagsResponse } from "@oaknational/resource-
 
 import type { ResourceAdapterHostProps } from "./publicTypes.js";
 import { createResourceAdapterInternalClient } from "./client.js";
-import { ResourceAdapterApiError } from "./getResourceAdapterCapabilities.js";
+import { ResourceAdapterApiError } from "./errors.js";
 
 type ResourceAdapterFeatureFlagsHostProps = Pick<
   ResourceAdapterHostProps,

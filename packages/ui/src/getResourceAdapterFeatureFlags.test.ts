@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getResourceAdapterFeatureFlags } from "./getResourceAdapterFeatureFlags.js";
-import { ResourceAdapterApiError } from "./getResourceAdapterCapabilities.js";
+import { ResourceAdapterApiError } from "./errors.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();

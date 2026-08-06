@@ -6,6 +6,7 @@ import {
 import type { InternalRouter } from "@oaknational/resource-adapter-contracts/internal/server";
 import type { HostRouter } from "@oaknational/resource-adapter-contracts/server";
 
+import { ResourceAdapterApiError } from "./errors.js";
 import type { GetToken } from "./publicTypes.js";
 
 export type ResourceAdapterPublicApiClient = TRPCClient<HostRouter>;
@@ -23,18 +24,28 @@ function normalizeApiBaseUrl(url: string): string {
   }
 
   if (!normalized) {
-    throw new Error("apiBaseUrl must be a non-empty absolute http(s) URL.");
+    throw new ResourceAdapterApiError(
+      "apiBaseUrl must be a non-empty absolute http(s) URL.",
+    );
   }
 
   let parsed: URL;
   try {
     parsed = new URL(normalized);
   } catch {
-    throw new Error("apiBaseUrl must be a valid absolute http(s) URL.");
+    throw new ResourceAdapterApiError(
+      "apiBaseUrl must be a valid absolute http(s) URL.",
+    );
   }
 
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new Error("apiBaseUrl must use http or https.");
+    throw new ResourceAdapterApiError("apiBaseUrl must use http or https.");
+  }
+
+  if (/\/trpc(\/|$)/.test(parsed.pathname)) {
+    throw new ResourceAdapterApiError(
+      "apiBaseUrl must be the API origin without a /trpc path; the package appends its own.",
+    );
   }
 
   return normalized;

@@ -36,6 +36,40 @@ test(
   },
 );
 
+// The crash section is not gated on authentication and the caught error goes no
+// further than the harness logger, so this needs no session and writes nothing.
+test(
+  "contains a simulated adapter crash",
+  {
+    tag: "@deployment-safe",
+  },
+  async ({ page }) => {
+    await page.goto("/");
+
+    const section = page.getByRole("region", { name: "Error boundary test" });
+    await expect(section).toContainText("The adapter surface renders normally.");
+
+    await section.getByRole("button", { name: "Simulate adapter crash" }).click();
+
+    // The fallback replaces the crashed content...
+    const fallback = section.getByTestId("resource-adapter-error-fallback");
+    await expect(fallback).toBeVisible();
+    await expect(fallback).toContainText("Create more with Aila is unavailable");
+    // ...and the page around it is untouched.
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Adding fractions" }),
+    ).toBeVisible();
+
+    // Try again re-catches while the crash is still simulated.
+    await fallback.getByRole("button", { name: "Try again" }).click();
+    await expect(section.getByTestId("resource-adapter-error-fallback")).toBeVisible();
+
+    await section.getByRole("button", { name: "Clear simulated crash" }).click();
+    await expect(section).toContainText("The adapter surface renders normally.");
+    await expect(section.getByTestId("resource-adapter-error-fallback")).toHaveCount(0);
+  },
+);
+
 test(
   "offers signed-out visitors sign-in rather than the Aila trigger",
   {

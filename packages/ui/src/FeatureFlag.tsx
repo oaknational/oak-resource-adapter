@@ -14,9 +14,8 @@ export type FeatureFlagProps = Readonly<{
  */
 export function FeatureFlag({ children, enabledFlags, flag }: FeatureFlagProps) {
   const availableFlags = enabledFlags ?? [];
-  const isEnabled = availableFlags.includes(flag);
 
-  if (isEnabled !== true) {
+  if (!availableFlags.includes(flag)) {
     return null;
   }
 
