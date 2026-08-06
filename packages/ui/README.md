@@ -47,40 +47,6 @@ const capabilities = await getResourceAdapterCapabilities({
 The helper wraps the package's internal typed tRPC client, so hosts never
 depend on `@trpc/client` themselves.
 
-## Error handling
-
-The dialog catches its own render failures, so a crash inside the adapter cannot
-take down your lesson page. It replaces the crashed content with a plain message
-and a Try again button, styled without oak-components so a broken install cannot
-break the message too.
-
-Nothing is reported to us. Pass `onError` to send caught errors to your own
-tooling:
-
-```tsx
-<ResourceAdapterDialog
-  capabilities={capabilities}
-  isOpen={isOpen}
-  lesson={lesson}
-  onClose={close}
-  onError={(error, info) => reportError(error, { componentStack: info.componentStack })}
-/>
-```
-
-- **`onError`**: `(error: Error, info: { componentStack: string | null })`. Both
-  arguments are plain values, never React types, so you can pass them straight to
-  your own reporter. You can leave it off, and if it throws or rejects, the
-  message still renders.
-- **When it clears**: automatically when the dialog closes or the lesson changes,
-  and when someone clicks Try again. `ResourceAdapterErrorBoundary` is exported
-  too, if you want to wrap more of your page. It takes `resetKeys` (any change
-  clears the error), `fallback` and `onError`.
-- **What it does not cover**: React boundaries only see failures during
-  rendering. Failed requests, errors in event handlers, server-rendering errors
-  and errors in the message itself all get past them, and keep their own error
-  handling. `getResourceAdapterCapabilities` throws `ResourceAdapterApiError` for
-  you to catch, for example.
-
 ## Testing local changes inside a host app like OWA
 
 Sometimes it isn't enough to develop against the local harness and you need to

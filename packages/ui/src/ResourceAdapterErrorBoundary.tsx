@@ -155,6 +155,8 @@ type ResourceAdapterUnavailableMessageProps = Readonly<{
   testId: string;
 }>;
 
+// Literal styles, not oak-components: the fallback has to render even when a
+// broken oak-components install is the thing that crashed.
 const errorRed = "#dd0035";
 const bodyBlack = "#222222";
 
