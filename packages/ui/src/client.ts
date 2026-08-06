@@ -17,7 +17,10 @@ export type CreateResourceAdapterClientOptions = Readonly<{
 }>;
 
 function normalizeApiBaseUrl(url: string): string {
-  const normalized = url.trim().replace(/\/+$/, "");
+  let normalized = url.trim();
+  while (normalized.endsWith("/")) {
+    normalized = normalized.slice(0, -1);
+  }
 
   if (!normalized) {
     throw new Error("apiBaseUrl must be a non-empty absolute http(s) URL.");
