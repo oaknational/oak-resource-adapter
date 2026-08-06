@@ -12,6 +12,9 @@ import { promptTemplates } from "./prompt-templates.js";
 import { resourceAdapterSchema } from "./pg-schema.js";
 import { transformationAttempts } from "./transformation-attempts.js";
 
+// Text avoids a database migration when the application vocabulary grows.
+type OutputValidationStatus = "INVALID_JSON" | "SCHEMA_MISMATCH" | "VALID";
+
 /**
  * One physical model call made during an attempt.
  *
@@ -38,6 +41,9 @@ export const modelInvocations = resourceAdapterSchema.table(
     inputTokens: integer("input_tokens"),
     model: text("model").notNull(),
     outputTokens: integer("output_tokens"),
+    outputValidationStatus: text(
+      "output_validation_status",
+    ).$type<OutputValidationStatus>(),
     /** Null for a call made without a registered template. */
     promptTemplateId: uuid("prompt_template_id"),
     provider: text("provider").notNull(),

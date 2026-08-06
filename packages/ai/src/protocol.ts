@@ -1,27 +1,40 @@
-import type {
-  Response,
-  ResponseCreateParamsNonStreaming,
-} from "openai/resources/responses/responses";
+import type { ResponseCreateParamsNonStreaming } from "openai/resources/responses/responses";
+
+export type JsonPrimitive = boolean | null | number | string;
+export type JsonValue = JsonPrimitive | JsonObject | readonly JsonValue[];
+export type JsonObject = Readonly<{ [key: string]: JsonValue }>;
 
 /**
- * A non-streaming model request. The logical model role is resolved to a
- * physical model separately, so callers cannot set `model` or enable streaming.
- *
- * NB: Swapping to a non-OpenAI-compatible provider would mean revisiting call sites
- *
- * Per-call controls such as cancellation are not part of this type; they are
- * passed separately so that a recorded invocation stays serialisable.
+ * Initially OpenAI-compatible; unlike outputs, this boundary may need
+ * normalising when a non-compatible provider is introduced. Streaming and
+ * background calls need different lifecycles and are deliberately excluded.
  */
 export type ModelInvocationRequest = Omit<
   ResponseCreateParamsNonStreaming,
-  "model" | "stream"
+  "background" | "model" | "stream"
 >;
 
-/**
- * The initial model response protocol.
- *
- * This is intentionally an internal alias rather than a re-export of the
- * OpenAI SDK type, so a future normalisation layer can replace this boundary
- * without spreading provider imports through the application.
- */
-export type ModelInvocationResponse = Response;
+export type ModelProviderRequest = JsonObject;
+
+export type ModelIncompleteReason = "CONTENT_FILTER" | "MAX_OUTPUT_TOKENS" | "UNKNOWN";
+
+export type ModelResponseOutput =
+  | Readonly<{ kind: "INCOMPLETE"; reason: ModelIncompleteReason }>
+  | Readonly<{ kind: "MISSING" }>
+  | Readonly<{ kind: "REFUSAL"; refusal: string }>
+  | Readonly<{ kind: "TEXT"; text: string }>;
+
+export type ModelUsage = Readonly<{
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+}>;
+
+export type ModelResponseRecord = Readonly<{
+  providerResponseId?: string;
+  rawResponse: JsonValue;
+  usage?: ModelUsage;
+}>;
+
+export type ModelInvocationResponse = ModelResponseRecord &
+  Readonly<{ output: ModelResponseOutput }>;

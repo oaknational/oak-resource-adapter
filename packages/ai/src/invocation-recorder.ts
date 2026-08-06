@@ -1,4 +1,6 @@
-import type { ModelInvocationResponse } from "./protocol.js";
+import type { ModelInvocationError } from "./model-invocation-error.js";
+import type { OutputValidationStatus } from "./model-output.js";
+import type { ModelInvocationResponse, ModelResponseRecord } from "./protocol.js";
 import type { ResolvedModelInvocation } from "./resolved-invocation.js";
 
 export type ModelInvocationStarted = ResolvedModelInvocation &
@@ -10,6 +12,7 @@ export type ModelInvocationSucceeded = ModelInvocationStarted &
   Readonly<{
     completedAt: Date;
     durationMs: number;
+    outputValidationStatus?: OutputValidationStatus;
     response: ModelInvocationResponse;
   }>;
 
@@ -17,7 +20,8 @@ export type ModelInvocationFailed = ModelInvocationStarted &
   Readonly<{
     completedAt: Date;
     durationMs: number;
-    error: unknown;
+    error: ModelInvocationError;
+    response?: ModelResponseRecord;
   }>;
 
 /**

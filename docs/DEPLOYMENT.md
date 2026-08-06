@@ -1,77 +1,81 @@
 # Deployment
 
-Two Vercel projects, both deployed by workflow rather than by Vercel's Git
-integration. [`docs/RELEASE_PROCESS.md`](RELEASE_PROCESS.md) is the process this
-serves; this document is how it is built.
+Two Vercel projects, deployed by GitHub Actions rather than by Vercel's Git
+integration. [Release process](RELEASE_PROCESS.md) is the process this serves;
+the Terraform is in [`infrastructure/project/`](../infrastructure/project/).
+
+## What exists
 
 | Project                        | Root directory | Database | Deployed to                  |
 | ------------------------------ | -------------- | -------- | ---------------------------- |
 | `oak-resource-adapter-api`     | `apps/api`     | Yes      | Preview, staging, production |
 | `oak-resource-adapter-harness` | `apps/harness` | No       | Preview, staging             |
 
-| Branch           | Reaches                   | Deployed by                                                           |
-| ---------------- | ------------------------- | --------------------------------------------------------------------- |
-| Feature branches | A Preview pair            | [`deploy-preview.yml`](../.github/workflows/deploy-preview.yml)       |
-| `main`           | The `staging` environment | The same workflow                                                     |
-| `production`     | The production API domain | [`deploy-production.yml`](../.github/workflows/deploy-production.yml) |
+| Environment    | What it is                                       | Database   |
+| -------------- | ------------------------------------------------ | ---------- |
+| **Preview**    | One deployment per push, on an unpredictable URL | staging    |
+| **`staging`**  | `main`'s deployment, on a fixed domain           | staging    |
+| **production** | `production`'s deployment, on the public domain  | production |
 
-Every Preview migrates the shared staging database before it deploys, so a
-schema change is testable in the Preview that introduces it.
-[Database](DATABASE.md#changing-the-schema) sets out what keeps that safe — the
-rules matter, because one pull request's migration is visible to every other
-Preview.
+Preview and `staging` differ in configuration and durability, never in data —
+they share one database. Both sit behind Vercel Authentication; only the
+production API domain is public.
 
-Terraform for the projects is in
-[`infrastructure/project/`](../infrastructure/project/), which also lists what
-Cloud still has to confirm.
+Nothing deploys until the repository variable `ENABLE_VERCEL_DEPLOYMENTS` is
+exactly `true`. Until then both workflows skip.
 
-## Three things called staging
+## What happens on a pull request
 
-| Term                     | What it is                                                                                  |
-| ------------------------ | ------------------------------------------------------------------------------------------- |
-| **A Preview**            | One deployment per push, on a URL nobody can predict. Every branch gets them.               |
-| **`staging`**            | A Vercel custom environment: `main`'s deployment, on a fixed domain, with its own env vars. |
-| **The staging database** | The single non-production database. Previews and `staging` all share it.                    |
+[`deploy-preview.yml`](../.github/workflows/deploy-preview.yml):
 
-A Preview and `staging` differ in configuration and durability, never in data.
-Calling any non-production deployment "staging" is harmless shorthand right up
-until someone assumes it has its own database.
+1. Applies the branch's migrations to the staging database, so a schema change
+   is testable in the Preview that introduces it. [Database](DATABASE.md) has
+   the rules that keeps safe.
+2. Deploys the API and captures its URL.
+3. Deploys the harness, pointed at that URL.
+4. Requests `/adapter-proxy/health` on the harness until it answers, which
+   passes only if the pair is wired correctly.
+5. Runs `pnpm test:e2e:deployment` against the harness.
+6. Comments both URLs on the pull request.
 
-QA works in each pull request's own Preview, and again in the release branch's,
-so `main` is not a QA gate. `staging` exists because OWA needs a stable adapter
-API origin to integrate against, and because [release process
-step 1](RELEASE_PROCESS.md) otherwise has no fixed deployment to check.
+Fork and Dependabot pull requests skip all of it: they hold no repository
+secrets.
 
-## Nothing runs until the switch is set
+## What happens on `main`
 
-Both workflows skip unless the repository variable `ENABLE_VERCEL_DEPLOYMENTS`
-is exactly `true`. Setting it is the only step between this configuration
-existing and deployments happening.
+The same workflow and the same steps, targeting the `staging` environment
+instead of a Preview, so the deployments land on the staging domains.
 
-## Why not the Git integration
+## What happens on `production`
 
-`apps/api/vercel.json` and `apps/harness/vercel.json` both set
-`git.deploymentEnabled` to `false`.
+[`deploy-production.yml`](../.github/workflows/deploy-production.yml):
 
-A harness deployment is inert until it is told which API deployment to talk to,
-and every Preview gets an unpredictable URL. Only a workflow that has just
-deployed the API knows that URL, so a Git-triggered harness Preview would point
-at nothing. Turning Git deployments off also means the harness never builds for
-production, and that a merge to `production` deploys exactly once.
+1. Applies migrations to the production database.
+2. Deploys with `--skip-domain`, so the deployment exists but holds no traffic.
+3. Checks it: `/health`, and a tRPC probe that must answer 412.
+4. Promotes it onto the production domain.
 
-## How a Preview pair is wired
+A failure at any point leaves the live deployment untouched. The project also
+sets `auto_assign_custom_domains = false`, so nothing else can take the domain
+first.
 
-`deploy-preview.yml` deploys the API, captures its URL, then deploys the harness
-with that URL as `RESOURCE_ADAPTER_API_ORIGIN`. The harness page uses relative
-paths under `/adapter-proxy`, so the browser only ever touches the harness
-origin and the API's bypass credential never reaches a client bundle.
+The browser suite does not run here. It needs a harness pointed at the API under
+test, and the production API refuses harness origins by design.
 
-Both deploy on every push, even when only one app changed: the harness carries
-its API's URL, so skipping a build leaves a pair pointing at the previous
-deployment. `turbo-ignore` and `ignore_command` cannot help — Ignored Build Step
-mechanisms only apply to Git-triggered builds.
+## How the Preview pair is wired
 
-Three values make that work, and two of them are easy to confuse:
+Every Preview produces two deployments whose URLs are unknown until they exist,
+and both sit behind Vercel Authentication. Three things make the pair work.
+
+**The harness proxies to the API.** The harness page talks only to its own
+origin, under `/adapter-proxy`, and
+[`route.ts`](../apps/harness/app/adapter-proxy/%5B...path%5D/route.ts) forwards
+server-side to `RESOURCE_ADAPTER_API_ORIGIN`. The browser therefore needs no
+credential for the API, and the deployment-safe tests need to reach one origin
+rather than two.
+
+**Three values are set per deployment**, because they differ every time and no
+static configuration could hold them:
 
 | Value                                | Set on                 | Which secret              |
 | ------------------------------------ | ---------------------- | ------------------------- |
@@ -79,89 +83,46 @@ Three values make that work, and two of them are easy to confuse:
 | `RESOURCE_ADAPTER_API_BYPASS_SECRET` | The harness deployment | The **API** project's     |
 | `VERCEL_AUTOMATION_BYPASS_SECRET`    | The test job           | The **harness** project's |
 
-The bypass secret is per project. Vercel injects a variable called
-`VERCEL_AUTOMATION_BYPASS_SECRET` into every project holding that project's own
-secret, which is why the proxy in
-[`route.ts`](../apps/harness/app/adapter-proxy/%5B...path%5D/route.ts) reads a
-differently named variable: the harness's own secret opens nothing on the API.
+The bypass secret is per project, and Vercel injects one called
+`VERCEL_AUTOMATION_BYPASS_SECRET` into every project holding that project's own.
+The proxy reads a differently named variable because the harness's own secret
+opens nothing on the API.
 
-The API separately has to trust the harness origin, because Clerk checks the
-token's `azp` claim against `authorizedParties`. That is
-`RESOURCE_ADAPTER_ALLOWED_ORIGIN_PATTERNS`, a static value per environment
-rather than something the workflow sets:
+**The API has to trust the harness origin**, because Clerk checks the token's
+`azp` claim against `authorizedParties`:
 
-- Preview: `https://oak-resource-adapter-harness-*.vercel.thenational.academy`.
-  A wildcard is only safe over a zone Oak controls, and
-  [`cors.ts`](../apps/api/src/cors.ts) discards any pattern that does not end in
-  `.thenational.academy` so configuration alone cannot point it at a public
+- Preview: `RESOURCE_ADAPTER_ALLOWED_ORIGIN_PATTERNS` set to
+  `https://oak-resource-adapter-harness-*.vercel.thenational.academy`.
+  [`cors.ts`](../apps/api/src/cors.ts) discards any pattern not ending in
+  `.thenational.academy`, so configuration alone cannot point it at a public
   suffix such as `vercel.app`.
-- Staging: the harness's staging deployment answers on its own custom domain, so
-  list that domain exactly in `RESOURCE_ADAPTER_ALLOWED_ORIGINS` instead.
-- Production: neither. `cors.ts` ignores patterns entirely when `VERCEL_ENV` is
-  `production`, where OWA is the only caller and its origin is known.
+- Staging: the harness answers on a fixed domain, so list it exactly in
+  `RESOURCE_ADAPTER_ALLOWED_ORIGINS`.
+- Production: neither. `cors.ts` ignores patterns when `VERCEL_ENV` is
+  `production`, where OWA is the only caller.
 
-## Staged production
+## How migrations reach the database
 
-`deploy-production.yml` migrates, deploys with `--skip-domain`, checks the
-deployment while it holds no traffic, and only then promotes it. A failure at
-any point leaves the live deployment untouched. The project also sets
-`auto_assign_custom_domains = false`, so nothing else can take the domain first.
+[`db-migrate.yml`](../.github/workflows/db-migrate.yml) is the only way
+migrations reach a deployed database. It connects through Cloud SQL Proxy on
+`127.0.0.1`, authenticated with Workload Identity Federation, so there is no key
+to rotate and no CI egress IP to allowlist.
 
-The checks are `/health` and a tRPC probe, both from the runner. The browser
-suite cannot run here: it needs a harness pointed at the API under test, and the
-production API refuses harness origins by design.
+Doppler supplies `CLOUD_SQL_INSTANCE_CONNECTION_NAME`,
+`GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT`, and a `DATABASE_URL`
+already pointing at the proxy. The proxy steps are skipped while the instance
+name is empty.
 
-## Who owns which environment variable
+How the _deployed API_ reaches the database is a separate question, and the two
+are easy to conflate. It will authenticate by Vercel OIDC federated to GCP, so
+that it holds no long-lived database credential either — not yet built, so the
+API still connects with a `DATABASE_URL`.
 
-**Doppler owns every Vercel environment variable.** Terraform passes none, and
-owns project shape, domains and protection instead. This is the same split
-`oak-ai-lesson-assistant` uses for its Doppler-synced Vercel project.
+## Secrets the workflows use
 
-Proposed Doppler configs, to be agreed before they are created — the harness has
-no production config because it is never deployed there:
-
-| Config               | Syncs to                                            |
-| -------------------- | --------------------------------------------------- |
-| `prd_vercel_api`     | `oak-resource-adapter-api`, production              |
-| `stg_vercel_api`     | `oak-resource-adapter-api`, preview and staging     |
-| `stg_vercel_harness` | `oak-resource-adapter-harness`, preview and staging |
-
-Whether the Doppler integration can target a Vercel **custom environment** is
-still unconfirmed, and no other Oak repository has needed it — Aila syncs
-Doppler but has no custom environments, and the moderation service has one but
-no Doppler. If it cannot, `staging` values move into Terraform's
-`custom_env_vars` and the split above holds for Preview and Production only.
-
-The three values in the pairing table above are the exception: they differ per
-deployment, so the workflow passes them with `vercel deploy --env`.
-
-### Four that are easy to get wrong
-
-**The harness and the browser tests must share one Clerk instance.** The tests
-sign in with the credentials in `stg_github`; the deployed harness verifies that
-session with the publishable key in `stg_vercel_harness`. If those two configs
-point at different Clerk instances the deployment-safe suite fails at sign-in,
-looking like a broken deployment rather than a mismatched key.
-
-**`SENTRY_DSN` is required in every Vercel config, not just production.**
-[`initSentry`](../apps/api/src/sentry/init.ts) throws when the DSN is missing
-under `NODE_ENV=production`, and Vercel builds every deployment that way —
-Preview and staging included. Omit it from the Preview config and every API
-Preview fails on boot.
-
-**`ENABLE_DEV_ROUTES` belongs in Preview and staging only**, because the harness
-posts to the unauthenticated `/dev` routes.
-[`devRoutesEnabled`](../apps/api/src/dev-routes.ts) opens them only for an
-explicit affirmative, so leaving it out of the production config and writing
-`0` there both close them.
-
-**`SENTRY_AUTH_TOKEN` does not exist yet.** Source maps go unuploaded until it
-does, so production stack traces stay minified.
-
-## Secrets the workflows need
-
-Repository secrets, with the Vercel values readable from the Terraform
-workspace outputs rather than the dashboard:
+Doppler owns every Vercel environment variable; Terraform owns project shape,
+domains and protection. The workflows themselves hold these as repository
+secrets, readable from the Terraform workspace outputs:
 
 | Secret                         | Purpose                                |
 | ------------------------------ | -------------------------------------- |
@@ -174,16 +135,3 @@ workspace outputs rather than the dashboard:
 
 `DOPPLER_TOKEN` is already in place; see
 [development notes](DEVELOPMENT.md#how-ci-reads-secrets).
-
-## How migrations reach the database
-
-[`db-migrate.yml`](../.github/workflows/db-migrate.yml) connects through Cloud
-SQL Proxy on `127.0.0.1`, authenticated with Workload Identity Federation, so
-there is no key to rotate and no CI egress IP to allowlist. Doppler supplies
-`CLOUD_SQL_INSTANCE_CONNECTION_NAME`, `GCP_WORKLOAD_IDENTITY_PROVIDER`,
-`GCP_SERVICE_ACCOUNT`, and a `DATABASE_URL` already pointing at the proxy. The
-proxy steps are skipped while the instance name is empty, so the workflow is
-unchanged until Cloud provisions the service account.
-
-This says nothing about how the Vercel runtime reaches the database, which needs
-its own route. The two are easy to conflate.

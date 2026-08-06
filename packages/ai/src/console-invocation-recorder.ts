@@ -1,6 +1,5 @@
 import { raLogger } from "@oaknational/resource-adapter-logger";
 
-import { errorMetadata } from "./error-metadata.js";
 import type {
   InvocationRecorder,
   ModelInvocationFailed,
@@ -43,22 +42,30 @@ export function createConsoleInvocationRecorder(
         ...baseLogFields(invocation),
         completedAt: invocation.completedAt.toISOString(),
         durationMs: invocation.durationMs,
-        responseId: invocation.response.id,
+        outputValidationStatus: invocation.outputValidationStatus,
+        responseId: invocation.response.providerResponseId,
         usage: invocation.response.usage
           ? {
-              inputTokens: invocation.response.usage.input_tokens,
-              outputTokens: invocation.response.usage.output_tokens,
-              totalTokens: invocation.response.usage.total_tokens,
+              inputTokens: invocation.response.usage.inputTokens,
+              outputTokens: invocation.response.usage.outputTokens,
+              totalTokens: invocation.response.usage.totalTokens,
             }
           : undefined,
       });
     },
     recordFailed(invocation: ModelInvocationFailed) {
+      // Classification only. The provider's message can carry prompt content and
+      // stays on `cause`; its code is diagnostic and does not.
       info("Model invocation failed %o", {
         ...baseLogFields(invocation),
         completedAt: invocation.completedAt.toISOString(),
         durationMs: invocation.durationMs,
-        ...errorMetadata(invocation.error),
+        errorCode: invocation.error.code,
+        errorStatus: invocation.error.status,
+        providerCode: invocation.error.providerCode,
+        responseId: invocation.response?.providerResponseId,
+        retryable: invocation.error.retryable,
+        usage: invocation.response?.usage,
       });
     },
   };

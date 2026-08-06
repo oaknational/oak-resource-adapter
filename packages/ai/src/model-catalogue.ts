@@ -7,7 +7,8 @@ type ModelCatalogueEntry = Readonly<{
 }>;
 
 export const SUPPORTED_MODELS = {
-  "gpt-5.4-2026-03-05": { provider: "openai" },
+  "gpt-5.6-luna": { provider: "openai" },
+  "gpt-5.6-terra": { provider: "openai" },
 } as const satisfies Readonly<Record<string, ModelCatalogueEntry>>;
 
 /**

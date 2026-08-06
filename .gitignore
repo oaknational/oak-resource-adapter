@@ -22,6 +22,7 @@ test-results/
 
 .yalc/
 yalc.lock
+.serena
 
 # Terraform Cloud holds the state; a local init leaves these behind.
 .terraform/

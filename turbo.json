@@ -18,11 +18,14 @@
       "env": [
         "DATABASE_URL",
         "ENABLE_DEV_ROUTES",
+        "POSTHOG_API_KEY",
+        "POSTHOG_HOST",
         "RESOURCE_ADAPTER_ALLOWED_ORIGINS",
         "RESOURCE_ADAPTER_ALLOWED_ORIGIN_PATTERNS",
         "RESOURCE_ADAPTER_API_BYPASS_SECRET",
         "RESOURCE_ADAPTER_API_ORIGIN",
         "SENTRY_ENVIRONMENT",
+        "USE_POSTHOG",
         "VERCEL_ENV"
       ],
       "persistent": true

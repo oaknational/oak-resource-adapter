@@ -24,7 +24,7 @@ secret:
 there is no `DATABASE_URL` secret at repository or Environment level, and no
 workflow carries a database credential. The deploy workflows additionally hold
 Vercel's own credentials, listed in
-[deployment](DEPLOYMENT.md#secrets-the-workflows-need).
+[deployment](DEPLOYMENT.md#secrets-the-workflows-use).
 
 The same name at every scope is deliberate: GitHub resolves an Environment secret
 over the repository one for any job declaring that `environment:`.
@@ -41,9 +41,7 @@ inheriting from the `stg` and `prd` roots.
 
 Vercel gets its own branch configs, split by project, because only the API has
 database and Clerk secret-key access. Doppler is the sole owner of Vercel
-environment variables and Terraform passes none; see
-[deployment](DEPLOYMENT.md#who-owns-which-environment-variable) for the naming
-and the reasoning.
+environment variables and Terraform passes none.
 
 ## Applying migrations
 

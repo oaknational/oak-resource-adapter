@@ -40,9 +40,9 @@ describe("getResourceAdapterCapabilities", () => {
 
     await expect(
       getResourceAdapterCapabilities({
+        apiBaseUrl: "https://resource-adapter-api.example",
         getToken: async () => "clerk-token",
         lesson,
-        trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
       }),
     ).resolves.toMatchObject({
       capabilities: [{ id: "worksheetAdapter" }],
@@ -88,10 +88,38 @@ describe("getResourceAdapterCapabilities", () => {
 
     await expect(
       getResourceAdapterCapabilities({
+        apiBaseUrl: "https://resource-adapter-api.example",
         getToken: async () => null,
         lesson,
-        trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
       }),
     ).resolves.toEqual({ capabilities: [] });
+  });
+
+  it("resolves the public endpoint from apiBaseUrl", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          {
+            result: {
+              data: {
+                capabilities: [],
+              },
+            },
+          },
+        ]),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getResourceAdapterCapabilities({
+      apiBaseUrl: "https://resource-adapter-api.example/proxy/resource-adapter/",
+      getToken: async () => "clerk-token",
+      lesson,
+    });
+
+    const [url] = fetchMock.mock.calls[0] ?? [];
+    expect(String(url)).toContain(
+      "https://resource-adapter-api.example/proxy/resource-adapter/trpc/v1/capabilities.get?batch=1",
+    );
   });
 });
