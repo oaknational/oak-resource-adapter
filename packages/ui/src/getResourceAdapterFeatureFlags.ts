@@ -8,28 +8,20 @@ import { ResourceAdapterApiError } from "./getResourceAdapterCapabilities.js";
 
 type ResourceAdapterFeatureFlagsHostProps = Pick<
   ResourceAdapterHostProps,
-  "getToken" | "trpcEndpoint"
+  "apiBaseUrl" | "getToken"
 >;
-
-function deriveInternalEndpoint(publicEndpoint: string): string {
-  return publicEndpoint.replace(/\/trpc\/v\d+$/, "/trpc/internal");
-}
 
 /**
  * Retrieves feature flags enabled for the authenticated teacher.
- *
- * Automatically derives the internal endpoint from the public endpoint.
  */
 export async function getResourceAdapterFeatureFlags({
+  apiBaseUrl,
   getToken,
-  trpcEndpoint,
 }: ResourceAdapterFeatureFlagsHostProps): Promise<ResourceAdapterFeatureFlagsResponse> {
-  const internalEndpoint = deriveInternalEndpoint(trpcEndpoint);
-
   try {
     const response = await createResourceAdapterInternalClient({
+      apiBaseUrl,
       getToken,
-      trpcEndpoint: internalEndpoint,
     }).featureFlags.get.query();
     const parsedResponse =
       resourceAdapterFeatureFlagsResponseSchema.safeParse(response);

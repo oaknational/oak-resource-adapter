@@ -8,6 +8,19 @@ import type { ResourceAdapterDialogProps } from "./ResourceAdapterDialog.js";
 import { getResourceAdapterFeatureFlags } from "./getResourceAdapterFeatureFlags.js";
 import type { LessonContext, ResourceAdapterCapability } from "./publicTypes.js";
 
+const { logErrorMock } = vi.hoisted(() => ({
+  logErrorMock: vi.fn(),
+}));
+
+vi.mock("@oaknational/resource-adapter-logger", () => ({
+  raLogger: () => ({
+    error: logErrorMock,
+    info: vi.fn(),
+    table: vi.fn(),
+    warn: vi.fn(),
+  }),
+}));
+
 // The flag request itself is covered by getResourceAdapterFeatureFlags.test.ts,
 // so these tests own only what the dialog does with the result.
 vi.mock("./getResourceAdapterFeatureFlags.js", () => ({
@@ -35,12 +48,12 @@ const worksheetCapability: ResourceAdapterCapability = {
 
 function renderDialog(overrides: Partial<ResourceAdapterDialogProps> = {}) {
   const props: ResourceAdapterDialogProps = {
+    apiBaseUrl: "https://resource-adapter-api.example",
     capabilities: [worksheetCapability],
     getToken: async () => "clerk-token",
     isOpen: true,
     lesson,
     onClose: vi.fn(),
-    trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
     ...overrides,
   };
 
@@ -121,8 +134,8 @@ describe("ResourceAdapterDialog", () => {
 
       await waitFor(() => {
         expect(getFeatureFlagsMock).toHaveBeenCalledWith({
+          apiBaseUrl: props.apiBaseUrl,
           getToken: props.getToken,
-          trpcEndpoint: props.trpcEndpoint,
         });
       });
     });
@@ -151,12 +164,14 @@ describe("ResourceAdapterDialog", () => {
     // A flag outage must not take the dialog down with it: teachers still get
     // the base experience, minus anything gated.
     it("keeps the dialog usable when the flag request fails", async () => {
-      getFeatureFlagsMock.mockRejectedValue(new Error("service unavailable"));
+      const error = new Error("service unavailable");
+      getFeatureFlagsMock.mockRejectedValue(error);
       renderDialog();
 
       await waitFor(() => {
         expect(getFeatureFlagsMock).toHaveBeenCalled();
       });
+      expect(logErrorMock).toHaveBeenCalledWith(error);
       expect(screen.getByText(lesson.title)).toBeInTheDocument();
       expect(
         screen.queryByText(/New Resource Adapter UI can be rendered here/),

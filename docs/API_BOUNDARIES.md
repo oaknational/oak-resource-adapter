@@ -44,7 +44,7 @@ Served by `hostRouter` from `@oaknational/resource-adapter-contracts/server`.
 - **Context**: `ResourceAdapterApiContextHost` (includes capabilities service + version checking)
 - **Procedures**:
   - `capabilities.get` — Discover and manage lesson adaptations
-- **Version Checking**: All requests must include the `x-resource-adapter-api-contract-version` header with value `1`
+- **Version Checking**: All requests must include the `x-resource-adapter-contract-version` header with value `1`
 
 ### Internal API: `/trpc/internal` (UI Component Private)
 
@@ -58,14 +58,36 @@ Served by `internalRouter` from `@oaknational/resource-adapter-contracts/interna
 - **Version Checking**: Not required; internal endpoints have no version contract
 - **Future**: When new UI-private needs arise (analytics, caching, debug info), they belong here alongside feature flags
 
-### Endpoint Derivation
+### Endpoint construction
 
-The UI component automatically derives the internal endpoint from the public endpoint:
+Hosts pass a single `apiBaseUrl` — the origin the Resource Adapter API is served
+from — and the UI component appends both paths itself. Neither endpoint path is
+supplied by the host:
 
-- Input: `https://api.example.com/resource-adapter/trpc/v1`
-- Derived: `https://api.example.com/resource-adapter/trpc/internal`
+- Input: `https://api.example.com`
+- Public client: `https://api.example.com/trpc/v1`
+- Internal client: `https://api.example.com/trpc/internal`
 
-This keeps the public interface stable while allowing the internal implementation to evolve independently.
+A base URL mounted behind a proxy path keeps that path:
+
+- Input: `https://api.example.com/resource-adapter`
+- Public client: `https://api.example.com/resource-adapter/trpc/v1`
+- Internal client: `https://api.example.com/resource-adapter/trpc/internal`
+
+`normalizeApiBaseUrl` in [`packages/ui/src/client.ts`](../packages/ui/src/client.ts)
+validates the value before either client is built:
+
+| Rule                          | Why                                                                            |
+| ----------------------------- | ------------------------------------------------------------------------------ |
+| Trailing slashes are stripped | A configured value ending in `/` would otherwise produce `//trpc/v1`           |
+| Must parse as an absolute URL | A relative value silently resolves against the host page, not the API          |
+| Must use `http` or `https`    | Rejects a mis-set value before it reaches the network as an unsupported scheme |
+
+Each rule throws on failure rather than falling back, so a misconfigured host
+fails at client construction instead of on the first request.
+
+Because hosts depend on the origin alone, the internal API's paths and procedures
+can change without a host-side change.
 
 ## Deployment and consumer model
 

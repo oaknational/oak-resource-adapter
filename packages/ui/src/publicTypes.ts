@@ -20,7 +20,7 @@ export type {
 export type GetToken = () => Promise<string | null>;
 
 export type ResourceAdapterHostProps = Readonly<{
+  apiBaseUrl: string;
   getToken: GetToken;
   lesson: LessonContext;
-  trpcEndpoint: string;
 }>;

@@ -21,8 +21,8 @@ describe("getResourceAdapterFeatureFlags", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await getResourceAdapterFeatureFlags({
+      apiBaseUrl: "https://resource-adapter-api.example",
       getToken: async () => "clerk-token",
-      trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
     });
 
     const [url] = fetchMock.mock.calls[0] ?? [];
@@ -45,8 +45,8 @@ describe("getResourceAdapterFeatureFlags", () => {
 
     await expect(
       getResourceAdapterFeatureFlags({
+        apiBaseUrl: "https://resource-adapter-api.example",
         getToken: async () => "clerk-token",
-        trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
       }),
     ).resolves.toEqual(["feature-flags-smoke-test-enabled"]);
 
@@ -72,8 +72,8 @@ describe("getResourceAdapterFeatureFlags", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await getResourceAdapterFeatureFlags({
+      apiBaseUrl: "https://resource-adapter-api.example",
       getToken: async () => "clerk-token",
-      trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
     });
 
     const [, request] = fetchMock.mock.calls[0] ?? [];
@@ -89,8 +89,8 @@ describe("getResourceAdapterFeatureFlags", () => {
 
     await expect(
       getResourceAdapterFeatureFlags({
+        apiBaseUrl: "https://resource-adapter-api.example",
         getToken: async () => null,
-        trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
       }),
     ).resolves.toEqual([]);
 
@@ -119,8 +119,8 @@ describe("getResourceAdapterFeatureFlags", () => {
 
     await expect(
       getResourceAdapterFeatureFlags({
+        apiBaseUrl: "https://resource-adapter-api.example",
         getToken: async () => null,
-        trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
       }),
     ).rejects.toMatchObject({
       name: "ResourceAdapterApiError",
@@ -133,8 +133,8 @@ describe("getResourceAdapterFeatureFlags", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
 
     const error = await getResourceAdapterFeatureFlags({
+      apiBaseUrl: "https://resource-adapter-api.example",
       getToken: async () => "clerk-token",
-      trpcEndpoint: "https://resource-adapter-api.example/trpc/v1",
     }).catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(ResourceAdapterApiError);
@@ -146,26 +146,30 @@ describe("getResourceAdapterFeatureFlags", () => {
 
   describe("endpoint derivation", () => {
     it.each([
-      ["https://api.example/trpc/v1", "https://api.example/trpc/internal"],
+      ["https://api.example", "https://api.example/trpc/internal"],
+      ["https://api.example/", "https://api.example/trpc/internal"],
       [
-        "https://api.example/resource-adapter/trpc/v1",
+        "https://api.example/resource-adapter",
         "https://api.example/resource-adapter/trpc/internal",
       ],
-      ["http://localhost:3001/trpc/v1", "http://localhost:3001/trpc/internal"],
-      ["https://api.example/trpc/v2", "https://api.example/trpc/internal"],
-    ])("transforms %s to %s", async (publicEndpoint, expectedInternalEndpoint) => {
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValue(new Response(JSON.stringify([{ result: { data: [] } }])));
-      vi.stubGlobal("fetch", fetchMock);
+      ["http://localhost:3001", "http://localhost:3001/trpc/internal"],
+      ["https://api.example", "https://api.example/trpc/internal"],
+    ])(
+      "transforms %s to internal endpoint %s",
+      async (apiBaseUrl, expectedInternalEndpoint) => {
+        const fetchMock = vi
+          .fn()
+          .mockResolvedValue(new Response(JSON.stringify([{ result: { data: [] } }])));
+        vi.stubGlobal("fetch", fetchMock);
 
-      await getResourceAdapterFeatureFlags({
-        getToken: async () => "token",
-        trpcEndpoint: publicEndpoint,
-      });
+        await getResourceAdapterFeatureFlags({
+          apiBaseUrl,
+          getToken: async () => "test-token",
+        });
 
-      const [actualUrl] = fetchMock.mock.calls[0] ?? [];
-      expect(String(actualUrl)).toContain(expectedInternalEndpoint);
-    });
+        const [url] = fetchMock.mock.calls[0] ?? [];
+        expect(String(url)).toContain(expectedInternalEndpoint);
+      },
+    );
   });
 });

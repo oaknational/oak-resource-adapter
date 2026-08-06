@@ -12,7 +12,7 @@ function getClient(): PostHog {
   if (!client) {
     if (!process.env.POSTHOG_API_KEY) {
       throw new Error(
-        "POSTHOG_API_KEY is required when PostHog feature flags are enabled. Set NODE_ENV=development or USE_POSTHOG=false to use in-memory flags instead.",
+        "POSTHOG_API_KEY is required when PostHog feature flags are enabled (USE_POSTHOG=true or NODE_ENV=production). In production, PostHog is always enabled. To use in-memory flags, run outside production with USE_POSTHOG=false.",
       );
     }
     client = new PostHog(process.env.POSTHOG_API_KEY, {

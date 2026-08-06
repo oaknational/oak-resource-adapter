@@ -98,6 +98,14 @@ describe("PostHogFeatureFlagAdapter", () => {
       });
     });
 
+    it("throws an accurate setup error when POSTHOG_API_KEY is missing", async () => {
+      vi.stubEnv("POSTHOG_API_KEY", undefined);
+
+      await expect(loadFreshAdapter()).rejects.toThrow(
+        "POSTHOG_API_KEY is required when PostHog feature flags are enabled (USE_POSTHOG=true or NODE_ENV=production). In production, PostHog is always enabled. To use in-memory flags, run outside production with USE_POSTHOG=false.",
+      );
+    });
+
     it("shares a single client across adapter instances", async () => {
       providerAnswers(true);
       const { PostHogFeatureFlagAdapter } = await loadAdapterModule();

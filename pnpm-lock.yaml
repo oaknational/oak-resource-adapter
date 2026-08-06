@@ -251,6 +251,9 @@ importers:
       '@oaknational/resource-adapter-contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@oaknational/resource-adapter-logger':
+        specifier: workspace:*
+        version: link:../logger
       '@trpc/client':
         specifier: 11.18.0
         version: 11.18.0(@trpc/server@11.18.0(typescript@7.0.2))(typescript@7.0.2)

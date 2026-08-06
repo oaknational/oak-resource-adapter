@@ -66,6 +66,7 @@
   },
   "dependencies": {
     "@oaknational/resource-adapter-contracts": "workspace:*",
+    "@oaknational/resource-adapter-logger": "workspace:*",
     "@trpc/client": "11.18.0"
   }
 }

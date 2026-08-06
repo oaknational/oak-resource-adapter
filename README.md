@@ -93,18 +93,18 @@ import {
 } from "@oaknational/resource-adapter";
 
 const capabilities = await getResourceAdapterCapabilities({
+  apiBaseUrl: "https://resource-adapter.example",
   getToken,
   lesson,
-  trpcEndpoint: "https://resource-adapter.example/trpc/v1",
 });
 
 <ResourceAdapterDialog
+  apiBaseUrl="https://resource-adapter.example"
   capabilities={capabilities.capabilities}
   getToken={getToken}
   isOpen={true}
   lesson={lesson}
   onClose={() => {}}
-  trpcEndpoint="https://resource-adapter.example/trpc/v1"
 />;
 ```
 

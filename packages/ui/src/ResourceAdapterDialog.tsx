@@ -9,6 +9,7 @@ import {
   OakInformativeModalBody,
   OakP,
 } from "@oaknational/oak-components";
+import { raLogger } from "@oaknational/resource-adapter-logger";
 
 import { FeatureFlag } from "./FeatureFlag.js";
 import { getResourceAdapterFeatureFlags } from "./getResourceAdapterFeatureFlags.js";
@@ -19,25 +20,27 @@ import type {
 } from "./publicTypes.js";
 
 export type ResourceAdapterDialogProps = Readonly<{
+  apiBaseUrl: string;
   capabilities: readonly ResourceAdapterCapability[];
   getToken: GetToken;
   isOpen: boolean;
   lesson: LessonContext;
   onClose: () => void;
-  trpcEndpoint: string;
 }>;
+
+const log = raLogger("feature-flags");
 
 /**
  * The package-owned adapter sidebar. Generation controls, progress, preview and
  * download flow will be added here without requiring OWA layout changes.
  */
 export function ResourceAdapterDialog({
+  apiBaseUrl,
   capabilities,
   getToken,
   isOpen,
   lesson,
   onClose,
-  trpcEndpoint,
 }: ResourceAdapterDialogProps) {
   const [enabledFlags, setEnabledFlags] = useState<readonly string[]>([]);
   const capability = capabilities[0];
@@ -53,13 +56,14 @@ export function ResourceAdapterDialog({
 
       try {
         const flags = await getResourceAdapterFeatureFlags({
+          apiBaseUrl,
           getToken,
-          trpcEndpoint,
         });
         if (!canceled) {
           setEnabledFlags(flags);
         }
-      } catch {
+      } catch (error) {
+        log.error(error);
         if (!canceled) {
           setEnabledFlags([]);
         }
@@ -71,7 +75,7 @@ export function ResourceAdapterDialog({
     return () => {
       canceled = true;
     };
-  }, [getToken, isOpen, trpcEndpoint]);
+  }, [apiBaseUrl, getToken, isOpen]);
 
   return (
     <OakInformativeModal

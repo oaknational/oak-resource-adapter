@@ -12,18 +12,38 @@ export type ResourceAdapterPublicApiClient = TRPCClient<HostRouter>;
 export type ResourceAdapterInternalApiClient = TRPCClient<InternalRouter>;
 
 export type CreateResourceAdapterClientOptions = Readonly<{
+  apiBaseUrl: string;
   getToken: GetToken;
-  trpcEndpoint: string;
 }>;
 
-type CreateClientOptions = CreateResourceAdapterClientOptions &
-  Readonly<{ extraHeaders?: Readonly<Record<string, string>> }>;
+function normalizeApiBaseUrl(url: string): string {
+  const normalized = url.trim().replace(/\/+$/, "");
 
-function createLinkOptions({
-  extraHeaders,
-  getToken,
-  trpcEndpoint,
-}: CreateClientOptions) {
+  if (!normalized) {
+    throw new Error("apiBaseUrl must be a non-empty absolute http(s) URL.");
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(normalized);
+  } catch {
+    throw new Error("apiBaseUrl must be a valid absolute http(s) URL.");
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error("apiBaseUrl must use http or https.");
+  }
+
+  return normalized;
+}
+
+type CreateLinkOptions = Readonly<{
+  extraHeaders?: Readonly<Record<string, string>>;
+  getToken: GetToken;
+  url: string;
+}>;
+
+function createLinkOptions({ extraHeaders, getToken, url }: CreateLinkOptions) {
   return {
     headers: async () => {
       const token = await getToken();
@@ -34,7 +54,7 @@ function createLinkOptions({
       };
     },
     methodOverride: "POST" as const,
-    url: trpcEndpoint,
+    url,
   };
 }
 
@@ -42,14 +62,17 @@ function createLinkOptions({
  * Creates a typed tRPC client for the public API (capabilities).
  * Includes the contract version header.
  */
-export function createResourceAdapterClient(
-  options: CreateResourceAdapterClientOptions,
-): ResourceAdapterPublicApiClient {
+export function createResourceAdapterClient({
+  apiBaseUrl,
+  getToken,
+}: CreateResourceAdapterClientOptions): ResourceAdapterPublicApiClient {
+  const base = normalizeApiBaseUrl(apiBaseUrl);
   return createTRPCClient<HostRouter>({
     links: [
       httpBatchLink(
         createLinkOptions({
-          ...options,
+          getToken,
+          url: `${base}/trpc/v1`,
           extraHeaders: {
             [resourceAdapterApiContractVersionHeader]: String(
               resourceAdapterApiContractVersion,
@@ -65,10 +88,14 @@ export function createResourceAdapterClient(
  * Creates a typed tRPC client for the internal API (feature flags and other UI-private procedures).
  * Does not include the contract version header (internal APIs are unversioned).
  */
-export function createResourceAdapterInternalClient(
-  options: CreateResourceAdapterClientOptions,
-): ResourceAdapterInternalApiClient {
+export function createResourceAdapterInternalClient({
+  apiBaseUrl,
+  getToken,
+}: CreateResourceAdapterClientOptions): ResourceAdapterInternalApiClient {
+  const base = normalizeApiBaseUrl(apiBaseUrl);
   return createTRPCClient<InternalRouter>({
-    links: [httpBatchLink(createLinkOptions(options))],
+    links: [
+      httpBatchLink(createLinkOptions({ getToken, url: `${base}/trpc/internal` })),
+    ],
   });
 }

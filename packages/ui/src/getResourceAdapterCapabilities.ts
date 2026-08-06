@@ -24,14 +24,14 @@ export class ResourceAdapterApiError extends Error {
  * response validation.
  */
 export async function getResourceAdapterCapabilities({
+  apiBaseUrl,
   getToken,
   lesson,
-  trpcEndpoint,
 }: ResourceAdapterHostProps): Promise<ResourceAdapterCapabilitiesResponse> {
   try {
     const response = await createResourceAdapterClient({
+      apiBaseUrl,
       getToken,
-      trpcEndpoint,
     }).capabilities.get.query(lesson);
     const parsedResponse =
       resourceAdapterCapabilitiesResponseSchema.safeParse(response);
