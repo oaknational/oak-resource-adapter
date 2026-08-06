@@ -28,7 +28,8 @@
     "@oaknational/resource-adapter-db": "workspace:*",
     "@oaknational/resource-adapter-logger": "workspace:*",
     "drizzle-orm": "^0.45.2",
-    "openai": "6.49.0"
+    "openai": "6.49.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

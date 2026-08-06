@@ -295,6 +295,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "output_validation_status": {
+          "name": "output_validation_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "prompt_template_id": {
           "name": "prompt_template_id",
           "type": "uuid",

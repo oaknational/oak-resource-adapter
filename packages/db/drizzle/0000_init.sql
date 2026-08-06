@@ -46,6 +46,7 @@ CREATE TABLE "resource_adapter"."model_invocations" (
 	"input_tokens" integer,
 	"model" text NOT NULL,
 	"output_tokens" integer,
+	"output_validation_status" text,
 	"prompt_template_id" uuid,
 	"provider" text NOT NULL,
 	"provider_response_id" text,
