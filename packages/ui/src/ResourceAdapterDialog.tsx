@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import {
   OakFlex,
   OakHeading,
@@ -8,22 +10,28 @@ import {
   OakP,
 } from "@oaknational/oak-components";
 
+import { FeatureFlag } from "./FeatureFlag.js";
+import { getResourceAdapterFeatureFlags } from "./getResourceAdapterFeatureFlags.js";
+import { reportToHost } from "./errors.js";
 import {
   ResourceAdapterErrorBoundary,
   ResourceAdapterUnavailableMessage,
 } from "./ResourceAdapterErrorBoundary.js";
 import type {
+  GetToken,
   LessonContext,
   ResourceAdapterCapability,
   ResourceAdapterErrorHandler,
 } from "./publicTypes.js";
 
 export type ResourceAdapterDialogProps = Readonly<{
+  apiBaseUrl: string;
   capabilities: readonly ResourceAdapterCapability[];
+  getToken: GetToken;
   isOpen: boolean;
   lesson: LessonContext;
   onClose: () => void;
-  /** Invoked with any caught render failure, for the host's own observability. */
+  /** Invoked with any error the adapter catches, for the host's observability. */
   onError?: ResourceAdapterErrorHandler;
 }>;
 
@@ -64,14 +72,56 @@ type ResourceAdapterDialogInnerProps = ResourceAdapterDialogProps &
   Readonly<{ resetKeys: readonly unknown[] }>;
 
 function ResourceAdapterDialogInner({
+  apiBaseUrl,
   capabilities,
+  getToken,
   isOpen,
   lesson,
   onClose,
   onError,
   resetKeys,
 }: ResourceAdapterDialogInnerProps) {
+  const [enabledFlags, setEnabledFlags] = useState<readonly string[]>([]);
   const capability = capabilities[0];
+
+  // A ref, so an inline host callback does not re-run the fetch below.
+  const onErrorRef = useRef(onError);
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
+  useEffect(() => {
+    let canceled = false;
+
+    async function loadFlags() {
+      if (!isOpen) {
+        setEnabledFlags([]);
+        return;
+      }
+
+      try {
+        const flags = await getResourceAdapterFeatureFlags({
+          apiBaseUrl,
+          getToken,
+        });
+        if (!canceled) {
+          setEnabledFlags(flags);
+        }
+      } catch (error) {
+        reportToHost(onErrorRef.current, error);
+
+        if (!canceled) {
+          setEnabledFlags([]);
+        }
+      }
+    }
+
+    void loadFlags();
+
+    return () => {
+      canceled = true;
+    };
+  }, [apiBaseUrl, getToken, isOpen]);
 
   return (
     <OakInformativeModal
@@ -91,7 +141,11 @@ function ResourceAdapterDialogInner({
             {...(onError ? { onError } : {})}
             resetKeys={resetKeys}
           >
-            <ResourceAdapterDialogContent capability={capability} lesson={lesson} />
+            <ResourceAdapterDialogContent
+              capability={capability}
+              enabledFlags={enabledFlags}
+              lesson={lesson}
+            />
           </ResourceAdapterErrorBoundary>
         </OakFlex>
       </OakInformativeModalBody>
@@ -101,6 +155,7 @@ function ResourceAdapterDialogInner({
 
 type ResourceAdapterDialogContentProps = Readonly<{
   capability: ResourceAdapterCapability | undefined;
+  enabledFlags: readonly string[];
   lesson: LessonContext;
 }>;
 
@@ -110,6 +165,7 @@ type ResourceAdapterDialogContentProps = Readonly<{
  */
 function ResourceAdapterDialogContent({
   capability,
+  enabledFlags,
   lesson,
 }: ResourceAdapterDialogContentProps) {
   return (
@@ -123,6 +179,12 @@ function ResourceAdapterDialogContent({
           Available capability: <strong>{capability.label}</strong>.
         </OakP>
       )}
+      <FeatureFlag enabledFlags={enabledFlags} flag="feature-flags-smoke-test-enabled">
+        <OakP>
+          Feature flag <strong>feature-flags-smoke-test-enabled</strong> is enabled. New
+          Resource Adapter UI can be rendered here.
+        </OakP>
+      </FeatureFlag>
     </>
   );
 }

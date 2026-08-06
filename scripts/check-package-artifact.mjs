@@ -156,6 +156,7 @@ try {
   // with whatever the source says, so a directive added to a server-safe module
   // by mistake would pass. Adding a module means choosing a list for it.
   const clientModules = [
+    "FeatureFlag.js",
     "ResourceAdapterButton.js",
     "ResourceAdapterDialog.js",
     "ResourceAdapterErrorBoundary.js",
@@ -163,7 +164,9 @@ try {
   const serverSafeModules = [
     "index.js",
     "client.js",
+    "errors.js",
     "getResourceAdapterCapabilities.js",
+    "getResourceAdapterFeatureFlags.js",
     "capabilities.js",
     "publicTypes.js",
   ];

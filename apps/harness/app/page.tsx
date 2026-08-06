@@ -29,9 +29,6 @@ const lesson: LessonContext = {
 
 const apiBaseUrl =
   process.env.NEXT_PUBLIC_RESOURCE_ADAPTER_API_BASE_URL ?? "http://localhost:3001";
-const trpcEndpoint =
-  process.env.NEXT_PUBLIC_RESOURCE_ADAPTER_TRPC_ENDPOINT ??
-  "http://localhost:3001/trpc/v1";
 
 type ApiHealthState = "checking" | "healthy" | "unavailable";
 type TestJobStatus = "failed" | "queued" | "running" | "succeeded";
@@ -114,15 +111,15 @@ export default function HarnessPage() {
     log.info("Loading capabilities for lesson %s", lesson.lessonSlug);
 
     try {
-      const response = await getResourceAdapterCapabilities({
+      const capabilitiesResponse = await getResourceAdapterCapabilities({
+        apiBaseUrl,
         getToken,
         lesson,
-        trpcEndpoint,
       });
 
-      setCapabilities(response.capabilities);
+      setCapabilities(capabilitiesResponse.capabilities);
       setCapabilitiesState("ready");
-      log.info("Loaded %d capabilities", response.capabilities.length);
+      log.info("Loaded %d capabilities", capabilitiesResponse.capabilities.length);
     } catch (error: unknown) {
       setCapabilities([]);
 
@@ -377,7 +374,9 @@ export default function HarnessPage() {
           )}
         </article>
         <ResourceAdapterDialog
+          apiBaseUrl={apiBaseUrl}
           capabilities={capabilities}
+          getToken={getToken}
           isOpen={isResourceAdapterOpen}
           lesson={lesson}
           onClose={() => setIsResourceAdapterOpen(false)}

@@ -2,6 +2,7 @@
 
 import { Component, useEffect, useRef, type ReactNode } from "react";
 
+import { reportToHost } from "./errors.js";
 import type { ResourceAdapterErrorHandler } from "./publicTypes.js";
 
 export type ResourceAdapterErrorBoundaryProps = Readonly<{
@@ -19,21 +20,6 @@ export type ResourceAdapterErrorBoundaryProps = Readonly<{
 type ResourceAdapterErrorBoundaryState = Readonly<{
   hasError: boolean;
 }>;
-
-/** React reports whatever was thrown, which is not necessarily an Error. */
-function toError(thrown: unknown): Error {
-  if (thrown instanceof Error) {
-    return thrown;
-  }
-
-  try {
-    return new Error(String(thrown));
-  } catch {
-    // String() throws on a null-prototype object, and throwing here would
-    // unmount the boundary and let the crash reach the host.
-    return new Error("Unstringifiable value thrown during render");
-  }
-}
 
 function resetKeysChanged(
   previous: readonly unknown[] = [],
@@ -66,16 +52,7 @@ export class ResourceAdapterErrorBoundary extends Component<
     thrown: unknown,
     errorInfo: { componentStack?: string | null },
   ): void {
-    const componentStack = errorInfo.componentStack ?? null;
-
-    try {
-      // Promise.resolve so an async onError's rejection is swallowed too.
-      void Promise.resolve(
-        this.props.onError?.(toError(thrown), { componentStack }),
-      ).catch(() => {});
-    } catch {
-      // A broken host callback must not affect the fallback render.
-    }
+    reportToHost(this.props.onError, thrown, errorInfo.componentStack ?? null);
   }
 
   override componentDidMount(): void {

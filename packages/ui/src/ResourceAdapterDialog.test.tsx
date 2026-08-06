@@ -1,11 +1,26 @@
 // @vitest-environment jsdom
 import { type ReactNode } from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { OakThemeProvider, oakDefaultTheme } from "@oaknational/oak-components";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { userEvent } from "@testing-library/user-event";
 
 import { ResourceAdapterDialog } from "./ResourceAdapterDialog.js";
+import type { ResourceAdapterDialogProps } from "./ResourceAdapterDialog.js";
+import { getResourceAdapterFeatureFlags } from "./getResourceAdapterFeatureFlags.js";
 import type { LessonContext, ResourceAdapterCapability } from "./publicTypes.js";
+
+// The flag request itself is covered by getResourceAdapterFeatureFlags.test.ts,
+// so these tests own only what the dialog does with the result.
+vi.mock("./getResourceAdapterFeatureFlags.js", () => ({
+  getResourceAdapterFeatureFlags: vi.fn(),
+}));
+
+const getFeatureFlagsMock = vi.mocked(getResourceAdapterFeatureFlags);
+
+const smokeTestFlag = "feature-flags-smoke-test-enabled";
+const apiBaseUrl = "https://resource-adapter-api.example";
+const getToken = async () => "clerk-token";
 
 const lesson: LessonContext = {
   lessonSlug: "adding-fractions",
@@ -44,6 +59,20 @@ function shellCrashingCapabilities(): readonly ResourceAdapterCapability[] {
   });
 }
 
+function dialogProps(
+  overrides: Partial<ResourceAdapterDialogProps> = {},
+): ResourceAdapterDialogProps {
+  return {
+    apiBaseUrl,
+    capabilities: [capability],
+    getToken,
+    isOpen: true,
+    lesson,
+    onClose: vi.fn(),
+    ...overrides,
+  };
+}
+
 function renderWithTheme(children: ReactNode) {
   const result = render(
     <OakThemeProvider theme={oakDefaultTheme}>{children}</OakThemeProvider>,
@@ -58,252 +87,343 @@ function renderWithTheme(children: ReactNode) {
   };
 }
 
+function renderDialog(overrides: Partial<ResourceAdapterDialogProps> = {}) {
+  const props = dialogProps(overrides);
+  const { rerenderWithTheme } = renderWithTheme(<ResourceAdapterDialog {...props} />);
+
+  return {
+    props,
+    rerender(nextOverrides: Partial<ResourceAdapterDialogProps>) {
+      rerenderWithTheme(<ResourceAdapterDialog {...props} {...nextOverrides} />);
+    },
+  };
+}
+
+beforeEach(() => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  getFeatureFlagsMock.mockResolvedValue([]);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.clearAllMocks();
+});
+
 describe("ResourceAdapterDialog", () => {
-  beforeEach(() => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+  describe("when open", () => {
+    it("presents the adapter as a labelled dialog", () => {
+      renderDialog();
+
+      expect(
+        screen.getByRole("dialog", { name: "Create more with Aila" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { level: 2, name: "Create more with Aila" }),
+      ).toBeInTheDocument();
+    });
+
+    it("renders the lesson and its capability while nothing throws", () => {
+      renderDialog();
+
+      const dialog = screen.getByRole("dialog", { name: "Create more with Aila" });
+      expect(within(dialog).getByText("Adding fractions")).toBeVisible();
+      expect(within(dialog).getByText("Adapt worksheet")).toBeVisible();
+    });
+
+    it("announces only the first capability while the picker is unbuilt", () => {
+      renderDialog({
+        capabilities: [capability, { ...capability, label: "Adapt starter quiz" }],
+      });
+
+      expect(screen.getByText("Adapt worksheet")).toBeInTheDocument();
+      expect(screen.queryByText("Adapt starter quiz")).not.toBeInTheDocument();
+    });
+
+    it("omits the capability line when the host has none to offer", () => {
+      renderDialog({ capabilities: [] });
+
+      expect(screen.queryByText(/Available capability/)).not.toBeInTheDocument();
+      expect(screen.getByText(lesson.title)).toBeInTheDocument();
+    });
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
+  describe("feature flags", () => {
+    it("requests flags with the host token and base URL", async () => {
+      const { props } = renderDialog();
+
+      await waitFor(() => {
+        expect(getFeatureFlagsMock).toHaveBeenCalledWith({
+          apiBaseUrl: props.apiBaseUrl,
+          getToken: props.getToken,
+        });
+      });
+    });
+
+    it("reveals flagged content once an enabled flag arrives", async () => {
+      getFeatureFlagsMock.mockResolvedValue([smokeTestFlag]);
+      renderDialog();
+
+      expect(
+        await screen.findByText(/New Resource Adapter UI can be rendered here/),
+      ).toBeInTheDocument();
+    });
+
+    it("hides flagged content while the flag is disabled", async () => {
+      getFeatureFlagsMock.mockResolvedValue(["some-other-flag"]);
+      renderDialog();
+
+      await waitFor(() => {
+        expect(getFeatureFlagsMock).toHaveBeenCalled();
+      });
+      expect(
+        screen.queryByText(/New Resource Adapter UI can be rendered here/),
+      ).not.toBeInTheDocument();
+    });
+
+    // A flag outage must not take the dialog down with it: teachers still get
+    // the base experience, minus anything gated.
+    it("keeps the dialog usable and reports a failed flag request", async () => {
+      const error = new Error("service unavailable");
+      const onError = vi.fn();
+      getFeatureFlagsMock.mockRejectedValue(error);
+
+      renderDialog({ onError });
+
+      await waitFor(() => {
+        expect(onError).toHaveBeenCalledWith(error, { componentStack: null });
+      });
+      expect(screen.getByText(lesson.title)).toBeInTheDocument();
+      expect(
+        screen.queryByText(/New Resource Adapter UI can be rendered here/),
+      ).not.toBeInTheDocument();
+    });
+
+    it("survives a host error handler that throws", async () => {
+      getFeatureFlagsMock.mockRejectedValue(new Error("service unavailable"));
+      const onError = vi.fn(() => {
+        throw new Error("host handler broke");
+      });
+
+      renderDialog({ onError });
+
+      await waitFor(() => {
+        expect(onError).toHaveBeenCalled();
+      });
+      expect(screen.getByText(lesson.title)).toBeInTheDocument();
+    });
   });
 
-  it("renders the lesson and its capability while nothing throws", () => {
-    renderWithTheme(
-      <ResourceAdapterDialog
-        capabilities={[capability]}
-        isOpen={true}
-        lesson={lesson}
-        onClose={() => {}}
-      />,
-    );
+  describe("when closed", () => {
+    it("renders no dialog", () => {
+      renderDialog({ isOpen: false });
 
-    const dialog = screen.getByRole("dialog", { name: "Create more with Aila" });
-    expect(within(dialog).getByText("Adding fractions")).toBeVisible();
-    expect(within(dialog).getByText("Adapt worksheet")).toBeVisible();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("requests no flags", () => {
+      renderDialog({ isOpen: false });
+
+      expect(getFeatureFlagsMock).not.toHaveBeenCalled();
+    });
+
+    it("refetches flags on reopening rather than trusting the previous answer", async () => {
+      const { rerender } = renderDialog();
+      await waitFor(() => {
+        expect(getFeatureFlagsMock).toHaveBeenCalledTimes(1);
+      });
+
+      rerender({ isOpen: false });
+      rerender({ isOpen: true });
+
+      await waitFor(() => {
+        expect(getFeatureFlagsMock).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    // Closing mid-request must not let the late answer paint flagged content
+    // over a dialog the teacher has already dismissed.
+    it("discards a flag response that lands after closing", async () => {
+      let resolveFirstRequest: (flags: readonly string[]) => void = () => {};
+      getFeatureFlagsMock
+        .mockReturnValueOnce(
+          new Promise((resolve) => {
+            resolveFirstRequest = resolve;
+          }),
+        )
+        // Leaving the reopened dialog's own request pending means any flagged
+        // content on screen could only have come from the discarded response.
+        .mockReturnValue(new Promise(() => {}));
+
+      const { rerender } = renderDialog();
+      rerender({ isOpen: false });
+      resolveFirstRequest([smokeTestFlag]);
+      rerender({ isOpen: true });
+
+      await waitFor(() => {
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+      });
+      expect(
+        screen.queryByText(/New Resource Adapter UI can be rendered here/),
+      ).not.toBeInTheDocument();
+    });
   });
 
-  it("shows the fallback inside the still-open modal when content crashes", () => {
-    const flag = { crash: true };
-    const onClose = vi.fn();
+  describe("dismissal", () => {
+    it("hands closing back to the host", async () => {
+      const onClose = vi.fn();
+      renderDialog({ onClose });
 
-    renderWithTheme(
-      <ResourceAdapterDialog
-        capabilities={[capability]}
-        isOpen={true}
-        lesson={crashableLesson(flag)}
-        onClose={onClose}
-      />,
-    );
+      await userEvent.click(screen.getByRole("button", { name: "Close" }));
 
-    const dialog = screen.getByRole("dialog", { name: "Create more with Aila" });
-    expect(within(dialog).getByTestId("resource-adapter-error-fallback")).toBeVisible();
-    expect(
-      within(dialog).getByRole("heading", { name: "Create more with Aila" }),
-    ).toBeVisible();
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    // The dialog is presentational about its own visibility: the host owns
+    // `isOpen`, so closing must not be self-applied.
+    it("stays open until the host says otherwise", async () => {
+      renderDialog();
+
+      await userEvent.click(screen.getByRole("button", { name: "Close" }));
+
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
   });
 
-  it("recovers when the dialog is closed and reopened", () => {
-    const flag = { crash: true };
-    const crashable = crashableLesson(flag);
+  describe("crash containment", () => {
+    it("shows the fallback inside the still-open modal when content crashes", () => {
+      renderDialog({ lesson: crashableLesson({ crash: true }) });
 
-    const { rerenderWithTheme } = renderWithTheme(
-      <ResourceAdapterDialog
-        capabilities={[capability]}
-        isOpen={true}
-        lesson={crashable}
-        onClose={() => {}}
-      />,
-    );
-    expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
+      const dialog = screen.getByRole("dialog", { name: "Create more with Aila" });
+      expect(
+        within(dialog).getByTestId("resource-adapter-error-fallback"),
+      ).toBeVisible();
+      expect(
+        within(dialog).getByRole("heading", { name: "Create more with Aila" }),
+      ).toBeVisible();
+    });
 
-    flag.crash = false;
-    rerenderWithTheme(
-      <ResourceAdapterDialog
-        capabilities={[capability]}
-        isOpen={false}
-        lesson={crashable}
-        onClose={() => {}}
-      />,
-    );
-    rerenderWithTheme(
-      <ResourceAdapterDialog
-        capabilities={[capability]}
-        isOpen={true}
-        lesson={crashable}
-        onClose={() => {}}
-      />,
-    );
+    it("recovers when the dialog is closed and reopened", () => {
+      const flag = { crash: true };
+      const crashable = crashableLesson(flag);
 
-    expect(
-      screen.queryByTestId("resource-adapter-error-fallback"),
-    ).not.toBeInTheDocument();
-    expect(screen.getByText("Adding fractions")).toBeVisible();
-  });
+      const { rerender } = renderDialog({ lesson: crashable });
+      expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
 
-  it("recovers when the lesson changes", () => {
-    const flag = { crash: true };
+      flag.crash = false;
+      rerender({ isOpen: false });
+      rerender({ isOpen: true });
 
-    const { rerenderWithTheme } = renderWithTheme(
-      <ResourceAdapterDialog
-        capabilities={[capability]}
-        isOpen={true}
-        lesson={crashableLesson(flag)}
-        onClose={() => {}}
-      />,
-    );
-    expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
+      expect(
+        screen.queryByTestId("resource-adapter-error-fallback"),
+      ).not.toBeInTheDocument();
+      expect(screen.getByText("Adding fractions")).toBeVisible();
+    });
 
-    rerenderWithTheme(
-      <ResourceAdapterDialog
-        capabilities={[capability]}
-        isOpen={true}
-        lesson={{ ...lesson, lessonSlug: "subtracting-fractions" }}
-        onClose={() => {}}
-      />,
-    );
+    it("recovers when the lesson changes", () => {
+      const { rerender } = renderDialog({
+        lesson: crashableLesson({ crash: true }),
+      });
+      expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
 
-    expect(
-      screen.queryByTestId("resource-adapter-error-fallback"),
-    ).not.toBeInTheDocument();
-    expect(screen.getByText("Adding fractions")).toBeVisible();
-  });
+      rerender({ lesson: { ...lesson, lessonSlug: "subtracting-fractions" } });
 
-  it("contains a dialog shell crash and takes focus, sparing the host page", () => {
-    renderWithTheme(
-      <>
-        <p>host page content</p>
-        <ResourceAdapterDialog
-          capabilities={shellCrashingCapabilities()}
-          isOpen={true}
-          lesson={lesson}
-          onClose={() => {}}
-        />
-      </>,
-    );
+      expect(
+        screen.queryByTestId("resource-adapter-error-fallback"),
+      ).not.toBeInTheDocument();
+      expect(screen.getByText("Adding fractions")).toBeVisible();
+    });
 
-    expect(screen.getByText("host page content")).toBeVisible();
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
-    expect(fallback).toHaveAttribute("role", "alert");
-    expect(fallback).toHaveFocus();
-  });
-
-  it("lets the teacher dismiss the shell fallback, telling the host to close", () => {
-    const onClose = vi.fn();
-
-    renderWithTheme(
-      <ResourceAdapterDialog
-        capabilities={shellCrashingCapabilities()}
-        isOpen={true}
-        lesson={lesson}
-        onClose={onClose}
-      />,
-    );
-
-    const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
-
-    fireEvent.click(within(fallback).getByRole("button", { name: "Dismiss" }));
-    expect(onClose).toHaveBeenCalledOnce();
-  });
-
-  it("gives both shell fallback actions an explicit button type", () => {
-    renderWithTheme(
-      <ResourceAdapterDialog
-        capabilities={shellCrashingCapabilities()}
-        isOpen={true}
-        lesson={lesson}
-        onClose={() => {}}
-      />,
-    );
-
-    // Without it the default inside a host form would be submit.
-    const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
-    for (const name of ["Try again", "Dismiss"]) {
-      expect(within(fallback).getByRole("button", { name })).toHaveAttribute(
-        "type",
-        "button",
+    it("contains a dialog shell crash and takes focus, sparing the host page", () => {
+      renderWithTheme(
+        <>
+          <p>host page content</p>
+          <ResourceAdapterDialog
+            {...dialogProps({ capabilities: shellCrashingCapabilities() })}
+          />
+        </>,
       );
-    }
-  });
 
-  it("returns focus to the host's trigger when the shell fallback is dismissed", () => {
-    const healthy = [capability];
+      expect(screen.getByText("host page content")).toBeVisible();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
+      expect(fallback).toHaveAttribute("role", "alert");
+      expect(fallback).toHaveFocus();
+    });
 
-    // The real sequence: focus on the trigger as the dialog opens, then a crash.
-    const { rerenderWithTheme } = renderWithTheme(
-      <>
-        <button type="button">Create more with AI</button>
-        <ResourceAdapterDialog
-          capabilities={healthy}
-          isOpen={false}
-          lesson={lesson}
-          onClose={() => {}}
-        />
-      </>,
-    );
-    const trigger = screen.getByRole("button", { name: "Create more with AI" });
-    trigger.focus();
+    it("lets the teacher dismiss the shell fallback, telling the host to close", () => {
+      const onClose = vi.fn();
 
-    const dialog = (
-      capabilities: readonly ResourceAdapterCapability[],
-      isOpen: boolean,
-    ) => (
-      <>
-        <button type="button">Create more with AI</button>
-        <ResourceAdapterDialog
-          capabilities={capabilities}
-          isOpen={isOpen}
-          lesson={lesson}
-          onClose={() => {}}
-        />
-      </>
-    );
+      renderDialog({ capabilities: shellCrashingCapabilities(), onClose });
 
-    rerenderWithTheme(dialog(healthy, true));
-    rerenderWithTheme(dialog(shellCrashingCapabilities(), true));
+      const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
 
-    const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
-    expect(fallback).toHaveFocus();
+      fireEvent.click(within(fallback).getByRole("button", { name: "Dismiss" }));
+      expect(onClose).toHaveBeenCalledOnce();
+    });
 
-    // Dismiss tells the host to close, and that clears the boundary.
-    fireEvent.click(within(fallback).getByRole("button", { name: "Dismiss" }));
-    rerenderWithTheme(dialog(healthy, false));
+    it("gives both shell fallback actions an explicit button type", () => {
+      renderDialog({ capabilities: shellCrashingCapabilities() });
 
-    expect(
-      screen.queryByTestId("resource-adapter-dialog-fallback"),
-    ).not.toBeInTheDocument();
-    expect(trigger).toHaveFocus();
-  });
+      // Without it the default inside a host form would be submit.
+      const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
+      for (const name of ["Try again", "Dismiss"]) {
+        expect(within(fallback).getByRole("button", { name })).toHaveAttribute(
+          "type",
+          "button",
+        );
+      }
+    });
 
-  it("adds no heading of its own, leaving the host page's structure intact", () => {
-    renderWithTheme(
-      <ResourceAdapterDialog
-        capabilities={shellCrashingCapabilities()}
-        isOpen={true}
-        lesson={lesson}
-        onClose={() => {}}
-      />,
-    );
+    it("returns focus to the host's trigger when the shell fallback is dismissed", () => {
+      const healthy = [capability];
 
-    const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
-    expect(within(fallback).queryAllByRole("heading")).toHaveLength(0);
-  });
+      // The real sequence: focus on the trigger as the dialog opens, then a crash.
+      const dialog = (
+        capabilities: readonly ResourceAdapterCapability[],
+        isOpen: boolean,
+      ) => (
+        <>
+          <button type="button">Create more with AI</button>
+          <ResourceAdapterDialog {...dialogProps({ capabilities, isOpen })} />
+        </>
+      );
 
-  it("renders nothing for a shell crash while the dialog is closed", () => {
-    renderWithTheme(
-      <ResourceAdapterDialog
-        capabilities={shellCrashingCapabilities()}
-        isOpen={false}
-        lesson={lesson}
-        onClose={() => {}}
-      />,
-    );
+      const { rerenderWithTheme } = renderWithTheme(dialog(healthy, false));
+      const trigger = screen.getByRole("button", { name: "Create more with AI" });
+      trigger.focus();
 
-    expect(
-      screen.queryByTestId("resource-adapter-dialog-fallback"),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByTestId("resource-adapter-error-fallback"),
-    ).not.toBeInTheDocument();
+      rerenderWithTheme(dialog(healthy, true));
+      rerenderWithTheme(dialog(shellCrashingCapabilities(), true));
+
+      const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
+      expect(fallback).toHaveFocus();
+
+      // Dismiss tells the host to close, and that clears the boundary.
+      fireEvent.click(within(fallback).getByRole("button", { name: "Dismiss" }));
+      rerenderWithTheme(dialog(healthy, false));
+
+      expect(
+        screen.queryByTestId("resource-adapter-dialog-fallback"),
+      ).not.toBeInTheDocument();
+      expect(trigger).toHaveFocus();
+    });
+
+    it("adds no heading of its own, leaving the host page's structure intact", () => {
+      renderDialog({ capabilities: shellCrashingCapabilities() });
+
+      const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
+      expect(within(fallback).queryAllByRole("heading")).toHaveLength(0);
+    });
+
+    it("renders nothing for a shell crash while the dialog is closed", () => {
+      renderDialog({ capabilities: shellCrashingCapabilities(), isOpen: false });
+
+      expect(
+        screen.queryByTestId("resource-adapter-dialog-fallback"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("resource-adapter-error-fallback"),
+      ).not.toBeInTheDocument();
+    });
   });
 });

@@ -20,9 +20,9 @@ export type {
 export type GetToken = () => Promise<string | null>;
 
 export type ResourceAdapterHostProps = Readonly<{
+  apiBaseUrl: string;
   getToken: GetToken;
   lesson: LessonContext;
-  trpcEndpoint: string;
 }>;
 
 /**
@@ -33,7 +33,10 @@ export type ResourceAdapterErrorInfo = Readonly<{
   componentStack: string | null;
 }>;
 
-/** Called when the boundary catches a render failure, for the host to report. */
+/**
+ * Called when the adapter catches an error, for the host to report. Render
+ * failures carry a `componentStack`; errors from our own requests do not.
+ */
 export type ResourceAdapterErrorHandler = (
   error: Error,
   info: ResourceAdapterErrorInfo,

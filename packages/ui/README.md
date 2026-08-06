@@ -35,13 +35,25 @@ everything else, including `getResourceAdapterCapabilities`, stays callable
 from server code:
 
 ```ts
-import { getResourceAdapterCapabilities } from "@oaknational/resource-adapter";
+import {
+  getResourceAdapterCapabilities,
+  ResourceAdapterDialog,
+} from "@oaknational/resource-adapter";
 
 const capabilities = await getResourceAdapterCapabilities({
+  apiBaseUrl: "https://resource-adapter.example",
   getToken,
   lesson,
-  trpcEndpoint: "https://resource-adapter.example/trpc/v1",
 });
+
+<ResourceAdapterDialog
+  apiBaseUrl="https://resource-adapter.example"
+  capabilities={capabilities.capabilities}
+  getToken={getToken}
+  isOpen={true}
+  lesson={lesson}
+  onClose={() => {}}
+/>;
 ```
 
 The helper wraps the package's internal typed tRPC client, so hosts never

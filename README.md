@@ -69,8 +69,9 @@ pnpm dev
 ```
 
 This starts the harness on port 3000 and the local API on port 3001. The harness page
-uses the workspace UI package's typed client to resolve capabilities, then
-renders the package-owned drawer with representative lesson context. This
+uses the workspace UI package helper to resolve capabilities, then renders the
+package-owned drawer with representative lesson context. The drawer resolves
+its own feature flags through the package's internal client helpers. This
 mirrors the OWA/package composition boundary.
 
 The API dev server also runs background jobs through Workflow's local runtime,
@@ -81,17 +82,30 @@ job and durable-output conventions.
 ## API client
 
 The service API uses tRPC. The typed client is internal to the UI package;
-hosts such as OWA or the harness call `getResourceAdapterCapabilities`, which
-wraps it, so they never depend on `@trpc/client` themselves:
+hosts such as OWA or the harness call `getResourceAdapterCapabilities`, while
+`ResourceAdapterDialog` fetches feature flags internally, so hosts never depend
+on `@trpc/client` themselves:
 
 ```ts
-import { getResourceAdapterCapabilities } from "@oaknational/resource-adapter";
+import {
+  getResourceAdapterCapabilities,
+  ResourceAdapterDialog,
+} from "@oaknational/resource-adapter";
 
 const capabilities = await getResourceAdapterCapabilities({
+  apiBaseUrl: "https://resource-adapter.example",
   getToken,
   lesson,
-  trpcEndpoint: "https://resource-adapter.example/trpc/v1",
 });
+
+<ResourceAdapterDialog
+  apiBaseUrl="https://resource-adapter.example"
+  capabilities={capabilities.capabilities}
+  getToken={getToken}
+  isOpen={true}
+  lesson={lesson}
+  onClose={() => {}}
+/>;
 ```
 
 ## Local database
