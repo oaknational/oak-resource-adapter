@@ -20,7 +20,24 @@ export type {
 export type GetToken = () => Promise<string | null>;
 
 export type ResourceAdapterHostProps = Readonly<{
+  apiBaseUrl: string;
   getToken: GetToken;
   lesson: LessonContext;
-  trpcEndpoint: string;
 }>;
+
+/**
+ * A plain object rather than React's `ErrorInfo`, because the host may resolve a
+ * different copy of React. `componentStack` is normalised to null when absent.
+ */
+export type ResourceAdapterErrorInfo = Readonly<{
+  componentStack: string | null;
+}>;
+
+/**
+ * Called when the adapter catches an error, for the host to report. Render
+ * failures carry a `componentStack`; errors from our own requests do not.
+ */
+export type ResourceAdapterErrorHandler = (
+  error: Error,
+  info: ResourceAdapterErrorInfo,
+) => void;

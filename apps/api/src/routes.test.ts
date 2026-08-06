@@ -11,6 +11,10 @@ import {
   GET as getCapabilities,
   OPTIONS as options,
 } from "../app/trpc/v1/[trpc]/route";
+import {
+  GET as getFeatureFlags,
+  OPTIONS as internalOptions,
+} from "../app/trpc/internal/[trpc]/route";
 import { GET as getJobStatus } from "../app/dev/jobs/[id]/route";
 import {
   OPTIONS as testJobOptions,
@@ -65,6 +69,14 @@ function capabilitiesRequest(
   });
 }
 
+function featureFlagsRequest(): NextRequest {
+  return request("http://localhost:3001/trpc/internal/featureFlags.get?batch=1", {
+    headers: {
+      Origin: "http://localhost:3000",
+    },
+  });
+}
+
 describe("API routes", () => {
   beforeEach(() => {
     // The /dev routes are opt-in; the tests asserting they are closed unset this.
@@ -112,6 +124,13 @@ describe("API routes", () => {
     await expect(response.json()).resolves.toMatchObject([
       { result: { data: { capabilities: [] } } },
     ]);
+  });
+
+  it("returns feature flags from the unversioned internal API", async () => {
+    const response = await getFeatureFlags(featureFlagsRequest());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject([{ result: { data: [] } }]);
   });
 
   it("rejects an unsupported API contract version", async () => {
@@ -171,6 +190,23 @@ describe("API routes", () => {
     );
   });
 
+  it("returns CORS headers for internal tRPC preflight requests", () => {
+    const response = internalOptions(
+      request("http://localhost:3001/trpc/internal/featureFlags.get", {
+        headers: { Origin: "http://localhost:3000" },
+        method: "OPTIONS",
+      }),
+    );
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
+      "http://localhost:3000",
+    );
+    expect(response.headers.get("Access-Control-Allow-Methods")).toBe(
+      "GET, POST, OPTIONS",
+    );
+  });
+
   it("returns CORS headers for test job preflight requests", () => {
     const response = testJobOptions(
       request("http://localhost:3001/dev/jobs/test-echo", {
@@ -226,6 +262,17 @@ describe("API routes", () => {
     });
 
     const response = await getCapabilities(capabilitiesRequest(lesson));
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toMatchObject([
+      { error: { data: { code: "UNAUTHORIZED" } } },
+    ]);
+  });
+
+  it("returns 401 Unauthorized from the internal API when unauthenticated", async () => {
+    vi.mocked(requestAuthenticator).mockResolvedValue(null);
+
+    const response = await getFeatureFlags(featureFlagsRequest());
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toMatchObject([

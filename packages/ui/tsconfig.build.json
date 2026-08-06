@@ -8,5 +8,5 @@
     "outDir": "dist",
     "sourceMap": true
   },
-  "exclude": ["src/**/*.test.*"]
+  "exclude": ["src/**/*.test.*", "src/**/*.d.ts"]
 }

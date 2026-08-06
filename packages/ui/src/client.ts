@@ -3,41 +3,113 @@ import {
   resourceAdapterApiContractVersion,
   resourceAdapterApiContractVersionHeader,
 } from "@oaknational/resource-adapter-contracts";
-import type { AppRouterV1 } from "@oaknational/resource-adapter-contracts/server";
+import type { InternalRouter } from "@oaknational/resource-adapter-contracts/internal/server";
+import type { HostRouter } from "@oaknational/resource-adapter-contracts/server";
 
+import { ResourceAdapterApiError } from "./errors.js";
 import type { GetToken } from "./publicTypes.js";
 
-export type ResourceAdapterApiClient = TRPCClient<AppRouterV1>;
+export type ResourceAdapterPublicApiClient = TRPCClient<HostRouter>;
+export type ResourceAdapterInternalApiClient = TRPCClient<InternalRouter>;
 
 export type CreateResourceAdapterClientOptions = Readonly<{
+  apiBaseUrl: string;
   getToken: GetToken;
-  trpcEndpoint: string;
 }>;
 
+function normalizeApiBaseUrl(url: string): string {
+  let normalized = url.trim();
+  while (normalized.endsWith("/")) {
+    normalized = normalized.slice(0, -1);
+  }
+
+  if (!normalized) {
+    throw new ResourceAdapterApiError(
+      "apiBaseUrl must be a non-empty absolute http(s) URL.",
+    );
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(normalized);
+  } catch {
+    throw new ResourceAdapterApiError(
+      "apiBaseUrl must be a valid absolute http(s) URL.",
+    );
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new ResourceAdapterApiError("apiBaseUrl must use http or https.");
+  }
+
+  if (/\/trpc(\/|$)/.test(parsed.pathname)) {
+    throw new ResourceAdapterApiError(
+      "apiBaseUrl must be the API origin without a /trpc path; the package appends its own.",
+    );
+  }
+
+  return normalized;
+}
+
+type CreateLinkOptions = Readonly<{
+  extraHeaders?: Readonly<Record<string, string>>;
+  getToken: GetToken;
+  url: string;
+}>;
+
+function createLinkOptions({ extraHeaders, getToken, url }: CreateLinkOptions) {
+  return {
+    headers: async () => {
+      const token = await getToken();
+
+      return {
+        ...extraHeaders,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+    },
+    methodOverride: "POST" as const,
+    url,
+  };
+}
+
 /**
- * Creates the supported typed client for Resource Adapter service calls from
- * the published UI package, OWA, or the local harness.
+ * Creates a typed tRPC client for the public API (capabilities).
+ * Includes the contract version header.
  */
 export function createResourceAdapterClient({
+  apiBaseUrl,
   getToken,
-  trpcEndpoint,
-}: CreateResourceAdapterClientOptions): ResourceAdapterApiClient {
-  return createTRPCClient<AppRouterV1>({
+}: CreateResourceAdapterClientOptions): ResourceAdapterPublicApiClient {
+  const base = normalizeApiBaseUrl(apiBaseUrl);
+  return createTRPCClient<HostRouter>({
     links: [
-      httpBatchLink({
-        headers: async () => {
-          const token = await getToken();
-
-          return {
+      httpBatchLink(
+        createLinkOptions({
+          getToken,
+          url: `${base}/trpc/v1`,
+          extraHeaders: {
             [resourceAdapterApiContractVersionHeader]: String(
               resourceAdapterApiContractVersion,
             ),
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          };
-        },
-        methodOverride: "POST",
-        url: trpcEndpoint,
-      }),
+          },
+        }),
+      ),
+    ],
+  });
+}
+
+/**
+ * Creates a typed tRPC client for the internal API (feature flags and other UI-private procedures).
+ * Does not include the contract version header (internal APIs are unversioned).
+ */
+export function createResourceAdapterInternalClient({
+  apiBaseUrl,
+  getToken,
+}: CreateResourceAdapterClientOptions): ResourceAdapterInternalApiClient {
+  const base = normalizeApiBaseUrl(apiBaseUrl);
+  return createTRPCClient<InternalRouter>({
+    links: [
+      httpBatchLink(createLinkOptions({ getToken, url: `${base}/trpc/internal` })),
     ],
   });
 }

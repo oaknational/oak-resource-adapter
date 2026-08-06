@@ -7,16 +7,7 @@ import type {
 } from "./publicTypes.js";
 import { getSupportedCapabilities } from "./capabilities.js";
 import { createResourceAdapterClient } from "./client.js";
-
-export class ResourceAdapterApiError extends Error {
-  public readonly status: number | undefined;
-
-  public constructor(message: string, status?: number) {
-    super(message);
-    this.name = "ResourceAdapterApiError";
-    this.status = status;
-  }
-}
+import { ResourceAdapterApiError } from "./errors.js";
 
 /**
  * Retrieves the service-owned capabilities for a lesson. OWA uses this client
@@ -24,14 +15,14 @@ export class ResourceAdapterApiError extends Error {
  * response validation.
  */
 export async function getResourceAdapterCapabilities({
+  apiBaseUrl,
   getToken,
   lesson,
-  trpcEndpoint,
 }: ResourceAdapterHostProps): Promise<ResourceAdapterCapabilitiesResponse> {
   try {
     const response = await createResourceAdapterClient({
+      apiBaseUrl,
       getToken,
-      trpcEndpoint,
     }).capabilities.get.query(lesson);
     const parsedResponse =
       resourceAdapterCapabilitiesResponseSchema.safeParse(response);
