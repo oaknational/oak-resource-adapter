@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { OakThemeProvider, oakDefaultTheme } from "@oaknational/oak-components";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import userEvent from "@testing-library/user-event";
+import { userEvent } from "@testing-library/user-event";
 
 import { ResourceAdapterDialog } from "./ResourceAdapterDialog.js";
 import type { ResourceAdapterDialogProps } from "./ResourceAdapterDialog.js";
