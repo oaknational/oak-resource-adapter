@@ -24,3 +24,17 @@ export type ResourceAdapterHostProps = Readonly<{
   lesson: LessonContext;
   trpcEndpoint: string;
 }>;
+
+/**
+ * A plain object rather than React's `ErrorInfo`, because the host may resolve a
+ * different copy of React. `componentStack` is normalised to null when absent.
+ */
+export type ResourceAdapterErrorInfo = Readonly<{
+  componentStack: string | null;
+}>;
+
+/** Called when the boundary catches a render failure, for the host to report. */
+export type ResourceAdapterErrorHandler = (
+  error: Error,
+  info: ResourceAdapterErrorInfo,
+) => void;

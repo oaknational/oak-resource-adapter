@@ -142,6 +142,7 @@ try {
     "getResourceAdapterCapabilities",
     "ResourceAdapterButton",
     "ResourceAdapterDialog",
+    "ResourceAdapterErrorBoundary",
   ]) {
     if (!rootDeclaration.includes(exportName)) {
       throw new Error(`Published package is missing ${exportName}.`);
@@ -150,7 +151,15 @@ try {
 
   // "use client" must sit exactly on the component modules: app-router hosts
   // need it there, and every other module must stay callable from server code.
-  const clientModules = ["ResourceAdapterButton.js", "ResourceAdapterDialog.js"];
+  //
+  // Listed by hand on purpose. Deriving them from `src` would make this agree
+  // with whatever the source says, so a directive added to a server-safe module
+  // by mistake would pass. Adding a module means choosing a list for it.
+  const clientModules = [
+    "ResourceAdapterButton.js",
+    "ResourceAdapterDialog.js",
+    "ResourceAdapterErrorBoundary.js",
+  ];
   const serverSafeModules = [
     "index.js",
     "client.js",
@@ -171,6 +180,23 @@ try {
     if (readPackedFile(uiTarball, `package/dist/${file}`).startsWith('"use client";')) {
       throw new Error(`dist/${file} must not carry the "use client" directive.`);
     }
+  }
+
+  // Nothing beyond those lists may ship. This catches both a module nobody
+  // listed above and a build artefact importing packages hosts do not install
+  const packedModules = execFileSync("tar", ["-tf", uiTarball], { encoding: "utf8" })
+    .split("\n")
+    .filter((path) => /^package\/dist\/[^/]+\.js$/.test(path))
+    .map((path) => basename(path));
+  const expectedModules = new Set([...clientModules, ...serverSafeModules]);
+  const unexpectedModules = packedModules.filter(
+    (module) => !expectedModules.has(module),
+  );
+
+  if (unexpectedModules.length > 0) {
+    throw new Error(
+      `Published package ships modules with no source counterpart: ${unexpectedModules.join(", ")}.`,
+    );
   }
 
   const capabilitiesEntryPoint = join(

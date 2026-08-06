@@ -5,6 +5,7 @@ import {
   ResourceAdapterApiError,
   ResourceAdapterButton,
   ResourceAdapterDialog,
+  ResourceAdapterErrorBoundary,
   type LessonContext,
   type ResourceAdapterCapability,
 } from "@oaknational/resource-adapter";
@@ -53,6 +54,10 @@ const testJobStatusLabels: Record<TestJobStatus, string> = {
   succeeded: "Succeeded",
 };
 
+function CrashOnRender(): never {
+  throw new Error("Simulated Resource Adapter render failure");
+}
+
 /** Rejects unknown statuses so a wire-format change cannot silently stop polling. */
 function parseTestJobResponse(body: unknown): TestJobResponse {
   if (
@@ -89,6 +94,7 @@ export default function HarnessPage() {
   >("loading");
   const [apiHealthState, setApiHealthState] = useState<ApiHealthState>("checking");
   const [isResourceAdapterOpen, setIsResourceAdapterOpen] = useState(false);
+  const [simulateAdapterCrash, setSimulateAdapterCrash] = useState(false);
   const [isCreatingTestJob, setIsCreatingTestJob] = useState(false);
   const [testJob, setTestJob] = useState<TestJobResponse | null>(null);
   const [testJobError, setTestJobError] = useState<string | null>(null);
@@ -297,6 +303,36 @@ export default function HarnessPage() {
               </p>
             </div>
           </section>
+          <section
+            aria-labelledby="error-boundary-test-heading"
+            className={styles.workerTest}
+          >
+            <h2 id="error-boundary-test-heading">Error boundary test</h2>
+            <p>
+              Simulating a crash renders the package&apos;s fallback below and hands the
+              error to the host&apos;s own logger. Try again re-catches while the
+              simulated crash is active.
+            </p>
+            <button
+              className={styles.workerTestButton}
+              onClick={() => setSimulateAdapterCrash((current) => !current)}
+              type="button"
+            >
+              {simulateAdapterCrash
+                ? "Clear simulated crash"
+                : "Simulate adapter crash"}
+            </button>
+            <ResourceAdapterErrorBoundary
+              key={String(simulateAdapterCrash)}
+              onError={(error) => log.error(error)}
+            >
+              {simulateAdapterCrash ? (
+                <CrashOnRender />
+              ) : (
+                <p>The adapter surface renders normally.</p>
+              )}
+            </ResourceAdapterErrorBoundary>
+          </section>
           {capabilities.length > 0 && (
             <section
               aria-labelledby="create-more-heading"
@@ -345,6 +381,7 @@ export default function HarnessPage() {
           isOpen={isResourceAdapterOpen}
           lesson={lesson}
           onClose={() => setIsResourceAdapterOpen(false)}
+          onError={(error) => log.error(error)}
         />
       </main>
     </>
