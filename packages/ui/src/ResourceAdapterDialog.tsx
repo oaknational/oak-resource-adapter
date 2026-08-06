@@ -59,7 +59,7 @@ export function ResourceAdapterDialog({
         if (!canceled) {
           setEnabledFlags(flags);
         }
-      } catch (error) {
+      } catch {
         if (!canceled) {
           setEnabledFlags([]);
         }

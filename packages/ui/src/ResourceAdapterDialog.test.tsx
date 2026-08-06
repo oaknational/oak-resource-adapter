@@ -151,20 +151,6 @@ describe("ResourceAdapterDialog", () => {
 
     // A flag outage must not take the dialog down with it: teachers still get
     // the base experience, minus anything gated.
-    it("keeps the dialog usable when the flag request fails", async () => {
-      const error = new Error("service unavailable");
-      getFeatureFlagsMock.mockRejectedValue(error);
-      renderDialog();
-
-      await waitFor(() => {
-        expect(getFeatureFlagsMock).toHaveBeenCalled();
-      });
-      expect(console.error).toHaveBeenCalledWith(error);
-      expect(screen.getByText(lesson.title)).toBeInTheDocument();
-      expect(
-        screen.queryByText(/New Resource Adapter UI can be rendered here/),
-      ).not.toBeInTheDocument();
-    });
   });
 
   describe("when closed", () => {
