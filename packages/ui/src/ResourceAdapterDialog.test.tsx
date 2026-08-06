@@ -8,19 +8,6 @@ import type { ResourceAdapterDialogProps } from "./ResourceAdapterDialog.js";
 import { getResourceAdapterFeatureFlags } from "./getResourceAdapterFeatureFlags.js";
 import type { LessonContext, ResourceAdapterCapability } from "./publicTypes.js";
 
-const { logErrorMock } = vi.hoisted(() => ({
-  logErrorMock: vi.fn(),
-}));
-
-vi.mock("@oaknational/resource-adapter-logger", () => ({
-  raLogger: () => ({
-    error: logErrorMock,
-    info: vi.fn(),
-    table: vi.fn(),
-    warn: vi.fn(),
-  }),
-}));
-
 // The flag request itself is covered by getResourceAdapterFeatureFlags.test.ts,
 // so these tests own only what the dialog does with the result.
 vi.mock("./getResourceAdapterFeatureFlags.js", () => ({
@@ -76,6 +63,7 @@ function renderDialog(overrides: Partial<ResourceAdapterDialogProps> = {}) {
 }
 
 beforeEach(() => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
   getFeatureFlagsMock.mockResolvedValue([]);
 });
 
@@ -171,7 +159,7 @@ describe("ResourceAdapterDialog", () => {
       await waitFor(() => {
         expect(getFeatureFlagsMock).toHaveBeenCalled();
       });
-      expect(logErrorMock).toHaveBeenCalledWith(error);
+      expect(console.error).toHaveBeenCalledWith(error);
       expect(screen.getByText(lesson.title)).toBeInTheDocument();
       expect(
         screen.queryByText(/New Resource Adapter UI can be rendered here/),

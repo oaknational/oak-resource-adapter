@@ -9,7 +9,6 @@ import {
   OakInformativeModalBody,
   OakP,
 } from "@oaknational/oak-components";
-import { raLogger } from "@oaknational/resource-adapter-logger";
 
 import { FeatureFlag } from "./FeatureFlag.js";
 import { getResourceAdapterFeatureFlags } from "./getResourceAdapterFeatureFlags.js";
@@ -27,8 +26,6 @@ export type ResourceAdapterDialogProps = Readonly<{
   lesson: LessonContext;
   onClose: () => void;
 }>;
-
-const log = raLogger("feature-flags");
 
 /**
  * The package-owned adapter sidebar. Generation controls, progress, preview and
@@ -63,7 +60,7 @@ export function ResourceAdapterDialog({
           setEnabledFlags(flags);
         }
       } catch (error) {
-        log.error(error);
+        console.error(error);
         if (!canceled) {
           setEnabledFlags([]);
         }
