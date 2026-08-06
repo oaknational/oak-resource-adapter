@@ -26,6 +26,8 @@ export type InvokeModelParams<TRole extends string> = Readonly<{
    * such as a workflow step ID. Grants no idempotency.
    */
   correlationKey?: string;
+  /** The prompt template `request` was rendered from, from `preparePrompt`. */
+  promptTemplateId?: string;
   request: ModelInvocationRequest;
   role: TRole;
   /** Caller-owned cancellation, composed with the effective timeout. */
@@ -106,6 +108,9 @@ export function createModelInvoker<const TBindings extends RoleBindings>(
           : { correlationKey: params.correlationKey }),
         invocationId: randomUUID(),
         model: binding.model,
+        ...(params.promptTemplateId === undefined
+          ? {}
+          : { promptTemplateId: params.promptTemplateId }),
         provider: providerForModel(binding.model),
         request: params.request,
         role: params.role,

@@ -52,6 +52,10 @@ pnpm test:artifact
 pnpm test:e2e
 pnpm secrets:scan
 pnpm changeset
+pnpm docker:db:bootstrap
+pnpm docker:db:reset
+pnpm docker:db:psql
+pnpm docker:db:clear
 ```
 
 Run `pnpm exec playwright install chromium` once before the first browser test.
@@ -113,6 +117,33 @@ build the schema:
 
 ```sh
 pnpm db:reset          # drops and recreates the local schema, then migrates
+```
+
+### Docker alternative (local PostgreSQL)
+
+```sh
+pnpm docker:db:bootstrap
+
+pnpm doppler:pull:dev
+pnpm db:reset
+```
+
+To stop and remove it later:
+
+```sh
+pnpm docker:db:clear
+```
+
+To recreate the container from scratch:
+
+```sh
+pnpm docker:db:reset
+```
+
+To open a `psql` shell inside the container:
+
+```sh
+pnpm docker:db:psql
 ```
 
 Day to day:

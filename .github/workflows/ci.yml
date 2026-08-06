@@ -3,7 +3,9 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    # `production` is not created yet. release.yml publishes only after CI passes
+    # there, so it has to be listed here.
+    branches: [main, production]
   workflow_dispatch:
 
 permissions:
@@ -11,19 +13,23 @@ permissions:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Pull requests only: a cancelled run on a release branch would leave
+  # release.yml with no successful CI run to publish from.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   changeset:
     name: Check package release metadata
     if: github.event_name == 'pull_request' && vars.ENFORCE_CHANGESETS == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository history
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
@@ -43,12 +49,14 @@ jobs:
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository history
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install pinned Gitleaks
         run: |
@@ -63,10 +71,13 @@ jobs:
   static-checks:
     name: Run static checks
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Set up pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
@@ -107,10 +118,13 @@ jobs:
   unit-tests:
     name: Run unit tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Set up pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
@@ -130,6 +144,7 @@ jobs:
   database-integration:
     name: Run database integration tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/resource_adapter
     services:
@@ -150,6 +165,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Set up pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
@@ -172,10 +189,13 @@ jobs:
   package-artifact:
     name: Verify published package
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Set up pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
@@ -195,10 +215,35 @@ jobs:
   browser-tests:
     name: Run browser tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Throwaway database, so no pull request reads or writes the shared staging
+      # one. Also set per step, where it cannot be overridden.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/resource_adapter
+      # The harness posts to the /dev routes, which fail closed without this.
+      ENABLE_DEV_ROUTES: "1"
+      # `secrets` cannot be read from an `if:` condition; `env` can.
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: resource_adapter
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d resource_adapter"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Check out repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Set up pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
@@ -212,14 +257,38 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Runs even when the suite below is skipped, so a dependency bump that
+      # breaks the migrations is still caught.
+      - name: Apply database migrations
+        run: pnpm --filter @oaknational/resource-adapter-db db:migrate:deploy
+
       - name: Install Playwright browser
+        if: env.DOPPLER_TOKEN != ''
         run: pnpm exec playwright install --with-deps chromium
 
+      # Dependabot and fork pull requests carry no repository secrets, so they
+      # cannot fetch the Clerk credentials the suite needs. Guarded per step, not
+      # per job: `Run browser tests` is a required check, and a skipped job blocks
+      # a merge just as a failed one does.
       - name: Inject Doppler env vars
-        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534
+        if: env.DOPPLER_TOKEN != ''
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534 # v2.0.0
         id: doppler
         with:
-          doppler-token: ${{ secrets.DOPPLER_TOKEN }}
+          doppler-token: ${{ env.DOPPLER_TOKEN }}
           inject-env-vars: true
+
+      # The Doppler step exports secrets through $GITHUB_ENV, which outranks a
+      # job-level `env:`. Step level cannot be overridden, so a DATABASE_URL in
+      # the staging config cannot redirect this run.
       - name: Run browser tests
+        if: env.DOPPLER_TOKEN != ''
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/resource_adapter
+          ENABLE_DEV_ROUTES: "1"
         run: pnpm test:e2e
+
+      - name: Report a skipped suite
+        if: env.DOPPLER_TOKEN == ''
+        run: |
+          echo "::warning::Browser tests skipped: this event has no DOPPLER_TOKEN, so the Clerk credentials cannot be fetched. Expected for Dependabot and fork pull requests."

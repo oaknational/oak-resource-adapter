@@ -7,17 +7,22 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "tsc --project tsconfig.build.json",
     "db:check": "drizzle-kit check",
     "db:generate": "drizzle-kit generate",
     "db:migrate:deploy": "node scripts/migrate.mjs",
     "db:migrate:dev": "drizzle-kit migrate",
     "db:reset": "node scripts/reset.mjs",
     "db:studio": "drizzle-kit studio",
+    "dev": "tsc --project tsconfig.build.json --watch",
     "lint": "eslint scripts src --max-warnings=0",
     "lint:fix": "eslint scripts src --fix",
     "test": "vitest run",

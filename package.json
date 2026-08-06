@@ -18,6 +18,11 @@
     "ci:publish": "turbo run build --filter=@oaknational/resource-adapter... && changeset publish",
     "ci:version": "changeset version && pnpm install --lockfile-only",
     "dev": "node --env-file-if-exists=.env node_modules/turbo/bin/turbo run dev --parallel",
+    "docker:db:bootstrap": "pnpm run docker:db:clear && pnpm run docker:db:run",
+    "docker:db:clear": "docker ps -a --format '{{.Names}}' | grep -qx resource-adapter-postgres && docker stop resource-adapter-postgres && docker rm resource-adapter-postgres || echo 'Container resource-adapter-postgres does not exist.'",
+    "docker:db:psql": "docker exec -it resource-adapter-postgres psql -U oai -d oak_resource_adapter",
+    "docker:db:reset": "pnpm run docker:db:clear && pnpm run docker:db:run",
+    "docker:db:run": "docker run --name resource-adapter-postgres -e POSTGRES_USER=oai -e POSTGRES_PASSWORD=oai -e POSTGRES_DB=oak_resource_adapter -p 5432:5432 -d postgres:16",
     "db:check": "pnpm --filter @oaknational/resource-adapter-db db:check",
     "db:generate": "pnpm --filter @oaknational/resource-adapter-db db:generate",
     "db:migrate:dev": "pnpm --filter @oaknational/resource-adapter-db db:migrate:dev",
@@ -36,7 +41,7 @@
     "test:integration": "node --env-file-if-exists=.env node_modules/turbo/bin/turbo run test:integration",
     "test:artifact": "node scripts/check-package-artifact.mjs",
     "test:e2e": "pnpm build && node --env-file-if-exists=.env node_modules/@playwright/test/cli.js test",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check && tsc --noEmit"
   },
   "devDependencies": {
     "@changesets/cli": "2.31.0",

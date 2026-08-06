@@ -22,6 +22,9 @@ export default defineConfig({
   dialect: "postgresql",
   out: "./drizzle",
   schema: "./src/schema/index.ts",
+  // Confines drizzle-kit to our own schema, so it never proposes dropping
+  // anything it finds in `public` or in Terraform-managed schemas.
+  schemaFilter: ["resource_adapter"],
   strict: true,
   verbose: true,
 });

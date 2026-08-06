@@ -15,7 +15,11 @@ import {
   GET as getFeatureFlags,
   OPTIONS as internalOptions,
 } from "../app/trpc/internal/[trpc]/route";
-import { OPTIONS as testJobOptions } from "../app/dev/jobs/test-echo/route";
+import { GET as getJobStatus } from "../app/dev/jobs/[id]/route";
+import {
+  OPTIONS as testJobOptions,
+  POST as postTestJob,
+} from "../app/dev/jobs/test-echo/route";
 import * as capabilities from "./capabilities";
 import { requestAuthenticator } from "./authentication";
 
@@ -75,6 +79,9 @@ function featureFlagsRequest(): NextRequest {
 
 describe("API routes", () => {
   beforeEach(() => {
+    // The /dev routes are opt-in; the tests asserting they are closed unset this.
+    vi.stubEnv("ENABLE_DEV_ROUTES", "1");
+
     vi.mocked(requestAuthenticator).mockImplementation(async () => {
       return {
         organisationId: "org-123",
@@ -85,6 +92,7 @@ describe("API routes", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it("returns CORS-enabled health status", async () => {
@@ -213,6 +221,41 @@ describe("API routes", () => {
     );
     expect(response.headers.get("Access-Control-Allow-Methods")).toBe("POST, OPTIONS");
   });
+
+  // These also prove the gate precedes any database access: with no DATABASE_URL
+  // set, a gate after the query would throw instead of returning 404.
+  it("hides the test job route unless dev routes are enabled", async () => {
+    vi.stubEnv("ENABLE_DEV_ROUTES", "");
+
+    const preflight = testJobOptions(
+      request("http://localhost:3001/dev/jobs/test-echo", {
+        headers: { Origin: "http://localhost:3000" },
+        method: "OPTIONS",
+      }),
+    );
+    expect(preflight.status).toBe(404);
+
+    const created = await postTestJob(
+      request("http://localhost:3001/dev/jobs/test-echo", {
+        body: JSON.stringify({ message: "hello worker" }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      }),
+    );
+    expect(created.status).toBe(404);
+  });
+
+  it("hides the job status route unless dev routes are enabled", async () => {
+    vi.stubEnv("ENABLE_DEV_ROUTES", "");
+
+    const response = await getJobStatus(
+      request("http://localhost:3001/dev/jobs/01JBQ2X5N0000000000000000"),
+      { params: Promise.resolve({ id: "01JBQ2X5N0000000000000000" }) },
+    );
+
+    expect(response.status).toBe(404);
+  });
+
   it("returns 401 Unauthorized when the request is not authenticated", async () => {
     vi.mocked(requestAuthenticator).mockImplementation(async () => {
       return null;
