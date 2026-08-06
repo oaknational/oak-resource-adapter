@@ -8,12 +8,18 @@ import { afterEach } from "vitest";
 // directly rather than through `vi.stubGlobal` so that a test file calling
 // `vi.unstubAllGlobals` cannot strip it midway.
 globalThis.IntersectionObserver = class {
-  disconnect() {}
-  observe() {}
+  disconnect() {
+    return undefined;
+  }
+  observe() {
+    return undefined;
+  }
   takeRecords() {
     return [];
   }
-  unobserve() {}
+  unobserve() {
+    return undefined;
+  }
 } as unknown as typeof IntersectionObserver;
 
 // Testing Library only auto-cleans when a global `afterEach` is detected at

@@ -60,7 +60,6 @@ export function ResourceAdapterDialog({
           setEnabledFlags(flags);
         }
       } catch (error) {
-        console.error(error);
         if (!canceled) {
           setEnabledFlags([]);
         }

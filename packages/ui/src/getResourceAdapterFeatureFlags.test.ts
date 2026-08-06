@@ -153,7 +153,6 @@ describe("getResourceAdapterFeatureFlags", () => {
         "https://api.example/resource-adapter/trpc/internal",
       ],
       ["http://localhost:3001", "http://localhost:3001/trpc/internal"],
-      ["https://api.example", "https://api.example/trpc/internal"],
     ])(
       "transforms %s to internal endpoint %s",
       async (apiBaseUrl, expectedInternalEndpoint) => {

@@ -20,21 +20,19 @@ interface TrpcRouteConfig<TRouter extends AnyRouter> {
   router: TRouter;
   endpoint: string;
   log: ReturnType<typeof raLogger>;
-  createContext: (
-    req: Request,
-  ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
+  createContext: (req: Request) => Promise<inferRouterContext<TRouter>>;
+}
+
+function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    headers: getCorsHeaders(request, allowedMethods),
+    status: 204,
+  });
 }
 
 export function createTrpcRouteHandler<TRouter extends AnyRouter>(
   config: TrpcRouteConfig<TRouter>,
 ) {
-  function OPTIONS(request: NextRequest) {
-    return new NextResponse(null, {
-      headers: getCorsHeaders(request, allowedMethods),
-      status: 204,
-    });
-  }
-
   async function handleRequest(request: NextRequest): Promise<Response> {
     const response = await fetchRequestHandler({
       allowMethodOverride: true,

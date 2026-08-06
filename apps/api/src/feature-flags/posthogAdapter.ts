@@ -23,7 +23,7 @@ function getClient(): PostHog {
 }
 
 export class PostHogFeatureFlagAdapter implements FeatureFlagServiceType {
-  private client: PostHog;
+  private readonly client: PostHog;
 
   constructor() {
     this.client = getClient();
