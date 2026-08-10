@@ -27,8 +27,25 @@ const lesson: LessonContext = {
   availableResources: ["worksheet"],
 };
 
-const apiBaseUrl =
-  process.env.NEXT_PUBLIC_RESOURCE_ADAPTER_API_BASE_URL ?? "http://localhost:3001";
+const adapterProxyPath = "/adapter-proxy";
+
+/**
+ * Everything the harness sends goes through its own proxy route, which forwards
+ * server-side to whichever API deployment this harness was paired with. One
+ * build therefore works against any of them, and the API's bypass secret stays
+ * out of the bundle.
+ *
+ * The package requires an absolute URL, so this builds one from the current
+ * origin at run time rather than baking one in at build time.
+ */
+function resolveApiBaseUrl(): string {
+  // Read only from effects in the browser. Prerendering needs a value that
+  // parses, not one that resolves.
+  const origin =
+    typeof window === "undefined" ? "http://localhost:3000" : window.location.origin;
+
+  return `${origin}${adapterProxyPath}`;
+}
 
 type ApiHealthState = "checking" | "healthy" | "unavailable";
 type TestJobStatus = "failed" | "queued" | "running" | "succeeded";
@@ -82,6 +99,7 @@ function parseTestJobResponse(body: unknown): TestJobResponse {
 }
 
 export default function HarnessPage() {
+  const apiBaseUrl = resolveApiBaseUrl();
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const [capabilities, setCapabilities] = useState<
     readonly ResourceAdapterCapability[]
@@ -131,7 +149,7 @@ export default function HarnessPage() {
       log.error(error);
       setCapabilitiesState("error");
     }
-  }, [getToken, isLoaded, isSignedIn]);
+  }, [apiBaseUrl, getToken, isLoaded, isSignedIn]);
 
   useEffect(() => {
     void loadCapabilities();
@@ -142,7 +160,7 @@ export default function HarnessPage() {
 
     async function loadHealth() {
       try {
-        const response = await fetch(new URL("/health", apiBaseUrl));
+        const response = await fetch(`${adapterProxyPath}/health`);
         const body: unknown = await response.json();
         const isHealthy =
           response.ok &&
@@ -174,7 +192,7 @@ export default function HarnessPage() {
     setTestJobError(null);
 
     try {
-      const response = await fetch(new URL("/dev/jobs/test-echo", apiBaseUrl), {
+      const response = await fetch(`${adapterProxyPath}/dev/jobs/test-echo`, {
         body: JSON.stringify({ message: "Hello from the harness" }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
@@ -212,7 +230,7 @@ export default function HarnessPage() {
       requestInFlight = true;
 
       try {
-        const response = await fetch(new URL(`/dev/jobs/${testJobId}`, apiBaseUrl), {
+        const response = await fetch(`${adapterProxyPath}/dev/jobs/${testJobId}`, {
           signal: controller.signal,
         });
 

@@ -6,10 +6,14 @@ name: Apply database migrations
 # that environment's Doppler config. The connection string is fetched at run time,
 # so there is no second copy of it to rotate.
 #
-# Database access is confined to the "Apply migrations" step. CI's egress IP
-# cannot be allowlisted on the databases, so that step is expected to be replaced
-# — by an in-network runner, an identity-authenticated proxy, or a triggered
-# in-network job — and confining it keeps that a one-step change.
+# CI's egress IP cannot be allowlisted on the databases, so the job reaches them
+# through Cloud SQL Proxy on 127.0.0.1, authenticated with Workload Identity
+# Federation. Keyless, so there is nothing to rotate, matching the OIDC posture
+# already used for npm trusted publishing.
+#
+# The proxy steps are dormant until Doppler supplies
+# CLOUD_SQL_INSTANCE_CONNECTION_NAME, so the workflow keeps working unchanged
+# until Cloud provisions the service account.
 
 on:
   # No outputs: a caller gates its promotion on this job's conclusion.
@@ -31,18 +35,29 @@ on:
 
 permissions:
   contents: read
-
-# The advisory lock in the migrate script is the backstop; this avoids it.
-concurrency:
-  group: db-migrate-${{ inputs.environment }}
-  cancel-in-progress: false
+  id-token: write # Workload Identity Federation for Cloud SQL Proxy
 
 jobs:
   migrate:
     name: Apply migrations to ${{ inputs.environment }}
+    # On the job rather than the workflow: a workflow reached through `uses:`
+    # does not apply its own top-level concurrency, and every Preview reaches
+    # this one that way. The advisory lock in the migrate script is the
+    # backstop; this avoids having to rely on it.
+    concurrency:
+      group: db-migrate-${{ inputs.environment }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: ${{ inputs.environment }}
+    # Declared empty so the Cloud SQL Proxy steps have something to test before
+    # Doppler exists to fill them, and so this list is the contract the Doppler
+    # config has to satisfy. The Doppler step below writes through $GITHUB_ENV,
+    # which outranks a job-level env: for every step after it.
+    env:
+      CLOUD_SQL_INSTANCE_CONNECTION_NAME: ""
+      GCP_SERVICE_ACCOUNT: ""
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ""
 
     steps:
       - name: Check out repository
@@ -77,6 +92,52 @@ jobs:
             echo "::error::The DOPPLER_TOKEN for the ${{ inputs.environment }} environment is scoped to a Doppler config with no DATABASE_URL."
             exit 1
           fi
+
+      # Doppler holds a DATABASE_URL already pointing at 127.0.0.1, so nothing
+      # here rewrites a host and the migrate step is unaware of the transport.
+      - name: Authenticate to Google Cloud
+        if: env.CLOUD_SQL_INSTANCE_CONNECTION_NAME != ''
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      # Checksum taken from the v2.24.1 release artefact; Google publishes no
+      # .sha256 alongside it. Same pattern as the Gitleaks pin in ci.yml.
+      - name: Install pinned Cloud SQL Proxy
+        if: env.CLOUD_SQL_INSTANCE_CONNECTION_NAME != ''
+        run: |
+          version=2.24.1
+          expected=fae2766aac9d614a2bdef2f2a7778f3d054f3acd5ff07a81a9e300bd471512eb
+          curl -sSfL -o cloud-sql-proxy \
+            "https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v${version}/cloud-sql-proxy.linux.amd64"
+          echo "${expected}  cloud-sql-proxy" | sha256sum -c -
+          chmod +x cloud-sql-proxy
+
+      # Backgrounded here and used by the next step, so its output goes to a file
+      # rather than the step's stdout: a child holding that pipe open stops the
+      # runner seeing EOF, and the step hangs until the job times out.
+      - name: Start Cloud SQL Proxy
+        if: env.CLOUD_SQL_INSTANCE_CONNECTION_NAME != ''
+        run: |
+          ./cloud-sql-proxy \
+            --address 127.0.0.1 \
+            --port 5432 \
+            --health-check \
+            "$CLOUD_SQL_INSTANCE_CONNECTION_NAME" > cloud-sql-proxy.log 2>&1 &
+
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS --max-time 5 http://127.0.0.1:9090/readiness; then
+              echo "Cloud SQL Proxy is ready."
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          echo "::error::Cloud SQL Proxy did not become ready for $CLOUD_SQL_INSTANCE_CONNECTION_NAME."
+          cat cloud-sql-proxy.log
+          exit 1
 
       - name: Apply migrations
         run: pnpm db:migrate:deploy

@@ -41,6 +41,7 @@
     "test:integration": "node --env-file-if-exists=.env node_modules/turbo/bin/turbo run test:integration",
     "test:artifact": "node scripts/check-package-artifact.mjs",
     "test:e2e": "pnpm build && node --env-file-if-exists=.env node_modules/@playwright/test/cli.js test",
+    "test:e2e:deployment": "node --env-file-if-exists=.env scripts/run-deployment-tests.mjs",
     "type-check": "turbo run type-check && tsc --noEmit"
   },
   "devDependencies": {

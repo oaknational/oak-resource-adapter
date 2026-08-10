@@ -6,7 +6,6 @@
       "env": [
         "DEBUG",
         "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
-        "NEXT_PUBLIC_RESOURCE_ADAPTER_API_BASE_URL",
         "SENTRY_AUTH_TOKEN",
         "SENTRY_DSN",
         "SENTRY_ORG",
@@ -22,8 +21,12 @@
         "POSTHOG_API_KEY",
         "POSTHOG_HOST",
         "RESOURCE_ADAPTER_ALLOWED_ORIGINS",
+        "RESOURCE_ADAPTER_ALLOWED_ORIGIN_PATTERNS",
+        "RESOURCE_ADAPTER_API_BYPASS_SECRET",
+        "RESOURCE_ADAPTER_API_ORIGIN",
         "SENTRY_ENVIRONMENT",
-        "USE_POSTHOG"
+        "USE_POSTHOG",
+        "VERCEL_ENV"
       ],
       "persistent": true
     },

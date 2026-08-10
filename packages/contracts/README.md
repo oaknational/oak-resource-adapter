@@ -10,7 +10,7 @@ The package publishes four entry points:
 - `@oaknational/resource-adapter-contracts/server`
 - `@oaknational/resource-adapter-contracts/internal/server`
 
-This package is published as a fixed version pair with
+Once releases are enabled, this package is published as a fixed version pair with
 [`@oaknational/resource-adapter`](https://www.npmjs.com/package/@oaknational/resource-adapter),
 which depends on it at runtime. Hosts such as OWA install the UI package and
 receive this one transitively; it rarely needs installing directly.

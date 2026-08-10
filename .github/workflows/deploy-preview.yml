@@ -1,0 +1,198 @@
+name: Deploy preview
+
+# Deploys the API and the harness as a pair and tests the result. Only this
+# workflow knows both URLs, which is why the Git integration cannot do it.
+# See docs/DEPLOYMENT.md.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-preview-${{ github.ref }}
+  # Cancel superseded pull request runs, including mid-migration: the whole
+  # pending batch runs in one transaction, so a dropped connection rolls it back
+  # and releases the advisory lock, and the next push reapplies it.
+  #
+  # A push to main is never cancelled. Cancelling the caller cancels the
+  # migration with it whatever the called job's own concurrency says, and
+  # staging is what everything else is tested against.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Pinned rather than @latest, matching the npm pin in release.yml.
+  VERCEL_CLI_VERSION: 58.5.1
+
+jobs:
+  # Every Preview migrates the shared staging database before deploying, so a
+  # schema change is testable in its own Preview. docs/DATABASE.md has the rules
+  # that keeps safe.
+  #
+  # Fork and Dependabot pull requests hold no repository secrets, so both jobs
+  # skip. Skipped rather than guarded step by step, unlike ci.yml's browser
+  # tests, because neither should ever be a required check.
+  migrate:
+    name: Apply staging migrations
+    if: >-
+      vars.ENABLE_VERCEL_DEPLOYMENTS == 'true' &&
+      github.actor != 'dependabot[bot]' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    # A called workflow cannot grant itself more than its caller holds, so
+    # db-migrate.yml's own id-token: write is not enough on its own.
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/db-migrate.yml
+    with:
+      environment: staging
+    secrets: inherit
+
+  deploy:
+    name: Deploy and test
+    # `needs` alone is the gate on the migration: a failed or skipped migrate
+    # job stops this one, which is why there is no always() here.
+    needs: migrate
+    # Repeated from migrate rather than inherited, so the reason this does not
+    # run for a fork or Dependabot stays legible here.
+    if: >-
+      vars.ENABLE_VERCEL_DEPLOYMENTS == 'true' &&
+      github.actor != 'dependabot[bot]' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write # comment the deployment URLs
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      # main gets the staging custom environment and its stable domains;
+      # everything else gets an ordinary Preview.
+      VERCEL_TARGET: ${{ github.ref == 'refs/heads/main' && 'staging' || 'preview' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install the Vercel CLI
+        run: npm install --global "vercel@${VERCEL_CLI_VERSION}"
+
+      # The API first: the harness deployment below needs its URL. Vercel builds
+      # remotely from the project's own environment variables, which Doppler
+      # syncs, so nothing here reconstructs configuration.
+      - name: Deploy the API
+        id: api
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
+        run: |
+          url="$(vercel deploy --yes --target="$VERCEL_TARGET" --token="$VERCEL_TOKEN")"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed the API to $url"
+
+      # RESOURCE_ADAPTER_API_BYPASS_SECRET is the API project's secret, not this
+      # project's: see app/adapter-proxy/[...path]/route.ts.
+      - name: Deploy the harness
+        id: harness
+        env:
+          API_BYPASS_SECRET: ${{ secrets.VERCEL_API_BYPASS_SECRET }}
+          API_URL: ${{ steps.api.outputs.url }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_HARNESS }}
+        run: |
+          url="$(vercel deploy --yes --target="$VERCEL_TARGET" --token="$VERCEL_TOKEN" \
+            --env "RESOURCE_ADAPTER_API_ORIGIN=$API_URL" \
+            --env "RESOURCE_ADAPTER_API_BYPASS_SECRET=$API_BYPASS_SECRET")"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed the harness to $url"
+
+      # Before the tests, so the URLs are on the pull request even when the
+      # suite goes on to fail.
+      - name: Comment the deployment URLs
+        if: github.event_name == 'pull_request'
+        env:
+          API_URL: ${{ steps.api.outputs.url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HARNESS_URL: ${{ steps.harness.outputs.url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          body="$(cat <<EOF
+          | Deployment | URL |
+          | ---------- | ------------- |
+          | Harness    | $HARNESS_URL |
+          | API        | $API_URL |
+
+          Both sit behind Vercel Authentication. Open the harness, not the API: the
+          harness reaches the API through its own \`/adapter-proxy\` route.
+          EOF
+          )"
+
+          # Edits its own previous comment, so a busy branch leaves one.
+          gh pr comment "$PR_NUMBER" --edit-last --create-if-none --body "$body"
+
+      # Proves the pair, not just the deployment: this path only answers if the
+      # harness resolved its API origin and its bypass secret opened the API.
+      - name: Confirm the harness reaches its API
+        env:
+          BYPASS_SECRET: ${{ secrets.VERCEL_HARNESS_BYPASS_SECRET }}
+          HARNESS_URL: ${{ steps.harness.outputs.url }}
+        run: |
+          body=""
+          for attempt in 1 2 3 4 5; do
+            if body="$(curl -fsS --max-time 30 \
+              -H "x-vercel-protection-bypass: $BYPASS_SECRET" \
+              "$HARNESS_URL/adapter-proxy/health")"; then
+              break
+            fi
+
+            body=""
+            echo "Attempt $attempt failed."
+            if [ "$attempt" -lt 5 ]; then
+              sleep 10
+            fi
+          done
+
+          echo "$body"
+          if [ "$(printf '%s' "$body" | jq -r '.status // empty')" != "ok" ]; then
+            echo "::error::The harness could not reach its paired API at $HARNESS_URL/adapter-proxy/health."
+            exit 1
+          fi
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      # The deployment-safe suite needs the Clerk test credentials, exactly as
+      # the browser-tests job in ci.yml does.
+      - name: Inject Doppler env vars
+        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534 # v2.0.0
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN }}
+          inject-env-vars: true
+
+      # This bypass secret is the harness's own, unlike the one handed to the
+      # deploy step above: the browser has to get past the harness's own wall.
+      - name: Run the deployment-safe browser tests
+        env:
+          E2E_BASE_URL: ${{ steps.harness.outputs.url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_HARNESS_BYPASS_SECRET }}
+        run: pnpm test:e2e:deployment

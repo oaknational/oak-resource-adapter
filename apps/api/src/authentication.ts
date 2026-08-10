@@ -1,7 +1,7 @@
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { raLogger } from "@oaknational/resource-adapter-logger";
-import { getAllowedOrigins } from "./cors";
+import { getAuthorizedParties } from "./cors";
 
 const log = raLogger("auth");
 
@@ -18,7 +18,7 @@ export const requestAuthenticator: RequestAuthenticator = async (request) => {
     const client = await clerkClient();
 
     const requestState = await client.authenticateRequest(request, {
-      authorizedParties: getAllowedOrigins(),
+      authorizedParties: getAuthorizedParties(request),
     });
     if (!requestState.isAuthenticated) {
       return null;
