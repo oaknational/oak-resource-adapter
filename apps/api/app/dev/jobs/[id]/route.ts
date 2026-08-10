@@ -1,7 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getCorsHeaders } from "../../../../src/cors";
-import { devRouteNotFound, devRoutesEnabled } from "../../../../src/dev-routes";
+import {
+  createDevOptionsHandler,
+  devRouteNotFound,
+  devRoutesEnabled,
+} from "../../../../src/dev-routes";
 import { jobIdSchema } from "../../../../src/jobs/domain";
 import { getJob } from "../../../../src/jobs/job-repository";
 import { toJobResponse } from "../../../../src/jobs/job-response";
@@ -12,16 +16,7 @@ type RouteContext = {
 
 const allowedMethods = "GET, OPTIONS";
 
-export function OPTIONS(request: NextRequest) {
-  if (!devRoutesEnabled()) {
-    return devRouteNotFound();
-  }
-
-  return new NextResponse(null, {
-    headers: getCorsHeaders(request, allowedMethods),
-    status: 204,
-  });
-}
+export const OPTIONS = createDevOptionsHandler(allowedMethods);
 
 export async function GET(
   request: NextRequest,

@@ -1,3 +1,7 @@
+import { NextResponse, type NextRequest } from "next/server";
+
+import { getCorsHeaders } from "./cors";
+
 const affirmativeValues = new Set(["1", "true", "yes", "on"]);
 
 /**
@@ -14,4 +18,18 @@ export function devRoutesEnabled(): boolean {
 
 export function devRouteNotFound(): Response {
   return new Response(null, { status: 404 });
+}
+
+/** The shared `/dev` preflight handler: gate first, then CORS headers. */
+export function createDevOptionsHandler(allowedMethods: string) {
+  return function OPTIONS(request: NextRequest): Response {
+    if (!devRoutesEnabled()) {
+      return devRouteNotFound();
+    }
+
+    return new NextResponse(null, {
+      headers: getCorsHeaders(request, allowedMethods),
+      status: 204,
+    });
+  };
 }

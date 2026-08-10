@@ -4,7 +4,11 @@ import { isModelInvocationError } from "@oaknational/resource-adapter-ai";
 
 import { invokeDevSmokeText } from "../../../../src/ai/dev-invoker";
 import { getCorsHeaders } from "../../../../src/cors";
-import { devRouteNotFound, devRoutesEnabled } from "../../../../src/dev-routes";
+import {
+  createDevOptionsHandler,
+  devRouteNotFound,
+  devRoutesEnabled,
+} from "../../../../src/dev-routes";
 
 const requestSchema = z.object({
   input: z.string().min(1).max(2000),
@@ -12,16 +16,7 @@ const requestSchema = z.object({
 
 const allowedMethods = "POST, OPTIONS";
 
-export function OPTIONS(request: NextRequest) {
-  if (!devRoutesEnabled()) {
-    return devRouteNotFound();
-  }
-
-  return new NextResponse(null, {
-    headers: getCorsHeaders(request, allowedMethods),
-    status: 204,
-  });
-}
+export const OPTIONS = createDevOptionsHandler(allowedMethods);
 
 export async function POST(request: NextRequest): Promise<Response> {
   // Before the body is read or a client is constructed.
