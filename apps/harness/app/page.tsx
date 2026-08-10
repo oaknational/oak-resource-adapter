@@ -55,6 +55,48 @@ function CrashOnRender(): never {
   throw new Error("Simulated Resource Adapter render failure");
 }
 
+const modelOutcomeLabels = {
+  INCOMPLETE: "Incomplete response",
+  OUTPUT_MISSING: "No output returned",
+  REFUSAL: "Refused by the model",
+  SUCCESS: "Succeeded",
+} as const;
+
+type ModelTestOutcome = keyof typeof modelOutcomeLabels;
+type ModelTestResponse = {
+  outcome: ModelTestOutcome;
+  outputText: string | null;
+  usage: { outputTokens: number } | null;
+};
+
+/** Rejects unrecognised shapes so a wire-format change cannot render junk. */
+function parseModelTestResponse(body: unknown): ModelTestResponse {
+  if (
+    typeof body !== "object" ||
+    body === null ||
+    !("outcome" in body) ||
+    typeof body.outcome !== "string" ||
+    !Object.hasOwn(modelOutcomeLabels, body.outcome)
+  ) {
+    throw new Error("The API returned a model invocation in an unrecognised shape.");
+  }
+
+  const outputText =
+    "outputText" in body && typeof body.outputText === "string"
+      ? body.outputText
+      : null;
+  const usage =
+    "usage" in body &&
+    typeof body.usage === "object" &&
+    body.usage !== null &&
+    "outputTokens" in body.usage &&
+    typeof body.usage.outputTokens === "number"
+      ? { outputTokens: body.usage.outputTokens }
+      : null;
+
+  return { outcome: body.outcome as ModelTestOutcome, outputText, usage };
+}
+
 /** Rejects unknown statuses so a wire-format change cannot silently stop polling. */
 function parseTestJobResponse(body: unknown): TestJobResponse {
   if (
@@ -95,6 +137,9 @@ export default function HarnessPage() {
   const [isCreatingTestJob, setIsCreatingTestJob] = useState(false);
   const [testJob, setTestJob] = useState<TestJobResponse | null>(null);
   const [testJobError, setTestJobError] = useState<string | null>(null);
+  const [isInvokingModel, setIsInvokingModel] = useState(false);
+  const [modelTest, setModelTest] = useState<ModelTestResponse | null>(null);
+  const [modelTestError, setModelTestError] = useState<string | null>(null);
 
   const loadCapabilities = useCallback(async () => {
     if (!isLoaded) {
@@ -193,6 +238,39 @@ export default function HarnessPage() {
     }
   }, []);
 
+  const runModelSmokeTest = useCallback(async () => {
+    setIsInvokingModel(true);
+    setModelTest(null);
+    setModelTestError(null);
+
+    try {
+      const response = await fetch(new URL("/dev/ai/invoke", apiBaseUrl), {
+        body: JSON.stringify({ input: "Reply with the single word: pong" }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+
+      if (response.status === 404) {
+        throw new Error("Dev routes are not enabled on the API.");
+      }
+      if (response.status === 503) {
+        throw new Error("The API has no OpenAI API key configured.");
+      }
+      if (!response.ok) {
+        throw new Error(`The API returned HTTP ${response.status}.`);
+      }
+
+      setModelTest(parseModelTestResponse(await response.json()));
+    } catch (error) {
+      log.error(error);
+      setModelTestError(
+        error instanceof Error ? error.message : "Could not run the model invocation.",
+      );
+    } finally {
+      setIsInvokingModel(false);
+    }
+  }, []);
+
   const testJobIsActive = testJob?.status === "queued" || testJob?.status === "running";
 
   useEffect(() => {
@@ -255,6 +333,18 @@ export default function HarnessPage() {
     }
   }
 
+  let modelTestStatus = "Not run";
+  if (isInvokingModel) {
+    modelTestStatus = "Invoking";
+  } else if (modelTestError) {
+    modelTestStatus = modelTestError;
+  } else if (modelTest) {
+    modelTestStatus = modelOutcomeLabels[modelTest.outcome];
+    if (modelTest.outcome === "SUCCESS" && modelTest.usage) {
+      modelTestStatus += ` (${modelTest.usage.outputTokens} output tokens)`;
+    }
+  }
+
   return (
     <>
       <a className={styles.skipLink} href="#main-content">
@@ -299,6 +389,23 @@ export default function HarnessPage() {
                 Status: {testJobStatus}
               </p>
             </div>
+          </section>
+          <section aria-labelledby="ai-test-heading" className={styles.workerTest}>
+            <h2 id="ai-test-heading">Model invocation test</h2>
+            <div className={styles.workerTestControls}>
+              <button
+                className={styles.workerTestButton}
+                disabled={isInvokingModel}
+                onClick={() => void runModelSmokeTest()}
+                type="button"
+              >
+                Run model invocation
+              </button>
+              <p aria-live="polite" className={styles.workerTestStatus}>
+                Status: {modelTestStatus}
+              </p>
+            </div>
+            {modelTest?.outputText && <p>Model output: {modelTest.outputText}</p>}
           </section>
           <section
             aria-labelledby="error-boundary-test-heading"
