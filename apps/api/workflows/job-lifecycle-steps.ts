@@ -1,5 +1,5 @@
-import { jobFailureSchema, type JobFailure } from "../src/jobs/domain";
-import { claimJob, completeJob, failJob } from "../src/jobs/job-repository";
+import { jobFailureSchema, type JobFailure } from "@/jobs/domain";
+import { claimJob, completeJob, failJob } from "@/jobs/job-repository";
 
 export async function claimJobStep(jobId: string, workflowRunId: string) {
   "use step";

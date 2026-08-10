@@ -1,8 +1,8 @@
 import { FatalError, getWorkflowMetadata } from "workflow";
 
-import { isRegisteredJobKind } from "../src/jobs/registry";
-import { testEchoJob } from "../src/jobs/test-echo/definition";
-import { executeTestEchoStep } from "../src/jobs/test-echo/steps";
+import { isRegisteredJobKind } from "@/jobs/registry";
+import { testEchoJob } from "@/jobs/test-echo/definition";
+import { executeTestEchoStep } from "@/jobs/test-echo/steps";
 import { claimJobStep, completeJobStep, failJobStep } from "./job-lifecycle-steps";
 
 export async function runJob(jobId: string): Promise<void> {

@@ -2,13 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { isModelInvocationError } from "@oaknational/resource-adapter-ai";
 
-import { invokeDevSmokeText } from "../../../../src/ai/dev-invoker";
-import { getCorsHeaders } from "../../../../src/cors";
+import { invokeDevSmokeText } from "@/ai/dev-invoker";
+import { getCorsHeaders } from "@/cors";
 import {
   createDevOptionsHandler,
   devRouteNotFound,
   devRoutesEnabled,
-} from "../../../../src/dev-routes";
+} from "@/dev-routes";
 
 const requestSchema = z.object({
   input: z.string().min(1).max(2000),

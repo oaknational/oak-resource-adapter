@@ -1,14 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { getCorsHeaders } from "../../../../src/cors";
+import { getCorsHeaders } from "@/cors";
 import {
   createDevOptionsHandler,
   devRouteNotFound,
   devRoutesEnabled,
-} from "../../../../src/dev-routes";
-import { jobIdSchema } from "../../../../src/jobs/domain";
-import { getJob } from "../../../../src/jobs/job-repository";
-import { toJobResponse } from "../../../../src/jobs/job-response";
+} from "@/dev-routes";
+import { jobIdSchema } from "@/jobs/domain";
+import { getJob } from "@/jobs/job-repository";
+import { toJobResponse } from "@/jobs/job-response";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
