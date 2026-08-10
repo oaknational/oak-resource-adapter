@@ -11,7 +11,7 @@ export type RecorderErrorHandler = (
 ) => Promise<void> | void;
 
 function reportRecorderError(error: unknown, stage: RecordingStage): void {
-  // Deliberately do not attach the raw error as a cause: recorder failures can
+  // The raw error is not attached as a cause: recorder failures can
   // contain prompts, model output, or persistence payloads. `describeError`
   // carries enough to tell, say, a connection failure from a constraint
   // violation without any of that content.

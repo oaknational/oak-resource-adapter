@@ -7,7 +7,7 @@ export type JsonObject = Readonly<{ [key: string]: JsonValue }>;
 /**
  * Initially OpenAI-compatible; unlike outputs, this boundary may need
  * normalising when a non-compatible provider is introduced. Streaming and
- * background calls need different lifecycles and are deliberately excluded.
+ * background calls need different lifecycles, so they are excluded.
  */
 export type ModelInvocationRequest = Omit<
   ResponseCreateParamsNonStreaming,

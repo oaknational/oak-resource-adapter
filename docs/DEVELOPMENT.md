@@ -26,7 +26,7 @@ workflow carries a database credential. The deploy workflows additionally hold
 Vercel's own credentials, listed in
 [deployment](DEPLOYMENT.md#secrets-the-workflows-use).
 
-The same name at every scope is deliberate: GitHub resolves an Environment secret
+The same name works at every scope because GitHub resolves an Environment secret
 over the repository one for any job declaring that `environment:`.
 
 | Scope                    | Doppler config | Used by                                                                 |

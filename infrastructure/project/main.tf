@@ -49,8 +49,7 @@ module "api" {
   # deploy-preview.yml reaches protected deployments with the bypass secret.
   protection_bypass_for_automation = true
 
-  # Deliberately none. Doppler owns every Vercel environment variable; see
-  # README.md.
+  # None: Doppler owns every Vercel environment variable; see README.md.
   environment_variables = []
 }
 
