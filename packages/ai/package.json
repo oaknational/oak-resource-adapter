@@ -22,6 +22,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
     "test:integration": "RUN_DATABASE_INTEGRATION_TESTS=1 vitest run src/persistence/model-invocation.integration.test.ts",
+    "test:integration:openai": "RUN_OPENAI_INTEGRATION_TESTS=1 vitest run src/openai-responses-transport.integration.test.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
