@@ -5,7 +5,7 @@ This document describes how to test local, unpublished changes to
 the local harness (`pnpm dev`) is enough; reach for this workflow when a
 change needs verifying against the real OWA integration before it is
 released. How releases themselves work is covered in the
-[release workflow](RELEASE_WORKFLOW.md).
+[release process](RELEASE_PROCESS.md).
 
 ## How yalc works
 

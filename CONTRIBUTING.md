@@ -11,8 +11,9 @@ Do not report security vulnerabilities in a public issue. Follow the
 
 ## Development
 
-Repository development and release-operational notes are in
-[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+Repository development notes are in
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). The operational release sequence is
+in [docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md).
 
 Commit messages must follow
 [Conventional Commits](https://www.conventionalcommits.org); a commitlint

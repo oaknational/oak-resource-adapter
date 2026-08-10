@@ -1,9 +1,9 @@
 name: Release
 
 on:
-  # Only after CI has gone green on main, so a release can never start from a
-  # red main. GitHub reads this trigger from the default branch, so a change to
-  # it takes effect once merged, not from a branch.
+  # This is an incomplete scaffold and remains disabled by ENABLE_NPM_RELEASES.
+  # Only run after CI has gone green on production. GitHub reads this trigger
+  # from the default branch, so changes to it take effect once merged there.
   workflow_run:
     workflows: [CI]
     # Not main: main runs ahead of production, and OWA pins whatever is
@@ -27,8 +27,15 @@ jobs:
     # "true". Without it, every qualifying run would attempt a publish, because
     # the changesets action treats "no changesets pending" as "publish anything
     # unpublished". See docs/DEVELOPMENT.md for when to enable it.
+    #
+    # This job checks out the triggering commit and holds publish credentials,
+    # so it must only ever run for a push to this repository. `branches:` above
+    # matches the triggering run's head branch, which a fork pull request
+    # controls; these two conditions are what make that unreachable.
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
       vars.ENABLE_NPM_RELEASES == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -41,6 +48,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          # A workflow_run itself points at the default branch. Check out the
+          # exact production commit from the successful CI run instead.
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -76,6 +86,9 @@ jobs:
       - name: Create release pull request or publish
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
         with:
+          # workflow_run has the default branch as github.ref. Set this
+          # explicitly so the version PR targets production.
+          branch: production
           version: pnpm ci:version
           publish: pnpm ci:publish
           commit: "chore: version packages"
