@@ -178,12 +178,12 @@ failures without a normal provider response are thrown.
 compatible gateway client. It defaults `store` to `false`; callers using
 `previous_response_id` must explicitly enable provider-side retention.
 
-The application builds the OpenAI client and passes it in; the package never
-constructs one. `new OpenAI()` reads `OPENAI_API_KEY` when constructed, and
-the key lives in Doppler (`dev`, `stg`, `prd`). A live smoke test exists as
+The application constructs the `OpenAI` client and passes it to the transport.
+`new OpenAI()` reads `OPENAI_API_KEY` from the environment; the key lives in
+Doppler (`dev`, `stg`, `prd`). A live smoke test exists as
 `pnpm --filter @oaknational/resource-adapter-ai test:integration:openai`
-(needs the key; everywhere else, including keyless CI, the suite reports as
-skipped). For a manual end-to-end check, the
+(needs the key; everywhere else, including CI, which has no key, the suite
+reports as skipped). For a manual end-to-end check, the
 dev-gated `POST /dev/ai/invoke` route runs one invocation, demonstrated by the
 harness page's "Model invocation test" section.
 

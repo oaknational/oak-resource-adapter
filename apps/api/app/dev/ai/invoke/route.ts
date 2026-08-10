@@ -19,7 +19,6 @@ const allowedMethods = "POST, OPTIONS";
 export const OPTIONS = createDevOptionsHandler(allowedMethods);
 
 export async function POST(request: NextRequest): Promise<Response> {
-  // Before the body is read or a client is constructed.
   if (!devRoutesEnabled()) {
     return devRouteNotFound();
   }
@@ -47,8 +46,6 @@ export async function POST(request: NextRequest): Promise<Response> {
       );
     }
     if (isModelInvocationError(error)) {
-      // The error's stable message and code; never the raw provider body,
-      // which can carry prompt content.
       return NextResponse.json(
         { code: error.code, error: error.message },
         { headers, status: error.code === "INVALID_CONFIGURATION" ? 503 : 502 },

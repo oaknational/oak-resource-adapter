@@ -43,8 +43,7 @@ vi.mock("./authentication", async (importOriginal) => {
   };
 });
 
-// Fully stubbed (no passthrough): a forgotten stub must fail the test, not
-// construct a real OpenAI client and make a paid call.
+// Fully stubbed so a forgotten stub can never make a paid OpenAI call.
 vi.mock("./ai/dev-invoker", () => ({
   invokeDevSmokeText: vi.fn(),
 }));
@@ -102,10 +101,7 @@ function featureFlagsRequest(): NextRequest {
 
 describe("API routes", () => {
   beforeEach(() => {
-    // The /dev routes are opt-in; the tests asserting they are closed unset this.
     vi.stubEnv("ENABLE_DEV_ROUTES", "1");
-
-    // Module-factory mocks keep call history across tests; reset per test.
     vi.mocked(invokeDevSmokeText).mockReset();
 
     vi.mocked(requestAuthenticator).mockImplementation(async () => {
@@ -355,7 +351,6 @@ describe("API routes", () => {
     const response = await postModelInvoke(modelInvokeRequest({ input: "ping" }));
 
     expect(response.status).toBe(200);
-    // Exact shape: a regression guard against leaking the raw provider payload.
     await expect(response.json()).resolves.toEqual({
       outcome: "SUCCESS",
       outputText: "pong",

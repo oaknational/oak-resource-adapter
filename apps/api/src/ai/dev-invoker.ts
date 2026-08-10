@@ -15,14 +15,6 @@ const devRoleBindings = defineRoleBindings({
   },
 });
 
-/**
- * Runs one text invocation for the dev route.
- *
- * A fresh invoker per call: the OpenAI client reads `OPENAI_API_KEY` at
- * construction, so anything module-scoped would make `next build` and server
- * boot require the key. The output cap is set here, server-side, so a dev
- * request cannot run up cost.
- */
 export function invokeDevSmokeText(input: string): Promise<TextModelOutputResult> {
   if (!process.env.OPENAI_API_KEY) {
     throw new ModelInvocationError({

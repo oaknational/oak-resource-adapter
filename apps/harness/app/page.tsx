@@ -86,7 +86,6 @@ type ModelTestResponse = {
   usage: { outputTokens: number } | null;
 };
 
-/** Rejects unrecognised shapes so a wire-format change cannot render junk. */
 function parseModelTestResponse(body: unknown): ModelTestResponse {
   if (
     typeof body !== "object" ||
@@ -114,7 +113,6 @@ function parseModelTestResponse(body: unknown): ModelTestResponse {
   return { outcome: body.outcome as ModelTestOutcome, outputText, usage };
 }
 
-/** Rejects unknown statuses so a wire-format change cannot silently stop polling. */
 function parseTestJobResponse(body: unknown): TestJobResponse {
   if (
     typeof body !== "object" ||
