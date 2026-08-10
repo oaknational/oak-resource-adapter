@@ -2,6 +2,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getDatabaseClient, initialiseDatabaseClient } from "./client.js";
 
+// Only the connector is stubbed; readCloudSqlConfig stays real so these
+// exercise the same configuration reading a deployment would.
+const createCloudSqlPoolConfig = vi.fn(async () => ({ stream: () => undefined }));
+
+vi.mock("./cloud-sql.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./cloud-sql.js")>()),
+  createCloudSqlPoolConfig,
+}));
+
+const cloudSqlEnv = {
+  CLOUD_SQL_DATABASE: "resource_adapter",
+  CLOUD_SQL_INSTANCE_CONNECTION_NAME: "oak:europe-west2:ora-stg",
+  CLOUD_SQL_USER: "ora-app@oak.iam",
+  GCP_SERVICE_ACCOUNT: "ora-app@oak.iam.gserviceaccount.com",
+  GCP_WORKLOAD_IDENTITY_PROVIDER:
+    "projects/1/locations/global/workloadIdentityPools/vercel/providers/ora",
+};
+
+function configureCloudSql(): void {
+  for (const [name, value] of Object.entries(cloudSqlEnv)) {
+    vi.stubEnv(name, value);
+  }
+}
+
 const globalDatabase = globalThis as typeof globalThis & {
   resourceAdapterDatabaseClient?: unknown;
   resourceAdapterDatabaseKey?: string;
@@ -10,6 +34,7 @@ const globalDatabase = globalThis as typeof globalThis & {
 beforeEach(() => {
   delete globalDatabase.resourceAdapterDatabaseClient;
   delete globalDatabase.resourceAdapterDatabaseKey;
+  createCloudSqlPoolConfig.mockClear();
 });
 
 afterEach(() => {
@@ -67,5 +92,24 @@ describe("initialiseDatabaseClient", () => {
     vi.stubEnv("CLOUD_SQL_INSTANCE_CONNECTION_NAME", "oak:europe-west2:ora-stg");
 
     await expect(initialiseDatabaseClient()).rejects.toThrowError("CLOUD_SQL_DATABASE");
+  });
+
+  it("builds a Cloud SQL client that getDatabaseClient then returns", async () => {
+    configureCloudSql();
+
+    await initialiseDatabaseClient();
+
+    expect(createCloudSqlPoolConfig).toHaveBeenCalledOnce();
+    expect(getDatabaseClient()).toBeDefined();
+  });
+
+  // Rebuilding would open a fresh pool on every serverless invocation.
+  it("does not rebuild when already initialised for the same instance", async () => {
+    configureCloudSql();
+
+    await initialiseDatabaseClient();
+    await initialiseDatabaseClient();
+
+    expect(createCloudSqlPoolConfig).toHaveBeenCalledOnce();
   });
 });

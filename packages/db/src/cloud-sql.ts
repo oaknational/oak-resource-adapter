@@ -65,14 +65,14 @@ export function readCloudSqlConfig(): CloudSqlConfig | null {
 }
 
 /**
- * Exchanges Vercel's OIDC token for GCP credentials.
+ * Describes the Vercel-to-GCP token exchange.
  *
- * `getSubjectToken` runs per exchange rather than once at construction, because
+ * `getSubjectToken` runs per exchange rather than once here, because
  * `getVercelOidcToken` reads the `x-vercel-oidc-token` request header before
  * falling back to the environment.
  */
-function createGoogleAuthClient(config: CloudSqlConfig) {
-  const client = ExternalAccountClient.fromJSON({
+export function buildExternalAccountOptions(config: CloudSqlConfig) {
+  return {
     audience: `//iam.googleapis.com/${config.workloadIdentityProvider}`,
     scopes: ["https://www.googleapis.com/auth/cloud-platform"],
     service_account_impersonation_url:
@@ -88,7 +88,11 @@ function createGoogleAuthClient(config: CloudSqlConfig) {
     subject_token_type: "urn:ietf:params:oauth:token-type:jwt",
     token_url: "https://sts.googleapis.com/v1/token",
     type: "external_account",
-  });
+  };
+}
+
+function createGoogleAuthClient(config: CloudSqlConfig) {
+  const client = ExternalAccountClient.fromJSON(buildExternalAccountOptions(config));
 
   if (!client) {
     throw new Error(
