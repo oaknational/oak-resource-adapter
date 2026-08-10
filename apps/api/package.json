@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.22",
+    "@oaknational/resource-adapter-ai": "workspace:*",
     "@oaknational/resource-adapter-contracts": "workspace:*",
     "@oaknational/resource-adapter-db": "workspace:*",
     "@oaknational/resource-adapter-logger": "workspace:*",
@@ -24,6 +25,7 @@
     "@trpc/server": "11.18.0",
     "drizzle-orm": "^0.45.2",
     "next": "^16.1.0",
+    "openai": "6.49.0",
     "posthog-node": "^5.46.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
