@@ -16,6 +16,8 @@ How the repository is developed and released:
 - [UI local development workflow](UI_LOCAL_DEVELOPMENT.md): how to test
   local, unpublished package changes inside a host app such as OWA using
   yalc.
+- [Comments and documentation](COMMENTS_AND_DOCUMENTATION.md): what earns a
+  comment or a document, and what to delete on sight.
 
 How the service works:
 

@@ -6,18 +6,28 @@ set -u
 cmd="$(jq -r '.tool_input.command // empty')"
 [ -n "$cmd" ] || exit 0
 
+# The first non-option word after `git` is the subcommand. Matching that rather
+# than the whole string keeps `git log --grep=commit`, and any command that
+# merely mentions git, out of the way.
+subcommand="$(printf '%s\n' "$cmd" | awk '{
+  for (i = 1; i <= NF; i++) {
+    if ($i != "git") continue
+    for (j = i + 1; j <= NF; j++) {
+      if ($j == "-C" || $j == "-c" || $j == "--git-dir" || $j == "--work-tree") { j++; continue }
+      if ($j ~ /^-/) continue
+      print $j
+      exit
+    }
+  }
+}')"
+
 is_commit=false
 is_push=false
-case "$cmd" in
-*git*commit*) is_commit=true ;;
+case "$subcommand" in
+commit) is_commit=true ;;
+push) is_push=true ;;
+*) exit 0 ;;
 esac
-case "$cmd" in
-*git*push*) is_push=true ;;
-esac
-
-if [ "$is_commit" = false ] && [ "$is_push" = false ]; then
-  exit 0
-fi
 
 # -n means --no-verify on commit, but --dry-run on push, so it only counts as a
 # bypass for commits.

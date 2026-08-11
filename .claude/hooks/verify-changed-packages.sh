@@ -14,6 +14,12 @@ fi
 root="${CLAUDE_PROJECT_DIR:-.}"
 cd "$root" || exit 0
 
+# Nothing uncommitted, so this turn changed no code and there is nothing to
+# verify. Committed work is checked by .husky/pre-push.
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then
+  exit 0
+fi
+
 # Nothing installed yet. Silence would look like a pass, hence the message.
 if [ ! -x node_modules/.bin/turbo ]; then
   echo '{"systemMessage":"type-check/lint hook skipped: node_modules/.bin/turbo is missing (run pnpm install)."}'

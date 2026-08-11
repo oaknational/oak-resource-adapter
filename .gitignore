@@ -9,8 +9,6 @@ apps/*/next-env.d.ts
 coverage/
 playwright-report/
 test-results/
-# Traces and downloads written by the Playwright MCP server.
-.playwright-mcp/
 
 .env
 .env.*

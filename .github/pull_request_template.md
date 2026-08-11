@@ -23,4 +23,5 @@ How it should now look:
 
 - [ ] Manually tested across browsers / devices
 - [ ] Considered impact on accessibility
+- [ ] Comments and docs follow the ([guidance](../docs/COMMENTS_AND_DOCUMENTATION.md))
 - [ ] Does this PR update a package with a breaking change

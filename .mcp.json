@@ -3,11 +3,6 @@
     "linear": {
       "type": "http",
       "url": "https://mcp.linear.app/mcp"
-    },
-    "playwright": {
-      "type": "stdio",
-      "command": "pnpm",
-      "args": ["dlx", "@playwright/mcp@latest"]
     }
   }
 }
