@@ -21,9 +21,6 @@ concurrency:
   group: deploy-production
   cancel-in-progress: false
 
-env:
-  VERCEL_CLI_VERSION: 58.5.1
-
 jobs:
   migrate:
     name: Apply production migrations
@@ -64,8 +61,18 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install the Vercel CLI
-        run: npm install --global "vercel@${VERCEL_CLI_VERSION}"
+      - name: Set up pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # Brings the Vercel CLI with it, pinned by the root package.json.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       # --skip-domain is what separates "built" from "live". The project also
       # sets auto_assign_custom_domains = false, so neither this deployment nor
@@ -73,7 +80,7 @@ jobs:
       - name: Deploy without taking the domain
         id: deploy
         run: |
-          url="$(vercel deploy --prod --skip-domain --yes --token="$VERCEL_TOKEN")"
+          url="$(pnpm exec vercel deploy --prod --skip-domain --yes --token="$VERCEL_TOKEN")"
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Built $url, holding no traffic."
 
@@ -131,5 +138,5 @@ jobs:
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
         run: |
-          vercel promote "$DEPLOYMENT_URL" --yes --token="$VERCEL_TOKEN"
+          pnpm exec vercel promote "$DEPLOYMENT_URL" --yes --token="$VERCEL_TOKEN"
           echo "Promoted $DEPLOYMENT_URL."

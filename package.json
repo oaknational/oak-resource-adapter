@@ -29,7 +29,7 @@
     "db:migrate:deploy": "pnpm --filter @oaknational/resource-adapter-db db:migrate:deploy",
     "db:reset": "pnpm --filter @oaknational/resource-adapter-db db:reset",
     "db:studio": "pnpm --filter @oaknational/resource-adapter-db db:studio",
-    "doppler:pull:dev": "doppler secrets download --project oak-resource-adapter --config dev --no-file --format env > .env",
+    "env:pull:dev": "node scripts/pull-dev-env.mjs",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "lint": "turbo run lint",
@@ -59,7 +59,8 @@
     "prettier": "^3.9.6",
     "turbo": "^2.5.8",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "typescript-eslint": "^8.65.0"
+    "typescript-eslint": "^8.65.0",
+    "vercel": "58.5.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

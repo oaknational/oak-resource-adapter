@@ -179,8 +179,8 @@ compatible gateway client. It defaults `store` to `false`; callers using
 `previous_response_id` must explicitly enable provider-side retention.
 
 The application constructs the `OpenAI` client and passes it to the transport.
-`new OpenAI()` reads `OPENAI_API_KEY` from the environment; the key lives in
-Doppler (`dev`, `stg`, `prd`). A live smoke test exists as
+`new OpenAI()` reads `OPENAI_API_KEY` from the environment, which Terraform sets
+in every deployed target. A live smoke test exists as
 `pnpm --filter @oaknational/resource-adapter-ai test:integration:openai`
 (needs the key; everywhere else, including CI, which has no key, the suite
 reports as skipped). For a manual end-to-end check, the

@@ -14,6 +14,9 @@ test-results/
 .env.*
 !.env.example
 
+# Written by the Vercel CLI when a local directory is linked to a project.
+.vercel/
+
 # Personal Claude Code overrides. The checked-in settings.json is shared.
 .claude/settings.local.json
 

@@ -25,10 +25,6 @@ concurrency:
   # staging is what everything else is tested against.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-env:
-  # Pinned rather than @latest, matching the npm pin in release.yml.
-  VERCEL_CLI_VERSION: 58.5.1
-
 jobs:
   # Every Preview migrates the shared staging database before deploying, so a
   # schema change is testable in its own Preview. docs/DATABASE.md has the rules
@@ -93,21 +89,19 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      # Brings the Vercel CLI with it, pinned by the root package.json.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install the Vercel CLI
-        run: npm install --global "vercel@${VERCEL_CLI_VERSION}"
-
       # The API first: the harness deployment below needs its URL. Vercel builds
-      # remotely from the project's own environment variables, which Doppler
-      # syncs, so nothing here reconstructs configuration.
+      # remotely from the project's own environment variables, which Terraform
+      # owns, so nothing here reconstructs configuration.
       - name: Deploy the API
         id: api
         env:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
         run: |
-          url="$(vercel deploy --yes --target="$VERCEL_TARGET" --token="$VERCEL_TOKEN")"
+          url="$(pnpm exec vercel deploy --yes --target="$VERCEL_TARGET" --token="$VERCEL_TOKEN")"
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed the API to $url"
 
@@ -120,7 +114,7 @@ jobs:
           API_URL: ${{ steps.api.outputs.url }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_HARNESS }}
         run: |
-          url="$(vercel deploy --yes --target="$VERCEL_TARGET" --token="$VERCEL_TOKEN" \
+          url="$(pnpm exec vercel deploy --yes --target="$VERCEL_TARGET" --token="$VERCEL_TOKEN" \
             --env "RESOURCE_ADAPTER_API_ORIGIN=$API_URL" \
             --env "RESOURCE_ADAPTER_API_BYPASS_SECRET=$API_BYPASS_SECRET")"
           echo "url=$url" >> "$GITHUB_OUTPUT"
@@ -181,18 +175,16 @@ jobs:
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
 
-      # The deployment-safe suite needs the Clerk test credentials, exactly as
-      # the browser-tests job in ci.yml does.
-      - name: Inject Doppler env vars
-        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534 # v2.0.0
-        with:
-          doppler-token: ${{ secrets.DOPPLER_TOKEN }}
-          inject-env-vars: true
-
+      # The Clerk values must be the instance the deployed harness verifies
+      # against, or the suite dies at sign-in.
+      #
       # This bypass secret is the harness's own, unlike the one handed to the
       # deploy step above: the browser has to get past the harness's own wall.
       - name: Run the deployment-safe browser tests
         env:
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           E2E_BASE_URL: ${{ steps.harness.outputs.url }}
+          E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_HARNESS_BYPASS_SECRET }}
         run: pnpm test:e2e:deployment

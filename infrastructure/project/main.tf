@@ -49,8 +49,8 @@ module "api" {
   # deploy-preview.yml reaches protected deployments with the bypass secret.
   protection_bypass_for_automation = true
 
-  # None: Doppler owns every Vercel environment variable; see README.md.
-  environment_variables = []
+  environment_variables = local.api_environment_variables
+  custom_env_vars       = local.api_staging_env_vars
 }
 
 # Development and QA only. Never deployed to production, and holds no database
@@ -78,5 +78,6 @@ module "harness" {
 
   protection_bypass_for_automation = true
 
-  environment_variables = []
+  environment_variables = local.harness_environment_variables
+  custom_env_vars       = local.harness_staging_env_vars
 }

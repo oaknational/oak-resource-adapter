@@ -7,8 +7,8 @@ cover how the repository is developed and operated.
 How the repository is developed and released:
 
 - [Development notes](DEVELOPMENT.md): repository-operational knowledge,
-  including secret management with Doppler, migrations and contributor-facing
-  Changesets guidance.
+  including secret management, migrations and contributor-facing Changesets
+  guidance.
 - [Release process](RELEASE_PROCESS.md): how to release the API and packages and
   update OWA, plus the temporary first-release checklist.
 - [Deployment](DEPLOYMENT.md): the two Vercel projects, how a Preview pair is
