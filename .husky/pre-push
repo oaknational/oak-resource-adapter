@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 #
 # Runs the quick parts of CI before anything leaves the machine. Nothing here
-# needs a database, Doppler or a browser. The slower jobs stay in CI.
+# needs a database, a credential or a browser. The slower jobs stay in CI.
 set -eu
 
 if ! command -v gitleaks >/dev/null 2>&1; then

@@ -223,12 +223,15 @@ jobs:
     timeout-minutes: 20
     env:
       # Throwaway database, so no pull request reads or writes the shared staging
-      # one. Also set per step, where it cannot be overridden.
+      # one.
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/resource_adapter
       # The harness posts to the /dev routes, which fail closed without this.
       ENABLE_DEV_ROUTES: "1"
-      # `secrets` cannot be read from an `if:` condition; `env` can.
-      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+      # The three values e2e/global.setup.ts asserts. `secrets` cannot be read
+      # from an `if:` condition; `env` can.
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
     services:
       postgres:
         image: postgres:17
@@ -268,32 +271,18 @@ jobs:
         run: pnpm --filter @oaknational/resource-adapter-db db:migrate:deploy
 
       - name: Install Playwright browser
-        if: env.DOPPLER_TOKEN != ''
+        if: env.CLERK_SECRET_KEY != ''
         run: pnpm exec playwright install --with-deps chromium
 
       # Dependabot and fork pull requests carry no repository secrets, so they
-      # cannot fetch the Clerk credentials the suite needs. Guarded per step, not
-      # per job: `Run browser tests` is a required check, and a skipped job blocks
-      # a merge just as a failed one does.
-      - name: Inject Doppler env vars
-        if: env.DOPPLER_TOKEN != ''
-        uses: dopplerhq/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534 # v2.0.0
-        id: doppler
-        with:
-          doppler-token: ${{ env.DOPPLER_TOKEN }}
-          inject-env-vars: true
-
-      # The Doppler step exports secrets through $GITHUB_ENV, which outranks a
-      # job-level `env:`. Step level cannot be overridden, so a DATABASE_URL in
-      # the staging config cannot redirect this run.
+      # have no Clerk credentials to sign in with. Guarded per step, not per job:
+      # `Run browser tests` is a required check, and a skipped job blocks a merge
+      # just as a failed one does.
       - name: Run browser tests
-        if: env.DOPPLER_TOKEN != ''
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/resource_adapter
-          ENABLE_DEV_ROUTES: "1"
+        if: env.CLERK_SECRET_KEY != ''
         run: pnpm test:e2e
 
       - name: Report a skipped suite
-        if: env.DOPPLER_TOKEN == ''
+        if: env.CLERK_SECRET_KEY == ''
         run: |
-          echo "::warning::Browser tests skipped: this event has no DOPPLER_TOKEN, so the Clerk credentials cannot be fetched. Expected for Dependabot and fork pull requests."
+          echo "::warning::Browser tests skipped: this event carries no repository secrets, so there are no Clerk credentials to sign in with. Expected for Dependabot and fork pull requests."

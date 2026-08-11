@@ -108,9 +108,10 @@ Two different routes, neither holding a long-lived credential.
 **CI, to run migrations.** [`db-migrate.yml`](../.github/workflows/db-migrate.yml)
 is the only way migrations reach a deployed database. It runs Cloud SQL Proxy as
 a separate process and connects over `127.0.0.1`, authenticating with Workload
-Identity Federation, so there is no CI egress IP to allowlist. Doppler supplies
-the instance connection name, the identity provider, the service account, and a
-`DATABASE_URL` already pointing at the proxy.
+Identity Federation, so there is no CI egress IP to allowlist. Each GitHub
+Environment supplies the instance connection name, the identity provider and the
+service account as variables, and a `MIGRATION_DATABASE_URL` already pointing at
+the proxy as its one secret.
 
 **The deployed API, to serve requests.**
 [`cloud-sql.ts`](../packages/db/src/cloud-sql.ts) uses the Cloud SQL Node
@@ -132,18 +133,26 @@ it has run.
 
 ## Secrets the workflows use
 
-Doppler owns every Vercel environment variable; Terraform owns project shape,
-domains and protection. The workflows themselves hold these as repository
-secrets, readable from the Terraform workspace outputs:
+Terraform owns project shape, domains, protection and every Vercel environment
+variable — see [`locals.tf`](../infrastructure/project/locals.tf), which is where
+each value's destination is decided.
 
-| Secret                         | Purpose                                |
-| ------------------------------ | -------------------------------------- |
-| `VERCEL_TOKEN`                 | Deploy and promote                     |
-| `VERCEL_ORG_ID`                | Team scope                             |
-| `VERCEL_PROJECT_ID_API`        | Which project the API step deploys     |
-| `VERCEL_PROJECT_ID_HARNESS`    | Which project the harness step deploys |
-| `VERCEL_API_BYPASS_SECRET`     | Reaching the protected API             |
-| `VERCEL_HARNESS_BYPASS_SECRET` | Reaching the protected harness         |
+What the workflows need for themselves they hold as repository secrets. The first
+six are readable from the Terraform workspace outputs:
 
-`DOPPLER_TOKEN` is already in place; see
+| Secret                              | Purpose                                |
+| ----------------------------------- | -------------------------------------- |
+| `VERCEL_TOKEN`                      | Deploy and promote                     |
+| `VERCEL_ORG_ID`                     | Team scope                             |
+| `VERCEL_PROJECT_ID_API`             | Which project the API step deploys     |
+| `VERCEL_PROJECT_ID_HARNESS`         | Which project the harness step deploys |
+| `VERCEL_API_BYPASS_SECRET`          | Reaching the protected API             |
+| `VERCEL_HARNESS_BYPASS_SECRET`      | Reaching the protected harness         |
+| `CLERK_SECRET_KEY`                  | Signing the browser suite in           |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | The same                               |
+| `E2E_CLERK_USER_EMAIL`              | The same                               |
+
+The three Clerk values must belong to the instance the deployed harness verifies
+against, or the suite dies at sign-in. Migrations take their credentials from the
+GitHub Environment instead; see
 [development notes](DEVELOPMENT.md#how-ci-reads-secrets).

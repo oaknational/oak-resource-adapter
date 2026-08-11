@@ -5,43 +5,38 @@ Resource Adapter contributors but does not belong in the public README.
 
 ## Adding a new secret
 
-Doppler (`oak-resource-adapter` project) is the source of truth. To add a
-secret:
+The Terraform Cloud workspace is the source of truth. To add a secret:
 
-1. Add it to Doppler in every config that needs it (`dev`, `stg`, `prd`).
+1. Add a `sensitive = true` variable to
+   [`variables.tf`](../infrastructure/project/variables.tf), place it against the
+   destinations that need it in
+   [`locals.tf`](../infrastructure/project/locals.tf), then set the value as a
+   workspace variable and apply. An empty value is dropped rather than written,
+   so a value that does not exist yet stays absent from the deployment.
 2. If any `turbo run` task reads it, declare it in that task's `env` (or
    `globalEnv`) in [`turbo.json`](../turbo.json). Turbo hashes caches on declared
    env vars only — an undeclared secret means stale or cross-environment cache.
    Declare it on `build` only if it is read while building: the `NEXT_PUBLIC_*`
    values are baked into the client bundle, so a build belongs to one environment.
-3. Nothing to do for CI: jobs fetch what they need from Doppler at run time.
-   Locally, `pnpm doppler:pull:dev` refreshes the gitignored `.env` read by
-   repository tooling.
+3. A workflow that reads the value itself, rather than a deployment reading it,
+   needs a GitHub secret too — see below. Locally, `pnpm env:pull:dev` refreshes
+   the gitignored `.env` read by repository tooling.
 
 ## How CI reads secrets
 
-`DOPPLER_TOKEN` is the only credential CI holds for anything Oak runs itself:
-there is no `DATABASE_URL` secret at repository or Environment level, and no
-workflow carries a database credential. The deploy workflows additionally hold
-Vercel's own credentials, listed in
+Terraform Cloud cannot be read back — a sensitive workspace variable is
+write-only, and the API returns it as null — so a workflow needing a value holds
+it as a GitHub secret rather than fetching it at run time. Vercel environment
+variables are not here at all: Terraform writes them straight to the projects.
+
+| Scope                    | Holds                                                          | Used by                                                                 |
+| ------------------------ | -------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Repository secrets       | the Clerk test credentials, and Vercel's own                   | pull request CI and preview deployments                                 |
+| `staging` Environment    | staging's `MIGRATION_DATABASE_URL` and its Cloud SQL variables | [`db-migrate.yml`](../.github/workflows/db-migrate.yml) against staging |
+| `production` Environment | the production equivalents                                     | the same workflow against production                                    |
+
+The Vercel credentials are listed in
 [deployment](DEPLOYMENT.md#secrets-the-workflows-use).
-
-The same name works at every scope because GitHub resolves an Environment secret
-over the repository one for any job declaring that `environment:`.
-
-| Scope                    | Doppler config | Used by                                                                 |
-| ------------------------ | -------------- | ----------------------------------------------------------------------- |
-| Repository secret        | `stg_github`   | pull request CI and preview deployments, for the Clerk test credentials |
-| `staging` Environment    | `stg_github`   | [`db-migrate.yml`](../.github/workflows/db-migrate.yml) against staging |
-| `production` Environment | `prd_github`   | the same workflow against production                                    |
-
-Each token is read-only and scoped to one Doppler config, so a staging job cannot
-reach production values. `stg_github` and `prd_github` are branch configs
-inheriting from the `stg` and `prd` roots.
-
-Vercel gets its own branch configs, split by project, because only the API has
-database and Clerk secret-key access. Doppler is the sole owner of Vercel
-environment variables and Terraform passes none.
 
 ## Applying migrations
 
@@ -183,6 +178,6 @@ if the build step above is skipped.
 `RELEASE_GITHUB_TOKEN` is a fine-grained PAT with Contents and Pull requests
 read/write access. It lets the version PR trigger CI; it is not an npm
 credential. The workflow commits through the GitHub API (`commitMode:
-github-api`), and Doppler's `DOPPLER_TOKEN` plays no part in package publishing.
+github-api`).
 
 The package configuration is in [`.changeset`](../.changeset/).

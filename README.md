@@ -25,17 +25,18 @@ Contributor documentation is indexed in [docs/README.md](docs/README.md).
 
 - Node.js 24 LTS (see `.nvmrc`)
 - pnpm 10 or later
-- [Doppler CLI](https://docs.doppler.com/docs/install-cli), authenticated with
-  `doppler login`, before refreshing local secrets
+- Access to Oak's Vercel team, signed in with `pnpm exec vercel login`, before
+  refreshing local secrets
 
-Doppler is the single source of truth for secrets. The development pull script
-explicitly selects the `oak-resource-adapter` project and writes a local,
-gitignored `.env`. Other repository commands read the process environment or
-that file without invoking Doppler. Run this once after cloning, and again
-whenever secrets change:
+Terraform Cloud is the single source of truth for secrets, and it cannot be read
+back: a sensitive workspace variable is write-only. So shared development values
+are pulled from the API project's Vercel development environment, which Terraform
+writes, into a local, gitignored `.env`. Other repository commands read the
+process environment or that file. Run this once after cloning, and again whenever
+secrets change:
 
 ```sh
-pnpm doppler:pull:dev   # writes the dev config into a local, gitignored .env
+pnpm env:pull:dev   # writes the development environment into a local, gitignored .env
 ```
 
 ## Commands
@@ -117,7 +118,7 @@ const capabilities = await getResourceAdapterCapabilities({
 ## Local database
 
 PostgreSQL, accessed through Drizzle. `DATABASE_URL` is read from the process
-environment or the root `.env`. Run `pnpm doppler:pull:dev` first (see
+environment or the root `.env`. Run `pnpm env:pull:dev` first (see
 Prerequisites), then point it at any local PostgreSQL instance you control and
 build the schema:
 
@@ -130,7 +131,7 @@ pnpm db:reset          # drops and recreates the local schema, then migrates
 ```sh
 pnpm docker:db:bootstrap
 
-pnpm doppler:pull:dev
+pnpm env:pull:dev
 pnpm db:reset
 ```
 
