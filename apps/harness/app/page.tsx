@@ -15,6 +15,7 @@ import { raLogger } from "@oaknational/resource-adapter-logger";
 import { useCallback, useEffect, useState } from "react";
 
 import styles from "./page.module.css";
+import { SmokeTestPanel } from "./SmokeTestPanel";
 
 const log = raLogger("harness");
 
@@ -72,7 +73,47 @@ function CrashOnRender(): never {
   throw new Error("Simulated Resource Adapter render failure");
 }
 
-/** Rejects unknown statuses so a wire-format change cannot silently stop polling. */
+const modelOutcomeLabels = {
+  INCOMPLETE: "Incomplete response",
+  OUTPUT_MISSING: "No output returned",
+  REFUSAL: "Refused by the model",
+  SUCCESS: "Succeeded",
+} as const;
+
+type ModelTestOutcome = keyof typeof modelOutcomeLabels;
+type ModelTestResponse = {
+  outcome: ModelTestOutcome;
+  outputText: string | null;
+  usage: { outputTokens: number } | null;
+};
+
+function parseModelTestResponse(body: unknown): ModelTestResponse {
+  if (
+    typeof body !== "object" ||
+    body === null ||
+    !("outcome" in body) ||
+    typeof body.outcome !== "string" ||
+    !Object.hasOwn(modelOutcomeLabels, body.outcome)
+  ) {
+    throw new Error("The API returned a model invocation in an unrecognised shape.");
+  }
+
+  const outputText =
+    "outputText" in body && typeof body.outputText === "string"
+      ? body.outputText
+      : null;
+  const usage =
+    "usage" in body &&
+    typeof body.usage === "object" &&
+    body.usage !== null &&
+    "outputTokens" in body.usage &&
+    typeof body.usage.outputTokens === "number"
+      ? { outputTokens: body.usage.outputTokens }
+      : null;
+
+  return { outcome: body.outcome as ModelTestOutcome, outputText, usage };
+}
+
 function parseTestJobResponse(body: unknown): TestJobResponse {
   if (
     typeof body !== "object" ||
@@ -113,6 +154,9 @@ export default function HarnessPage() {
   const [isCreatingTestJob, setIsCreatingTestJob] = useState(false);
   const [testJob, setTestJob] = useState<TestJobResponse | null>(null);
   const [testJobError, setTestJobError] = useState<string | null>(null);
+  const [isInvokingModel, setIsInvokingModel] = useState(false);
+  const [modelTest, setModelTest] = useState<ModelTestResponse | null>(null);
+  const [modelTestError, setModelTestError] = useState<string | null>(null);
 
   const loadCapabilities = useCallback(async () => {
     if (!isLoaded) {
@@ -211,6 +255,39 @@ export default function HarnessPage() {
     }
   }, []);
 
+  const runModelSmokeTest = useCallback(async () => {
+    setIsInvokingModel(true);
+    setModelTest(null);
+    setModelTestError(null);
+
+    try {
+      const response = await fetch(`${adapterProxyPath}/dev/ai/invoke`, {
+        body: JSON.stringify({ input: "Reply with the single word: pong" }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+
+      if (response.status === 404) {
+        throw new Error("Dev routes are not enabled on the API.");
+      }
+      if (response.status === 503) {
+        throw new Error("The API has no OpenAI API key configured.");
+      }
+      if (!response.ok) {
+        throw new Error(`The API returned HTTP ${response.status}.`);
+      }
+
+      setModelTest(parseModelTestResponse(await response.json()));
+    } catch (error) {
+      log.error(error);
+      setModelTestError(
+        error instanceof Error ? error.message : "Could not run the model invocation.",
+      );
+    } finally {
+      setIsInvokingModel(false);
+    }
+  }, []);
+
   const testJobIsActive = testJob?.status === "queued" || testJob?.status === "running";
 
   useEffect(() => {
@@ -273,6 +350,18 @@ export default function HarnessPage() {
     }
   }
 
+  let modelTestStatus = "Not run";
+  if (isInvokingModel) {
+    modelTestStatus = "Invoking";
+  } else if (modelTestError) {
+    modelTestStatus = modelTestError;
+  } else if (modelTest) {
+    modelTestStatus = modelOutcomeLabels[modelTest.outcome];
+    if (modelTest.outcome === "SUCCESS" && modelTest.usage) {
+      modelTestStatus += ` (${modelTest.usage.outputTokens} output tokens)`;
+    }
+  }
+
   return (
     <>
       <a className={styles.skipLink} href="#main-content">
@@ -302,41 +391,34 @@ export default function HarnessPage() {
             <h2 id="worksheet-heading">Worksheet</h2>
             <p>A worksheet is available for this lesson.</p>
           </section>
-          <section aria-labelledby="worker-test-heading" className={styles.workerTest}>
-            <h2 id="worker-test-heading">Background worker test</h2>
-            <div className={styles.workerTestControls}>
-              <button
-                className={styles.workerTestButton}
-                disabled={isCreatingTestJob || testJobIsActive}
-                onClick={() => void runWorkerSmokeTest()}
-                type="button"
-              >
-                Run test job
-              </button>
-              <p aria-live="polite" className={styles.workerTestStatus}>
-                Status: {testJobStatus}
-              </p>
-            </div>
-          </section>
-          <section
-            aria-labelledby="error-boundary-test-heading"
-            className={styles.workerTest}
+          <SmokeTestPanel
+            buttonLabel="Run test job"
+            disabled={isCreatingTestJob || testJobIsActive}
+            heading="Background worker test"
+            onRun={() => void runWorkerSmokeTest()}
+            status={testJobStatus}
+          />
+          <SmokeTestPanel
+            buttonLabel="Run model invocation"
+            disabled={isInvokingModel}
+            heading="Model invocation test"
+            onRun={() => void runModelSmokeTest()}
+            status={modelTestStatus}
           >
-            <h2 id="error-boundary-test-heading">Error boundary test</h2>
+            {modelTest?.outputText && <p>Model output: {modelTest.outputText}</p>}
+          </SmokeTestPanel>
+          <SmokeTestPanel
+            buttonLabel={
+              simulateAdapterCrash ? "Clear simulated crash" : "Simulate adapter crash"
+            }
+            heading="Error boundary test"
+            onRun={() => setSimulateAdapterCrash((current) => !current)}
+          >
             <p>
               Simulating a crash renders the package&apos;s fallback below and hands the
               error to the host&apos;s own logger. Try again re-catches while the
               simulated crash is active.
             </p>
-            <button
-              className={styles.workerTestButton}
-              onClick={() => setSimulateAdapterCrash((current) => !current)}
-              type="button"
-            >
-              {simulateAdapterCrash
-                ? "Clear simulated crash"
-                : "Simulate adapter crash"}
-            </button>
             <ResourceAdapterErrorBoundary
               key={String(simulateAdapterCrash)}
               onError={(error) => log.error(error)}
@@ -347,7 +429,7 @@ export default function HarnessPage() {
                 <p>The adapter surface renders normally.</p>
               )}
             </ResourceAdapterErrorBoundary>
-          </section>
+          </SmokeTestPanel>
           {capabilities.length > 0 && (
             <section
               aria-labelledby="create-more-heading"

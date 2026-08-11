@@ -6,6 +6,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "noEmit": true,
+    "paths": { "@/*": ["./src/*"] },
     "plugins": [{ "name": "next" }, { "name": "workflow" }],
     "types": ["node", "react", "react-dom"]
   },

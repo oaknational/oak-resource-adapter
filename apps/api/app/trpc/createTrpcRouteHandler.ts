@@ -3,7 +3,7 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { NextResponse, type NextRequest } from "next/server";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 
-import { getCorsHeaders } from "../../src/cors";
+import { getCorsHeaders } from "@/cors";
 
 const allowedMethods = "GET, POST, OPTIONS";
 

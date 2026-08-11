@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { executeTestEchoStep } from "../src/jobs/test-echo/steps";
+import { executeTestEchoStep } from "@/jobs/test-echo/steps";
 import { claimJobStep, completeJobStep, failJobStep } from "./job-lifecycle-steps";
 import { runJob } from "./run-job";
 
@@ -17,7 +17,7 @@ vi.mock("./job-lifecycle-steps", () => ({
   failJobStep: vi.fn(),
 }));
 
-vi.mock("../src/jobs/test-echo/steps", () => ({
+vi.mock("@/jobs/test-echo/steps", () => ({
   executeTestEchoStep: vi.fn(),
 }));
 

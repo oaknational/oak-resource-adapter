@@ -1,7 +1,7 @@
 import { internalRouter } from "@oaknational/resource-adapter-contracts/internal/server";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 
-import { createContextInternal } from "../../../../src/context";
+import { createContextInternal } from "@/context";
 import { createTrpcRouteHandler } from "../../createTrpcRouteHandler";
 
 const { GET, POST, OPTIONS } = createTrpcRouteHandler({

@@ -1,13 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { getCorsHeaders } from "../../../../src/cors";
-import { devRouteNotFound, devRoutesEnabled } from "../../../../src/dev-routes";
-import { idempotencyKeySchema } from "../../../../src/jobs/domain";
-import { enqueueJob } from "../../../../src/jobs/enqueue-job";
-import { IdempotencyConflictError } from "../../../../src/jobs/job-repository";
-import { toJobResponse } from "../../../../src/jobs/job-response";
-import { testEchoJob } from "../../../../src/jobs/test-echo/definition";
+import { getCorsHeaders } from "@/cors";
+import {
+  createDevOptionsHandler,
+  devRouteNotFound,
+  devRoutesEnabled,
+} from "@/dev-routes";
+import { idempotencyKeySchema } from "@/jobs/domain";
+import { enqueueJob } from "@/jobs/enqueue-job";
+import { IdempotencyConflictError } from "@/jobs/job-repository";
+import { toJobResponse } from "@/jobs/job-response";
+import { testEchoJob } from "@/jobs/test-echo/definition";
 
 const requestSchema = testEchoJob.input.extend({
   idempotencyKey: idempotencyKeySchema.optional(),
@@ -15,16 +19,7 @@ const requestSchema = testEchoJob.input.extend({
 
 const allowedMethods = "POST, OPTIONS";
 
-export function OPTIONS(request: NextRequest) {
-  if (!devRoutesEnabled()) {
-    return devRouteNotFound();
-  }
-
-  return new NextResponse(null, {
-    headers: getCorsHeaders(request, allowedMethods),
-    status: 204,
-  });
-}
+export const OPTIONS = createDevOptionsHandler(allowedMethods);
 
 export async function POST(request: NextRequest): Promise<Response> {
   // Before the body is read or the database is touched.
