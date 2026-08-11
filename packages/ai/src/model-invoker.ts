@@ -298,8 +298,8 @@ export function createModelInvoker<const TBindings extends RoleBindings>(
       startedAt: new Date(),
     };
 
-    // Deliberately fail closed: a model is never invoked without an audit
-    // record, so a recorder outage prevents the call.
+    // Fails closed: a model is never invoked without an audit record, so a
+    // recorder outage prevents the call.
     try {
       await config.recorder.recordStarted(started);
     } catch (error) {

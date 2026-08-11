@@ -18,7 +18,7 @@ type OutputValidationStatus = "INVALID_JSON" | "SCHEMA_MISMATCH" | "VALID";
 /**
  * One physical model call made during an attempt.
  *
- * An append-only log, deliberately not deduplicated: a retried workflow step that
+ * An append-only log, not deduplicated: a retried workflow step that
  * calls the model again is two paid calls and must read as two rows.
  */
 export const modelInvocations = resourceAdapterSchema.table(

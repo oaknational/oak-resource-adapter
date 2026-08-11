@@ -26,8 +26,8 @@ function ThrowsNull(): never {
 }
 
 // jsdom does not fire `unhandledrejection`, so the rejection has to be observed
-// on the node process. Declared locally because this package deliberately keeps
-// node types out of scope for its browser-facing source.
+// on the node process. Declared locally because this package keeps node types
+// out of scope for its browser-facing source.
 declare const process: {
   on(event: "unhandledRejection", listener: () => void): void;
   off(event: "unhandledRejection", listener: () => void): void;

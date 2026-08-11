@@ -101,22 +101,34 @@ opens nothing on the API.
 - Production: neither. `cors.ts` ignores patterns when `VERCEL_ENV` is
   `production`, where OWA is the only caller.
 
-## How migrations reach the database
+## How the database is reached
 
-[`db-migrate.yml`](../.github/workflows/db-migrate.yml) is the only way
-migrations reach a deployed database. It connects through Cloud SQL Proxy on
-`127.0.0.1`, authenticated with Workload Identity Federation, so there is no key
-to rotate and no CI egress IP to allowlist.
+Two different routes, neither holding a long-lived credential.
 
-Doppler supplies `CLOUD_SQL_INSTANCE_CONNECTION_NAME`,
-`GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT`, and a `DATABASE_URL`
-already pointing at the proxy. The proxy steps are skipped while the instance
-name is empty.
+**CI, to run migrations.** [`db-migrate.yml`](../.github/workflows/db-migrate.yml)
+is the only way migrations reach a deployed database. It runs Cloud SQL Proxy as
+a separate process and connects over `127.0.0.1`, authenticating with Workload
+Identity Federation, so there is no CI egress IP to allowlist. Doppler supplies
+the instance connection name, the identity provider, the service account, and a
+`DATABASE_URL` already pointing at the proxy.
 
-How the _deployed API_ reaches the database is a separate question, and the two
-are easy to conflate. It will authenticate by Vercel OIDC federated to GCP, so
-that it holds no long-lived database credential either — not yet built, so the
-API still connects with a `DATABASE_URL`.
+**The deployed API, to serve requests.**
+[`cloud-sql.ts`](../packages/db/src/cloud-sql.ts) uses the Cloud SQL Node
+connector in-process. Vercel mints a short-lived OIDC token per request, GCP's
+Security Token Service exchanges it for an access token, and the connector opens
+an mTLS tunnel to the instance. Authentication is IAM, so there is no database
+password anywhere.
+
+Both are dormant until `CLOUD_SQL_INSTANCE_CONNECTION_NAME` is set. Without it,
+everything connects from `DATABASE_URL` — which is what local development, CI
+and the integration tests do.
+
+The connector needs an async handshake before its first query, while
+`getDatabaseClient()` is called synchronously from a dozen query sites. So
+`initialiseDatabaseClient()` does that work once from
+[`instrumentation.ts`](../apps/api/instrumentation.ts), and `getDatabaseClient()`
+throws rather than silently falling back if a Cloud SQL deployment queries before
+it has run.
 
 ## Secrets the workflows use
 

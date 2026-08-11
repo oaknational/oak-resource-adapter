@@ -54,7 +54,7 @@ stay in `apps/api` — the feature flag catalogue, for instance.
 ## The published UI surface
 
 `packages/ui/src/index.ts` is the public API of `@oaknational/resource-adapter`.
-`index.test.ts` asserts its export list, so widening it is a deliberate edit.
+`index.test.ts` asserts its export list, so nothing widens it by accident.
 
 ## Endpoint construction
 

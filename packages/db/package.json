@@ -31,8 +31,11 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@google-cloud/cloud-sql-connector": "^1.11.3",
+    "@vercel/oidc": "^3.8.2",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
+    "google-auth-library": "^10.9.1",
     "pg": "^8.22.0"
   },
   "devDependencies": {
