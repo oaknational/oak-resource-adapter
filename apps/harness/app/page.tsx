@@ -260,7 +260,7 @@ export default function HarnessPage() {
     setModelTestError(null);
 
     try {
-      const response = await fetch(new URL("/dev/ai/invoke", apiBaseUrl), {
+      const response = await fetch(`${adapterProxyPath}/dev/ai/invoke`, {
         body: JSON.stringify({ input: "Reply with the single word: pong" }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
