@@ -1,56 +1,39 @@
 # Model invocation
 
-`@oaknational/resource-adapter-ai` is the server-side entry point for invoking
-AI models. It separates the stable role used by generation code from the
-physical model and transport used to fulfil the request.
+`@oaknational/resource-adapter-ai` is the server-side boundary for model calls.
+Application code selects a role; configuration binds that role to a supported
+model and transport. Provider clients, credentials, and production bindings live
+outside the package.
 
-The package is currently infrastructure only. It contains no production model
-role bindings, provider clients, credentials, or network calls.
+A **role** is the stable, application-facing reason for a call. A **model** is a
+physical model ID from the closed catalogue in `model-catalogue.ts`, and its
+**provider** is derived from that model rather than declared per binding. A
+**transport** is how the call reaches the provider: a direct client, Helicone, or
+another gateway. Changing the model behind a role is a binding change; changing
+the gateway is a transport change.
 
-## Vocabulary
+Requests are initially OpenAI-compatible. Provider requests and responses,
+output states, and operational errors are normalised at the transport seam, so
+call sites do not depend on a particular SDK. A provider with a different input
+shape may eventually require a neutral request protocol too.
 
-- A **role** is the stable, application-facing reason for a call, such as
-  `quick-classifier`.
-- A **model** is the physical provider model ID selected for a role, drawn from
-  the supported catalogue in `packages/ai/src/model-catalogue.ts`.
-- A **provider** owns or serves the model, such as OpenAI, Anthropic, or an
-  internal service. It is derived from the model, never declared per binding.
-- A **transport** is how the invocation reaches that provider, such as a
-  direct client, Helicone, or another gateway.
-- A **protocol** is the request and response shape used by a transport.
-
-Pipeline code selects a role, never a physical model or gateway. Changing a
-model therefore changes the role bindings; changing a gateway changes the
-transport configuration.
-
-Only `packages/ai/src/protocol.ts` imports the OpenAI SDK. However, adopting a
-provider that is not OpenAI-compatible would mean revisiting call sites rather
-than only this boundary.
-
-## Supported models
-
-`model-catalogue.ts` holds the closed set of models this service may invoke.
-
-## Binding roles and invoking models
+## Invoking models
 
 ```ts
-// examples
 const roleBindings = defineRoleBindings({
   "quick-classifier": {
-    model: "gpt-5.4-2026-03-05", // must be one of our SUPPORTED_MODELS
+    model: "gpt-5.6-luna",
     transport: "primary",
   },
 });
 
 const ai = createModelInvoker({
-  roleBindings,
   recorder: invocationRecorder,
-  transports: {
-    primary: modelTransport,
-  },
+  roleBindings,
+  transports: { primary: modelTransport },
 });
 
-const response = await ai.invoke({
+const result = await ai.invokeText({
   correlationKey: workflowStepId,
   request: {
     instructions: "Classify the resource.",
@@ -59,68 +42,141 @@ const response = await ai.invoke({
   role: "quick-classifier",
   signal: jobSignal,
 });
-```
 
-## Cancellation and timeouts
-
-Every invocation receives a timeout signal, defaulting to `DEFAULT_TIMEOUT_MS`
-and overridable per invoker (`defaultTimeoutMs`) or per call (`timeoutMs`).
-Timeouts must be positive integers no greater than `2_147_483_647`
-milliseconds; invalid defaults fail when the invoker is created, and invalid
-per-call values fail before an invocation is recorded.
-Because requests are non-streaming, latency scales with output length: long-form
-generation roles should raise `timeoutMs` rather than assume the default fits.
-A caller-supplied signal and the timeout can both abort the same invocation,
-whichever fires first.
-
-Transports always receive a signal and must forward it to their underlying
-client.
-
-## CorrelationKey
-
-`correlationKey` ties an invocation back to the unit of work that caused it,
-such as a workflow step ID, so recorded spend can be traced to its origin.
-
-It grants no idempotency.
-
-## Adding a transport
-
-A transport implements one method:
-
-```ts
-interface ModelTransport {
-  invoke(
-    invocation: ResolvedModelInvocation,
-    options: ModelTransportOptions,
-  ): Promise<ModelInvocationResponse>;
+if (result.outcome === "SUCCESS") {
+  console.log(result.output);
 }
 ```
 
-A gateway-specific implementation is only needed when it has meaningfully
-different behaviour. Direct OpenAI and an OpenAI-compatible gateway should share
-one future Responses transport configured with different clients, base URLs,
-and headers.
+`invokeText` is the common case. `invoke` exposes the lower-level normalised
+response. `correlationKey` is audit metadata and grants no idempotency.
 
-## Invocation recording
+## Structured outputs
 
-The invoker reports started, succeeded, and failed lifecycle events through an
-`InvocationRecorder`. `ResolvedModelInvocation` is plain, serialisable data so a
-recorder can persist it directly.
+`invokeStructured` infers its success type from a Zod schema and validates the
+provider output again inside the package:
 
-Recording is observability and does not change the outcome of a call. If
-`recordSucceeded` or `recordFailed` throws, the error is routed to
-`onRecorderError` — a broken recorder never discards a paid-for response or
-masks a provider error. `recordStarted` is an exception: it fails
-closed, so a recorder outage prevents the call.
+```ts
+const classification = z.object({
+  confidence: z.number().min(0).max(1),
+  resourceType: z.enum(["slide-deck", "worksheet"]),
+});
 
-Recorders may receive prompt and response content and are responsible for
-applying retention and redaction rules.
+const result = await ai.invokeStructured({
+  request: {
+    instructions: "Classify the resource.",
+    input: resourceText,
+  },
+  role: "quick-classifier",
+  schema: classification,
+  schemaName: "resource_classification",
+});
 
-## Safety and orchestration
-
-Threat detection and response moderation are higher-level orchestration
-concerns rather than implicit model-invocation middleware:
-
-```text
-threat detection -> model invocation -> response moderation -> domain validation
+switch (result.outcome) {
+  case "SUCCESS":
+    result.output.resourceType;
+    break;
+  case "STRUCTURED_OUTPUT_FAILURE":
+    // INVALID_JSON or SCHEMA_MISMATCH
+    break;
+  case "REFUSAL":
+  case "INCOMPLETE":
+  case "OUTPUT_MISSING":
+    break;
+}
 ```
+
+Schemas are object-wrapped internally, so primitives and unions are supported.
+Each transport converts Zod to its provider's schema dialect. An unsupported
+schema fails with `INVALID_CONFIGURATION` before a request is recorded or sent.
+
+Refusals, incomplete or missing output, and validation failures are branchable
+outcomes. Operational failures throw `ModelInvocationError`; its stable `code`
+and derived `retryable` flag are safe to handle outside the package, while raw
+provider details remain on `cause`.
+
+Every convenience-method result carries `meta`: the invocation ID to join against
+`model_invocations`, plus the provider response ID and usage where available.
+Structured responses
+are recorded with `VALID`, `INVALID_JSON`, or `SCHEMA_MISMATCH`; other responses
+have no validation status.
+
+## Cancellation and timeouts
+
+Every invocation has a timeout, set globally with `defaultTimeoutMs` or per call
+with `timeoutMs`. A caller signal is composed with it, and transports must forward
+the resulting signal to their client. The timeout starts after `recordStarted`,
+so recorder latency does not consume the provider-call budget.
+
+## Prompt templates
+
+Templates are defined in source. Their placeholders become the required keys of
+the variables argument, and rendering rejects missing or unused variables.
+
+```ts
+const LOWER_READING_AGE = definePromptTemplate({
+  identifier: "lower-reading-age",
+  template: "Rewrite for reading age {{readingAge}}.\n\n{{text}}",
+  version: 1,
+});
+
+const prompt = await preparePrompt({
+  template: LOWER_READING_AGE,
+  variables: { readingAge: "9", text: sourceText },
+});
+
+await ai.invokeText({
+  promptTemplateId: prompt.promptTemplateId,
+  request: { input: prompt.text },
+  role: "rewriter",
+});
+```
+
+`preparePrompt` renders and registers a template on first use. Change the
+version whenever the body changes; reusing an identifier and version with a new
+body is rejected. `renderPromptTemplate` renders without registration.
+
+## Persistence
+
+`createDatabaseInvocationRecorder({ transformationAttemptId })` writes model
+calls to `model_invocations`. It inserts before the provider call and updates on
+completion, so an abandoned call remains visible with `completed_at = null`.
+Failure rows store classified error metadata rather than potentially sensitive
+provider messages.
+
+One row represents one application-level invocation. An application retry is a
+new row; retries made internally by a provider client remain within the original
+row. Raw provider responses, response IDs, token usage, and structured-output
+validation status are retained when available.
+
+The invoker fails closed if `recordStarted` fails, preventing an unrecorded model
+call. Failures from `recordSucceeded` or `recordFailed` are instead sent to
+`onRecorderError`, so a recorder fault cannot hide a paid response or provider
+error. Recorders receive prompt and response content and must apply appropriate
+retention and redaction.
+
+## Adding a transport
+
+```ts
+interface ModelTransport {
+  prepare(
+    invocation: ModelTransportInvocation,
+    output: ModelOutputRequirement,
+  ): {
+    request: ModelProviderRequest;
+    execute(options: ModelTransportOptions): Promise<ModelTransportResult>;
+  };
+}
+```
+
+`prepare` converts the logical invocation into the exact serialisable provider
+request without sending it. The invoker records that request before calling
+`execute`. A terminal provider failure is returned with its response data;
+failures without a normal provider response are thrown.
+
+`createOpenAIResponsesTransport` can be configured with direct OpenAI or a
+compatible gateway client. It defaults `store` to `false`; callers using
+`previous_response_id` must explicitly enable provider-side retention.
+
+Threat detection and response moderation belong in orchestration around this
+boundary, not inside the transport.

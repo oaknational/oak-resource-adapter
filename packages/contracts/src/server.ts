@@ -7,6 +7,9 @@ import {
   type LessonContext,
   type ResourceAdapterCapabilitiesResponse,
 } from "./v1.js";
+import type { ResourceAdapterAuthenticatedTeacher } from "./authentication.js";
+
+export type { ResourceAdapterAuthenticatedTeacher } from "./authentication.js";
 
 /** The service boundary required by the capabilities procedure. */
 export type ResourceAdapterCapabilitiesService = Readonly<{
@@ -17,26 +20,18 @@ export type ResourceAdapterCapabilitiesService = Readonly<{
 }>;
 
 /**
- * The API application creates this context for every request. Future slices
- * will add verified teacher identity, feature flags, and job services here.
+ * Public API context (served from `/trpc/v1`).
+ * Contains only what external hosts (OWA) need.
  */
-export type ResourceAdapterApiContext = Readonly<{
+export type ResourceAdapterApiContextHost = Readonly<{
   apiContractVersion: number | null;
   authenticatedTeacher: ResourceAdapterAuthenticatedTeacher | null;
   capabilities: ResourceAdapterCapabilitiesService;
 }>;
 
-/**
- * The application derives this only after verifying the host's bearer token.
- * It deliberately contains the small set of claims service procedures need.
- */
-export type ResourceAdapterAuthenticatedTeacher = Readonly<{
-  organisationId: string | null;
-  teacherId: string;
-}>;
+const t_host = initTRPC.context<ResourceAdapterApiContextHost>().create();
 
-const t = initTRPC.context<ResourceAdapterApiContext>().create();
-const versionedProcedure = t.procedure.use(({ ctx, next }) => {
+const versionedProcedure = t_host.procedure.use(({ ctx, next }) => {
   if (ctx.apiContractVersion !== resourceAdapterApiContractVersionV1) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
@@ -48,7 +43,7 @@ const versionedProcedure = t.procedure.use(({ ctx, next }) => {
 });
 
 /**
- * Use for every teacher-facing procedure once Clerk verification is wired in.
+ * Use for every teacher-facing procedure on the public API.
  * Health checks remain outside tRPC and do not use this procedure.
  */
 export const authenticatedProcedure = versionedProcedure.use(({ ctx, next }) => {
@@ -69,13 +64,14 @@ export const authenticatedProcedure = versionedProcedure.use(({ ctx, next }) => 
 
 /**
  * The immutable v1 API router served from `/trpc/v1`.
+ * Public contract for external hosts (OWA).
  *
  * Additive procedures and optional fields can remain on this router. A
  * breaking input, output, or transport change gets a separate v2 router and
  * endpoint, while this one remains deployed for older OWA packages.
  */
-export const appRouterV1 = t.router({
-  capabilities: t.router({
+export const hostRouter = t_host.router({
+  capabilities: t_host.router({
     get: authenticatedProcedure
       .input(lessonContextSchema)
       .output(resourceAdapterCapabilitiesResponseSchema)
@@ -83,4 +79,4 @@ export const appRouterV1 = t.router({
   }),
 });
 
-export type AppRouterV1 = typeof appRouterV1;
+export type HostRouter = typeof hostRouter;

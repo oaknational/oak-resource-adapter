@@ -1,0 +1,135 @@
+name: Deploy production
+
+# Step 3 of docs/RELEASE_PROCESS.md. Merging into `production` is the gate;
+# everything after it is automatic.
+#
+# The order is load-bearing. Migrations first, because the deployment depends on
+# them. Then a deployment holding no traffic, checked against production
+# configuration, and only then the domain. A failure at any point leaves the
+# live deployment untouched.
+
+on:
+  push:
+    branches: [production]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never cancel: a half-finished promotion is worse than a queued one.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  VERCEL_CLI_VERSION: 58.5.1
+
+jobs:
+  migrate:
+    name: Apply production migrations
+    # The ref check matters for workflow_dispatch, which can be started from any
+    # branch and would otherwise deploy that branch to production.
+    if: >-
+      github.ref == 'refs/heads/production' &&
+      vars.ENABLE_VERCEL_DEPLOYMENTS == 'true'
+    # A called workflow cannot grant itself more than its caller holds, so
+    # db-migrate.yml's own id-token: write is not enough on its own.
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/db-migrate.yml
+    with:
+      environment: production
+    secrets: inherit
+
+  deploy:
+    name: Deploy, check and promote
+    needs: migrate
+    # Repeated rather than inherited through `needs`, so removing the gate from
+    # one job cannot silently open the other.
+    if: >-
+      github.ref == 'refs/heads/production' &&
+      vars.ENABLE_VERCEL_DEPLOYMENTS == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Install the Vercel CLI
+        run: npm install --global "vercel@${VERCEL_CLI_VERSION}"
+
+      # --skip-domain is what separates "built" from "live". The project also
+      # sets auto_assign_custom_domains = false, so neither this deployment nor
+      # anything else takes the domain without the promote step below.
+      - name: Deploy without taking the domain
+        id: deploy
+        run: |
+          url="$(vercel deploy --prod --skip-domain --yes --token="$VERCEL_TOKEN")"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Built $url, holding no traffic."
+
+      # The harness is never deployed to production, and the production API
+      # refuses harness origins by design — getAllowedOriginPatterns() in
+      # apps/api/src/cors.ts returns nothing when VERCEL_ENV is production. So
+      # the browser suite cannot run here; these server-side probes send no
+      # Origin header and are not subject to CORS.
+      - name: Check the unpromoted deployment
+        env:
+          BYPASS_SECRET: ${{ secrets.VERCEL_API_BYPASS_SECRET }}
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          health=""
+          for attempt in 1 2 3 4 5; do
+            if health="$(curl -fsS --max-time 30 \
+              -H "x-vercel-protection-bypass: $BYPASS_SECRET" \
+              "$DEPLOYMENT_URL/health")"; then
+              break
+            fi
+
+            health=""
+            echo "Attempt $attempt failed."
+            if [ "$attempt" -lt 5 ]; then
+              sleep 10
+            fi
+          done
+
+          echo "$health"
+          if [ "$(printf '%s' "$health" | jq -r '.status // empty')" != "ok" ]; then
+            echo "::error::$DEPLOYMENT_URL/health did not report ok. Not promoting."
+            exit 1
+          fi
+
+      # Sends no contract version header, so versionedProcedure rejects it with
+      # 412. Reaching that rejection proves the route is mounted, the procedure
+      # resolved and createContext ran. Asserting on 412 rather than 401 keeps
+      # no copy of the contract version here to drift.
+      - name: Probe the tRPC route
+        env:
+          BYPASS_SECRET: ${{ secrets.VERCEL_API_BYPASS_SECRET }}
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          status="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 \
+            -H "x-vercel-protection-bypass: $BYPASS_SECRET" \
+            "$DEPLOYMENT_URL/trpc/v1/capabilities.get")"
+
+          echo "The tRPC route answered HTTP $status."
+          if [ "$status" != "412" ]; then
+            echo "::error::Expected HTTP 412 from a versionless tRPC call, got $status. Not promoting."
+            exit 1
+          fi
+
+      - name: Promote to the production domain
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          vercel promote "$DEPLOYMENT_URL" --yes --token="$VERCEL_TOKEN"
+          echo "Promoted $DEPLOYMENT_URL."

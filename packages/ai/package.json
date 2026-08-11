@@ -21,11 +21,15 @@
     "lint:fix": "eslint src --fix",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
+    "test:integration": "RUN_DATABASE_INTEGRATION_TESTS=1 vitest run src/persistence/model-invocation.integration.test.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@oaknational/resource-adapter-db": "workspace:*",
     "@oaknational/resource-adapter-logger": "workspace:*",
-    "openai": "6.49.0"
+    "drizzle-orm": "^0.45.2",
+    "openai": "6.49.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

@@ -32,7 +32,7 @@ an original row that was persisted but still has no Workflow run ID.
 
 ## Durable outputs
 
-Job outcomes belong in their domain tables, not on the job. A `generation_attempts`
+Job outcomes belong in their domain tables, not on the job. A `transformation_attempts`
 row references exactly one job while the job remains independent of product
 tables. Its input, invocation, document and artifact relationships are described
 in [database](DATABASE.md).
@@ -75,5 +75,6 @@ These convenience routes support the development and staging harnesses. They are
 not a public API contract and can be replaced by the authenticated generation API
 when that contract is designed.
 
-Every route under `/dev` returns 404 unless `ENABLE_DEV_ROUTES` is set, so the
-smoke test above needs it in your `.env`.
+Every route under `/dev` returns 404 unless `ENABLE_DEV_ROUTES` is `1`, `true`,
+`yes` or `on`, so the smoke test above needs it in your `.env`. Anything else,
+including `0` and `false`, leaves them closed.

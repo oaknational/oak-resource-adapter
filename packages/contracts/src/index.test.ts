@@ -6,7 +6,8 @@ import {
   resourceAdapterApiContractVersion,
   resourceAdapterCapabilitiesResponseSchema,
 } from "./index.js";
-import { appRouterV1 } from "./server.js";
+import { internalRouter } from "./internal-server.js";
+import { hostRouter } from "./server.js";
 
 describe("Resource Adapter API contracts", () => {
   it.each([
@@ -66,77 +67,113 @@ describe("Resource Adapter API contracts", () => {
     ).toMatchObject({ capabilities: [{ id: "future-adapter" }] });
   });
 
-  it("calls the capabilities service through the typed router", async () => {
-    const caller = appRouterV1.createCaller({
-      apiContractVersion: resourceAdapterApiContractVersion,
-      authenticatedTeacher: {
-        organisationId: "org-123",
-        teacherId: "teacher-456",
-      },
-      capabilities: {
-        getCapabilities: () => ({
-          capabilities: [
-            {
-              id: "worksheetAdapter",
-              label: "Adapt worksheet",
-              resourceType: "worksheet",
-            },
-          ],
+  describe("Public API (hostRouter)", () => {
+    it("calls the capabilities service through the typed router", async () => {
+      const caller = hostRouter.createCaller({
+        apiContractVersion: resourceAdapterApiContractVersion,
+        authenticatedTeacher: {
+          organisationId: "org-123",
+          teacherId: "teacher-456",
+        },
+        capabilities: {
+          getCapabilities: () => ({
+            capabilities: [
+              {
+                id: "worksheetAdapter",
+                label: "Adapt worksheet",
+                resourceType: "worksheet",
+              },
+            ],
+          }),
+        },
+      });
+
+      await expect(
+        caller.capabilities.get({
+          lessonSlug: "adding-fractions",
+          programmeSlug: "ks2-maths",
+          title: "Adding fractions",
+          subjectSlug: "maths",
+          keyStageSlug: "ks2",
+          availableResources: ["worksheet"],
         }),
-      },
+      ).resolves.toMatchObject({ capabilities: [{ id: "worksheetAdapter" }] });
     });
 
-    await expect(
-      caller.capabilities.get({
-        lessonSlug: "adding-fractions",
-        programmeSlug: "ks2-maths",
-        title: "Adding fractions",
-        subjectSlug: "maths",
-        keyStageSlug: "ks2",
-        availableResources: ["worksheet"],
-      }),
-    ).resolves.toMatchObject({ capabilities: [{ id: "worksheetAdapter" }] });
+    it("rejects an unsupported API contract version", async () => {
+      const caller = hostRouter.createCaller({
+        apiContractVersion: 999,
+        authenticatedTeacher: {
+          organisationId: "org-123",
+          teacherId: "teacher-456",
+        },
+        capabilities: {
+          getCapabilities: () => ({ capabilities: [] }),
+        },
+      });
+
+      await expect(
+        caller.capabilities.get({
+          lessonSlug: "adding-fractions",
+          programmeSlug: "ks2-maths",
+          title: "Adding fractions",
+          subjectSlug: "maths",
+          keyStageSlug: "ks2",
+          availableResources: ["worksheet"],
+        }),
+      ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    });
+
+    it("rejects an unauthenticated request with UNAUTHORIZED", async () => {
+      const caller = hostRouter.createCaller({
+        apiContractVersion: resourceAdapterApiContractVersion,
+        authenticatedTeacher: null,
+        capabilities: {
+          getCapabilities: () => ({ capabilities: [] }),
+        },
+      });
+
+      await expect(
+        caller.capabilities.get({
+          lessonSlug: "adding-fractions",
+          programmeSlug: "ks2-maths",
+          title: "Adding fractions",
+          subjectSlug: "maths",
+          keyStageSlug: "ks2",
+          availableResources: ["worksheet"],
+        }),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    });
   });
 
-  it("rejects an unsupported API contract version", async () => {
-    const caller = appRouterV1.createCaller({
-      apiContractVersion: 999,
-      authenticatedTeacher: null,
-      capabilities: {
-        getCapabilities: () => ({ capabilities: [] }),
-      },
+  describe("Internal API (internalRouter)", () => {
+    it("calls the feature flags service through the typed router", async () => {
+      const caller = internalRouter.createCaller({
+        authenticatedTeacher: {
+          organisationId: "org-123",
+          teacherId: "teacher-456",
+        },
+        featureFlags: {
+          getEnabledFlags: () => ["feature-flags-smoke-test-enabled"],
+        },
+      });
+
+      await expect(caller.featureFlags.get()).resolves.toEqual([
+        "feature-flags-smoke-test-enabled",
+      ]);
     });
 
-    await expect(
-      caller.capabilities.get({
-        lessonSlug: "adding-fractions",
-        programmeSlug: "ks2-maths",
-        title: "Adding fractions",
-        subjectSlug: "maths",
-        keyStageSlug: "ks2",
-        availableResources: ["worksheet"],
-      }),
-    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
-  });
+    it("rejects an unauthenticated request with UNAUTHORIZED", async () => {
+      const caller = internalRouter.createCaller({
+        authenticatedTeacher: null,
+        featureFlags: {
+          getEnabledFlags: () => [],
+        },
+      });
 
-  it("rejects an unauthenticated request with UNAUTHORIZED", async () => {
-    const caller = appRouterV1.createCaller({
-      apiContractVersion: resourceAdapterApiContractVersion,
-      authenticatedTeacher: null,
-      capabilities: {
-        getCapabilities: () => ({ capabilities: [] }),
-      },
+      await expect(caller.featureFlags.get()).rejects.toMatchObject({
+        code: "UNAUTHORIZED",
+      });
     });
-
-    await expect(
-      caller.capabilities.get({
-        lessonSlug: "adding-fractions",
-        programmeSlug: "ks2-maths",
-        title: "Adding fractions",
-        subjectSlug: "maths",
-        keyStageSlug: "ks2",
-        availableResources: ["worksheet"],
-      }),
-    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 });

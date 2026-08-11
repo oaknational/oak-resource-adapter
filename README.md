@@ -69,29 +69,49 @@ pnpm dev
 ```
 
 This starts the harness on port 3000 and the local API on port 3001. The harness page
-uses the workspace UI package's typed client to resolve capabilities, then
-renders the package-owned drawer with representative lesson context. This
+uses the workspace UI package helper to resolve capabilities, then renders the
+package-owned drawer with representative lesson context. The drawer resolves
+its own feature flags through the package's internal client helpers. This
 mirrors the OWA/package composition boundary.
+
+One difference from OWA: the harness browser calls its own `/adapter-proxy` route,
+which forwards to the API server-side. That is what lets a deployed harness be
+paired with an API deployment whose URL is only known once it exists. OWA calls
+the API directly, so the API's cross-origin handling is covered by unit tests
+rather than by the harness.
 
 The API dev server also runs background jobs through Workflow's local runtime,
 using the same workflow and step code intended for Vercel. See
 [background jobs](docs/BACKGROUND_JOBS.md) for the dummy job smoke test and the
 job and durable-output conventions.
 
-## API client
+## Calling the service
 
 The service API uses tRPC. The typed client is internal to the UI package;
-hosts such as OWA or the harness call `getResourceAdapterCapabilities`, which
-wraps it, so they never depend on `@trpc/client` themselves:
+hosts such as OWA or the harness call `getResourceAdapterCapabilities`, while
+`ResourceAdapterDialog` fetches feature flags internally, so hosts never depend
+on `@trpc/client` themselves:
 
 ```ts
-import { getResourceAdapterCapabilities } from "@oaknational/resource-adapter";
+import {
+  getResourceAdapterCapabilities,
+  ResourceAdapterDialog,
+} from "@oaknational/resource-adapter";
 
 const capabilities = await getResourceAdapterCapabilities({
+  apiBaseUrl: "https://resource-adapter.example",
   getToken,
   lesson,
-  trpcEndpoint: "https://resource-adapter.example/trpc/v1",
 });
+
+<ResourceAdapterDialog
+  apiBaseUrl="https://resource-adapter.example"
+  capabilities={capabilities.capabilities}
+  getToken={getToken}
+  isOpen={true}
+  lesson={lesson}
+  onClose={() => {}}
+/>;
 ```
 
 ## Local database
@@ -149,9 +169,10 @@ retention implications of storing prompts and worksheet content.
 ## Release Versioning
 
 `@oaknational/resource-adapter` and its contracts package release together as
-a fixed version group on public npm, versioned with Changesets and published
-automatically by [`release.yml`](.github/workflows/release.yml). The step-by-step
-pipeline is described in the [release workflow](docs/RELEASE_WORKFLOW.md), the
-policy and one-time setup in [development notes](docs/DEVELOPMENT.md), and
-testing local changes inside a host app in the
+a fixed version group on public npm and are versioned with Changesets. Once
+release automation is enabled, [`release.yml`](.github/workflows/release.yml)
+publishes them from `production`. The operational sequence is described in the
+[release process](docs/RELEASE_PROCESS.md), contributor-facing Changesets
+guidance is in [development notes](docs/DEVELOPMENT.md), and testing local
+changes inside a host app is in the
 [UI local development workflow](docs/UI_LOCAL_DEVELOPMENT.md).

@@ -10,9 +10,14 @@
       "Bash(pnpm type-check *)",
       "Bash(pnpm format)",
       "Bash(pnpm format *)",
+      "Bash(pnpm format:fix)",
+      "Bash(pnpm format:fix *)",
+      "Bash(pnpm exec prettier --write *)",
+      "Bash(pnpm exec drizzle-kit check *)",
       "Bash(pnpm --filter * test *)",
       "Bash(pnpm --filter * lint *)",
       "Bash(pnpm --filter * type-check *)",
+      "Bash(pnpm --filter * exec tsc *)",
       "Bash(pnpm db:check)",
       "Bash(pnpm db:check *)",
       "Bash(pnpm test:coverage)",
@@ -21,7 +26,9 @@
       "Bash(npm show *)",
       "Bash(npm view *)",
       "Bash(pg_isready)",
-      "Bash(pg_isready *)"
+      "Bash(pg_isready *)",
+      "Bash(terraform fmt -check *)",
+      "Bash(terraform validate *)"
     ]
   },
   "worktree": {

@@ -5,6 +5,7 @@ import {
   ResourceAdapterApiError,
   ResourceAdapterButton,
   ResourceAdapterDialog,
+  ResourceAdapterErrorBoundary,
   type LessonContext,
   type ResourceAdapterCapability,
 } from "@oaknational/resource-adapter";
@@ -26,11 +27,25 @@ const lesson: LessonContext = {
   availableResources: ["worksheet"],
 };
 
-const apiBaseUrl =
-  process.env.NEXT_PUBLIC_RESOURCE_ADAPTER_API_BASE_URL ?? "http://localhost:3001";
-const trpcEndpoint =
-  process.env.NEXT_PUBLIC_RESOURCE_ADAPTER_TRPC_ENDPOINT ??
-  "http://localhost:3001/trpc/v1";
+const adapterProxyPath = "/adapter-proxy";
+
+/**
+ * Everything the harness sends goes through its own proxy route, which forwards
+ * server-side to whichever API deployment this harness was paired with. One
+ * build therefore works against any of them, and the API's bypass secret stays
+ * out of the bundle.
+ *
+ * The package requires an absolute URL, so this builds one from the current
+ * origin at run time rather than baking one in at build time.
+ */
+function resolveApiBaseUrl(): string {
+  // Read only from effects in the browser. Prerendering needs a value that
+  // parses, not one that resolves.
+  const origin =
+    typeof window === "undefined" ? "http://localhost:3000" : window.location.origin;
+
+  return `${origin}${adapterProxyPath}`;
+}
 
 type ApiHealthState = "checking" | "healthy" | "unavailable";
 type TestJobStatus = "failed" | "queued" | "running" | "succeeded";
@@ -52,6 +67,10 @@ const testJobStatusLabels: Record<TestJobStatus, string> = {
   running: "Running",
   succeeded: "Succeeded",
 };
+
+function CrashOnRender(): never {
+  throw new Error("Simulated Resource Adapter render failure");
+}
 
 /** Rejects unknown statuses so a wire-format change cannot silently stop polling. */
 function parseTestJobResponse(body: unknown): TestJobResponse {
@@ -80,6 +99,7 @@ function parseTestJobResponse(body: unknown): TestJobResponse {
 }
 
 export default function HarnessPage() {
+  const apiBaseUrl = resolveApiBaseUrl();
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const [capabilities, setCapabilities] = useState<
     readonly ResourceAdapterCapability[]
@@ -89,6 +109,7 @@ export default function HarnessPage() {
   >("loading");
   const [apiHealthState, setApiHealthState] = useState<ApiHealthState>("checking");
   const [isResourceAdapterOpen, setIsResourceAdapterOpen] = useState(false);
+  const [simulateAdapterCrash, setSimulateAdapterCrash] = useState(false);
   const [isCreatingTestJob, setIsCreatingTestJob] = useState(false);
   const [testJob, setTestJob] = useState<TestJobResponse | null>(null);
   const [testJobError, setTestJobError] = useState<string | null>(null);
@@ -108,15 +129,15 @@ export default function HarnessPage() {
     log.info("Loading capabilities for lesson %s", lesson.lessonSlug);
 
     try {
-      const response = await getResourceAdapterCapabilities({
+      const capabilitiesResponse = await getResourceAdapterCapabilities({
+        apiBaseUrl,
         getToken,
         lesson,
-        trpcEndpoint,
       });
 
-      setCapabilities(response.capabilities);
+      setCapabilities(capabilitiesResponse.capabilities);
       setCapabilitiesState("ready");
-      log.info("Loaded %d capabilities", response.capabilities.length);
+      log.info("Loaded %d capabilities", capabilitiesResponse.capabilities.length);
     } catch (error: unknown) {
       setCapabilities([]);
 
@@ -128,7 +149,7 @@ export default function HarnessPage() {
       log.error(error);
       setCapabilitiesState("error");
     }
-  }, [getToken, isLoaded, isSignedIn]);
+  }, [apiBaseUrl, getToken, isLoaded, isSignedIn]);
 
   useEffect(() => {
     void loadCapabilities();
@@ -139,7 +160,7 @@ export default function HarnessPage() {
 
     async function loadHealth() {
       try {
-        const response = await fetch(new URL("/health", apiBaseUrl));
+        const response = await fetch(`${adapterProxyPath}/health`);
         const body: unknown = await response.json();
         const isHealthy =
           response.ok &&
@@ -171,7 +192,7 @@ export default function HarnessPage() {
     setTestJobError(null);
 
     try {
-      const response = await fetch(new URL("/dev/jobs/test-echo", apiBaseUrl), {
+      const response = await fetch(`${adapterProxyPath}/dev/jobs/test-echo`, {
         body: JSON.stringify({ message: "Hello from the harness" }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
@@ -209,7 +230,7 @@ export default function HarnessPage() {
       requestInFlight = true;
 
       try {
-        const response = await fetch(new URL(`/dev/jobs/${testJobId}`, apiBaseUrl), {
+        const response = await fetch(`${adapterProxyPath}/dev/jobs/${testJobId}`, {
           signal: controller.signal,
         });
 
@@ -297,6 +318,36 @@ export default function HarnessPage() {
               </p>
             </div>
           </section>
+          <section
+            aria-labelledby="error-boundary-test-heading"
+            className={styles.workerTest}
+          >
+            <h2 id="error-boundary-test-heading">Error boundary test</h2>
+            <p>
+              Simulating a crash renders the package&apos;s fallback below and hands the
+              error to the host&apos;s own logger. Try again re-catches while the
+              simulated crash is active.
+            </p>
+            <button
+              className={styles.workerTestButton}
+              onClick={() => setSimulateAdapterCrash((current) => !current)}
+              type="button"
+            >
+              {simulateAdapterCrash
+                ? "Clear simulated crash"
+                : "Simulate adapter crash"}
+            </button>
+            <ResourceAdapterErrorBoundary
+              key={String(simulateAdapterCrash)}
+              onError={(error) => log.error(error)}
+            >
+              {simulateAdapterCrash ? (
+                <CrashOnRender />
+              ) : (
+                <p>The adapter surface renders normally.</p>
+              )}
+            </ResourceAdapterErrorBoundary>
+          </section>
           {capabilities.length > 0 && (
             <section
               aria-labelledby="create-more-heading"
@@ -341,10 +392,13 @@ export default function HarnessPage() {
           )}
         </article>
         <ResourceAdapterDialog
+          apiBaseUrl={apiBaseUrl}
           capabilities={capabilities}
+          getToken={getToken}
           isOpen={isResourceAdapterOpen}
           lesson={lesson}
           onClose={() => setIsResourceAdapterOpen(false)}
+          onError={(error) => log.error(error)}
         />
       </main>
     </>

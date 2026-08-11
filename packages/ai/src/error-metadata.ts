@@ -4,7 +4,7 @@ type ErrorMetadata = Readonly<{
   errorStatus?: number;
 }>;
 
-export function errorMetadata(error: unknown): ErrorMetadata {
+function errorMetadata(error: unknown): ErrorMetadata {
   if (!(error instanceof Error)) {
     return { errorName: "UnknownModelInvocationError" };
   }
@@ -17,7 +17,6 @@ export function errorMetadata(error: unknown): ErrorMetadata {
   };
 }
 
-/** Renders {@link errorMetadata} for inclusion in a message. */
 export function describeError(error: unknown): string {
   const { errorCode, errorName, errorStatus } = errorMetadata(error);
   return [

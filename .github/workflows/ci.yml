@@ -13,14 +13,19 @@ permissions:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  # Pull requests only: a cancelled run on a release branch would leave
-  # release.yml with no successful CI run to publish from.
+  # Cancel superseded pull request runs. Push runs on main and production must
+  # complete because downstream workflows can depend on their conclusion.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   changeset:
     name: Check package release metadata
-    if: github.event_name == 'pull_request' && vars.ENFORCE_CHANGESETS == 'true'
+    # The Changesets action's own version pull request consumes the changesets
+    # it is versioning, so this check would always fail against it.
+    if: >-
+      github.event_name == 'pull_request' &&
+      vars.ENFORCE_CHANGESETS == 'true' &&
+      github.head_ref != 'changeset-release/production'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
