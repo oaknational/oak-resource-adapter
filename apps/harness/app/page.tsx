@@ -15,6 +15,7 @@ import { raLogger } from "@oaknational/resource-adapter-logger";
 import { useCallback, useEffect, useState } from "react";
 
 import styles from "./page.module.css";
+import { SmokeTestPanel } from "./SmokeTestPanel";
 
 const log = raLogger("harness");
 
@@ -390,58 +391,34 @@ export default function HarnessPage() {
             <h2 id="worksheet-heading">Worksheet</h2>
             <p>A worksheet is available for this lesson.</p>
           </section>
-          <section aria-labelledby="worker-test-heading" className={styles.workerTest}>
-            <h2 id="worker-test-heading">Background worker test</h2>
-            <div className={styles.workerTestControls}>
-              <button
-                className={styles.workerTestButton}
-                disabled={isCreatingTestJob || testJobIsActive}
-                onClick={() => void runWorkerSmokeTest()}
-                type="button"
-              >
-                Run test job
-              </button>
-              <p aria-live="polite" className={styles.workerTestStatus}>
-                Status: {testJobStatus}
-              </p>
-            </div>
-          </section>
-          <section aria-labelledby="ai-test-heading" className={styles.workerTest}>
-            <h2 id="ai-test-heading">Model invocation test</h2>
-            <div className={styles.workerTestControls}>
-              <button
-                className={styles.workerTestButton}
-                disabled={isInvokingModel}
-                onClick={() => void runModelSmokeTest()}
-                type="button"
-              >
-                Run model invocation
-              </button>
-              <p aria-live="polite" className={styles.workerTestStatus}>
-                Status: {modelTestStatus}
-              </p>
-            </div>
-            {modelTest?.outputText && <p>Model output: {modelTest.outputText}</p>}
-          </section>
-          <section
-            aria-labelledby="error-boundary-test-heading"
-            className={styles.workerTest}
+          <SmokeTestPanel
+            buttonLabel="Run test job"
+            disabled={isCreatingTestJob || testJobIsActive}
+            heading="Background worker test"
+            onRun={() => void runWorkerSmokeTest()}
+            status={testJobStatus}
+          />
+          <SmokeTestPanel
+            buttonLabel="Run model invocation"
+            disabled={isInvokingModel}
+            heading="Model invocation test"
+            onRun={() => void runModelSmokeTest()}
+            status={modelTestStatus}
           >
-            <h2 id="error-boundary-test-heading">Error boundary test</h2>
+            {modelTest?.outputText && <p>Model output: {modelTest.outputText}</p>}
+          </SmokeTestPanel>
+          <SmokeTestPanel
+            buttonLabel={
+              simulateAdapterCrash ? "Clear simulated crash" : "Simulate adapter crash"
+            }
+            heading="Error boundary test"
+            onRun={() => setSimulateAdapterCrash((current) => !current)}
+          >
             <p>
               Simulating a crash renders the package&apos;s fallback below and hands the
               error to the host&apos;s own logger. Try again re-catches while the
               simulated crash is active.
             </p>
-            <button
-              className={styles.workerTestButton}
-              onClick={() => setSimulateAdapterCrash((current) => !current)}
-              type="button"
-            >
-              {simulateAdapterCrash
-                ? "Clear simulated crash"
-                : "Simulate adapter crash"}
-            </button>
             <ResourceAdapterErrorBoundary
               key={String(simulateAdapterCrash)}
               onError={(error) => log.error(error)}
@@ -452,7 +429,7 @@ export default function HarnessPage() {
                 <p>The adapter surface renders normally.</p>
               )}
             </ResourceAdapterErrorBoundary>
-          </section>
+          </SmokeTestPanel>
           {capabilities.length > 0 && (
             <section
               aria-labelledby="create-more-heading"
