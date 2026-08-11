@@ -15,6 +15,9 @@ Repository development notes are in
 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). The operational release sequence is
 in [docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md).
 
+Conventions for comments and documentation are in
+[docs/COMMENTS_AND_DOCUMENTATION.md](docs/COMMENTS_AND_DOCUMENTATION.md).
+
 Commit messages must follow
 [Conventional Commits](https://www.conventionalcommits.org); a commitlint
 hook rejects messages that do not.
