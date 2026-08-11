@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { afterEach, describe, beforeEach, expect, it, vi } from "vitest";
+import { ModelInvocationError } from "@oaknational/resource-adapter-ai";
 import {
   resourceAdapterApiContractVersion,
   resourceAdapterApiContractVersionHeader,
@@ -15,11 +16,16 @@ import {
   GET as getFeatureFlags,
   OPTIONS as internalOptions,
 } from "../app/trpc/internal/[trpc]/route";
+import {
+  OPTIONS as modelInvokeOptions,
+  POST as postModelInvoke,
+} from "../app/dev/ai/invoke/route";
 import { GET as getJobStatus } from "../app/dev/jobs/[id]/route";
 import {
   OPTIONS as testJobOptions,
   POST as postTestJob,
 } from "../app/dev/jobs/test-echo/route";
+import { invokeDevSmokeText } from "./ai/dev-invoker";
 import * as capabilities from "./capabilities";
 import { requestAuthenticator } from "./authentication";
 
@@ -36,6 +42,11 @@ vi.mock("./authentication", async (importOriginal) => {
     requestAuthenticator: vi.fn(original.requestAuthenticator),
   };
 });
+
+// Fully stubbed so these tests can never make a paid OpenAI call.
+vi.mock("./ai/dev-invoker", () => ({
+  invokeDevSmokeText: vi.fn(),
+}));
 
 const lesson = {
   lessonSlug: "adding-fractions",
@@ -69,6 +80,17 @@ function capabilitiesRequest(
   });
 }
 
+function modelInvokeRequest(body: unknown): NextRequest {
+  return request("http://localhost:3001/dev/ai/invoke", {
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+      Origin: "http://localhost:3000",
+    },
+    method: "POST",
+  });
+}
+
 function featureFlagsRequest(): NextRequest {
   return request("http://localhost:3001/trpc/internal/featureFlags.get?batch=1", {
     headers: {
@@ -79,8 +101,8 @@ function featureFlagsRequest(): NextRequest {
 
 describe("API routes", () => {
   beforeEach(() => {
-    // The /dev routes are opt-in; the tests asserting they are closed unset this.
     vi.stubEnv("ENABLE_DEV_ROUTES", "1");
+    vi.mocked(invokeDevSmokeText).mockReset();
 
     vi.mocked(requestAuthenticator).mockImplementation(async () => {
       return {
@@ -254,6 +276,105 @@ describe("API routes", () => {
     );
 
     expect(response.status).toBe(404);
+  });
+
+  it("returns CORS headers for model invocation preflight requests", () => {
+    const response = modelInvokeOptions(
+      request("http://localhost:3001/dev/ai/invoke", {
+        headers: { Origin: "http://localhost:3000" },
+        method: "OPTIONS",
+      }),
+    );
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
+      "http://localhost:3000",
+    );
+    expect(response.headers.get("Access-Control-Allow-Methods")).toBe("POST, OPTIONS");
+  });
+
+  it("hides the model invocation route unless dev routes are enabled", async () => {
+    vi.stubEnv("ENABLE_DEV_ROUTES", "");
+
+    const preflight = modelInvokeOptions(
+      request("http://localhost:3001/dev/ai/invoke", {
+        headers: { Origin: "http://localhost:3000" },
+        method: "OPTIONS",
+      }),
+    );
+    expect(preflight.status).toBe(404);
+
+    const response = await postModelInvoke(modelInvokeRequest({ input: "ping" }));
+    expect(response.status).toBe(404);
+  });
+
+  it("returns 503 when the invoker reports it is not configured", async () => {
+    vi.mocked(invokeDevSmokeText).mockRejectedValue(
+      new ModelInvocationError({
+        code: "INVALID_CONFIGURATION",
+        message: "OPENAI_API_KEY is not configured.",
+      }),
+    );
+
+    const response = await postModelInvoke(modelInvokeRequest({ input: "ping" }));
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      code: "INVALID_CONFIGURATION",
+      error: "OPENAI_API_KEY is not configured.",
+    });
+  });
+
+  it("rejects a bad request body before calling the model", async () => {
+    for (const body of [{}, { input: "" }, { input: "a".repeat(2001) }]) {
+      const response = await postModelInvoke(modelInvokeRequest(body));
+
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({
+        error: "The model invocation request is invalid.",
+      });
+    }
+    expect(invokeDevSmokeText).not.toHaveBeenCalled();
+  });
+
+  it("returns only the expected fields, never the raw provider response", async () => {
+    vi.mocked(invokeDevSmokeText).mockResolvedValue({
+      meta: {
+        invocationId: "inv-1",
+        providerResponseId: "resp_dev",
+        usage: { inputTokens: 12, outputTokens: 3, totalTokens: 15 },
+      },
+      outcome: "SUCCESS",
+      output: "pong",
+    });
+
+    const response = await postModelInvoke(modelInvokeRequest({ input: "ping" }));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      outcome: "SUCCESS",
+      outputText: "pong",
+      providerResponseId: "resp_dev",
+      usage: { inputTokens: 12, outputTokens: 3, totalTokens: 15 },
+    });
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
+      "http://localhost:3000",
+    );
+    expect(invokeDevSmokeText).toHaveBeenCalledExactlyOnceWith("ping");
+  });
+
+  it("returns a safe error summary, not the raw provider error, when invocation fails", async () => {
+    vi.mocked(invokeDevSmokeText).mockRejectedValue(
+      new ModelInvocationError({ code: "RATE_LIMITED" }),
+    );
+
+    const response = await postModelInvoke(modelInvokeRequest({ input: "ping" }));
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toEqual({
+      code: "RATE_LIMITED",
+      error: "The model provider rate-limited the invocation.",
+    });
   });
 
   it("returns 401 Unauthorized when the request is not authenticated", async () => {

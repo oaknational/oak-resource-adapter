@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { claimJob, completeJob, failJob } from "../src/jobs/job-repository";
+import { claimJob, completeJob, failJob } from "@/jobs/job-repository";
 import { claimJobStep, completeJobStep, failJobStep } from "./job-lifecycle-steps";
 
-vi.mock("../src/jobs/job-repository", () => ({
+vi.mock("@/jobs/job-repository", () => ({
   claimJob: vi.fn(),
   completeJob: vi.fn(),
   failJob: vi.fn(),

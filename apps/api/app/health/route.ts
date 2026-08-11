@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { getCorsHeaders } from "../../src/cors";
+import { getCorsHeaders } from "@/cors";
 
 export function GET(request: NextRequest) {
   return NextResponse.json(

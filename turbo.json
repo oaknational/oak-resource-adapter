@@ -18,6 +18,7 @@
       "env": [
         "DATABASE_URL",
         "ENABLE_DEV_ROUTES",
+        "OPENAI_API_KEY",
         "POSTHOG_API_KEY",
         "POSTHOG_HOST",
         "RESOURCE_ADAPTER_ALLOWED_ORIGINS",

@@ -1,4 +1,8 @@
 #!/usr/bin/env sh
+#
+# Runs the quick parts of CI before anything leaves the machine. Nothing here
+# needs a database, Doppler or a browser. The slower jobs stay in CI.
+set -eu
 
 if ! command -v gitleaks >/dev/null 2>&1; then
   echo "gitleaks is required before pushing."
@@ -6,5 +10,68 @@ if ! command -v gitleaks >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "Scanning Git history for secrets..."
-pnpm secrets:scan
+# Git sends one line per ref being pushed:
+#   <local ref> <local sha> <remote ref> <remote sha>
+# The remote sha is what the remote already has, so it is the base for
+# "what am I sending".
+base=""
+tip=""
+saw_ref=false
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -n "${local_ref:-}" ] || continue
+  saw_ref=true
+
+  case "$remote_ref" in
+  refs/heads/main | refs/heads/master | refs/heads/production)
+    echo "Refusing to push straight to ${remote_ref#refs/heads/}. Open a pull request instead."
+    exit 1
+    ;;
+  esac
+
+  # An all-zero local sha means the branch is being deleted.
+  case "$local_sha" in
+  *[!0]*) ;;
+  *) continue ;;
+  esac
+
+  [ -z "$base" ] || continue
+
+  tip="$local_sha"
+  case "$remote_sha" in
+  # The remote has this branch already, so only the new commits need checking.
+  *[!0]*) base="$remote_sha" ;;
+  # First push of this branch, so main is the base.
+  *) base="$(git rev-parse --verify --quiet origin/main || true)" ;;
+  esac
+done
+
+# Only deletions, so there is no code to check.
+if [ "$saw_ref" = true ] && [ -z "$tip" ]; then
+  echo "Branch deletion only, nothing to check."
+  exit 0
+fi
+
+# No refs on stdin, so the hook was run by hand rather than by git.
+[ -n "$base" ] || base="$(git rev-parse --verify --quiet origin/main || true)"
+
+if [ -n "$base" ]; then
+  echo "Scanning the commits being pushed for secrets..."
+  gitleaks detect --redact=100 --source . --log-opts="$base..${tip:-HEAD}"
+else
+  # No main to compare against, so the whole history gets scanned.
+  echo "Scanning Git history for secrets..."
+  pnpm secrets:scan
+fi
+
+echo "Checking formatting..."
+pnpm format
+
+# Checks the changed packages and anything that depends on them. Turbo caches
+# all three tasks, so a second push is close to free.
+if [ -n "$base" ]; then
+  echo "Linting, type-checking and testing the packages this push changes..."
+  pnpm exec turbo run lint type-check test --filter="...[$base]"
+else
+  echo "Linting, type-checking and testing every package..."
+  pnpm exec turbo run lint type-check test
+fi

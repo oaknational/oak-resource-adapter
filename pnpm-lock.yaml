@@ -59,6 +59,9 @@ importers:
       '@clerk/nextjs':
         specifier: ^7.5.22
         version: 7.5.22(next@16.2.10(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@oaknational/resource-adapter-ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@oaknational/resource-adapter-contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -80,6 +83,9 @@ importers:
       next:
         specifier: ^16.1.0
         version: 16.2.10(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      openai:
+        specifier: 6.49.0
+        version: 6.49.0(@smithy/signature-v4@5.6.8)(zod@4.4.3)
       posthog-node:
         specifier: ^5.46.1
         version: 5.48.1

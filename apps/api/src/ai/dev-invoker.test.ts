@@ -1,0 +1,75 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { ModelInvocationError } from "@oaknational/resource-adapter-ai";
+
+import { invokeDevSmokeText } from "./dev-invoker";
+
+const { createMock } = vi.hoisted(() => ({ createMock: vi.fn() }));
+
+vi.mock("openai", async (importOriginal) => {
+  const original = await importOriginal<typeof import("openai")>();
+  return {
+    ...original,
+    default: vi.fn(function FakeOpenAI() {
+      return { responses: { create: createMock } };
+    }),
+  };
+});
+
+function responseFixture() {
+  return {
+    id: "resp_fake",
+    output: [
+      {
+        content: [{ text: "pong", type: "output_text" }],
+        type: "message",
+      },
+    ],
+    output_text: "pong",
+    status: "completed",
+    usage: { input_tokens: 12, output_tokens: 3, total_tokens: 15 },
+  };
+}
+
+describe("invokeDevSmokeText", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    createMock.mockReset();
+  });
+
+  it("rejects with a configuration error when the API key is missing", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "");
+
+    await expect(invokeDevSmokeText("ping")).rejects.toThrow(ModelInvocationError);
+    await expect(invokeDevSmokeText("ping")).rejects.toThrow(
+      "OPENAI_API_KEY is not configured.",
+    );
+    expect(createMock).not.toHaveBeenCalled();
+  });
+
+  it("passes the expected request to OpenAI and returns the model's text", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "sk-test");
+    createMock.mockResolvedValue(responseFixture());
+
+    const result = await invokeDevSmokeText("ping");
+
+    expect(result.outcome).toBe("SUCCESS");
+    if (result.outcome === "SUCCESS") {
+      expect(result.output).toBe("pong");
+    }
+    expect(result.meta.providerResponseId).toBe("resp_fake");
+    expect(result.meta.usage).toEqual({
+      inputTokens: 12,
+      outputTokens: 3,
+      totalTokens: 15,
+    });
+    expect(createMock).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        input: "ping",
+        max_output_tokens: 256,
+        model: "gpt-5.6-luna",
+        store: false,
+      }),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+  });
+});
