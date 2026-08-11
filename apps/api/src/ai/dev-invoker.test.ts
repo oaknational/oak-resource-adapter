@@ -36,11 +36,11 @@ describe("invokeDevSmokeText", () => {
     createMock.mockReset();
   });
 
-  it("throws a configuration error when the API key is missing", () => {
+  it("rejects with a configuration error when the API key is missing", async () => {
     vi.stubEnv("OPENAI_API_KEY", "");
 
-    expect(() => invokeDevSmokeText("ping")).toThrow(ModelInvocationError);
-    expect(() => invokeDevSmokeText("ping")).toThrow(
+    await expect(invokeDevSmokeText("ping")).rejects.toThrow(ModelInvocationError);
+    await expect(invokeDevSmokeText("ping")).rejects.toThrow(
       "OPENAI_API_KEY is not configured.",
     );
     expect(createMock).not.toHaveBeenCalled();

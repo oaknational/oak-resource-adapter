@@ -15,7 +15,9 @@ const devRoleBindings = defineRoleBindings({
   },
 });
 
-export function invokeDevSmokeText(input: string): Promise<TextModelOutputResult> {
+export async function invokeDevSmokeText(
+  input: string,
+): Promise<TextModelOutputResult> {
   if (!process.env.OPENAI_API_KEY) {
     throw new ModelInvocationError({
       code: "INVALID_CONFIGURATION",
