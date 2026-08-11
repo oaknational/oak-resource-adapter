@@ -43,7 +43,7 @@ vi.mock("./authentication", async (importOriginal) => {
   };
 });
 
-// Fully stubbed so a forgotten stub can never make a paid OpenAI call.
+// Fully stubbed so these tests can never make a paid OpenAI call.
 vi.mock("./ai/dev-invoker", () => ({
   invokeDevSmokeText: vi.fn(),
 }));

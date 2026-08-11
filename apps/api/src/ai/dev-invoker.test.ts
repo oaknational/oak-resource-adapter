@@ -5,8 +5,6 @@ import { invokeDevSmokeText } from "./dev-invoker";
 
 const { createMock } = vi.hoisted(() => ({ createMock: vi.fn() }));
 
-// The fake sits at the SDK boundary, so the real invoker, transport and
-// recorder all run; only the network call is stubbed.
 vi.mock("openai", async (importOriginal) => {
   const original = await importOriginal<typeof import("openai")>();
   return {
@@ -48,7 +46,7 @@ describe("invokeDevSmokeText", () => {
     expect(createMock).not.toHaveBeenCalled();
   });
 
-  it("sends a capped request for the bound model and returns the text outcome", async () => {
+  it("passes the expected request to OpenAI and returns the model's text", async () => {
     vi.stubEnv("OPENAI_API_KEY", "sk-test");
     createMock.mockResolvedValue(responseFixture());
 
