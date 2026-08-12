@@ -9,10 +9,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./testing": {
-      "types": "./dist/testing.d.ts",
-      "import": "./dist/testing.js"
     }
   },
   "files": [
@@ -31,8 +27,7 @@
   "dependencies": {
     "@oaknational/oak-curriculum-schema": "2.15.0",
     "@oaknational/resource-adapter-logger": "workspace:*",
-    "zod": "^4.4.3",
-    "dotenv": "^17.4.2"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

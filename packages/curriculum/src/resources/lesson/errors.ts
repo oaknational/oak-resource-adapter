@@ -1,5 +1,5 @@
 /**
- * - `unusable-identity`: The slug doesn't match any lesson.
+ * - `unusable-identity`: The lesson or programme slug is blank.
  * - `not-found`: No lesson found for this identity.
  * - `upstream-unavailable`: Oak is unreachable or refused the request.
  * - `timed-out`: Oak didn't respond in time.

@@ -7,5 +7,5 @@
     "noEmit": false,
     "sourceMap": true
   },
-  "exclude": ["src/**/*.test.ts", "src/**/*-fixtures.ts"]
+  "exclude": ["src/**/__tests__/**", "src/**/*.test.ts", "src/**/*-fixtures.ts"]
 }

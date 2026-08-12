@@ -225,9 +225,6 @@ importers:
       '@oaknational/resource-adapter-logger':
         specifier: workspace:*
         version: link:../logger
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
       zod:
         specifier: ^4.4.3
         version: 4.4.3
