@@ -10,13 +10,13 @@ import { inspect } from "node:util";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ZodError } from "zod";
 
-import { CurriculumError } from "../../errors.js";
-import { createOakLessonRepository } from "../../lesson-repository.js";
+import { CurriculumError } from "./errors.js";
+import { createOakLessonRepository } from "./lesson-repository.js";
 import {
   browseDataRow,
   contentRow,
   restrictionLevelsRow,
-} from "../fixtures/oak-response-fixtures.js";
+} from "./oak-response-fixtures.js";
 
 const config = {
   apiKey: "test-api-key",
@@ -100,7 +100,7 @@ describe("OakLessonRepository.fetch", () => {
     oakResponds({});
 
     const repository = createOakLessonRepository(config);
-    await repository.fetch(addingFractions.lessonSlug, addingFractions.programmeSlug);
+    await repository.fetch(addingFractions);
 
     const [endpoint, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
     expect(endpoint).toBe(config.endpoint);
@@ -111,7 +111,7 @@ describe("OakLessonRepository.fetch", () => {
     oakResponds({});
 
     const repository = createOakLessonRepository(config);
-    await repository.fetch(addingFractions.lessonSlug, addingFractions.programmeSlug);
+    await repository.fetch(addingFractions);
 
     const [, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
     expect(JSON.parse(init.body as string)).toMatchObject({
@@ -130,9 +130,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    await expect(
-      repository.fetch(addingFractions.lessonSlug, addingFractions.programmeSlug),
-    ).resolves.toEqual({
+    await expect(repository.fetch(addingFractions)).resolves.toEqual({
       contentGuidance: [],
       identity: addingFractions,
       isLegacy: false,
@@ -168,9 +166,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    await expect(
-      repository.fetch(addingFractions.lessonSlug, addingFractions.programmeSlug),
-    ).resolves.toMatchObject({
+    await expect(repository.fetch(addingFractions)).resolves.toMatchObject({
       maxRestrictions: [
         { category: "media", maxLevel: "highly-restricted" },
         { category: "works", maxLevel: "ogl-compatible" },
@@ -192,9 +188,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    await expect(
-      repository.fetch(addingFractions.lessonSlug, addingFractions.programmeSlug),
-    ).resolves.toMatchObject({
+    await expect(repository.fetch(addingFractions)).resolves.toMatchObject({
       maxRestrictions: [
         { category: "downloadable-files", maxLevel: "restricted" },
         { category: "media", maxLevel: "highly-restricted" },
@@ -226,9 +220,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    await expect(
-      repository.fetch(addingFractions.lessonSlug, addingFractions.programmeSlug),
-    ).resolves.toMatchObject({
+    await expect(repository.fetch(addingFractions)).resolves.toMatchObject({
       programme: {
         examBoard: "AQA",
         keyStage: "KS4",
@@ -243,9 +235,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    const error = await repository
-      .fetch(addingFractions.lessonSlug, addingFractions.programmeSlug)
-      .catch((e: unknown) => e);
+    const error = await repository.fetch(addingFractions).catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(CurriculumError);
     expect((error as CurriculumError).code).toBe("not-found");
@@ -257,9 +247,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    const error = await repository
-      .fetch(addingFractions.lessonSlug, addingFractions.programmeSlug)
-      .catch((e: unknown) => e);
+    const error = await repository.fetch(addingFractions).catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(CurriculumError);
     expect((error as CurriculumError).code).toBe("malformed-response");
@@ -270,9 +258,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    const error = await repository
-      .fetch(addingFractions.lessonSlug, addingFractions.programmeSlug)
-      .catch((e: unknown) => e);
+    const error = await repository.fetch(addingFractions).catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(CurriculumError);
     expect((error as CurriculumError).code).toBe("upstream-unavailable");
@@ -285,9 +271,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    const error = await repository
-      .fetch(addingFractions.lessonSlug, addingFractions.programmeSlug)
-      .catch((e: unknown) => e);
+    const error = await repository.fetch(addingFractions).catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(CurriculumError);
     expect((error as Error).cause).toBe(refused);
@@ -307,9 +291,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    const error = await repository
-      .fetch(addingFractions.lessonSlug, addingFractions.programmeSlug)
-      .catch((e: unknown) => e);
+    const error = await repository.fetch(addingFractions).catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(CurriculumError);
     expect((error as CurriculumError).code).toBe("upstream-unavailable");
@@ -328,9 +310,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    const error = await repository
-      .fetch(addingFractions.lessonSlug, addingFractions.programmeSlug)
-      .catch((e: unknown) => e);
+    const error = await repository.fetch(addingFractions).catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(CurriculumError);
     expect((error as CurriculumError).code).toBe("malformed-response");
@@ -345,9 +325,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    const error = await repository
-      .fetch(identity.lessonSlug, identity.programmeSlug)
-      .catch((e: unknown) => e);
+    const error = await repository.fetch(identity).catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(CurriculumError);
     expect((error as CurriculumError).code).toBe("unusable-identity");
@@ -359,9 +337,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository({ ...config, timeoutMs: 10 });
 
-    await expect(
-      repository.fetch(addingFractions.lessonSlug, addingFractions.programmeSlug),
-    ).rejects.toMatchObject({
+    await expect(repository.fetch(addingFractions)).rejects.toMatchObject({
       code: "timed-out",
       message: expect.stringContaining("10ms"),
     });
@@ -372,9 +348,7 @@ describe("OakLessonRepository.fetch", () => {
     oakNeverAnswers();
 
     const repository = createOakLessonRepository(config);
-    const attempt = repository
-      .fetch(addingFractions.lessonSlug, addingFractions.programmeSlug)
-      .catch((e: unknown) => e);
+    const attempt = repository.fetch(addingFractions).catch((e: unknown) => e);
     await vi.advanceTimersByTimeAsync(5_000);
 
     expect(await attempt).toMatchObject({
@@ -398,9 +372,7 @@ describe("OakLessonRepository.fetch", () => {
     oakReturnsStatus(503);
 
     const repository = createOakLessonRepository(config);
-    await repository
-      .fetch(addingFractions.lessonSlug, addingFractions.programmeSlug)
-      .catch(() => undefined);
+    await repository.fetch(addingFractions).catch(() => undefined);
 
     expect(reported).toEqual([expect.objectContaining({ identity: addingFractions })]);
   });
@@ -410,9 +382,7 @@ describe("OakLessonRepository.fetch", () => {
     oakResponds({ browseData: [] });
 
     const repository = createOakLessonRepository(config);
-    await repository
-      .fetch(addingFractions.lessonSlug, addingFractions.programmeSlug)
-      .catch(() => undefined);
+    await repository.fetch(addingFractions).catch(() => undefined);
 
     expect(reported).toEqual([]);
   });
@@ -422,9 +392,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    await expect(
-      repository.fetch(addingFractions.lessonSlug, addingFractions.programmeSlug),
-    ).resolves.toMatchObject({
+    await expect(repository.fetch(addingFractions)).resolves.toMatchObject({
       isLegacy: true,
     });
   });
@@ -451,9 +419,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    await expect(
-      repository.fetch(addingFractions.lessonSlug, addingFractions.programmeSlug),
-    ).resolves.toMatchObject({
+    await expect(repository.fetch(addingFractions)).resolves.toMatchObject({
       contentGuidance: [
         "Depiction or discussion of serious crime",
         "Discriminatory language or behaviour",
@@ -473,9 +439,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    await expect(
-      repository.fetch(addingFractions.lessonSlug, addingFractions.programmeSlug),
-    ).resolves.toMatchObject({
+    await expect(repository.fetch(addingFractions)).resolves.toMatchObject({
       resources: [],
     });
   });
@@ -492,9 +456,7 @@ describe("OakLessonRepository.fetch", () => {
 
     const repository = createOakLessonRepository(config);
 
-    const error = await repository
-      .fetch(addingFractions.lessonSlug, addingFractions.programmeSlug)
-      .catch((e: unknown) => e);
+    const error = await repository.fetch(addingFractions).catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(CurriculumError);
     expect((error as CurriculumError).code).toBe("malformed-response");
@@ -515,9 +477,7 @@ describe("what reaches the log", () => {
     });
 
     const repository = createOakLessonRepository(config);
-    const error = await repository
-      .fetch(addingFractions.lessonSlug, addingFractions.programmeSlug)
-      .catch((e: unknown) => e);
+    const error = await repository.fetch(addingFractions).catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(CurriculumError);
     expect((error as Error).cause).toBeInstanceOf(ZodError);
@@ -532,9 +492,7 @@ describe("what reaches the log", () => {
     oakIsUnreachable(new Error("ECONNREFUSED"));
 
     const repository = createOakLessonRepository({ ...config, apiKey });
-    await repository
-      .fetch(addingFractions.lessonSlug, addingFractions.programmeSlug)
-      .catch(() => undefined);
+    await repository.fetch(addingFractions).catch(() => undefined);
 
     expect(logged()).not.toContain(apiKey);
     expect(logged()).toContain("ECONNREFUSED");

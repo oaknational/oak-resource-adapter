@@ -1,17 +1,17 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { CurriculumError } from "../../errors.js";
-import { createOakLessonRepository } from "../../lesson-repository.js";
+import { CurriculumError } from "./errors.js";
+import { createOakLessonRepository } from "./lesson-repository.js";
 import {
   buildLesson,
   createInMemoryLessonRepository,
-} from "../../in-memory-lesson-repository.js";
-import type { LessonRepository } from "../../types.js";
+} from "./in-memory-lesson-repository.js";
+import type { LessonRepository } from "./types.js";
 import {
   browseDataRow,
   contentRow,
   restrictionLevelsRow,
-} from "../fixtures/oak-response-fixtures.js";
+} from "./oak-response-fixtures.js";
 
 const theSameLesson = buildLesson();
 
@@ -52,29 +52,23 @@ describe.each(implementations)("%s repository", (_name, build) => {
   it("fetches the lesson to the same value", async () => {
     oakPublishesThatLesson();
 
-    await expect(
-      build().fetch(
-        theSameLesson.identity.lessonSlug,
-        theSameLesson.identity.programmeSlug,
-      ),
-    ).resolves.toEqual(theSameLesson);
+    await expect(build().fetch(theSameLesson.identity)).resolves.toEqual(theSameLesson);
   });
 
   it("reports no restrictions when no levels are recorded", async () => {
     oakPublishesThatLesson([]);
 
-    await expect(
-      build().fetch(
-        theSameLesson.identity.lessonSlug,
-        theSameLesson.identity.programmeSlug,
-      ),
-    ).resolves.toMatchObject({ maxRestrictions: [] });
+    await expect(build().fetch(theSameLesson.identity)).resolves.toMatchObject({
+      maxRestrictions: [],
+    });
   });
 
   it("refuses a blank identity without looking anything up", async () => {
     oakPublishesThatLesson();
 
-    await expect(build().fetch("  ", "")).rejects.toMatchObject({
+    await expect(
+      build().fetch({ lessonSlug: "  ", programmeSlug: "" }),
+    ).rejects.toMatchObject({
       code: "unusable-identity",
     });
     expect(fetch).not.toHaveBeenCalled();
@@ -93,7 +87,7 @@ describe.each(implementations)("%s repository", (_name, build) => {
     );
 
     const error = await build()
-      .fetch("no-such-lesson", "maths-primary-ks2")
+      .fetch({ lessonSlug: "no-such-lesson", programmeSlug: "maths-primary-ks2" })
       .catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(CurriculumError);

@@ -1,9 +1,9 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { CurriculumError } from "../../errors.js";
-import { createOakLessonRepository } from "../../lesson-repository.js";
-import type { LessonRepository } from "../../types.js";
-import { oakCurriculumConfigFromEnv } from "../../../../config/oak-curriculum-config.js";
+import { CurriculumError } from "./errors.js";
+import { createOakLessonRepository } from "./lesson-repository.js";
+import type { LessonRepository } from "./types.js";
+import { oakCurriculumConfigFromEnv } from "../../config/oak-curriculum-config.js";
 
 // Set the environment variable to run these tests, which are integration tests against the Oak curriculum endpoint.
 const enabled = process.env.RUN_CURRICULUM_INTEGRATION_TESTS === "true";
@@ -50,7 +50,7 @@ describe.runIf(enabled)("Oak curriculum endpoint (development)", () => {
   });
 
   it("fetches a known lesson", async () => {
-    const lesson = await repository.fetch(LESSON.lessonSlug, LESSON.programmeSlug);
+    const lesson = await repository.fetch(LESSON);
     expect(lesson).toMatchObject({
       identity: LESSON,
       programme: { subject: expect.any(String) },
@@ -61,13 +61,13 @@ describe.runIf(enabled)("Oak curriculum endpoint (development)", () => {
 
   it("fails when the lesson does not exist", async () => {
     await expect(
-      repository.fetch("no-such-lesson-anywhere", LESSON.programmeSlug),
+      repository.fetch({ ...LESSON, lessonSlug: "no-such-lesson-anywhere" }),
     ).rejects.toBeInstanceOf(CurriculumError);
   });
 
   // Pairs with the test below: LESSON must be one Oak publishes a worksheet for.
   it("returns the worksheet when the lesson has one", async () => {
-    const lesson = await repository.fetch(LESSON.lessonSlug, LESSON.programmeSlug);
+    const lesson = await repository.fetch(LESSON);
 
     expect(lesson.resources).toContainEqual(
       expect.objectContaining({ type: "worksheet", url: expect.any(String) }),
@@ -75,10 +75,7 @@ describe.runIf(enabled)("Oak curriculum endpoint (development)", () => {
   });
 
   it("returns no worksheet when the lesson has none", async () => {
-    const lesson = await repository.fetch(
-      WORKSHEETLESS_LESSON.lessonSlug,
-      WORKSHEETLESS_LESSON.programmeSlug,
-    );
+    const lesson = await repository.fetch(WORKSHEETLESS_LESSON);
 
     expect(lesson.resources).not.toContainEqual(
       expect.objectContaining({ type: "worksheet" }),
@@ -86,16 +83,13 @@ describe.runIf(enabled)("Oak curriculum endpoint (development)", () => {
   });
 
   it("returns no content guidance when the lesson has none", async () => {
-    const lesson = await repository.fetch(LESSON.lessonSlug, LESSON.programmeSlug);
+    const lesson = await repository.fetch(LESSON);
 
     expect(lesson.contentGuidance).toEqual([]);
   });
 
   it("returns the content guidance for a lesson that has it", async () => {
-    const lesson = await repository.fetch(
-      CONTENT_GUIDANCE_LESSON.lessonSlug,
-      CONTENT_GUIDANCE_LESSON.programmeSlug,
-    );
+    const lesson = await repository.fetch(CONTENT_GUIDANCE_LESSON);
 
     expect(lesson.contentGuidance).toEqual(
       expect.arrayContaining([
@@ -107,10 +101,7 @@ describe.runIf(enabled)("Oak curriculum endpoint (development)", () => {
   });
 
   it("returns the asset level restriction for a lesson", async () => {
-    const lesson = await repository.fetch(
-      RESTRICTED_LESSON.lessonSlug,
-      RESTRICTED_LESSON.programmeSlug,
-    );
+    const lesson = await repository.fetch(RESTRICTED_LESSON);
 
     expect(lesson.maxRestrictions).toEqual([
       { category: "downloadable-files", maxLevel: "restricted" },
