@@ -1,5 +1,3 @@
-import "dotenv/config";
-
 export type OakCurriculumConfig = Readonly<{
   apiKey: string;
   endpoint: string;

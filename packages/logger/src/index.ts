@@ -10,12 +10,12 @@ debugBase.log = console.log.bind(console);
 
 export type LoggerKey =
   | "ai"
+  | "auth"
   | "capabilities"
   | "curriculum"
+  | "feature-flags"
   | "harness"
-  | "auth"
-  | "internal-api"
-  | "feature-flags";
+  | "internal-api";
 
 /**
  * A pluggable error reporter (e.g. `Sentry.captureException`). The logger stays
