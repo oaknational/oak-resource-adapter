@@ -26,13 +26,13 @@ import {
   POST as postTestJob,
 } from "../app/dev/jobs/test-echo/route";
 import { invokeDevSmokeText } from "./ai/dev-invoker";
-import * as capabilities from "./capabilities";
+import * as capabilities from "./capabilities/service";
 import { requestAuthenticator } from "./authentication";
 
 // Passthrough mock: keeps the real capabilities service for every test, but
 // makes its exports spy-able so a single test can force the resolver to throw.
-vi.mock("./capabilities", async (importOriginal) =>
-  importOriginal<typeof import("./capabilities")>(),
+vi.mock("./capabilities/service", async (importOriginal) =>
+  importOriginal<typeof import("./capabilities/service")>(),
 );
 
 vi.mock("./authentication", async (importOriginal) => {
