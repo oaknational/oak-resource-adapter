@@ -19,6 +19,7 @@ Contributor documentation is indexed in [docs/README.md](docs/README.md).
 ## Architecture notes
 
 - [Background jobs](docs/BACKGROUND_JOBS.md)
+- [Curriculum](docs/CURRICULUM.md)
 - [Model invocation](docs/MODEL_INVOCATION.md)
 
 ## Prerequisites
