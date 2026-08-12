@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { HasuraClient } from "../../infrastructure/hasura/client.js";
-import type { OakCurriculumConfig } from "../../config/oak-curriculum-config.js";
+import {
+  DEFAULT_CURRICULUM_TIMEOUT_MS,
+  type OakCurriculumConfig,
+} from "../../config/oak-curriculum-config.js";
 import type { Lesson, LessonRepository } from "./types.js";
 import { CurriculumError } from "./errors.js";
 import {
@@ -17,7 +20,7 @@ const log = raLogger("curriculum");
 export class OakLessonRepository implements LessonRepository {
   constructor(
     private readonly client: HasuraClient,
-    private readonly timeoutMs?: number,
+    private readonly timeoutMs: number,
   ) {}
 
   async fetch(lessonSlug: string, programmeSlug: string): Promise<Lesson> {
@@ -93,10 +96,7 @@ export class OakLessonRepository implements LessonRepository {
         throw curriculumError;
       }
 
-      const timedOut =
-        error instanceof DOMException &&
-        error.name === "AbortError" &&
-        this.timeoutMs !== undefined;
+      const timedOut = error instanceof DOMException && error.name === "AbortError";
       const curriculumError = timedOut
         ? new CurriculumError(`Request timed out after ${this.timeoutMs}ms`, {
             cause: error,
@@ -123,18 +123,13 @@ export class OakLessonRepository implements LessonRepository {
 export function createOakLessonRepository(
   config: OakCurriculumConfig,
 ): LessonRepository {
-  if (config.timeoutMs !== undefined) {
-    const MAX_TIMEOUT = 2147483647; // 2^31 - 1, max value for setTimeout
-    if (
-      !Number.isInteger(config.timeoutMs) ||
-      config.timeoutMs <= 0 ||
-      config.timeoutMs > MAX_TIMEOUT
-    ) {
-      throw new RangeError(
-        `timeoutMs must be a positive integer <= ${MAX_TIMEOUT}, got ${config.timeoutMs}`,
-      );
-    }
+  const timeoutMs = config.timeoutMs ?? DEFAULT_CURRICULUM_TIMEOUT_MS;
+  const MAX_TIMEOUT = 2147483647; // 2^31 - 1, max value for setTimeout
+  if (!Number.isInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > MAX_TIMEOUT) {
+    throw new RangeError(
+      `timeoutMs must be a positive integer <= ${MAX_TIMEOUT}, got ${config.timeoutMs}`,
+    );
   }
-  const client = new HasuraClient(config);
-  return new OakLessonRepository(client, config.timeoutMs);
+  const client = new HasuraClient({ ...config, timeoutMs });
+  return new OakLessonRepository(client, timeoutMs);
 }

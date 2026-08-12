@@ -6,6 +6,12 @@ export type OakCurriculumConfig = Readonly<{
   timeoutMs?: number;
 }>;
 
+export type ResolvedOakCurriculumConfig = Readonly<
+  Omit<OakCurriculumConfig, "timeoutMs"> & { timeoutMs: number }
+>;
+
+export const DEFAULT_CURRICULUM_TIMEOUT_MS = 5_000;
+
 export const CURRICULUM_ENV_VARS = {
   apiKey: "CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY",
   endpoint: "CURRICULUM_API_URL",

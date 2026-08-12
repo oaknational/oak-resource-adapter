@@ -1,4 +1,4 @@
-import type { OakCurriculumConfig } from "../../config/oak-curriculum-config.js";
+import type { ResolvedOakCurriculumConfig } from "../../config/oak-curriculum-config.js";
 
 export interface HasuraGraphQLRequest {
   query: string;
@@ -10,9 +10,9 @@ export interface HasuraGraphQLRequest {
  * Handles authentication, timeouts, and error responses.
  */
 export class HasuraClient {
-  private config: OakCurriculumConfig;
+  private config: ResolvedOakCurriculumConfig;
 
-  constructor(config: OakCurriculumConfig) {
+  constructor(config: ResolvedOakCurriculumConfig) {
     this.config = config;
   }
 
@@ -22,8 +22,7 @@ export class HasuraClient {
    */
   async execute(request: HasuraGraphQLRequest): Promise<unknown> {
     const controller = new AbortController();
-    const timeoutMs = this.config.timeoutMs ?? 5_000;
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), this.config.timeoutMs);
 
     try {
       const response = await fetch(this.config.endpoint, {

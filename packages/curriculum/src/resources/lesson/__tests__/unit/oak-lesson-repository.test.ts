@@ -367,6 +367,23 @@ describe("OakLessonRepository.fetch", () => {
     });
   });
 
+  it("times out on the default timeout when none is configured", async () => {
+    vi.useFakeTimers();
+    oakNeverAnswers();
+
+    const repository = createOakLessonRepository(config);
+    const attempt = repository
+      .fetch(addingFractions.lessonSlug, addingFractions.programmeSlug)
+      .catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(5_000);
+
+    expect(await attempt).toMatchObject({
+      code: "timed-out",
+      message: expect.stringContaining("5000ms"),
+    });
+    vi.useRealTimers();
+  });
+
   it.each([0, -1, 1.5, 2_147_483_648])(
     "refuses to be built with a timeout of %s",
     (timeoutMs) => {
