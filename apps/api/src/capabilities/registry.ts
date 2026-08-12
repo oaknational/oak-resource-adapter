@@ -2,7 +2,7 @@ import type { CapabilityDefinition } from "./definition";
 
 const worksheetAdapterCapability: CapabilityDefinition = {
   id: "worksheetAdapter",
-  label: "Adapt worksheet",
+  label: "Scaffolded Practice Sheet",
   resourceType: "worksheet",
   isEligible: ({ lesson }) => lesson.availableResources.includes("worksheet"),
 };

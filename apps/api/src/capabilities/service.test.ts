@@ -39,12 +39,12 @@ const testDefinitions: ReadonlyArray<CapabilityDefinition> = [
 ];
 
 describe("getCapabilities", () => {
-  it("returns the worksheet adapter capability for a lesson with a worksheet", () => {
+  it("returns the scaffolded practice sheet capability for a lesson with a worksheet", () => {
     expect(getCapabilities(worksheetLesson)).toEqual({
       capabilities: [
         {
           id: "worksheetAdapter",
-          label: "Adapt worksheet",
+          label: "Scaffolded Practice Sheet",
           resourceType: "worksheet",
         },
       ],

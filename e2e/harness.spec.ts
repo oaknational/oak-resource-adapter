@@ -32,7 +32,7 @@ test(
     const sidebar = page.getByRole("dialog", { name: "Create more with Aila" });
     await expect(sidebar).toBeVisible();
     await expect(sidebar).toContainText("Hello, World!");
-    await expect(sidebar).toContainText("Adapt worksheet");
+    await expect(sidebar).toContainText("Scaffolded Practice Sheet");
   },
 );
 
