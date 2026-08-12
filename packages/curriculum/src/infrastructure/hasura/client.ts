@@ -1,8 +1,4 @@
-export type HasuraConfig = Readonly<{
-  apiKey: string;
-  endpoint: string;
-  timeoutMs?: number;
-}>;
+import type { OakCurriculumConfig } from "../../config/oak-curriculum-config.js";
 
 export interface HasuraGraphQLRequest {
   query: string;
@@ -14,9 +10,9 @@ export interface HasuraGraphQLRequest {
  * Handles authentication, timeouts, and error responses.
  */
 export class HasuraClient {
-  private config: HasuraConfig;
+  private config: OakCurriculumConfig;
 
-  constructor(config: HasuraConfig) {
+  constructor(config: OakCurriculumConfig) {
     this.config = config;
   }
 

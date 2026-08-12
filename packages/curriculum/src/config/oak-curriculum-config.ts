@@ -1,6 +1,10 @@
 import "dotenv/config";
 
-import type { HasuraConfig } from "../infrastructure/hasura/client.js";
+export type OakCurriculumConfig = Readonly<{
+  apiKey: string;
+  endpoint: string;
+  timeoutMs?: number;
+}>;
 
 export const CURRICULUM_ENV_VARS = {
   apiKey: "CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY",
@@ -9,7 +13,7 @@ export const CURRICULUM_ENV_VARS = {
 
 export function oakCurriculumConfigFromEnv(
   env: Record<string, string | undefined>,
-): HasuraConfig {
+): OakCurriculumConfig {
   const missing = Object.values(CURRICULUM_ENV_VARS)
     .filter((name) => (env[name] ?? "").trim() === "")
     .sort();

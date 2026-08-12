@@ -9,7 +9,13 @@ const debugBase = debug("ra");
 debugBase.log = console.log.bind(console);
 
 export type LoggerKey =
-  "ai" | "auth" | "capabilities" | "feature-flags" | "harness" | "internal-api";
+  | "ai"
+  | "capabilities"
+  | "curriculum"
+  | "harness"
+  | "auth"
+  | "internal-api"
+  | "feature-flags";
 
 /**
  * A pluggable error reporter (e.g. `Sentry.captureException`). The logger stays
