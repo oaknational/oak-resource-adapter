@@ -1,17 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { CurriculumError } from "./errors.js";
-import { createOakLessonRepository } from "./lesson-repository.js";
+import { CurriculumError } from "../errors.js";
 import {
   buildLesson,
   createInMemoryLessonRepository,
 } from "./in-memory-lesson-repository.js";
-import type { LessonRepository } from "./types.js";
 import {
+  assetsRow,
   browseDataRow,
   contentRow,
   restrictionLevelsRow,
-} from "./oak-response-fixtures.js";
+} from "./lesson-fixtures.js";
+import type { LessonRepository } from "./lesson.js";
+import { createOakLessonRepository } from "./oak-lesson-repository.js";
 
 const theSameLesson = buildLesson();
 
@@ -22,6 +23,7 @@ function oakPublishesThatLesson(restrictionLevels = [restrictionLevelsRow()]): v
       new Response(
         JSON.stringify({
           data: {
+            assets: [assetsRow()],
             browseData: [browseDataRow()],
             content: [contentRow()],
             restrictionLevels,
@@ -68,9 +70,7 @@ describe.each(implementations)("%s repository", (_name, build) => {
 
     await expect(
       build().fetch({ lessonSlug: "  ", programmeSlug: "" }),
-    ).rejects.toMatchObject({
-      code: "unusable-identity",
-    });
+    ).rejects.toMatchObject({ code: "unusable-identity" });
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -80,7 +80,7 @@ describe.each(implementations)("%s repository", (_name, build) => {
       vi.fn().mockResolvedValue(
         new Response(
           JSON.stringify({
-            data: { browseData: [], content: [], restrictionLevels: [] },
+            data: { assets: [], browseData: [], content: [], restrictionLevels: [] },
           }),
         ),
       ),

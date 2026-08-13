@@ -192,7 +192,10 @@ jobs:
         run: pnpm --filter @oaknational/resource-adapter-db db:migrate:deploy
 
       - name: Run database integration tests
-        run: pnpm test:integration
+        # The curriculum package's integration tests reach Oak's real curriculum
+        # endpoint and downloads API. This job holds only an ephemeral Postgres, so
+        # they are excluded until CI has somewhere to read those credentials from.
+        run: pnpm test:integration --filter='!@oaknational/resource-adapter-curriculum'
 
   package-artifact:
     name: Verify published package

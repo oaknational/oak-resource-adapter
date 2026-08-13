@@ -11,9 +11,10 @@ locals {
     # SENTRY_DSN is one project across every environment; SENTRY_ENVIRONMENT is
     # what separates the events.
     api_shared = {
-      POSTHOG_API_KEY   = var.posthog_api_key
-      SENTRY_AUTH_TOKEN = var.sentry_auth_token
-      SENTRY_DSN        = var.sentry_dsn
+      CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY = var.curriculum_api_key
+      POSTHOG_API_KEY                                    = var.posthog_api_key
+      SENTRY_AUTH_TOKEN                                  = var.sentry_auth_token
+      SENTRY_DSN                                         = var.sentry_dsn
     }
 
     api_production = {
@@ -33,9 +34,10 @@ locals {
     # E2E_CLERK_USER_EMAIL is read by `pnpm test:e2e` locally, not by any
     # deployment.
     api_development = {
-      CLERK_SECRET_KEY     = var.clerk_secret_key_test
-      E2E_CLERK_USER_EMAIL = var.e2e_clerk_user_email
-      OPENAI_API_KEY       = var.openai_api_key_development
+      CLERK_SECRET_KEY                                   = var.clerk_secret_key_test
+      CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY = var.curriculum_api_key
+      E2E_CLERK_USER_EMAIL                               = var.e2e_clerk_user_email
+      OPENAI_API_KEY                                     = var.openai_api_key_development
     }
   }
 

@@ -54,7 +54,13 @@
     "test:integration": {
       "cache": false,
       "dependsOn": ["^build"],
-      "env": ["DATABASE_URL", "RUN_DATABASE_INTEGRATION_TESTS"],
+      "env": [
+        "CURRICULUM_API_URL",
+        "CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY",
+        "CURRICULUM_DOWNLOADS_API_URL",
+        "DATABASE_URL",
+        "RUN_DATABASE_INTEGRATION_TESTS"
+      ],
       "outputs": []
     }
   }

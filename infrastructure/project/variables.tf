@@ -63,6 +63,13 @@ variable "clerk_secret_key_test" {
   default     = ""
 }
 
+variable "curriculum_api_key" {
+  description = "Key for Oak's curriculum endpoint, shared by every target and local development"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "posthog_api_key" {
   description = "PostHog project API key, required wherever USE_POSTHOG is set"
   type        = string

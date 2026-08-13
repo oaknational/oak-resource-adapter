@@ -19,14 +19,15 @@
     "dev": "tsc --project tsconfig.build.json --watch",
     "lint": "eslint src --max-warnings=0",
     "lint:fix": "eslint src --fix",
-    "test": "node --env-file-if-exists=../../.env node_modules/vitest/vitest.mjs run",
+    "test": "vitest run",
     "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
-    "test:integration": "node --env-file-if-exists=../../.env node_modules/vitest/vitest.mjs run src/resources/lesson/__tests__/integration/oak-curriculum.integration.test.ts",
+    "test:integration": "RUN_CURRICULUM_INTEGRATION_TESTS=1 vitest run src/oak-curriculum.integration.test.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@oaknational/oak-curriculum-schema": "2.15.0",
     "@oaknational/resource-adapter-logger": "workspace:*",
+    "fflate": "^0.8.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 
 const workspaceUnits = {
   "apps/api": [
@@ -11,11 +11,29 @@ const workspaceUnits = {
   "apps/harness": ["packages/logger", "packages/ui"],
   "packages/ai": ["packages/db", "packages/logger", "packages/resource-document"],
   "packages/contracts": ["packages/resource-document"],
+  "packages/curriculum": ["packages/logger"],
   "packages/db": ["packages/logger"],
   "packages/logger": [],
   "packages/resource-document": [],
   "packages/ui": ["packages/contracts", "packages/resource-document"],
 };
+
+// Rules are generated per entry above, so a unit missing from the map has no
+// import allowlist and no deep-import guard, and deps:check still passes.
+const undeclaredUnits = ["apps", "packages"]
+  .flatMap((group) =>
+    readdirSync(new URL(`./${group}/`, import.meta.url), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => `${group}/${entry.name}`),
+  )
+  .filter((unit) => existsSync(new URL(`./${unit}/package.json`, import.meta.url)))
+  .filter((unit) => !Object.hasOwn(workspaceUnits, unit));
+
+if (undeclaredUnits.length > 0) {
+  throw new Error(
+    `Add these to workspaceUnits in dependency-cruiser.config.mjs, or they go unchecked: ${undeclaredUnits.join(", ")}`,
+  );
+}
 
 const packageDirectories = Object.keys(workspaceUnits).filter((directory) =>
   directory.startsWith("packages/"),
