@@ -4,7 +4,7 @@ import type {
 } from "@oaknational/resource-adapter-contracts";
 
 import { capabilityDefinitions } from "./registry";
-import type { CapabilityDefinition, EligibilityContext } from "./definition";
+import type { CapabilityDefinition, EligibilityContext } from "./types";
 
 export function evaluateCapabilities(
   definitions: ReadonlyArray<CapabilityDefinition>,

@@ -1,4 +1,4 @@
-import type { CapabilityDefinition } from "./definition";
+import type { CapabilityDefinition } from "./types";
 
 const worksheetAdapterCapability: CapabilityDefinition = {
   id: "worksheetAdapter",

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { capabilityDefinitions } from "./registry";
 import { evaluateCapabilities, getCapabilities } from "./service";
-import type { CapabilityDefinition, EligibilityContext } from "./definition";
+import type { CapabilityDefinition, EligibilityContext } from "./types";
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 
 const worksheetLesson: LessonContext = {
