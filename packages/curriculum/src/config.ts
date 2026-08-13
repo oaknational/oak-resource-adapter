@@ -81,7 +81,7 @@ function requireConfigured(
 ): void {
   const missing = Object.values(names)
     .filter((name) => (env[name] ?? "").trim() === "")
-    .sort();
+    .sort((left, right) => left.localeCompare(right));
 
   if (missing.length > 0) {
     throw new Error(

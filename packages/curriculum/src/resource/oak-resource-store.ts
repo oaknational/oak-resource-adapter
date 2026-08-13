@@ -45,7 +45,7 @@ type Download = Readonly<{
  */
 export function createOakResourceStore(config: OakResourceStoreConfig): ResourceStore {
   const timeoutMs = resolveTimeoutMs(config.timeoutMs, DEFAULT_RESOURCE_TIMEOUT_MS);
-  const downloadsApiUrl = config.downloadsApiUrl.replace(/\/+$/, "");
+  const downloadsApiUrl = withoutTrailingSlashes(config.downloadsApiUrl);
 
   return {
     async fetch(
@@ -87,6 +87,15 @@ export function createOakResourceStore(config: OakResourceStoreConfig): Resource
       }
     },
   };
+}
+
+function withoutTrailingSlashes(url: string): string {
+  let end = url.length;
+  while (end > 0 && url.charAt(end - 1) === "/") {
+    end -= 1;
+  }
+
+  return url.slice(0, end);
 }
 
 async function requestDownload(

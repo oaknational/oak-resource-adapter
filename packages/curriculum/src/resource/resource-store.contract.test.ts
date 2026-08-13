@@ -151,22 +151,38 @@ describe("the downloads API resource store", () => {
     });
   });
 
-  it("reports a lesson the downloads API holds nothing for", async () => {
-    oakApiAnswers(404);
-    silenceLog();
+  it("tolerates a trailing slash on the configured API URL", async () => {
+    oakServes(zipOf({ "worksheet-questions.pdf": worksheetFile.bytes }));
 
-    await expect(
-      createOakResourceStore(config).fetch(lesson, "worksheet"),
-    ).rejects.toMatchObject({ code: "unavailable-resource" });
+    await createOakResourceStore({
+      downloadsApiUrl: "https://downloads.example///",
+    }).fetch(lesson, "worksheet");
+
+    const [requested] = vi.mocked(fetch).mock.calls[0] as [string];
+    expect(requested).toBe(
+      "https://downloads.example/api/lesson/adding-fractions/download?selection=worksheet-pdf-questions",
+    );
   });
 
-  it("reports a selection the downloads API rejects", async () => {
-    oakApiAnswers(400);
+  it.each([
+    {
+      answer: "404 for a lesson it holds nothing for",
+      status: 404,
+      code: "unavailable-resource",
+    },
+    {
+      answer: "400 for a selection it rejects",
+      status: 400,
+      code: "unavailable-resource",
+    },
+    { answer: "503 when it is unwell", status: 503, code: "upstream-unavailable" },
+  ])("reports $answer as $code", async ({ status, code }) => {
+    oakApiAnswers(status);
     silenceLog();
 
     await expect(
       createOakResourceStore(config).fetch(lesson, "worksheet"),
-    ).rejects.toMatchObject({ code: "unavailable-resource" });
+    ).rejects.toMatchObject({ code });
   });
 
   it("says a resource is restricted when the downloads API demands a teacher", async () => {
@@ -179,15 +195,6 @@ describe("the downloads API resource store", () => {
 
     expect(error).toMatchObject({ code: "upstream-unavailable" });
     expect((error as Error).message).toContain("signed-in teachers");
-  });
-
-  it("reports an unwell downloads API as unavailable", async () => {
-    oakApiAnswers(503);
-    silenceLog();
-
-    await expect(
-      createOakResourceStore(config).fetch(lesson, "worksheet"),
-    ).rejects.toMatchObject({ code: "upstream-unavailable" });
   });
 
   it("reports the reason when the downloads API returns no URL", async () => {
