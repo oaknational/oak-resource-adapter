@@ -3,7 +3,7 @@ import { type ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-
 import { PostHog } from "posthog-node";
 
 import { featureFlagCatalogue, type FeatureFlagKey } from "./catalogue";
-import type { FeatureFlagServiceType } from "./service";
+import type { FeatureFlagServiceType } from "./types";
 
 const log = raLogger("feature-flags");
 

@@ -4,15 +4,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default defineConfig([
-  globalIgnores([
-    "**/dist/**",
-    "**/.next/**",
-    "**/app/.well-known/workflow/**",
-    "**/coverage/**",
-    "**/node_modules/**",
-    "**/playwright-report/**",
-    "**/test-results/**",
-  ]),
+  globalIgnores(["dist/**", "coverage/**", "node_modules/**"]),
   js.configs.recommended,
   tseslint.configs.recommended,
   {
