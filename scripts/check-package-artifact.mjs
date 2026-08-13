@@ -27,9 +27,14 @@ async function findTarball(matches) {
 
 // Pin peers to the workspace-resolved versions so the check cannot break
 // when a peer publishes a new version outside our lockfile.
-async function installedVersion(packageName) {
+async function installedVersion(packageName, workspacePackage = "ui") {
   const manifest = await readFile(
-    join(repositoryRoot, "packages/ui/node_modules", packageName, "package.json"),
+    join(
+      repositoryRoot,
+      `packages/${workspacePackage}/node_modules`,
+      packageName,
+      "package.json",
+    ),
     "utf8",
   );
   return JSON.parse(manifest).version;
@@ -45,6 +50,12 @@ function readPackedFile(tarball, file) {
   });
 }
 
+function listPackedFiles(tarball) {
+  return execFileSync("tar", ["-tf", tarball], { encoding: "utf8" })
+    .split("\n")
+    .filter((file) => file.length > 0);
+}
+
 try {
   await Promise.all([
     rm(join(repositoryRoot, "packages/contracts/dist"), {
@@ -52,6 +63,10 @@ try {
       recursive: true,
     }),
     rm(join(repositoryRoot, "packages/ui/dist"), {
+      force: true,
+      recursive: true,
+    }),
+    rm(join(repositoryRoot, "packages/resource-document/dist"), {
       force: true,
       recursive: true,
     }),
@@ -63,6 +78,18 @@ try {
     [
       "--filter",
       "@oaknational/resource-adapter-contracts",
+      "pack",
+      "--pack-destination",
+      temporaryDirectory,
+    ],
+    repositoryRoot,
+  );
+
+  run(
+    "pnpm",
+    [
+      "--filter",
+      "@oaknational/resource-document",
       "pack",
       "--pack-destination",
       temporaryDirectory,
@@ -89,7 +116,11 @@ try {
     (file) =>
       /^oaknational-resource-adapter-contracts-\d/.test(file) && file.endsWith(".tgz"),
   );
+  const resourceDocumentTarball = await findTarball(
+    (file) => /^oaknational-resource-document-\d/.test(file) && file.endsWith(".tgz"),
+  );
   const contractsManifest = readPackedManifest(contractsTarball);
+  const resourceDocumentManifest = readPackedManifest(resourceDocumentTarball);
   const uiManifest = readPackedManifest(uiTarball);
 
   if (contractsManifest.version !== uiManifest.version) {
@@ -118,11 +149,13 @@ try {
           ),
           "@oaknational/resource-adapter-contracts": `file:${contractsTarball}`,
           "@oaknational/resource-adapter": `file:${uiTarball}`,
+          "@oaknational/resource-document": `file:${resourceDocumentTarball}`,
           next: await installedVersion("next"),
           "next-cloudinary": await installedVersion("next-cloudinary"),
           react: await installedVersion("react"),
           "react-dom": await installedVersion("react-dom"),
           "styled-components": await installedVersion("styled-components"),
+          zod: await installedVersion("zod", "contracts"),
         },
         pnpm: {
           overrides: {
@@ -136,6 +169,99 @@ try {
   );
 
   run("pnpm", ["install", "--config.auto-install-peers=false"], temporaryDirectory);
+
+  if (
+    resourceDocumentManifest.private !== true ||
+    resourceDocumentManifest.version !== "0.0.0"
+  ) {
+    throw new Error(
+      "The ORA-local resource-document artifact must remain private at version 0.0.0.",
+    );
+  }
+
+  if (resourceDocumentManifest.peerDependencies?.zod !== "^4.4.3") {
+    throw new Error("Resource-document must expose its Zod 4 peer dependency.");
+  }
+
+  // resource-document is private at 0.0.0, so a consumer cannot resolve it from
+  // the registry. Published code may use it internally, but the moment it
+  // reaches a published manifest or declaration the consuming install breaks —
+  // in OWA rather than here. Both halves matter: pack rewrites workspace:* to
+  // the resolved version, and tsc emits the module specifier for any exported
+  // type that names it.
+  for (const [unit, tarball] of [
+    ["contracts", contractsTarball],
+    ["ui", uiTarball],
+  ]) {
+    const manifest = readPackedManifest(tarball);
+    const declaringField = [
+      "dependencies",
+      "peerDependencies",
+      "optionalDependencies",
+    ].find(
+      (field) => manifest[field]?.["@oaknational/resource-document"] !== undefined,
+    );
+
+    if (declaringField) {
+      throw new Error(
+        `Published ${unit} package declares the private @oaknational/resource-document in ${declaringField}. Keep it a devDependency, or publish it.`,
+      );
+    }
+
+    const leakingDeclarations = listPackedFiles(tarball)
+      .filter((file) => file.endsWith(".d.ts"))
+      .filter((file) =>
+        readPackedFile(tarball, file).includes("@oaknational/resource-document"),
+      );
+
+    if (leakingDeclarations.length > 0) {
+      throw new Error(
+        `Published ${unit} declarations name the private @oaknational/resource-document: ${leakingDeclarations.join(", ")}. Keep document types out of the published signature, or publish that package.`,
+      );
+    }
+  }
+
+  for (const declaration of [
+    "package/dist/index.d.ts",
+    "package/dist/fixtures/index.d.ts",
+    "package/dist/markup/index.d.ts",
+  ]) {
+    readPackedFile(resourceDocumentTarball, declaration);
+  }
+  readPackedFile(resourceDocumentTarball, "package/EXTRACTION_HANDOFF.md");
+  readPackedFile(
+    resourceDocumentTarball,
+    "package/fixtures/linear-equations-smoke/extracted.mmd",
+  );
+
+  await writeFile(
+    join(temporaryDirectory, "resource-document-smoke.mjs"),
+    `import assert from "node:assert/strict";
+import {
+  CURRENT_SCHEMA_VERSION,
+  getResourceNodesByType,
+  parseResourceDocument,
+} from "@oaknational/resource-document";
+import {
+  loadResourceDocumentFixture,
+  resourceDocumentFixtureManifest,
+} from "@oaknational/resource-document/fixtures";
+import {
+  CURRENT_MARKUP_VERSION,
+  parseResourceMarkup,
+} from "@oaknational/resource-document/markup";
+
+assert.equal(CURRENT_SCHEMA_VERSION, "0.1");
+assert.equal(CURRENT_MARKUP_VERSION, "0.1");
+assert.equal(resourceDocumentFixtureManifest.length, 1);
+const fixture = await loadResourceDocumentFixture("linear-equations-smoke");
+const document = parseResourceMarkup(fixture.markup);
+assert.deepEqual(document, fixture.expectedDocument);
+assert.equal(getResourceNodesByType(document, "question").length, 2);
+assert.deepEqual(parseResourceDocument(document), document);
+`,
+  );
+  run("node", ["resource-document-smoke.mjs"], temporaryDirectory);
 
   const rootDeclaration = readPackedFile(uiTarball, "package/dist/index.d.ts");
   for (const exportName of [

@@ -1,0 +1,13 @@
+{
+  "id": "linear-equations-smoke",
+  "title": "Exploring linear equations",
+  "description": "Synthetic worksheet fixture derived from the initial design screenshots.",
+  "rights": "Synthetic test content committed under the repository licence.",
+  "markupVersion": "0.1",
+  "schemaVersion": "0.1",
+  "profile": "worksheet.v0",
+  "files": {
+    "markup": "extracted.mmd",
+    "expectedDocument": "expected/document.json"
+  }
+}

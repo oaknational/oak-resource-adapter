@@ -102,6 +102,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Check dependency boundaries
+        run: pnpm deps:check
+
       - name: Check migration history
         run: pnpm db:check
 

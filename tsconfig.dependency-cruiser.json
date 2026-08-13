@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["apps/api/src/*"]
+    }
+  },
+  "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "packages/**/*.tsx"],
+  "exclude": ["**/dist/**", "**/.next/**", "**/node_modules/**"]
+}
