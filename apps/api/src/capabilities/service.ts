@@ -20,5 +20,5 @@ export function evaluateCapabilities(
 export function getCapabilities(
   lesson: LessonContext,
 ): ResourceAdapterCapabilitiesResponse {
-  return evaluateCapabilities(capabilityDefinitions, { lesson });
+  return evaluateCapabilities(Object.values(capabilityDefinitions), { lesson });
 }

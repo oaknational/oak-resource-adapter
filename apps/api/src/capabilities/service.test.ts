@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { capabilityDefinitions } from "./registry";
 import { evaluateCapabilities, getCapabilities } from "./service";
 import type { CapabilityDefinition, EligibilityContext } from "./types";
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
@@ -124,13 +123,5 @@ describe("evaluateCapabilities", () => {
       evaluateCapabilities([questionCountCapability], contextWithoutQuestions)
         .capabilities,
     ).toEqual([]);
-  });
-});
-
-describe("capability registry", () => {
-  it("declares each capability id once", () => {
-    const ids = capabilityDefinitions.map((definition) => definition.id);
-
-    expect(new Set(ids).size).toBe(ids.length);
   });
 });

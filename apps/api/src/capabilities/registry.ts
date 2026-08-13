@@ -1,13 +1,6 @@
-import type { CapabilityDefinition } from "./types";
+import { worksheetAdapterCapability } from "./definitions/worksheet-adapter";
 
-const worksheetAdapterCapability: CapabilityDefinition = {
-  id: "worksheetAdapter",
-  label: "Scaffolded Practice Sheet",
-  resourceType: "worksheet",
-  isEligible: ({ lesson }) => lesson.availableResources.includes("worksheet"),
-};
-
-/** Add new capability definitions to this list; the service evaluates every entry. */
-export const capabilityDefinitions: ReadonlyArray<CapabilityDefinition> = [
-  worksheetAdapterCapability,
-];
+/** Add new capability definitions to this map; the service evaluates every entry. */
+export const capabilityDefinitions = {
+  [worksheetAdapterCapability.id]: worksheetAdapterCapability,
+} as const;
