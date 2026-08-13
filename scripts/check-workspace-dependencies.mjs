@@ -68,6 +68,8 @@ const usedWorkspaceDependencies = new Map(
 );
 const errors = [];
 
+const unresolvedWorkspaceImports = new Set();
+
 for (const module of cruiseResult.output.modules) {
   const sourceUnit = units.find((unit) => module.source.startsWith(`${unit}/`));
   if (!sourceUnit) {
@@ -75,6 +77,17 @@ for (const module of cruiseResult.output.modules) {
   }
 
   for (const dependency of module.dependencies) {
+    if (dependency.couldNotResolve) {
+      const workspaceName = [...packagesByName.keys()].find(
+        (name) =>
+          dependency.module === name || dependency.module?.startsWith(`${name}/`),
+      );
+      if (workspaceName) {
+        unresolvedWorkspaceImports.add(workspaceName);
+      }
+      continue;
+    }
+
     const targetUnit = units.find(
       (unit) =>
         dependency.resolved === unit || dependency.resolved?.startsWith(`${unit}/`),
@@ -87,6 +100,16 @@ for (const module of cruiseResult.output.modules) {
       .get(sourceUnit)
       .add(packagesByDirectory.get(targetUnit).name);
   }
+}
+
+// Workspace imports resolve through each package's exports map, which points at
+// dist. Unbuilt, every one of them resolves to nothing and every declared
+// dependency then looks unused.
+if (unresolvedWorkspaceImports.size > 0) {
+  console.error(
+    `Workspace packages did not resolve, so this check cannot run. Build them first with pnpm build.\n\nUnresolved: ${[...unresolvedWorkspaceImports].sort().join(", ")}`,
+  );
+  process.exit(1);
 }
 
 for (const unit of units) {

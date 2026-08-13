@@ -33,7 +33,7 @@ function probeSchemaVersion(input: unknown): SchemaVersion {
   if (
     input === null ||
     typeof input !== "object" ||
-    !Object.prototype.hasOwnProperty.call(input, "schemaVersion")
+    !Object.hasOwn(input, "schemaVersion")
   ) {
     throw new ResourceDocumentParseError(
       "missing_schema_version",

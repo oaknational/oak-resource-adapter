@@ -12,6 +12,7 @@ import {
 import type {
   AnswerAnnotation,
   Asset,
+  CalloutNode,
   NamespacedExtensions,
   ResourceDocument,
   ResourceDocumentDiagnostic,
@@ -45,7 +46,7 @@ interface ParsedDirective {
 }
 
 const directiveOpenPattern = /^:::(oak-[a-z0-9-]+)(?:\s+\{(.*)\})?\s*$/;
-const headingPattern = /^(#{1,6})\s+(.+)$/;
+const headingPattern = /^(#{1,6})\s+(\S.*)$/;
 
 export const CURRENT_MARKUP_VERSION = "0.1" as const;
 
@@ -73,6 +74,58 @@ function atLine<Result>(line: number, parse: () => Result): Result {
   }
 }
 
+const supportedFrontmatterFields = new Set([
+  "markup-version",
+  "schema-version",
+  "profile",
+  "document-id",
+  "language",
+  "title",
+  "subject-id",
+  "subject-label",
+  "key-stage-id",
+  "key-stage-label",
+  "year-group-id",
+  "year-group-label",
+  "target-reading-age",
+  "source-system",
+  "source-id",
+  "source-uri",
+  "source-checksum-sha256",
+  "producer",
+  "producer-version",
+]);
+
+function parseFrontmatterField(
+  line: string,
+  fieldLine: number,
+): { key: string; value: string } {
+  const separator = line.indexOf(":");
+  if (separator < 1) {
+    throw invalidMarkup(`Invalid frontmatter line: ${line}`, fieldLine);
+  }
+
+  const key = line.slice(0, separator).trim();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(line.slice(separator + 1).trim());
+  } catch {
+    throw invalidMarkup(
+      `Frontmatter field ${JSON.stringify(key)} must be a quoted JSON string.`,
+      fieldLine,
+    );
+  }
+
+  if (typeof parsed !== "string") {
+    throw invalidMarkup(
+      `Frontmatter field ${JSON.stringify(key)} must be a quoted string.`,
+      fieldLine,
+    );
+  }
+
+  return { key, value: parsed };
+}
+
 function parseFrontmatter(markup: string): ParsedFrontmatter {
   const lines = markup.replaceAll("\r\n", "\n").split("\n");
   if (lines[0] !== "---") {
@@ -92,69 +145,22 @@ function parseFrontmatter(markup: string): ParsedFrontmatter {
     }
 
     const fieldLine = offset + 2;
-    const separator = line.indexOf(":");
-    if (separator < 1) {
-      throw invalidMarkup(`Invalid frontmatter line: ${line}`, fieldLine);
-    }
-
-    const key = line.slice(0, separator).trim();
-    const rawValue = line.slice(separator + 1).trim();
+    const { key, value } = parseFrontmatterField(line, fieldLine);
     if (fields[key] !== undefined) {
       throw invalidMarkup(
         `Duplicate frontmatter field ${JSON.stringify(key)}.`,
         fieldLine,
       );
     }
-
-    try {
-      const parsed: unknown = JSON.parse(rawValue);
-      if (typeof parsed !== "string") {
-        throw invalidMarkup(
-          `Frontmatter field ${JSON.stringify(key)} must be a quoted string.`,
-          fieldLine,
-        );
-      }
-      fields[key] = parsed;
-      fieldLines[key] = fieldLine;
-    } catch (error) {
-      if (error instanceof ResourceDocumentParseError) {
-        throw error;
-      }
+    if (!supportedFrontmatterFields.has(key)) {
       throw invalidMarkup(
-        `Frontmatter field ${JSON.stringify(key)} must be a quoted JSON string.`,
+        `Unsupported frontmatter field ${JSON.stringify(key)}.`,
         fieldLine,
       );
     }
-  }
 
-  const supportedFields = new Set([
-    "markup-version",
-    "schema-version",
-    "profile",
-    "document-id",
-    "language",
-    "title",
-    "subject-id",
-    "subject-label",
-    "key-stage-id",
-    "key-stage-label",
-    "year-group-id",
-    "year-group-label",
-    "target-reading-age",
-    "source-system",
-    "source-id",
-    "source-uri",
-    "source-checksum-sha256",
-    "producer",
-    "producer-version",
-  ]);
-  const unsupportedField = Object.keys(fields).find(
-    (field) => !supportedFields.has(field),
-  );
-  if (unsupportedField) {
-    throw invalidMarkup(
-      `Unsupported frontmatter field ${JSON.stringify(unsupportedField)}.`,
-    );
+    fields[key] = value;
+    fieldLines[key] = fieldLine;
   }
 
   return {
@@ -179,7 +185,7 @@ function parseAttributes(source: string | undefined): Record<string, string> {
   }
 
   const attributes: Record<string, string> = {};
-  const pattern = /([a-z][a-z0-9-]*)=("(?:[^"\\]|\\.)*")/gy;
+  const pattern = /([a-z][a-z0-9-]*)=("(?:[^"\\]|\\.)*")/y;
   let cursor = 0;
 
   while (cursor < source.length) {
@@ -381,7 +387,8 @@ function nextGeneratedId(state: ParserState, seed: string): string {
   const base = slug.length > 0 ? slug : "content";
   const count = (state.generatedIds.get(base) ?? 0) + 1;
   state.generatedIds.set(base, count);
-  return `${UNSTABLE_ID_PREFIX}${count === 1 ? base : `${base}-${count}`}`;
+  const slugWithOrdinal = count === 1 ? base : `${base}-${count}`;
+  return `${UNSTABLE_ID_PREFIX}${slugWithOrdinal}`;
 }
 
 function commonNodeFields(
@@ -445,6 +452,20 @@ const commonAttributeNames = [
   "break-after",
   "preferred-width",
   "extensions",
+] as const;
+
+const figureAttributeNames = [
+  "asset-id",
+  "media-type",
+  "src",
+  "width",
+  "height",
+  "alt-kind",
+  "alt",
+  "alt-origin",
+  "rights",
+  "credit",
+  "asset-extensions",
 ] as const;
 
 function parseFigureAsset(attributes: Record<string, string>): Asset {
@@ -520,16 +541,37 @@ function registerAsset(state: ParserState, asset: Asset): void {
   state.assets.set(asset.id, asset);
 }
 
-function directiveToNode(
+type DirectiveHandler = (
   directive: ParsedDirective,
   state: ParserState,
-): ResourceNode | undefined {
-  const { attributes, inner, name } = directive;
+) => ResourceNode | undefined;
 
-  if (name === "oak-answer") {
+function hasContent(inner: readonly string[]): boolean {
+  return inner.some((line) => line.trim().length > 0);
+}
+
+function calloutDirective(role: CalloutNode["role"] | undefined): DirectiveHandler {
+  return ({ attributes, inner, name }) => {
+    assertAttributes(
+      attributes,
+      role === undefined ? [...commonAttributeNames, "role"] : commonAttributeNames,
+      name,
+    );
+    return {
+      ...commonNodeFields(attributes, name),
+      type: "callout",
+      role: role ?? enumAttribute(attributes, "role", calloutRoleSchema.options, name),
+      content: parseInlineContent(inner.join("\n")),
+    };
+  };
+}
+
+const directiveHandlers: Record<string, DirectiveHandler> = {
+  "oak-answer": (directive, state) => {
+    const { attributes, inner, name } = directive;
     assertAttributes(attributes, ["id", "target", "placement", "extensions"], name);
     const extensions = parseExtensions(attributes.extensions, name);
-    const answer: AnswerAnnotation = {
+    state.answers.push({
       id: requireAttribute(attributes, "id", name),
       targetId: requireAttribute(attributes, "target", name),
       placement: enumAttribute(
@@ -540,41 +582,26 @@ function directiveToNode(
       ),
       content: parseBlocks(inner, state, directive.innerOffset),
       ...(extensions === undefined ? {} : { extensions }),
-    };
-    state.answers.push(answer);
+    } satisfies AnswerAnnotation);
     return undefined;
-  }
+  },
 
-  if (name === "oak-learning-objective" || name === "oak-instruction") {
-    assertAttributes(attributes, commonAttributeNames, name);
-    return {
-      ...commonNodeFields(attributes, name),
-      type: "callout",
-      role: name === "oak-learning-objective" ? "learning-objective" : "instruction",
-      content: parseInlineContent(inner.join("\n")),
-    };
-  }
+  "oak-learning-objective": calloutDirective("learning-objective"),
+  "oak-instruction": calloutDirective("instruction"),
+  "oak-callout": calloutDirective(undefined),
 
-  if (name === "oak-callout") {
-    assertAttributes(attributes, [...commonAttributeNames, "role"], name);
-    return {
-      ...commonNodeFields(attributes, name),
-      type: "callout",
-      role: enumAttribute(attributes, "role", calloutRoleSchema.options, name),
-      content: parseInlineContent(inner.join("\n")),
-    };
-  }
-
-  if (name === "oak-section") {
+  "oak-section": (directive, state) => {
+    const { attributes, inner, name } = directive;
     assertAttributes(attributes, commonAttributeNames, name);
     return {
       ...commonNodeFields(attributes, name),
       type: "section",
       children: parseBlocks(inner, state, directive.innerOffset),
     };
-  }
+  },
 
-  if (name === "oak-question") {
+  "oak-question": (directive, state) => {
+    const { attributes, inner, name } = directive;
     assertAttributes(attributes, [...commonAttributeNames, "number", "marks"], name);
     return {
       ...commonNodeFields(attributes, name),
@@ -585,30 +612,24 @@ function directiveToNode(
         : { marks: parseInteger(attributes.marks, `${name} marks`) }),
       children: parseBlocks(inner, state, directive.innerOffset),
     };
-  }
+  },
 
-  if (name === "oak-answer-space") {
+  "oak-answer-space": ({ attributes, inner, name }) => {
     assertAttributes(attributes, [...commonAttributeNames, "kind", "lines"], name);
-    if (inner.some((line) => line.trim().length > 0)) {
+    if (hasContent(inner)) {
       throw invalidMarkup("oak-answer-space cannot contain child content.");
     }
-    const kind = enumAttribute(
-      attributes,
-      "kind",
-      responseSpaceKindSchema.options,
-      name,
-    );
     return {
       ...commonNodeFields(attributes, name),
       type: "responseSpace",
-      kind,
+      kind: enumAttribute(attributes, "kind", responseSpaceKindSchema.options, name),
       ...(attributes.lines === undefined
         ? {}
         : { lines: parsePositiveInteger(attributes.lines, `${name} lines`) }),
     };
-  }
+  },
 
-  if (name === "oak-heading") {
+  "oak-heading": ({ attributes, inner, name }) => {
     assertAttributes(attributes, [...commonAttributeNames, "level"], name);
     return {
       ...commonNodeFields(attributes, name),
@@ -620,34 +641,21 @@ function directiveToNode(
       ),
       content: parseInlineContent(inner.join("\n")),
     };
-  }
+  },
 
-  if (name === "oak-paragraph") {
+  "oak-paragraph": ({ attributes, inner, name }) => {
     assertAttributes(attributes, commonAttributeNames, name);
     return {
       ...commonNodeFields(attributes, name),
       type: "paragraph",
       content: parseInlineContent(inner.join("\n")),
     };
-  }
+  },
 
-  if (name === "oak-figure") {
+  "oak-figure": ({ attributes, inner, name }, state) => {
     assertAttributes(
       attributes,
-      [
-        ...commonAttributeNames,
-        "asset-id",
-        "media-type",
-        "src",
-        "width",
-        "height",
-        "alt-kind",
-        "alt",
-        "alt-origin",
-        "rights",
-        "credit",
-        "asset-extensions",
-      ],
+      [...commonAttributeNames, ...figureAttributeNames],
       name,
     );
     const asset = parseFigureAsset(attributes);
@@ -656,13 +664,11 @@ function directiveToNode(
       ...commonNodeFields(attributes, name),
       type: "figure",
       assetId: asset.id,
-      ...(inner.some((line) => line.trim().length > 0)
-        ? { caption: parseInlineContent(inner.join("\n")) }
-        : {}),
+      ...(hasContent(inner) ? { caption: parseInlineContent(inner.join("\n")) } : {}),
     };
-  }
+  },
 
-  if (name === "oak-unsupported") {
+  "oak-unsupported": ({ attributes, inner, name }) => {
     assertAttributes(
       attributes,
       [...commonAttributeNames, "description", "format", "accessible-text"],
@@ -680,8 +686,14 @@ function directiveToNode(
         value: inner.join("\n"),
       },
     };
-  }
+  },
+};
 
+function preserveUnknownDirective(
+  directive: ParsedDirective,
+  state: ParserState,
+): ResourceNode {
+  const { attributes, name } = directive;
   const id = attributes.id ?? nextGeneratedId(state, `unsupported-${name}`);
   state.diagnostics.push({
     category: "unsupported-markup",
@@ -697,6 +709,50 @@ function directiveToNode(
     description: `Unsupported extraction directive ${name}`,
     original: { format: "oak-mmd", value: directive.raw },
   };
+}
+
+function directiveToNode(
+  directive: ParsedDirective,
+  state: ParserState,
+): ResourceNode | undefined {
+  const handler = directiveHandlers[directive.name];
+  return handler
+    ? handler(directive, state)
+    : preserveUnknownDirective(directive, state);
+}
+
+function assertDirectiveOpening(line: string, blockLine: number): void {
+  if (directiveOpenPattern.test(line)) {
+    return;
+  }
+
+  throw invalidMarkup(
+    line === ":::"
+      ? "Unexpected directive closing marker."
+      : "Malformed or unsupported directive opening.",
+    blockLine,
+  );
+}
+
+function endsParagraph(line: string): boolean {
+  return (
+    line.trim().length === 0 || line.startsWith(":::") || headingPattern.test(line)
+  );
+}
+
+function readParagraph(
+  lines: string[],
+  startIndex: number,
+): { text: string; nextIndex: number } {
+  let index = startIndex;
+  const paragraphLines: string[] = [];
+
+  while (index < lines.length && !endsParagraph(lines[index] ?? "")) {
+    paragraphLines.push(lines[index] ?? "");
+    index += 1;
+  }
+
+  return { text: paragraphLines.join("\n"), nextIndex: index };
 }
 
 function parseBlocks(
@@ -715,7 +771,8 @@ function parseBlocks(
       continue;
     }
 
-    if (directiveOpenPattern.test(line)) {
+    if (line.startsWith(":::")) {
+      assertDirectiveOpening(line, blockLine);
       const directive = atLine(blockLine, () =>
         parseDirective(lines, index, lineOffset),
       );
@@ -727,16 +784,7 @@ function parseBlocks(
       continue;
     }
 
-    if (line.startsWith(":::")) {
-      throw invalidMarkup(
-        line === ":::"
-          ? "Unexpected directive closing marker."
-          : "Malformed or unsupported directive opening.",
-        blockLine,
-      );
-    }
-
-    const heading = line.match(headingPattern);
+    const heading = headingPattern.exec(line);
     if (heading?.[1] && heading[2]) {
       const headingText = heading[2];
       nodes.push({
@@ -749,27 +797,13 @@ function parseBlocks(
       continue;
     }
 
-    const paragraphLines: string[] = [];
-    while (index < lines.length) {
-      const paragraphLine = lines[index] ?? "";
-      if (
-        paragraphLine.trim().length === 0 ||
-        directiveOpenPattern.test(paragraphLine) ||
-        paragraphLine.startsWith(":::") ||
-        headingPattern.test(paragraphLine)
-      ) {
-        break;
-      }
-      paragraphLines.push(paragraphLine);
-      index += 1;
-    }
-
-    const paragraph = paragraphLines.join("\n");
+    const paragraph = readParagraph(lines, index);
     nodes.push({
-      id: nextGeneratedId(state, `paragraph-${paragraph}`),
+      id: nextGeneratedId(state, `paragraph-${paragraph.text}`),
       type: "paragraph",
-      content: atLine(blockLine, () => parseInlineContent(paragraph)),
+      content: atLine(blockLine, () => parseInlineContent(paragraph.text)),
     });
+    index = paragraph.nextIndex;
   }
 
   return nodes;
