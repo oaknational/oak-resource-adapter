@@ -23,6 +23,8 @@ How the service works:
 
 - [API boundaries](API_BOUNDARIES.md): where host-facing, internal, and
   server-only contracts belong, and how the published UI API is defined.
+- [Dependency architecture](DEPENDENCY_ARCHITECTURE.md): the allowed workspace
+  graph and the checks that enforce package boundaries.
 - [Database](DATABASE.md): the schema, the migration workflow, and the data
   protection implications of what it stores.
 - [Background jobs](BACKGROUND_JOBS.md): how the API and worker divide

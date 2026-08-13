@@ -45,6 +45,7 @@ pnpm env:pull:dev   # writes the development environment into a local, gitignore
 pnpm install
 pnpm format
 pnpm lint
+pnpm deps:check
 pnpm type-check
 pnpm build
 pnpm test

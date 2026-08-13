@@ -1,0 +1,170 @@
+{
+  "schemaVersion": "0.1",
+  "id": "synthetic:linear-equations:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "unstable:heading-exploring-linear-equations",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Exploring linear equations"
+        }
+      ]
+    },
+    {
+      "id": "learning-objective",
+      "type": "callout",
+      "role": "learning-objective",
+      "content": [
+        {
+          "type": "text",
+          "text": "Solve equations of the form "
+        },
+        {
+          "type": "math",
+          "value": "ax + b = c",
+          "display": false
+        },
+        {
+          "type": "text",
+          "text": " and explain each step clearly."
+        }
+      ]
+    },
+    {
+      "id": "instructions",
+      "type": "callout",
+      "role": "instruction",
+      "content": [
+        {
+          "type": "text",
+          "text": "Show your working. You may use the balance model to help you."
+        }
+      ]
+    },
+    {
+      "id": "balance-model",
+      "type": "figure",
+      "assetId": "balance-model-image",
+      "caption": [
+        {
+          "type": "text",
+          "text": "A balance model for solving the equations."
+        }
+      ]
+    },
+    {
+      "id": "question-1",
+      "layout": {
+        "keepTogether": true
+      },
+      "type": "question",
+      "label": "1",
+      "marks": 2,
+      "children": [
+        {
+          "id": "unstable:paragraph-solve-the-equation-2x-x-20",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Solve the equation\n"
+            },
+            {
+              "type": "math",
+              "value": "2x + x = 20",
+              "display": false
+            }
+          ]
+        },
+        {
+          "id": "question-1-response",
+          "type": "responseSpace",
+          "kind": "lines",
+          "lines": 4
+        }
+      ]
+    },
+    {
+      "id": "question-2",
+      "layout": {
+        "keepTogether": true
+      },
+      "type": "question",
+      "label": "2",
+      "marks": 3,
+      "children": [
+        {
+          "id": "unstable:paragraph-maya-starts-with-5y-7-18-she-says-the-first-step-is-to",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Maya starts with\n"
+            },
+            {
+              "type": "math",
+              "value": "5y - 7 = 18.",
+              "display": true
+            },
+            {
+              "type": "text",
+              "text": "\nShe says the first step is to divide both sides by 5. Explain her error, then solve the equation."
+            }
+          ]
+        },
+        {
+          "id": "question-2-response",
+          "type": "responseSpace",
+          "kind": "lines",
+          "lines": 6
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [
+    {
+      "id": "balance-model-image",
+      "mediaType": "image/svg+xml",
+      "contentRef": "https://example.test/assets/balance-model.svg",
+      "dimensions": {
+        "width": 1200,
+        "height": 800
+      },
+      "alternative": {
+        "kind": "text",
+        "text": "A balance model showing equal quantities on both sides.",
+        "origin": "source"
+      },
+      "rights": "Synthetic test content; no third-party rights.",
+      "credit": "Oak National Academy"
+    }
+  ],
+  "provenance": {
+    "source": {
+      "system": "synthetic-fixture",
+      "id": "linear-equations-smoke"
+    },
+    "producer": {
+      "name": "resource-document-spike",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Exploring linear equations",
+    "subject": {
+      "id": "maths",
+      "label": "Maths"
+    },
+    "keyStage": {
+      "id": "ks3",
+      "label": "Key stage 3"
+    }
+  }
+}

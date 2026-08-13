@@ -1,5 +1,5 @@
 import { featureFlagCatalogue, type FeatureFlagKey } from "./catalogue";
-import type { FeatureFlagServiceType } from "./service";
+import type { FeatureFlagServiceType } from "./types";
 
 export function createInMemoryFeatureFlags(
   overrides: Partial<Record<FeatureFlagKey, boolean>> = {},
