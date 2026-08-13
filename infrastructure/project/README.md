@@ -28,14 +28,9 @@ projects.
 
 Written ahead of the infrastructure it needs, so that it can be reviewed and
 corrected rather than described. Before a first apply it needs a Terraform Cloud
-workspace, the three domains under `var.cloudflare_zone_domain`, and two
-additions to the module:
+workspace and the three domains under `var.cloudflare_zone_domain`.
 
-- **`auto_assign_custom_domains` as an input**, so a production deployment can
-  exist without taking the domain until the workflow has checked it. The pinned
-  provider supports the attribute; the module does not pass it through.
-- **`project_id` and `protection_bypass_for_automation_secret` on `outputs.tf`**,
-  which the deploy workflows read. It currently exposes only a Sentry message.
-
-`terraform validate` fails on exactly those two and nothing else, which is the
-intended state until they land.
+The two module additions this configuration was written against —
+`auto_assign_custom_domains` as an input, and `project_id` and
+`protection_bypass_for_automation_secret` on `outputs.tf` — landed in v2.3.0,
+which `main.tf` now pins by commit.

@@ -22,7 +22,8 @@
     "next-cloudinary": "^6.16.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "styled-components": "^6.1.0"
+    "styled-components": "^6.1.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

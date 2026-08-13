@@ -16,11 +16,11 @@ resource "terraform_data" "workspace_validation" {
 # secret-key access.
 #
 # The module derives the project name as `<repo>-<build_type>`, giving
-# oak-resource-adapter-api and oak-resource-adapter-harness. v2.2.0 is current
-# and does not yet carry the two additions used below; see README.md. Terraform
-# requires a literal source, so the ref is repeated on the second call.
+# oak-resource-adapter-api and oak-resource-adapter-harness. The ref is the
+# commit tagged v2.3.0, because a tag can be moved and a commit cannot.
+# Terraform requires a literal source, so it is repeated on the second call.
 module "api" {
-  source                 = "github.com/oaknational/oak-terraform-modules//modules/vercel_project?ref=v2.2.0"
+  source                 = "github.com/oaknational/oak-terraform-modules//modules/vercel_project?ref=02f4fee1bf392d3c720e55e1444da76ec8f0edc2"
   build_type             = "api"
   cloudflare_zone_domain = var.cloudflare_zone_domain
   framework              = "nextjs"
@@ -43,7 +43,7 @@ module "api" {
 
   # What makes the staged production in docs/RELEASE_PROCESS.md possible: the
   # deployment exists without the domain, deploy-production.yml checks it, and
-  # only then promotes. See README.md — this input does not exist yet.
+  # only then promotes.
   auto_assign_custom_domains = false
 
   # deploy-preview.yml reaches protected deployments with the bypass secret.
@@ -56,7 +56,7 @@ module "api" {
 # Development and QA only. Never deployed to production, and holds no database
 # or Clerk secret-key access.
 module "harness" {
-  source                 = "github.com/oaknational/oak-terraform-modules//modules/vercel_project?ref=v2.2.0"
+  source                 = "github.com/oaknational/oak-terraform-modules//modules/vercel_project?ref=02f4fee1bf392d3c720e55e1444da76ec8f0edc2"
   build_type             = "harness"
   cloudflare_zone_domain = var.cloudflare_zone_domain
   framework              = "nextjs"

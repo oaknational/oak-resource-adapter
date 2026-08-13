@@ -1,19 +1,6 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2024",
-    "lib": ["ES2024"],
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "verbatimModuleSyntax": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
     "noEmit": true,
     "rootDir": "src",
     "types": ["node"]

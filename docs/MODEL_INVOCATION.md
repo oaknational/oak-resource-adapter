@@ -181,9 +181,8 @@ compatible gateway client. It defaults `store` to `false`; callers using
 The application constructs the `OpenAI` client and passes it to the transport.
 `new OpenAI()` reads `OPENAI_API_KEY` from the environment, which Terraform sets
 in every deployed target. A live smoke test exists as
-`pnpm --filter @oaknational/resource-adapter-ai test:integration:openai`
-(needs the key; everywhere else, including CI, which has no key, the suite
-reports as skipped). For a manual end-to-end check, the
+`pnpm --filter @oaknational/resource-adapter-ai smoke:openai` to be run by hand
+only. For a manual end-to-end check, the
 dev-gated `POST /dev/ai/invoke` route runs one invocation, demonstrated by the
 harness page's "Model invocation test" section.
 

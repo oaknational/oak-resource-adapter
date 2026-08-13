@@ -2,7 +2,7 @@ import { hostRouter } from "@oaknational/resource-adapter-contracts/server";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 
 import { createContextHost } from "@/context";
-import { createTrpcRouteHandler } from "../../createTrpcRouteHandler";
+import { createTrpcRouteHandler } from "../../create-trpc-route-handler";
 
 const { GET, POST, OPTIONS } = createTrpcRouteHandler({
   router: hostRouter,

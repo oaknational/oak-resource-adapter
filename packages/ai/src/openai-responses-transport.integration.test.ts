@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 import { createOpenAIResponsesTransport, DEFAULT_TIMEOUT_MS } from "./index.js";
 
 /**
- * Live smoke test against the real OpenAI API. Opt in with
- * `RUN_OPENAI_INTEGRATION_TESTS=1` and `OPENAI_API_KEY` set; CI runs
- * `test:integration` without a key, so this suite reports as skipped there.
+ * Live smoke test against the real OpenAI API. Run by hand
+ * with `pnpm smoke:openai`, never from CI or the `test:integration` suite.
+ * Without `RUN_OPENAI_INTEGRATION_TESTS=1` it reports as skipped.
  */
 const describeWithOpenAI =
   process.env.RUN_OPENAI_INTEGRATION_TESTS === "1" ? describe : describe.skip;
