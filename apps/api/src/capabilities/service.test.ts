@@ -92,7 +92,7 @@ describe("evaluateCapabilities", () => {
     ]);
   });
 
-  it("supports derived facts added to the eligibility context", () => {
+  it("passes the eligibility context through to predicates", () => {
     // worksheetFacts stands in for a derived fact the production context does not
     // carry; the cast keeps the stub out of the production context type.
     type StubEligibilityContext = EligibilityContext &
