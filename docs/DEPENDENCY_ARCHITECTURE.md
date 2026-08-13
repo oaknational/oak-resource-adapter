@@ -12,6 +12,7 @@ The approved workspace edges are:
 | `apps/harness`               | `logger`, `ui`                                         |
 | `packages/ai`                | `db`, `logger`, `resource-document`                    |
 | `packages/contracts`         | `resource-document`                                    |
+| `packages/curriculum`        | `logger`                                               |
 | `packages/db`                | `logger`                                               |
 | `packages/logger`            | no workspace package                                   |
 | `packages/resource-document` | no workspace package                                   |

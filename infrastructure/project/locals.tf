@@ -17,13 +17,15 @@ locals {
     }
 
     api_production = {
-      CLERK_SECRET_KEY = var.clerk_secret_key_production
-      OPENAI_API_KEY   = var.openai_api_key_production
+      CLERK_SECRET_KEY                                   = var.clerk_secret_key_production
+      CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY = var.curriculum_api_key_production
+      OPENAI_API_KEY                                     = var.openai_api_key_production
     }
 
     api_preview = {
-      CLERK_SECRET_KEY = var.clerk_secret_key_test
-      OPENAI_API_KEY   = var.openai_api_key_staging
+      CLERK_SECRET_KEY                                   = var.clerk_secret_key_test
+      CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY = var.curriculum_api_key_staging
+      OPENAI_API_KEY                                     = var.openai_api_key_staging
     }
 
     api_staging     = {}
@@ -33,9 +35,10 @@ locals {
     # E2E_CLERK_USER_EMAIL is read by `pnpm test:e2e` locally, not by any
     # deployment.
     api_development = {
-      CLERK_SECRET_KEY     = var.clerk_secret_key_test
-      E2E_CLERK_USER_EMAIL = var.e2e_clerk_user_email
-      OPENAI_API_KEY       = var.openai_api_key_development
+      CLERK_SECRET_KEY                                   = var.clerk_secret_key_test
+      CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY = var.curriculum_api_key_development
+      E2E_CLERK_USER_EMAIL                               = var.e2e_clerk_user_email
+      OPENAI_API_KEY                                     = var.openai_api_key_development
     }
   }
 

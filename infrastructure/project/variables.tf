@@ -63,6 +63,27 @@ variable "clerk_secret_key_test" {
   default     = ""
 }
 
+variable "curriculum_api_key_development" {
+  description = "Key for Oak's curriculum endpoint, for local development"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "curriculum_api_key_staging" {
+  description = "Key for Oak's curriculum endpoint, for Preview and staging"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "curriculum_api_key_production" {
+  description = "Key for Oak's curriculum endpoint, for production"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "posthog_api_key" {
   description = "PostHog project API key, required wherever USE_POSTHOG is set"
   type        = string

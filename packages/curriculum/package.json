@@ -1,0 +1,38 @@
+{
+  "name": "@oaknational/resource-adapter-curriculum",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Oak curriculum access for Resource Adapter",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "dev": "tsc --project tsconfig.build.json --watch",
+    "lint": "eslint src --max-warnings=0",
+    "lint:fix": "eslint src --fix",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
+    "test:integration": "RUN_CURRICULUM_INTEGRATION_TESTS=1 vitest run src/oak-curriculum.integration.test.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@oaknational/oak-curriculum-schema": "2.15.0",
+    "@oaknational/resource-adapter-logger": "workspace:*",
+    "fflate": "^0.8.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "vitest": "^4.1.10"
+  }
+}

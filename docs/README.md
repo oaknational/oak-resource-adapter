@@ -23,6 +23,8 @@ How the service works:
 
 - [API boundaries](API_BOUNDARIES.md): where host-facing, internal, and
   server-only contracts belong, and how the published UI API is defined.
+- [Curriculum](CURRICULUM.md): how a lesson and its resource files are read
+  from Oak, the errors that reach callers, and the local setup it needs.
 - [Dependency architecture](DEPENDENCY_ARCHITECTURE.md): the allowed workspace
   graph and the checks that enforce package boundaries.
 - [Database](DATABASE.md): the schema, the migration workflow, and the data
