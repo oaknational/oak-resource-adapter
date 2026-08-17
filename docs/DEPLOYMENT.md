@@ -38,8 +38,9 @@ exactly `true`. Until then both workflows skip.
 5. Runs `pnpm test:e2e:deployment` against the harness.
 6. Comments both URLs on the pull request.
 
-Fork and Dependabot pull requests skip all of it: they hold no repository
-secrets.
+Fork pull requests skip all of it: they hold no repository secrets. Dependabot
+pull requests are skipped explicitly; they read the separate [Dependabot secret
+store](#secrets-the-workflows-use), which holds no Vercel credentials.
 
 ## What happens on `main`
 
@@ -156,3 +157,8 @@ The three Clerk values must belong to the instance the deployed harness verifies
 against, or the suite dies at sign-in. Migrations take their credentials from the
 GitHub Environment instead; see
 [development notes](DEVELOPMENT.md#how-ci-reads-secrets).
+
+The same three Clerk values are duplicated into the repository's Dependabot
+secret store, which is all a Dependabot-triggered run can read, so
+`Run browser tests` runs on Dependabot pull requests instead of skipping. Both
+copies must be test-instance credentials, never production.
