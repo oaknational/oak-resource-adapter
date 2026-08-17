@@ -10,6 +10,8 @@ export interface ResourceDocumentFixtureManifestEntry {
   markupVersion: string;
   schemaVersion: string;
   profile: string;
+  /** Where the content came from, since fixtures ship with the package. */
+  rights: string;
 }
 
 export interface LoadedResourceDocumentFixture {
@@ -27,6 +29,7 @@ export const resourceDocumentFixtureManifest = [
     markupVersion: "0.1",
     schemaVersion: "0.1",
     profile: "worksheet.v0",
+    rights: "Synthetic test content committed under the repository licence.",
   },
 ] as const satisfies readonly ResourceDocumentFixtureManifestEntry[];
 

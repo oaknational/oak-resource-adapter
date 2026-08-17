@@ -5,7 +5,6 @@ import {
   ResourceAdapterApiError,
   ResourceAdapterButton,
   ResourceAdapterDialog,
-  ResourceAdapterErrorBoundary,
   type LessonContext,
   type ResourceAdapterCapability,
 } from "@oaknational/resource-adapter";
@@ -14,130 +13,30 @@ import { OakPrimaryButton, OakSecondaryButton } from "@oaknational/oak-component
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { useCallback, useEffect, useState } from "react";
 
+import { ErrorBoundarySmokeTest } from "./ErrorBoundarySmokeTest";
+import { fetchApiHealth, resolveApiBaseUrl } from "./harness-api";
+import { ModelSmokeTest } from "./ModelSmokeTest";
 import styles from "./page.module.css";
-import { SmokeTestPanel } from "./SmokeTestPanel";
+import { WorkerSmokeTest } from "./WorkerSmokeTest";
 
 const log = raLogger("harness");
 
 const lesson: LessonContext = {
   lessonSlug: "adding-fractions",
-  programmeSlug: "ks2-maths",
+  programmeSlug: "maths-primary-ks2",
   title: "Adding fractions",
   subjectSlug: "maths",
   keyStageSlug: "ks2",
   availableResources: ["worksheet"],
 };
 
-const adapterProxyPath = "/adapter-proxy";
-
-/**
- * Everything the harness sends goes through its own proxy route, which forwards
- * server-side to whichever API deployment this harness was paired with. One
- * build therefore works against any of them, and the API's bypass secret stays
- * out of the bundle.
- *
- * The package requires an absolute URL, so this builds one from the current
- * origin at run time rather than baking one in at build time.
- */
-function resolveApiBaseUrl(): string {
-  // Read only from effects in the browser. Prerendering needs a value that
-  // parses, not one that resolves.
-  const origin =
-    typeof window === "undefined" ? "http://localhost:3000" : window.location.origin;
-
-  return `${origin}${adapterProxyPath}`;
-}
-
 type ApiHealthState = "checking" | "healthy" | "unavailable";
-type TestJobStatus = "failed" | "queued" | "running" | "succeeded";
-type TestJobResponse = {
-  failure: { message: string } | null;
-  id: string;
-  status: TestJobStatus;
-};
 
 const apiHealthLabels: Record<ApiHealthState, string> = {
   checking: "Checking",
   healthy: "Healthy",
   unavailable: "Unavailable",
 };
-
-const testJobStatusLabels: Record<TestJobStatus, string> = {
-  failed: "Failed",
-  queued: "Queued",
-  running: "Running",
-  succeeded: "Succeeded",
-};
-
-function CrashOnRender(): never {
-  throw new Error("Simulated Resource Adapter render failure");
-}
-
-const modelOutcomeLabels = {
-  INCOMPLETE: "Incomplete response",
-  OUTPUT_MISSING: "No output returned",
-  REFUSAL: "Refused by the model",
-  SUCCESS: "Succeeded",
-} as const;
-
-type ModelTestOutcome = keyof typeof modelOutcomeLabels;
-type ModelTestResponse = {
-  outcome: ModelTestOutcome;
-  outputText: string | null;
-  usage: { outputTokens: number } | null;
-};
-
-function parseModelTestResponse(body: unknown): ModelTestResponse {
-  if (
-    typeof body !== "object" ||
-    body === null ||
-    !("outcome" in body) ||
-    typeof body.outcome !== "string" ||
-    !Object.hasOwn(modelOutcomeLabels, body.outcome)
-  ) {
-    throw new Error("The API returned a model invocation in an unrecognised shape.");
-  }
-
-  const outputText =
-    "outputText" in body && typeof body.outputText === "string"
-      ? body.outputText
-      : null;
-  const usage =
-    "usage" in body &&
-    typeof body.usage === "object" &&
-    body.usage !== null &&
-    "outputTokens" in body.usage &&
-    typeof body.usage.outputTokens === "number"
-      ? { outputTokens: body.usage.outputTokens }
-      : null;
-
-  return { outcome: body.outcome as ModelTestOutcome, outputText, usage };
-}
-
-function parseTestJobResponse(body: unknown): TestJobResponse {
-  if (
-    typeof body !== "object" ||
-    body === null ||
-    !("id" in body) ||
-    typeof body.id !== "string" ||
-    !("status" in body) ||
-    typeof body.status !== "string" ||
-    !Object.hasOwn(testJobStatusLabels, body.status)
-  ) {
-    throw new Error("The API returned a test job in an unrecognised shape.");
-  }
-
-  const failure =
-    "failure" in body &&
-    typeof body.failure === "object" &&
-    body.failure !== null &&
-    "message" in body.failure &&
-    typeof body.failure.message === "string"
-      ? { message: body.failure.message }
-      : null;
-
-  return { failure, id: body.id, status: body.status as TestJobStatus };
-}
 
 export default function HarnessPage() {
   const apiBaseUrl = resolveApiBaseUrl();
@@ -150,13 +49,6 @@ export default function HarnessPage() {
   >("loading");
   const [apiHealthState, setApiHealthState] = useState<ApiHealthState>("checking");
   const [isResourceAdapterOpen, setIsResourceAdapterOpen] = useState(false);
-  const [simulateAdapterCrash, setSimulateAdapterCrash] = useState(false);
-  const [isCreatingTestJob, setIsCreatingTestJob] = useState(false);
-  const [testJob, setTestJob] = useState<TestJobResponse | null>(null);
-  const [testJobError, setTestJobError] = useState<string | null>(null);
-  const [isInvokingModel, setIsInvokingModel] = useState(false);
-  const [modelTest, setModelTest] = useState<ModelTestResponse | null>(null);
-  const [modelTestError, setModelTestError] = useState<string | null>(null);
 
   const loadCapabilities = useCallback(async () => {
     if (!isLoaded) {
@@ -204,14 +96,7 @@ export default function HarnessPage() {
 
     async function loadHealth() {
       try {
-        const response = await fetch(`${adapterProxyPath}/health`);
-        const body: unknown = await response.json();
-        const isHealthy =
-          response.ok &&
-          typeof body === "object" &&
-          body !== null &&
-          "status" in body &&
-          body.status === "ok";
+        const isHealthy = await fetchApiHealth();
 
         if (isMounted) {
           setApiHealthState(isHealthy ? "healthy" : "unavailable");
@@ -229,138 +114,6 @@ export default function HarnessPage() {
       isMounted = false;
     };
   }, []);
-
-  const runWorkerSmokeTest = useCallback(async () => {
-    setIsCreatingTestJob(true);
-    setTestJob(null);
-    setTestJobError(null);
-
-    try {
-      const response = await fetch(`${adapterProxyPath}/dev/jobs/test-echo`, {
-        body: JSON.stringify({ message: "Hello from the harness" }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        throw new Error(`The API returned HTTP ${response.status}.`);
-      }
-
-      setTestJob(parseTestJobResponse(await response.json()));
-    } catch (error) {
-      log.error(error);
-      setTestJobError("Could not create the test job.");
-    } finally {
-      setIsCreatingTestJob(false);
-    }
-  }, []);
-
-  const runModelSmokeTest = useCallback(async () => {
-    setIsInvokingModel(true);
-    setModelTest(null);
-    setModelTestError(null);
-
-    try {
-      const response = await fetch(`${adapterProxyPath}/dev/ai/invoke`, {
-        body: JSON.stringify({ input: "Reply with the single word: pong" }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-
-      if (response.status === 404) {
-        throw new Error("Dev routes are not enabled on the API.");
-      }
-      if (response.status === 503) {
-        throw new Error("The API has no OpenAI API key configured.");
-      }
-      if (!response.ok) {
-        throw new Error(`The API returned HTTP ${response.status}.`);
-      }
-
-      setModelTest(parseModelTestResponse(await response.json()));
-    } catch (error) {
-      log.error(error);
-      setModelTestError(
-        error instanceof Error ? error.message : "Could not run the model invocation.",
-      );
-    } finally {
-      setIsInvokingModel(false);
-    }
-  }, []);
-
-  const testJobIsActive = testJob?.status === "queued" || testJob?.status === "running";
-
-  useEffect(() => {
-    if (!testJob || !testJobIsActive) {
-      return;
-    }
-
-    const controller = new AbortController();
-    const testJobId = testJob.id;
-    let requestInFlight = false;
-
-    async function pollJob() {
-      if (requestInFlight) {
-        return;
-      }
-
-      requestInFlight = true;
-
-      try {
-        const response = await fetch(`${adapterProxyPath}/dev/jobs/${testJobId}`, {
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`The API returned HTTP ${response.status}.`);
-        }
-
-        setTestJob(parseTestJobResponse(await response.json()));
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-
-        log.error(error);
-        setTestJob(null);
-        setTestJobError("Could not read the test job status.");
-      } finally {
-        requestInFlight = false;
-      }
-    }
-
-    void pollJob();
-    const interval = window.setInterval(() => void pollJob(), 500);
-
-    return () => {
-      controller.abort();
-      window.clearInterval(interval);
-    };
-  }, [testJob?.id, testJobIsActive]);
-
-  let testJobStatus = "Not run";
-  if (isCreatingTestJob) {
-    testJobStatus = "Creating";
-  } else if (testJobError) {
-    testJobStatus = testJobError;
-  } else if (testJob) {
-    testJobStatus = testJobStatusLabels[testJob.status];
-    if (testJob.failure?.message) {
-      testJobStatus += `: ${testJob.failure.message}`;
-    }
-  }
-
-  let modelTestStatus = "Not run";
-  if (isInvokingModel) {
-    modelTestStatus = "Invoking";
-  } else if (modelTestError) {
-    modelTestStatus = modelTestError;
-  } else if (modelTest) {
-    modelTestStatus = modelOutcomeLabels[modelTest.outcome];
-    if (modelTest.outcome === "SUCCESS" && modelTest.usage) {
-      modelTestStatus += ` (${modelTest.usage.outputTokens} output tokens)`;
-    }
-  }
 
   return (
     <>
@@ -391,45 +144,9 @@ export default function HarnessPage() {
             <h2 id="worksheet-heading">Worksheet</h2>
             <p>A worksheet is available for this lesson.</p>
           </section>
-          <SmokeTestPanel
-            buttonLabel="Run test job"
-            disabled={isCreatingTestJob || testJobIsActive}
-            heading="Background worker test"
-            onRun={() => void runWorkerSmokeTest()}
-            status={testJobStatus}
-          />
-          <SmokeTestPanel
-            buttonLabel="Run model invocation"
-            disabled={isInvokingModel}
-            heading="Model invocation test"
-            onRun={() => void runModelSmokeTest()}
-            status={modelTestStatus}
-          >
-            {modelTest?.outputText && <p>Model output: {modelTest.outputText}</p>}
-          </SmokeTestPanel>
-          <SmokeTestPanel
-            buttonLabel={
-              simulateAdapterCrash ? "Clear simulated crash" : "Simulate adapter crash"
-            }
-            heading="Error boundary test"
-            onRun={() => setSimulateAdapterCrash((current) => !current)}
-          >
-            <p>
-              Simulating a crash renders the package&apos;s fallback below and hands the
-              error to the host&apos;s own logger. Try again re-catches while the
-              simulated crash is active.
-            </p>
-            <ResourceAdapterErrorBoundary
-              key={String(simulateAdapterCrash)}
-              onError={(error) => log.error(error)}
-            >
-              {simulateAdapterCrash ? (
-                <CrashOnRender />
-              ) : (
-                <p>The adapter surface renders normally.</p>
-              )}
-            </ResourceAdapterErrorBoundary>
-          </SmokeTestPanel>
+          <WorkerSmokeTest />
+          <ModelSmokeTest />
+          <ErrorBoundarySmokeTest />
           {capabilities.length > 0 && (
             <section
               aria-labelledby="create-more-heading"

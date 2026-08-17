@@ -1,5 +1,5 @@
 import { createInMemoryFeatureFlags } from "./in-memory";
-import { PostHogFeatureFlagAdapter } from "./posthogAdapter";
+import { PostHogFeatureFlagAdapter } from "./posthog-adapter";
 import type { FeatureFlagServiceType } from "./types";
 
 export type { FeatureFlagServiceType } from "./types";

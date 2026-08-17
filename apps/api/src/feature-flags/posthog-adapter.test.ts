@@ -57,7 +57,7 @@ function providerAnswers(value: boolean) {
 
 async function loadAdapterModule() {
   vi.resetModules();
-  return import("./posthogAdapter");
+  return import("./posthog-adapter");
 }
 
 async function loadFreshAdapter() {
