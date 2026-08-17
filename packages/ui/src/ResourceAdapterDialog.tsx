@@ -22,6 +22,7 @@ import type {
   LessonContext,
   ResourceAdapterCapability,
   ResourceAdapterErrorHandler,
+  ResourceDocumentSummary,
 } from "./publicTypes.js";
 
 export type ResourceAdapterDialogProps = Readonly<{
@@ -31,6 +32,7 @@ export type ResourceAdapterDialogProps = Readonly<{
   isOpen: boolean;
   lesson: LessonContext;
   onClose: () => void;
+  resourceDocumentSummary?: ResourceDocumentSummary | undefined;
   /** Invoked with any error the adapter catches, for the host's observability. */
   onError?: ResourceAdapterErrorHandler;
 }>;
@@ -43,9 +45,9 @@ export type ResourceAdapterDialogProps = Readonly<{
  * modal, the outer one keeps a shell crash off the host page.
  */
 export function ResourceAdapterDialog(props: ResourceAdapterDialogProps) {
-  const { isOpen, lesson, onClose, onError } = props;
+  const { isOpen, lesson, onClose, onError, resourceDocumentSummary } = props;
   // isOpen resets on close without waiting for the modal's exit animation.
-  const resetKeys = [isOpen, lesson.lessonSlug];
+  const resetKeys = [isOpen, lesson.lessonSlug, resourceDocumentSummary?.id];
 
   return (
     <ResourceAdapterErrorBoundary
@@ -79,6 +81,7 @@ function ResourceAdapterDialogInner({
   lesson,
   onClose,
   onError,
+  resourceDocumentSummary,
   resetKeys,
 }: ResourceAdapterDialogInnerProps) {
   const [enabledFlags, setEnabledFlags] = useState<readonly string[]>([]);
@@ -145,6 +148,7 @@ function ResourceAdapterDialogInner({
               capability={capability}
               enabledFlags={enabledFlags}
               lesson={lesson}
+              resourceDocumentSummary={resourceDocumentSummary}
             />
           </ResourceAdapterErrorBoundary>
         </OakFlex>
@@ -157,6 +161,7 @@ type ResourceAdapterDialogContentProps = Readonly<{
   capability: ResourceAdapterCapability | undefined;
   enabledFlags: readonly string[];
   lesson: LessonContext;
+  resourceDocumentSummary?: ResourceDocumentSummary | undefined;
 }>;
 
 /**
@@ -167,6 +172,7 @@ function ResourceAdapterDialogContent({
   capability,
   enabledFlags,
   lesson,
+  resourceDocumentSummary,
 }: ResourceAdapterDialogContentProps) {
   return (
     <>
@@ -177,6 +183,19 @@ function ResourceAdapterDialogContent({
       {capability && (
         <OakP>
           Available capability: <strong>{capability.label}</strong>.
+        </OakP>
+      )}
+      {resourceDocumentSummary && (
+        <OakP>
+          Worksheet data loaded: <strong>{resourceDocumentSummary.title}</strong>. The
+          document contains {resourceDocumentSummary.questionCount}{" "}
+          {resourceDocumentSummary.questionCount === 1 ? "question" : "questions"}
+          {" and "}
+          {resourceDocumentSummary.diagnosticCount}{" "}
+          {resourceDocumentSummary.diagnosticCount === 1
+            ? "extraction diagnostic"
+            : "extraction diagnostics"}
+          , using schema {resourceDocumentSummary.schemaVersion}.
         </OakP>
       )}
       <FeatureFlag enabledFlags={enabledFlags} flag="feature-flags-smoke-test-enabled">

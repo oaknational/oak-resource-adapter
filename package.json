@@ -34,6 +34,7 @@
     "env:pull:dev": "node scripts/pull-dev-env.mjs",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
+    "fixtures:rights:check": "pnpm --filter @oaknational/resource-adapter-curriculum build && pnpm --filter @oaknational/resource-document build && pnpm --filter @oaknational/resource-adapter-original-resource-documents build && node --env-file-if-exists=.env scripts/verify-original-resource-document-fixture-rights.mjs",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "prepare": "husky",

@@ -25,6 +25,17 @@ export type ResourceAdapterHostProps = Readonly<{
   lesson: LessonContext;
 }>;
 
+export type ResourceDocumentSummary = Readonly<{
+  id: string;
+  title: string;
+  profile: string;
+  schemaVersion: string;
+  contentNodeCount: number;
+  questionCount: number;
+  assetCount: number;
+  diagnosticCount: number;
+}>;
+
 /**
  * A plain object rather than React's `ErrorInfo`, because the host may resolve a
  * different copy of React. `componentStack` is normalised to null when absent.

@@ -1,0 +1,40 @@
+{
+  "name": "@oaknational/resource-adapter-original-resource-documents",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ORA retrieval boundary for validated source resource documents",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./fixtures": {
+      "types": "./dist/fixtures.d.ts",
+      "import": "./dist/fixtures.js"
+    }
+  },
+  "files": [
+    "dist",
+    "fixtures"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "dev": "tsc --project tsconfig.build.json --watch",
+    "fixtures:generate": "pnpm --filter @oaknational/resource-document build && pnpm build && node scripts/generate-fixture-documents.mjs",
+    "lint": "eslint src --max-warnings=0",
+    "lint:fix": "eslint src --fix",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@oaknational/resource-document": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "vitest": "^4.1.10"
+  }
+}

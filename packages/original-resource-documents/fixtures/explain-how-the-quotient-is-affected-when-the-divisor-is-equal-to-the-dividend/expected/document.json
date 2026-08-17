@@ -1,0 +1,283 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:explain-how-the-quotient-is-affected-when-the-divisor-is-equal-to-the-dividend:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Explain how the quotient is affected when the divisor is equal to the dividend"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task A: When the number in each group is equal to the dividend"
+        }
+      ]
+    },
+    {
+      "id": "task-a-instruction",
+      "type": "callout",
+      "role": "instruction",
+      "content": [
+        {
+          "type": "text",
+          "text": "Fill in the missing numbers."
+        }
+      ]
+    },
+    {
+      "id": "question-1",
+      "type": "question",
+      "label": "1",
+      "children": [
+        {
+          "id": "unstable:paragraph-complete-1-1-times-square-and-1-div-1-square",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Complete "
+            },
+            {
+              "type": "math",
+              "value": "1 = 1 \\times \\square",
+              "display": false
+            },
+            {
+              "type": "text",
+              "text": " and "
+            },
+            {
+              "type": "math",
+              "value": "1 \\div 1 = \\square",
+              "display": false
+            },
+            {
+              "type": "text",
+              "text": "."
+            }
+          ]
+        },
+        {
+          "id": "question-1-response",
+          "type": "responseSpace",
+          "kind": "box"
+        }
+      ]
+    },
+    {
+      "id": "question-2",
+      "type": "question",
+      "label": "2",
+      "children": [
+        {
+          "id": "unstable:paragraph-complete-3-3-times-square-and-3-div-3-square",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Complete "
+            },
+            {
+              "type": "math",
+              "value": "3 = 3 \\times \\square",
+              "display": false
+            },
+            {
+              "type": "text",
+              "text": " and "
+            },
+            {
+              "type": "math",
+              "value": "3 \\div 3 = \\square",
+              "display": false
+            },
+            {
+              "type": "text",
+              "text": "."
+            }
+          ]
+        },
+        {
+          "id": "question-2-response",
+          "type": "responseSpace",
+          "kind": "box"
+        }
+      ]
+    },
+    {
+      "id": "question-3",
+      "type": "question",
+      "label": "3",
+      "children": [
+        {
+          "id": "unstable:paragraph-complete-5-5-times-square-and-5-div-5-square",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Complete "
+            },
+            {
+              "type": "math",
+              "value": "5 = 5 \\times \\square",
+              "display": false
+            },
+            {
+              "type": "text",
+              "text": " and "
+            },
+            {
+              "type": "math",
+              "value": "5 \\div 5 = \\square",
+              "display": false
+            },
+            {
+              "type": "text",
+              "text": "."
+            }
+          ]
+        },
+        {
+          "id": "question-3-response",
+          "type": "responseSpace",
+          "kind": "box"
+        }
+      ]
+    },
+    {
+      "id": "question-4",
+      "type": "question",
+      "label": "4",
+      "children": [
+        {
+          "id": "unstable:paragraph-complete-7-div-square-1",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Complete "
+            },
+            {
+              "type": "math",
+              "value": "7 \\div \\square = 1",
+              "display": false
+            },
+            {
+              "type": "text",
+              "text": "."
+            }
+          ]
+        },
+        {
+          "id": "question-4-response",
+          "type": "responseSpace",
+          "kind": "box"
+        }
+      ]
+    },
+    {
+      "id": "question-5",
+      "type": "question",
+      "label": "5",
+      "children": [
+        {
+          "id": "unstable:paragraph-complete-square-div-4-1",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Complete "
+            },
+            {
+              "type": "math",
+              "value": "\\square \\div 4 = 1",
+              "display": false
+            },
+            {
+              "type": "text",
+              "text": "."
+            }
+          ]
+        },
+        {
+          "id": "question-5-response",
+          "type": "responseSpace",
+          "kind": "box"
+        }
+      ]
+    },
+    {
+      "id": "question-6",
+      "type": "question",
+      "label": "6",
+      "children": [
+        {
+          "id": "unstable:paragraph-complete-8-div-8-square",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Complete "
+            },
+            {
+              "type": "math",
+              "value": "8 \\div 8 = \\square",
+              "display": false
+            },
+            {
+              "type": "text",
+              "text": "."
+            }
+          ]
+        },
+        {
+          "id": "question-6-response",
+          "type": "responseSpace",
+          "kind": "box"
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "explain-how-the-quotient-is-affected-when-the-divisor-is-equal-to-the-dividend:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/explain-how-the-quotient-is-affected-when-the-divisor-is-equal-to-the-dividend"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Explain how the quotient is affected when the divisor is equal to the dividend",
+    "subject": {
+      "id": "maths",
+      "label": "Maths"
+    },
+    "keyStage": {
+      "id": "ks1",
+      "label": "Key stage 1"
+    },
+    "yearGroup": {
+      "id": "year-2",
+      "label": "Year 2"
+    }
+  }
+}

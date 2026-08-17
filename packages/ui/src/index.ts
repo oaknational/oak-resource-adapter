@@ -17,4 +17,5 @@ export type {
   ResourceAdapterErrorHandler,
   ResourceAdapterErrorInfo,
   ResourceAdapterHostProps,
+  ResourceDocumentSummary,
 } from "./publicTypes.js";

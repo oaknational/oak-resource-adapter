@@ -1,0 +1,54 @@
+---
+markup-version: "0.1"
+schema-version: "0.1"
+profile: "worksheet.v0"
+document-id: "oak:worksheet:using-trace-tables:pupil"
+language: "en-GB"
+title: "Using trace tables"
+subject-id: "computing"
+subject-label: "Computing"
+key-stage-id: "ks4"
+key-stage-label: "Key stage 4"
+year-group-id: "year-10"
+year-group-label: "Year 10"
+source-system: "oak"
+source-id: "using-trace-tables:worksheet"
+source-uri: "https://www.thenational.academy/teachers/lessons/using-trace-tables"
+producer: "provisional-resource-document-fixture"
+producer-version: "0.1.0"
+---
+
+:::oak-heading {id="title" level="1"}
+Using trace tables
+:::
+
+:::oak-heading {id="task-a" level="2"}
+Task A: Explain how to trace variable values
+:::
+
+:::oak-question {id="question-1" number="1"}
+Explain what a trace table is and describe how and why programmers use one.
+
+:::oak-answer-space {id="question-1-response" kind="lines" lines="8"}
+:::
+:::
+
+:::oak-heading {id="task-b" level="2"}
+Task B: Trace values in a while loop
+:::
+
+:::oak-question {id="question-2" number="2"}
+Create a trace table to trace the values of line, variable, count and conditions in this program.
+
+:::oak-code-block {id="countdown-program"}
+from time import sleep
+count = 5
+while count != 0:
+    print(count)
+    count = count - 1
+    sleep(1)
+:::
+
+:::oak-answer-space {id="question-2-response" kind="grid"}
+:::
+:::

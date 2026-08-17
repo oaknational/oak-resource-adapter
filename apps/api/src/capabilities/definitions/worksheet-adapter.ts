@@ -1,8 +1,8 @@
-import type { CapabilityDefinition } from "../types";
+import { isAdaptable, type CapabilityDefinition } from "../types";
 
 export const worksheetAdapterCapability = {
   id: "worksheetAdapter",
   label: "Scaffolded Practice Sheet",
   resourceType: "worksheet",
-  isEligible: ({ lesson }) => lesson.availableResources.includes("worksheet"),
+  isEligible: (context) => isAdaptable(context, "worksheet"),
 } as const satisfies CapabilityDefinition;

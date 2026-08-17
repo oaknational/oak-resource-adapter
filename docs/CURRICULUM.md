@@ -47,8 +47,10 @@ Resource Adapter needs no storage credential of its own. Two things follow:
 restricted`, so filtering `maxRestrictions` on that level excludes them before a
   download is attempted.
 
-The semantic content extracted from a resource is a separate concern, in
-`@oaknational/resource-document`.
+The canonical semantic contract is a separate concern in
+`@oaknational/resource-document`. ORA retrieves a validated instance of that
+contract through `getOriginalResourceDocument(locator)` from the private
+`@oaknational/resource-adapter-original-resource-documents` package.
 
 ## Errors
 

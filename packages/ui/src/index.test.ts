@@ -23,6 +23,7 @@ const EXPECTED_PUBLIC_API = [
   "ResourceAdapterErrorHandler",
   "ResourceAdapterErrorInfo",
   "ResourceAdapterHostProps",
+  "ResourceDocumentSummary",
   "getResourceAdapterCapabilities",
 ];
 

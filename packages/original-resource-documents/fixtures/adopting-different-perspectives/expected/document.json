@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:adopting-different-perspectives:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Adopting different perspectives"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task A: Switching perspectives"
+        }
+      ]
+    },
+    {
+      "id": "task-a-instruction",
+      "type": "callout",
+      "role": "instruction",
+      "content": [
+        {
+          "type": "text",
+          "text": "Write the same scene from two different perspectives. Begin with a short paragraph in the past tense and third person. Then describe Addie's thoughts in the present tense and first person."
+        }
+      ]
+    },
+    {
+      "id": "question-1",
+      "type": "question",
+      "label": "1",
+      "children": [
+        {
+          "id": "unstable:paragraph-write-your-version-of-the-scene-use-sentence-variety-a",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Write your version of the scene. Use sentence variety and description in the third-person paragraph. Focus on Addie's feelings, thoughts and questions in the first-person paragraph."
+            }
+          ]
+        },
+        {
+          "id": "question-1-response",
+          "type": "responseSpace",
+          "kind": "lines",
+          "lines": 12
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task B: Writing an internal monologue"
+        }
+      ]
+    },
+    {
+      "id": "task-b-instruction",
+      "type": "callout",
+      "role": "instruction",
+      "content": [
+        {
+          "type": "text",
+          "text": "Write an internal monologue for Addie. Use present tense, first person, repetition, contractions, ellipsis, rhetorical questions, informal sentence openers and sensory detail."
+        }
+      ]
+    },
+    {
+      "id": "question-2",
+      "type": "question",
+      "label": "2",
+      "children": [
+        {
+          "id": "unstable:paragraph-show-what-addie-thinks-and-feels-at-this-moment-includ",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Show what Addie thinks and feels at this moment, including how her senses become overwhelming."
+            }
+          ]
+        },
+        {
+          "id": "question-2-response",
+          "type": "responseSpace",
+          "kind": "lines",
+          "lines": 14
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "adopting-different-perspectives:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/adopting-different-perspectives"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Adopting different perspectives",
+    "subject": {
+      "id": "english",
+      "label": "English"
+    },
+    "keyStage": {
+      "id": "ks2",
+      "label": "Key stage 2"
+    },
+    "yearGroup": {
+      "id": "year-6",
+      "label": "Year 6"
+    }
+  }
+}
