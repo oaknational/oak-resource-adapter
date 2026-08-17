@@ -21,11 +21,13 @@ jobs:
   changeset:
     name: Check package release metadata
     # The Changesets action's own version pull request consumes the changesets
-    # it is versioning, so this check would always fail against it.
+    # it is versioning, so this check would always fail against it. Dependabot
+    # cannot write changesets, so it would always fail against those too.
     if: >-
       github.event_name == 'pull_request' &&
       vars.ENFORCE_CHANGESETS == 'true' &&
-      github.head_ref != 'changeset-release/production'
+      github.head_ref != 'changeset-release/production' &&
+      !startsWith(github.head_ref, 'dependabot/')
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -280,8 +282,9 @@ jobs:
         if: env.CLERK_SECRET_KEY != ''
         run: pnpm exec playwright install --with-deps chromium
 
-      # Dependabot and fork pull requests carry no repository secrets, so they
-      # have no Clerk credentials to sign in with. Guarded per step, not per job:
+      # Fork pull requests carry no repository secrets, so they have no Clerk
+      # credentials to sign in with; Dependabot pull requests read the Dependabot
+      # secret store, which holds them. Guarded per step, not per job:
       # `Run browser tests` is a required check, and a skipped job blocks a merge
       # just as a failed one does.
       - name: Run browser tests
@@ -291,4 +294,4 @@ jobs:
       - name: Report a skipped suite
         if: env.CLERK_SECRET_KEY == ''
         run: |
-          echo "::warning::Browser tests skipped: this event carries no repository secrets, so there are no Clerk credentials to sign in with. Expected for Dependabot and fork pull requests."
+          echo "::warning::Browser tests skipped: this event carries no repository secrets, so there are no Clerk credentials to sign in with. Expected for fork pull requests."
