@@ -22,10 +22,10 @@ export function SiteHeader({
         <p className={styles.brand}>Oak National Academy</p>
         <p className={styles.harnessLabel}>Resource Adapter harness</p>
       </div>
-      <p className={`${styles.apiHealth} ${styles[apiHealthState]}`} role="status">
+      <output className={`${styles.apiHealth} ${styles[apiHealthState]}`}>
         <span aria-hidden="true" className={styles.healthDot} />
         API /health: {apiHealthLabels[apiHealthState]}
-      </p>
+      </output>
       {isSignedIn ? <UserButton /> : <SignInButton mode="modal" />}
     </header>
   );

@@ -294,12 +294,9 @@
   font-size: 0.875rem;
   line-height: 1.6;
   margin: 0.75rem 0 0;
-  max-height: 30rem;
   overflow-wrap: anywhere;
-  overflow-y: auto;
   padding: 1rem;
   white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .workerTest {

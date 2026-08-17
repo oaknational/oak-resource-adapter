@@ -55,7 +55,7 @@ export function WorksheetPanel({ scenario }: Readonly<{ scenario: LessonScenario
       </dl>
       <details className={styles.markupDetails}>
         <summary>Browse extracted markup</summary>
-        <pre aria-label={`Extracted markup for ${scenario.lesson.title}`} tabIndex={0}>
+        <pre aria-label={`Extracted markup for ${scenario.lesson.title}`}>
           <code>{scenario.markup}</code>
         </pre>
       </details>

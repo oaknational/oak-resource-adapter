@@ -58,6 +58,9 @@ export interface LoadedOriginalResourceDocumentFixture {
   expectedDocument: ResourceDocument;
 }
 
+export type OakWorksheetFixtureEntry = OriginalResourceDocumentFixtureManifestEntry &
+  Readonly<{ oakLesson: OakLessonFixtureMetadata }>;
+
 const oakOriginalFileResourceTypes = [
   "slide-deck",
   "worksheet",
@@ -67,6 +70,55 @@ const oakOriginalFileResourceTypes = [
   "starter-quiz",
   "starter-quiz-answers",
 ] as const;
+
+const oakLessonBaseUrl = "https://www.thenational.academy/teachers/lessons";
+const oakRights =
+  "Oak lesson verified with no recorded third-party material restrictions.";
+const rightsCheckedOn = "2026-08-17";
+
+function oakWorksheetFixture(
+  lesson: Readonly<{
+    lessonSlug: string;
+    title: string;
+    description: string;
+    programmeSlug: string;
+    keyStage: string;
+    keyStageSlug: string;
+    subject: string;
+    subjectSlug: string;
+    examBoard?: string;
+    tier?: string;
+    unitSlug: string;
+    unitTitle: string;
+  }>,
+): OakWorksheetFixtureEntry {
+  return {
+    id: lesson.lessonSlug,
+    title: lesson.title,
+    description: lesson.description,
+    markupVersion: "0.1",
+    schemaVersion: "0.1",
+    profile: "worksheet.v0",
+    rights: oakRights,
+    oakLesson: {
+      lessonSlug: lesson.lessonSlug,
+      programmeSlug: lesson.programmeSlug,
+      sourceUrl: `${oakLessonBaseUrl}/${lesson.lessonSlug}`,
+      rightsCheckedOn,
+      programme: {
+        examBoard: lesson.examBoard ?? null,
+        keyStage: lesson.keyStage,
+        keyStageSlug: lesson.keyStageSlug,
+        subject: lesson.subject,
+        subjectSlug: lesson.subjectSlug,
+        tier: lesson.tier ?? null,
+      },
+      unit: { slug: lesson.unitSlug, title: lesson.unitTitle },
+      contentGuidance: [],
+      originalFileResourceTypes: oakOriginalFileResourceTypes,
+    },
+  };
+}
 
 export const originalResourceDocumentFixtureManifest = [
   {
@@ -79,157 +131,71 @@ export const originalResourceDocumentFixtureManifest = [
     profile: "worksheet.v0",
     rights: "Synthetic test content committed under the repository licence.",
   },
-  {
-    id: "explain-how-the-quotient-is-affected-when-the-divisor-is-equal-to-the-dividend",
+  oakWorksheetFixture({
+    lessonSlug:
+      "explain-how-the-quotient-is-affected-when-the-divisor-is-equal-to-the-dividend",
     title:
       "Explain how the quotient is affected when the divisor is equal to the dividend",
     description: "Provisional extraction markup for an Oak KS1 maths worksheet.",
-    markupVersion: "0.1",
-    schemaVersion: "0.1",
-    profile: "worksheet.v0",
-    rights: "Oak lesson verified with no recorded third-party material restrictions.",
-    oakLesson: {
-      lessonSlug:
-        "explain-how-the-quotient-is-affected-when-the-divisor-is-equal-to-the-dividend",
-      programmeSlug: "maths-primary-ks1",
-      sourceUrl:
-        "https://www.thenational.academy/teachers/lessons/explain-how-the-quotient-is-affected-when-the-divisor-is-equal-to-the-dividend",
-      rightsCheckedOn: "2026-08-17",
-      programme: {
-        examBoard: null,
-        keyStage: "KS1",
-        keyStageSlug: "ks1",
-        subject: "Maths",
-        subjectSlug: "maths",
-        tier: null,
-      },
-      unit: {
-        slug: "doubling-halving-quotative-and-partitive-division",
-        title: "Doubling, halving, quotative and partitive division",
-      },
-      contentGuidance: [],
-      originalFileResourceTypes: oakOriginalFileResourceTypes,
-    },
-  },
-  {
-    id: "adopting-different-perspectives",
+    programmeSlug: "maths-primary-ks1",
+    keyStage: "KS1",
+    keyStageSlug: "ks1",
+    subject: "Maths",
+    subjectSlug: "maths",
+    unitSlug: "doubling-halving-quotative-and-partitive-division",
+    unitTitle: "Doubling, halving, quotative and partitive division",
+  }),
+  oakWorksheetFixture({
+    lessonSlug: "adopting-different-perspectives",
     title: "Adopting different perspectives",
     description: "Provisional extraction markup for an Oak KS2 English worksheet.",
-    markupVersion: "0.1",
-    schemaVersion: "0.1",
-    profile: "worksheet.v0",
-    rights: "Oak lesson verified with no recorded third-party material restrictions.",
-    oakLesson: {
-      lessonSlug: "adopting-different-perspectives",
-      programmeSlug: "english-primary-ks2",
-      sourceUrl:
-        "https://www.thenational.academy/teachers/lessons/adopting-different-perspectives",
-      rightsCheckedOn: "2026-08-17",
-      programme: {
-        examBoard: null,
-        keyStage: "KS2",
-        keyStageSlug: "ks2",
-        subject: "English",
-        subjectSlug: "english",
-        tier: null,
-      },
-      unit: {
-        slug: "a-kind-of-spark-narrative-writing",
-        title: "'A Kind of Spark': narrative writing",
-      },
-      contentGuidance: [],
-      originalFileResourceTypes: oakOriginalFileResourceTypes,
-    },
-  },
-  {
-    id: "composing-in-a-samba-style",
+    programmeSlug: "english-primary-ks2",
+    keyStage: "KS2",
+    keyStageSlug: "ks2",
+    subject: "English",
+    subjectSlug: "english",
+    unitSlug: "a-kind-of-spark-narrative-writing",
+    unitTitle: "'A Kind of Spark': narrative writing",
+  }),
+  oakWorksheetFixture({
+    lessonSlug: "composing-in-a-samba-style",
     title: "Composing in a samba style",
     description: "Provisional extraction markup for an Oak KS3 music worksheet.",
-    markupVersion: "0.1",
-    schemaVersion: "0.1",
-    profile: "worksheet.v0",
-    rights: "Oak lesson verified with no recorded third-party material restrictions.",
-    oakLesson: {
-      lessonSlug: "composing-in-a-samba-style",
-      programmeSlug: "music-secondary-ks3",
-      sourceUrl:
-        "https://www.thenational.academy/teachers/lessons/composing-in-a-samba-style",
-      rightsCheckedOn: "2026-08-17",
-      programme: {
-        examBoard: null,
-        keyStage: "KS3",
-        keyStageSlug: "ks3",
-        subject: "Music",
-        subjectSlug: "music",
-        tier: null,
-      },
-      unit: {
-        slug: "the-bass-hooks-and-grooves-of-80s-pop-5262",
-        title: "Samba music",
-      },
-      contentGuidance: [],
-      originalFileResourceTypes: oakOriginalFileResourceTypes,
-    },
-  },
-  {
-    id: "forming-ions-for-ionic-bonding",
+    programmeSlug: "music-secondary-ks3",
+    keyStage: "KS3",
+    keyStageSlug: "ks3",
+    subject: "Music",
+    subjectSlug: "music",
+    unitSlug: "the-bass-hooks-and-grooves-of-80s-pop-5262",
+    unitTitle: "Samba music",
+  }),
+  oakWorksheetFixture({
+    lessonSlug: "forming-ions-for-ionic-bonding",
     title: "Forming ions for ionic bonding",
     description: "Provisional extraction markup for an Oak KS4 chemistry worksheet.",
-    markupVersion: "0.1",
-    schemaVersion: "0.1",
-    profile: "worksheet.v0",
-    rights: "Oak lesson verified with no recorded third-party material restrictions.",
-    oakLesson: {
-      lessonSlug: "forming-ions-for-ionic-bonding",
-      programmeSlug: "chemistry-secondary-ks4-higher-aqa",
-      sourceUrl:
-        "https://www.thenational.academy/teachers/lessons/forming-ions-for-ionic-bonding",
-      rightsCheckedOn: "2026-08-17",
-      programme: {
-        examBoard: "AQA",
-        keyStage: "KS4",
-        keyStageSlug: "ks4",
-        subject: "Chemistry",
-        subjectSlug: "chemistry",
-        tier: "higher",
-      },
-      unit: {
-        slug: "structure-and-bonding",
-        title: "Structure and bonding",
-      },
-      contentGuidance: [],
-      originalFileResourceTypes: oakOriginalFileResourceTypes,
-    },
-  },
-  {
-    id: "using-trace-tables",
+    programmeSlug: "chemistry-secondary-ks4-higher-aqa",
+    keyStage: "KS4",
+    keyStageSlug: "ks4",
+    subject: "Chemistry",
+    subjectSlug: "chemistry",
+    examBoard: "AQA",
+    tier: "higher",
+    unitSlug: "structure-and-bonding",
+    unitTitle: "Structure and bonding",
+  }),
+  oakWorksheetFixture({
+    lessonSlug: "using-trace-tables",
     title: "Using trace tables",
     description: "Provisional extraction markup for an Oak KS4 computing worksheet.",
-    markupVersion: "0.1",
-    schemaVersion: "0.1",
-    profile: "worksheet.v0",
-    rights: "Oak lesson verified with no recorded third-party material restrictions.",
-    oakLesson: {
-      lessonSlug: "using-trace-tables",
-      programmeSlug: "computing-secondary-ks4-gcse-aqa",
-      sourceUrl: "https://www.thenational.academy/teachers/lessons/using-trace-tables",
-      rightsCheckedOn: "2026-08-17",
-      programme: {
-        examBoard: "AQA",
-        keyStage: "KS4",
-        keyStageSlug: "ks4",
-        subject: "Computing",
-        subjectSlug: "computing",
-        tier: null,
-      },
-      unit: {
-        slug: "programming-iteration",
-        title: "Programming: iteration",
-      },
-      contentGuidance: [],
-      originalFileResourceTypes: oakOriginalFileResourceTypes,
-    },
-  },
+    programmeSlug: "computing-secondary-ks4-gcse-aqa",
+    keyStage: "KS4",
+    keyStageSlug: "ks4",
+    subject: "Computing",
+    subjectSlug: "computing",
+    examBoard: "AQA",
+    unitSlug: "programming-iteration",
+    unitTitle: "Programming: iteration",
+  }),
 ] as const satisfies readonly OriginalResourceDocumentFixtureManifestEntry[];
 
 const fixturesDirectory = join(dirname(fileURLToPath(import.meta.url)), "../fixtures");
