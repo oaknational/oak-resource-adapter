@@ -15,6 +15,11 @@ export function ExtractionNotes({
     return null;
   }
 
+  const preserved =
+    unsupportedNodeIds.length === 0
+      ? "none — the markup was recognised but flagged"
+      : unsupportedNodeIds.join(", ");
+
   return (
     <OakInlineBanner
       isOpen
@@ -23,13 +28,7 @@ export function ExtractionNotes({
         <>
           <p>
             The document parsed, but the reader met markup this version does not model.
-            Unknown directives are kept as unsupported nodes:{" "}
-            <em>
-              {unsupportedNodeIds.length === 0
-                ? "none — the markup was recognised but flagged"
-                : unsupportedNodeIds.join(", ")}
-            </em>
-            .
+            Unknown directives are kept as unsupported nodes: <em>{preserved}</em>.
           </p>
           <ul>
             {diagnostics.map((diagnostic) => (

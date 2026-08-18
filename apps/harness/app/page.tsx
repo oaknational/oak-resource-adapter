@@ -3,11 +3,13 @@ import { edgeCaseNavigation, loadEdgeCase } from "./edge-cases";
 import { lessonScenarioNavigation, loadLessonScenario } from "./lesson-scenarios";
 import type { HarnessSection, HarnessView } from "./scenario-types";
 
+type SearchParamValue = string | string[] | undefined;
+
 type HarnessPageProps = Readonly<{
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<Record<string, SearchParamValue>>;
 }>;
 
-function parseSection(view: string | string[] | undefined): HarnessSection {
+function parseSection(view: SearchParamValue): HarnessSection {
   if (view === "smoke-tests" || view === "edge-cases") {
     return view;
   }
@@ -16,7 +18,7 @@ function parseSection(view: string | string[] | undefined): HarnessSection {
 }
 
 function resolveId(
-  requested: string | string[] | undefined,
+  requested: SearchParamValue,
   available: readonly { id: string }[],
   emptyMessage: string,
 ): string {
@@ -34,7 +36,7 @@ function resolveId(
 async function resolveView(
   section: HarnessSection,
   lessonId: string,
-  requestedCase: string | string[] | undefined,
+  requestedCase: SearchParamValue,
 ): Promise<HarnessView> {
   if (section === "smoke-tests") {
     return { section };
