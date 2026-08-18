@@ -72,6 +72,15 @@ export async function loadLessonScenario(id: string): Promise<LessonScenario> {
     rightsCheckedOn: oakLesson.rightsCheckedOn,
     sourceUrl: oakLesson.sourceUrl,
     markup,
+    diagnostics: document.diagnostics.map((diagnostic) => ({
+      category: diagnostic.category,
+      severity: diagnostic.severity,
+      message: diagnostic.message,
+      nodeId: diagnostic.nodeId ?? null,
+    })),
+    unsupportedNodeIds: getResourceNodesByType(document, "unsupported").map(
+      (node) => node.id,
+    ),
     documentSummary: {
       id: document.id,
       title: document.metadata.title ?? entry.title,

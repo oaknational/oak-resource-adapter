@@ -38,7 +38,16 @@ export function LessonScenarioView({
 
   return (
     <>
-      <ScenarioNavigation scenarios={scenarioNavigation} selectedId={scenario.id} />
+      <ScenarioNavigation
+        hrefFor={(id) => `/?lesson=${id}`}
+        items={scenarioNavigation.map(({ id, keyStage, subject, title }) => ({
+          id,
+          title,
+          detail: `${keyStage} · ${subject}`,
+        }))}
+        label="Lesson scenarios"
+        selectedId={scenario.id}
+      />
       <article className={styles.lesson}>
         <p className={styles.eyebrow}>
           {scenario.programme.keyStage} · {scenario.programme.subject}

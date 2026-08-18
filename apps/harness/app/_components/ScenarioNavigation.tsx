@@ -1,28 +1,35 @@
 import Link from "next/link";
 
 import styles from "../page.module.css";
-import type { LessonScenarioNavigationItem } from "../scenario-types";
+
+export type ScenarioNavigationItem = Readonly<{
+  id: string;
+  title: string;
+  detail: string;
+}>;
 
 export function ScenarioNavigation({
-  scenarios,
+  hrefFor,
+  items,
+  label,
   selectedId,
 }: Readonly<{
-  scenarios: readonly LessonScenarioNavigationItem[];
+  hrefFor: (id: string) => string;
+  items: readonly ScenarioNavigationItem[];
+  label: string;
   selectedId: string;
 }>) {
   return (
-    <nav aria-label="Lesson scenarios" className={styles.scenarioNavigation}>
+    <nav aria-label={label} className={styles.scenarioNavigation}>
       <ul>
-        {scenarios.map((scenario) => (
-          <li key={scenario.id}>
+        {items.map((item) => (
+          <li key={item.id}>
             <Link
-              aria-current={scenario.id === selectedId ? "page" : undefined}
-              href={`/?lesson=${scenario.id}`}
+              aria-current={item.id === selectedId ? "page" : undefined}
+              href={hrefFor(item.id)}
             >
-              <span>{scenario.title}</span>
-              <small>
-                {scenario.keyStage} · {scenario.subject}
-              </small>
+              <span>{item.title}</span>
+              <small>{item.detail}</small>
             </Link>
           </li>
         ))}

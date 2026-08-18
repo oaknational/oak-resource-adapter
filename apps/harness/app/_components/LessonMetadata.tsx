@@ -31,8 +31,25 @@ export function LessonMetadata({ scenario }: Readonly<{ scenario: LessonScenario
           </dd>
         </div>
         <div>
-          <dt>Original files from Oak</dt>
-          <dd>{scenario.originalFileResourceTypes.join(", ")}</dd>
+          <dt>Original Oak Files</dt>
+          <dd>
+            {scenario.originalFileResourceTypes.map((resourceType, index) => {
+              const hasExtraction =
+                scenario.extractedResourceTypes.includes(resourceType);
+
+              return (
+                <span key={resourceType}>
+                  {index === 0 ? "" : ", "}
+                  <span className={hasExtraction ? styles.matchedResource : undefined}>
+                    {resourceType}
+                    {hasExtraction && (
+                      <span className={styles.visuallyHidden}> (data held)</span>
+                    )}
+                  </span>
+                </span>
+              );
+            })}
+          </dd>
         </div>
         <div>
           <dt>Extractions held</dt>

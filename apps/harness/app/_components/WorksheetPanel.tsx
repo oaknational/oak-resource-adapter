@@ -1,3 +1,4 @@
+import { ExtractionNotes } from "./ExtractionNotes";
 import styles from "../page.module.css";
 import type { LessonScenario } from "../scenario-types";
 
@@ -26,7 +27,7 @@ export function WorksheetPanel({ scenario }: Readonly<{ scenario: LessonScenario
           Rights checked {formatCheckDate(scenario.rightsCheckedOn)}
         </span>
       </div>
-      <p>{scenario.rights} checked when the fixture corpus was snapshotted.</p>
+      <p>{scenario.rights}</p>
       <dl className={styles.documentSummary}>
         <div>
           <dt>Profile</dt>
@@ -53,6 +54,10 @@ export function WorksheetPanel({ scenario }: Readonly<{ scenario: LessonScenario
           <dd>{summary.diagnosticCount}</dd>
         </div>
       </dl>
+      <ExtractionNotes
+        diagnostics={scenario.diagnostics}
+        unsupportedNodeIds={scenario.unsupportedNodeIds}
+      />
       <details className={styles.markupDetails}>
         <summary>Browse extracted markup</summary>
         <pre aria-label={`Extracted markup for ${scenario.lesson.title}`}>

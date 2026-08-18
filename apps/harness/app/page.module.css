@@ -396,3 +396,55 @@
     grid-template-columns: 1fr;
   }
 }
+
+.visuallyHidden {
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.matchedResource {
+  color: #0b5c2e;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+/* Always present, so an empty slot reads as "OWA renders nothing here". */
+.owaSlot {
+  background: #ebfbeb;
+  border: 2px solid #222222;
+  border-radius: 0.75rem;
+  margin-top: 2.5rem;
+  padding: clamp(1rem, 4vw, 1.5rem);
+}
+
+.owaSlot > h2 {
+  margin: 0 0 0.75rem;
+}
+
+.owaSlotContent {
+  border: 2px dashed #6a7b6f;
+  border-radius: 0.5rem;
+  min-height: 7rem;
+  padding: 0.75rem;
+}
+
+/* The slot is the green panel, so the nested one must not stack another. */
+.owaSlotContent .createMore {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.owaSlotEmpty {
+  color: #4a4a4a;
+  font-style: italic;
+  margin: 0;
+}

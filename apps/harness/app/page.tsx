@@ -1,32 +1,79 @@
 import { HarnessPageClient } from "./_components/HarnessPageClient";
+import { edgeCaseNavigation, loadEdgeCase } from "./edge-cases";
 import { lessonScenarioNavigation, loadLessonScenario } from "./lesson-scenarios";
-import type { HarnessSection } from "./scenario-types";
+import type { HarnessSection, HarnessView } from "./scenario-types";
 
 type HarnessPageProps = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>;
 
-export default async function HarnessPage({ searchParams }: HarnessPageProps) {
-  const parameters = await searchParams;
-  const section: HarnessSection =
-    parameters.view === "smoke-tests" ? "smoke-tests" : "lessons";
-  const requestedScenario =
-    typeof parameters.lesson === "string" ? parameters.lesson : undefined;
-  const selectedNavigation =
-    lessonScenarioNavigation.find((scenario) => scenario.id === requestedScenario) ??
-    lessonScenarioNavigation[0];
-
-  if (selectedNavigation === undefined) {
-    throw new Error("The harness has no lesson scenarios.");
+function parseSection(view: string | string[] | undefined): HarnessSection {
+  if (view === "smoke-tests" || view === "edge-cases") {
+    return view;
   }
 
-  const selectedScenario = await loadLessonScenario(selectedNavigation.id);
+  return "lessons";
+}
+
+function resolveId(
+  requested: string | string[] | undefined,
+  available: readonly { id: string }[],
+  emptyMessage: string,
+): string {
+  const fallback = available[0];
+
+  if (fallback === undefined) {
+    throw new Error(emptyMessage);
+  }
+
+  const match = available.find((candidate) => candidate.id === requested);
+
+  return match?.id ?? fallback.id;
+}
+
+async function resolveView(
+  section: HarnessSection,
+  lessonId: string,
+  requestedCase: string | string[] | undefined,
+): Promise<HarnessView> {
+  if (section === "smoke-tests") {
+    return { section };
+  }
+
+  if (section === "edge-cases") {
+    const id = resolveId(
+      requestedCase,
+      edgeCaseNavigation,
+      "The harness has no edge cases.",
+    );
+
+    return {
+      section,
+      navigation: edgeCaseNavigation,
+      edgeCase: await loadEdgeCase(id),
+    };
+  }
+
+  return {
+    section,
+    navigation: lessonScenarioNavigation,
+    scenario: await loadLessonScenario(lessonId),
+  };
+}
+
+export default async function HarnessPage({ searchParams }: HarnessPageProps) {
+  const parameters = await searchParams;
+  const section = parseSection(parameters.view);
+  const lessonId = resolveId(
+    parameters.lesson,
+    lessonScenarioNavigation,
+    "The harness has no lesson scenarios.",
+  );
 
   return (
     <HarnessPageClient
-      scenarioNavigation={lessonScenarioNavigation}
-      section={section}
-      selectedScenario={selectedScenario}
+      lessonId={lessonId}
+      view={await resolveView(section, lessonId, parameters.case)}
     />
   );
 }
