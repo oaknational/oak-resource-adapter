@@ -1,0 +1,155 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:composing-in-a-samba-style:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Composing in a samba style"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task A: Composing a 12/8 groove"
+        }
+      ]
+    },
+    {
+      "id": "task-a-instruction",
+      "type": "callout",
+      "role": "instruction",
+      "content": [
+        {
+          "type": "text",
+          "text": "Create a 12/8 main groove. Use at least one low and two high parts, a four-beat pattern, a simple rhythm on the surdo, a syncopated pattern and a variety of strikes."
+        }
+      ]
+    },
+    {
+      "id": "main-groove-rhythm-grid",
+      "type": "unsupported",
+      "description": "Unsupported extraction directive oak-rhythm-grid",
+      "original": {
+        "format": "oak-mmd",
+        "value": ":::oak-rhythm-grid {id=\"main-groove-rhythm-grid\"}\ninstrument | 1 | and | a | 2 | and | a | 3 | and | a | 4 | and | a\nsurdo      |   |     |   |   |     |   |   |     |   |   |     |\nhigh part 1|   |     |   |   |     |   |   |     |   |   |     |\nhigh part 2|   |     |   |   |     |   |   |     |   |   |     |\n:::"
+      }
+    },
+    {
+      "id": "question-1",
+      "type": "question",
+      "label": "1",
+      "children": [
+        {
+          "id": "unstable:paragraph-how-do-these-rhythms-match-the-success-criteria",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "How do these rhythms match the success criteria?"
+            }
+          ]
+        },
+        {
+          "id": "question-1-response",
+          "type": "responseSpace",
+          "kind": "lines",
+          "lines": 4
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task B: Building the structure with breaks and solos"
+        }
+      ]
+    },
+    {
+      "id": "task-b-instruction",
+      "type": "callout",
+      "role": "instruction",
+      "content": [
+        {
+          "type": "text",
+          "text": "Practise the breaks, changing patterns fluently, the full structure and solo improvisations. Choose a tempo suitable for the whole group."
+        }
+      ]
+    },
+    {
+      "id": "question-2",
+      "type": "question",
+      "label": "2",
+      "children": [
+        {
+          "id": "unstable:paragraph-plan-a-structure-using-breaks-two-main-grooves-and-imp",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Plan a structure using breaks, two main grooves and improvised solos."
+            }
+          ]
+        },
+        {
+          "id": "question-2-response",
+          "type": "responseSpace",
+          "kind": "grid"
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "composing-in-a-samba-style:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/composing-in-a-samba-style"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [
+    {
+      "category": "unsupported-markup",
+      "severity": "warning",
+      "message": "Unsupported extraction directive oak-rhythm-grid was preserved without interpretation.",
+      "nodeId": "main-groove-rhythm-grid",
+      "fallback": "unsupported-node",
+      "reviewRequired": true
+    }
+  ],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Composing in a samba style",
+    "subject": {
+      "id": "music",
+      "label": "Music"
+    },
+    "keyStage": {
+      "id": "ks3",
+      "label": "Key stage 3"
+    },
+    "yearGroup": {
+      "id": "year-9",
+      "label": "Year 9"
+    }
+  }
+}

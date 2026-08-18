@@ -3,7 +3,7 @@
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { useCallback, useEffect, useState } from "react";
 
-import { createTestJob, readTestJob, type TestJobResponse } from "./harness-api";
+import { createTestJob, readTestJob, type TestJobResponse } from "../harness-api";
 import { SmokeTestPanel } from "./SmokeTestPanel";
 
 const log = raLogger("harness");

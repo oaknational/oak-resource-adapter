@@ -2,7 +2,7 @@
 
 import { useId, type ReactNode } from "react";
 
-import styles from "./page.module.css";
+import styles from "../page.module.css";
 
 type SmokeTestPanelProps = {
   buttonLabel: string;

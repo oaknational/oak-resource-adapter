@@ -21,6 +21,7 @@
     "@oaknational/resource-adapter-contracts": "workspace:*",
     "@oaknational/resource-adapter-db": "workspace:*",
     "@oaknational/resource-adapter-logger": "workspace:*",
+    "@oaknational/resource-adapter-original-resource-documents": "workspace:*",
     "@sentry/nextjs": "^10.67.0",
     "@trpc/server": "11.18.0",
     "drizzle-orm": "^0.45.2",

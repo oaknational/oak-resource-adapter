@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:forming-ions-for-ionic-bonding:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Forming ions for ionic bonding"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task A: Forming positively charged ions"
+        }
+      ]
+    },
+    {
+      "id": "question-1",
+      "type": "question",
+      "label": "1",
+      "children": [
+        {
+          "id": "unstable:paragraph-use-a-periodic-table-to-complete-the-table",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Use a periodic table to complete the table."
+            }
+          ]
+        },
+        {
+          "id": "positive-ion-table",
+          "type": "unsupported",
+          "description": "Unsupported extraction directive oak-ion-table",
+          "original": {
+            "format": "oak-mmd",
+            "value": ":::oak-ion-table {id=\"positive-ion-table\"}\nmetal     | charge | metal ion\nsodium    | 1+     | Na+\ncalcium   |        |\nmagnesium |        |\naluminium |        |\npotassium |        |\n:::"
+          }
+        }
+      ]
+    },
+    {
+      "id": "question-2",
+      "type": "question",
+      "label": "2",
+      "children": [
+        {
+          "id": "unstable:paragraph-why-do-metals-form-positively-charged-ions-also-called",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Why do metals form positively charged ions, also called cations?"
+            }
+          ]
+        },
+        {
+          "id": "question-2-response",
+          "type": "responseSpace",
+          "kind": "lines",
+          "lines": 5
+        }
+      ]
+    },
+    {
+      "id": "question-3",
+      "type": "question",
+      "label": "3",
+      "children": [
+        {
+          "id": "unstable:paragraph-beryllium-be-is-in-group-2-of-the-periodic-table-draw-",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Beryllium, Be, is in Group 2 of the periodic table. Draw the electronic configuration of a beryllium ion, "
+            },
+            {
+              "type": "math",
+              "value": "Be^{2+}",
+              "display": false
+            },
+            {
+              "type": "text",
+              "text": "."
+            }
+          ]
+        },
+        {
+          "id": "question-3-response",
+          "type": "responseSpace",
+          "kind": "box"
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "forming-ions-for-ionic-bonding:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/forming-ions-for-ionic-bonding"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [
+    {
+      "category": "unsupported-markup",
+      "severity": "warning",
+      "message": "Unsupported extraction directive oak-ion-table was preserved without interpretation.",
+      "nodeId": "positive-ion-table",
+      "fallback": "unsupported-node",
+      "reviewRequired": true
+    }
+  ],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Forming ions for ionic bonding",
+    "subject": {
+      "id": "chemistry",
+      "label": "Chemistry"
+    },
+    "keyStage": {
+      "id": "ks4",
+      "label": "Key stage 4"
+    },
+    "yearGroup": {
+      "id": "year-10",
+      "label": "Year 10"
+    }
+  }
+}

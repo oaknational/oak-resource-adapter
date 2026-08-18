@@ -223,29 +223,27 @@ try {
 
   for (const declaration of [
     "package/dist/index.d.ts",
-    "package/dist/fixtures/index.d.ts",
     "package/dist/markup/index.d.ts",
   ]) {
     readPackedFile(resourceDocumentTarball, declaration);
   }
   readPackedFile(resourceDocumentTarball, "package/EXTRACTION_HANDOFF.md");
-  readPackedFile(
-    resourceDocumentTarball,
-    "package/fixtures/linear-equations-smoke/extracted.mmd",
+  const unexpectedFixtureFiles = listPackedFiles(resourceDocumentTarball).filter(
+    (file) => file.includes("/fixtures/"),
   );
+  if (unexpectedFixtureFiles.length > 0) {
+    throw new Error(
+      `Portable resource-document artifact contains private ORA fixtures: ${unexpectedFixtureFiles.join(", ")}`,
+    );
+  }
 
   await writeFile(
     join(temporaryDirectory, "resource-document-smoke.mjs"),
     `import assert from "node:assert/strict";
 import {
   CURRENT_SCHEMA_VERSION,
-  getResourceNodesByType,
   parseResourceDocument,
 } from "@oaknational/resource-document";
-import {
-  loadResourceDocumentFixture,
-  resourceDocumentFixtureManifest,
-} from "@oaknational/resource-document/fixtures";
 import {
   CURRENT_MARKUP_VERSION,
   parseResourceMarkup,
@@ -253,11 +251,22 @@ import {
 
 assert.equal(CURRENT_SCHEMA_VERSION, "0.1");
 assert.equal(CURRENT_MARKUP_VERSION, "0.1");
-assert.equal(resourceDocumentFixtureManifest.length, 1);
-const fixture = await loadResourceDocumentFixture("linear-equations-smoke");
-const document = parseResourceMarkup(fixture.markup);
-assert.deepEqual(document, fixture.expectedDocument);
-assert.equal(getResourceNodesByType(document, "question").length, 2);
+const document = parseResourceMarkup(\`---
+markup-version: "0.1"
+schema-version: "0.1"
+profile: "generic.v0"
+document-id: "artifact-smoke"
+language: "en-GB"
+source-system: "test"
+source-id: "artifact-smoke"
+producer: "artifact-test"
+producer-version: "1"
+---
+
+:::oak-paragraph {id="paragraph"}
+Portable artifact smoke test.
+:::
+\`);
 assert.deepEqual(parseResourceDocument(document), document);
 `,
   );

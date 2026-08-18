@@ -2,7 +2,7 @@
 
 Application-agnostic contracts for representing extracted educational resource
 documents. The package owns the versioned Zod schemas, validation, document
-traversal, extraction-markup conversion and rights-safe conformance fixtures.
+traversal and extraction-markup conversion.
 
 ## Experimental contract
 
@@ -29,8 +29,10 @@ an explicit migration where required.
 - `@oaknational/resource-document` — schemas, parsing and traversal helpers.
 - `@oaknational/resource-document/markup` — the provisional extraction-markup
   parser.
-- `@oaknational/resource-document/fixtures` — rights-safe fixture manifest and
-  loader.
+
+ORA's temporary source-document fixtures and retrieval adapter live in the
+private `@oaknational/resource-adapter-original-resource-documents` workspace package. This
+keeps application data and server-side I/O out of the portable document contract.
 
 The markup grammar is intentionally narrow until real extraction samples are
 available. Unknown directives become explicit unsupported nodes and diagnostics;
@@ -46,9 +48,9 @@ For a pre-production refinement of the current experimental contract:
    cannot express locally in `src/invariants.ts`.
 2. Update parsing, markup conversion and traversal code when the changed shape
    affects those boundaries.
-3. Add or update focused tests and the rights-safe conformance fixture. Fixture
-   output changes should be reviewed as contract changes, not accepted as
-   incidental snapshots.
+3. Add or update focused tests and the rights-safe conformance corpus in
+   `packages/original-resource-documents`. Fixture output changes should be reviewed as
+   contract changes, not accepted as incidental snapshots.
 4. Run:
 
    ```sh
