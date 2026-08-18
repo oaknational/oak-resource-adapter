@@ -15,11 +15,6 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./fixtures": {
-      "types": "./dist/fixtures/index.d.ts",
-      "import": "./dist/fixtures/index.js",
-      "default": "./dist/fixtures/index.js"
-    },
     "./markup": {
       "types": "./dist/markup/index.d.ts",
       "import": "./dist/markup/index.js",
@@ -29,13 +24,12 @@
   },
   "files": [
     "dist",
-    "fixtures",
     "EXTRACTION_HANDOFF.md",
     "LICENSE",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
+    "build": "rm -rf dist && tsc --project tsconfig.build.json",
     "dev": "tsc --project tsconfig.build.json --watch",
     "lint": "eslint src --max-warnings=0",
     "lint:fix": "eslint src --fix",

@@ -48,11 +48,12 @@ vi.mock("./ai/dev-invoker", () => ({
   invokeDevSmokeText: vi.fn(),
 }));
 
+// Must stay a lesson the fixture corpus holds a worksheet extraction for.
 const lesson = {
-  lessonSlug: "adding-fractions",
-  programmeSlug: "ks2-maths",
-  title: "Adding fractions",
-  subjectSlug: "maths",
+  lessonSlug: "adopting-different-perspectives",
+  programmeSlug: "english-primary-ks2",
+  title: "Adopting different perspectives",
+  subjectSlug: "english",
   keyStageSlug: "ks2",
   availableResources: ["worksheet"],
 };

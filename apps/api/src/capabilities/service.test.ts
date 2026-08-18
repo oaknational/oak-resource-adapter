@@ -1,14 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import { evaluateCapabilities, getCapabilities } from "./service";
-import type { CapabilityDefinition, EligibilityContext } from "./types";
+import {
+  evaluateCapabilities,
+  getCapabilities,
+  resolveEligibility,
+  type EligibilityResolver,
+} from "./service";
+import { isAdaptable, type CapabilityDefinition } from "./types";
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 
 const worksheetLesson: LessonContext = {
-  lessonSlug: "adding-fractions",
-  programmeSlug: "ks2-maths",
-  title: "Adding fractions",
-  subjectSlug: "maths",
+  lessonSlug: "adopting-different-perspectives",
+  programmeSlug: "english-primary-ks2",
+  title: "Adopting different perspectives",
+  subjectSlug: "english",
   keyStageSlug: "ks2",
   availableResources: ["worksheet"],
 };
@@ -18,18 +23,26 @@ const quizOnlyLesson: LessonContext = {
   availableResources: ["starter-quiz"],
 };
 
+function resolverFor(
+  originalFileResourceTypes: readonly string[],
+  extractedResourceTypes: readonly string[],
+): EligibilityResolver {
+  return (lesson) =>
+    Promise.resolve({ lesson, originalFileResourceTypes, extractedResourceTypes });
+}
+
 const worksheetGatedCapability: CapabilityDefinition = {
   id: "test-worksheet-capability",
   label: "Worksheet capability",
   resourceType: "worksheet",
-  isEligible: ({ lesson }) => lesson.availableResources.includes("worksheet"),
+  isEligible: (context) => isAdaptable(context, "worksheet"),
 };
 
 const starterQuizGatedCapability: CapabilityDefinition = {
   id: "test-starter-quiz-capability",
   label: "Starter quiz capability",
   resourceType: "starter-quiz",
-  isEligible: ({ lesson }) => lesson.availableResources.includes("starter-quiz"),
+  isEligible: (context) => isAdaptable(context, "starter-quiz"),
 };
 
 const testDefinitions: ReadonlyArray<CapabilityDefinition> = [
@@ -38,8 +51,10 @@ const testDefinitions: ReadonlyArray<CapabilityDefinition> = [
 ];
 
 describe("getCapabilities", () => {
-  it("returns the scaffolded practice sheet capability for a lesson with a worksheet", () => {
-    expect(getCapabilities(worksheetLesson)).toEqual({
+  it("returns the scaffolded practice sheet capability for an adaptable worksheet", async () => {
+    await expect(
+      getCapabilities(worksheetLesson, resolverFor(["worksheet"], ["worksheet"])),
+    ).resolves.toEqual({
       capabilities: [
         {
           id: "worksheetAdapter",
@@ -50,20 +65,50 @@ describe("getCapabilities", () => {
     });
   });
 
-  it("returns no capabilities for a lesson without a worksheet", () => {
-    expect(getCapabilities(quizOnlyLesson)).toEqual({ capabilities: [] });
+  it("returns no capabilities for a lesson without an original worksheet file", async () => {
+    await expect(
+      getCapabilities(quizOnlyLesson, resolverFor(["starter-quiz"], ["worksheet"])),
+    ).resolves.toEqual({ capabilities: [] });
   });
 
-  it("excludes eligibility predicates from the response", () => {
-    const { capabilities } = getCapabilities(worksheetLesson);
+  it("returns no capabilities when no extraction exists", async () => {
+    await expect(
+      getCapabilities(worksheetLesson, resolverFor(["worksheet"], [])),
+    ).resolves.toEqual({ capabilities: [] });
+  });
+
+  it("excludes eligibility predicates from the response", async () => {
+    const { capabilities } = await getCapabilities(
+      worksheetLesson,
+      resolverFor(["worksheet"], ["worksheet"]),
+    );
 
     expect(capabilities[0]).not.toHaveProperty("isEligible");
   });
 });
 
+describe("resolveEligibility", () => {
+  it("reads extracted resource types from the fixture corpus", async () => {
+    await expect(resolveEligibility(worksheetLesson)).resolves.toMatchObject({
+      originalFileResourceTypes: ["worksheet"],
+      extractedResourceTypes: ["worksheet"],
+    });
+  });
+
+  it("reports no extracted resource types for a lesson outside the corpus", async () => {
+    await expect(
+      resolveEligibility({ ...worksheetLesson, lessonSlug: "not-a-lesson" }),
+    ).resolves.toMatchObject({ extractedResourceTypes: [] });
+  });
+});
+
 describe("evaluateCapabilities", () => {
   it("evaluates each definition's predicate independently", () => {
-    const response = evaluateCapabilities(testDefinitions, { lesson: quizOnlyLesson });
+    const response = evaluateCapabilities(testDefinitions, {
+      lesson: quizOnlyLesson,
+      originalFileResourceTypes: ["starter-quiz"],
+      extractedResourceTypes: ["starter-quiz"],
+    });
 
     expect(response).toEqual({
       capabilities: [
@@ -77,13 +122,10 @@ describe("evaluateCapabilities", () => {
   });
 
   it("preserves definition order in the response", () => {
-    const bothResourcesLesson: LessonContext = {
-      ...worksheetLesson,
-      availableResources: ["worksheet", "starter-quiz"],
-    };
-
     const response = evaluateCapabilities(testDefinitions, {
-      lesson: bothResourcesLesson,
+      lesson: worksheetLesson,
+      originalFileResourceTypes: ["worksheet", "starter-quiz"],
+      extractedResourceTypes: ["worksheet", "starter-quiz"],
     });
 
     expect(response.capabilities.map((capability) => capability.id)).toEqual([
@@ -92,36 +134,19 @@ describe("evaluateCapabilities", () => {
     ]);
   });
 
-  it("passes the eligibility context through to predicates", () => {
-    // worksheetFacts stands in for a derived fact the production context does not
-    // carry; the cast keeps the stub out of the production context type.
-    type StubEligibilityContext = EligibilityContext &
-      Readonly<{ worksheetFacts: Readonly<{ questionCount: number }> }>;
-
-    const questionCountCapability: CapabilityDefinition = {
-      id: "test-question-count-capability",
-      label: "Question count capability",
-      resourceType: "worksheet",
-      isEligible: (context) =>
-        (context as StubEligibilityContext).worksheetFacts.questionCount > 0,
-    };
-
-    const contextWithQuestions: StubEligibilityContext = {
+  it("requires both an original file and an extraction", () => {
+    const originalFileOnly = evaluateCapabilities([worksheetGatedCapability], {
       lesson: worksheetLesson,
-      worksheetFacts: { questionCount: 3 },
-    };
-    const contextWithoutQuestions: StubEligibilityContext = {
+      originalFileResourceTypes: ["worksheet"],
+      extractedResourceTypes: [],
+    });
+    const extractionOnly = evaluateCapabilities([worksheetGatedCapability], {
       lesson: worksheetLesson,
-      worksheetFacts: { questionCount: 0 },
-    };
+      originalFileResourceTypes: [],
+      extractedResourceTypes: ["worksheet"],
+    });
 
-    expect(
-      evaluateCapabilities([questionCountCapability], contextWithQuestions)
-        .capabilities,
-    ).toHaveLength(1);
-    expect(
-      evaluateCapabilities([questionCountCapability], contextWithoutQuestions)
-        .capabilities,
-    ).toEqual([]);
+    expect(originalFileOnly.capabilities).toEqual([]);
+    expect(extractionOnly.capabilities).toEqual([]);
   });
 });

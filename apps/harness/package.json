@@ -18,6 +18,8 @@
     "@oaknational/oak-components": "^3.0.0",
     "@oaknational/resource-adapter": "workspace:*",
     "@oaknational/resource-adapter-logger": "workspace:*",
+    "@oaknational/resource-adapter-original-resource-documents": "workspace:*",
+    "@oaknational/resource-document": "workspace:*",
     "next": "^16.1.0",
     "next-cloudinary": "^6.16.0",
     "react": "^19.0.0",

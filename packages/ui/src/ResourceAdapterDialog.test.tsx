@@ -8,7 +8,11 @@ import { userEvent } from "@testing-library/user-event";
 import { ResourceAdapterDialog } from "./ResourceAdapterDialog.js";
 import type { ResourceAdapterDialogProps } from "./ResourceAdapterDialog.js";
 import { getResourceAdapterFeatureFlags } from "./getResourceAdapterFeatureFlags.js";
-import type { LessonContext, ResourceAdapterCapability } from "./publicTypes.js";
+import type {
+  LessonContext,
+  ResourceAdapterCapability,
+  ResourceDocumentSummary,
+} from "./publicTypes.js";
 
 // The flag request itself is covered by getResourceAdapterFeatureFlags.test.ts,
 // so these tests own only what the dialog does with the result.
@@ -35,6 +39,17 @@ const capability: ResourceAdapterCapability = {
   id: "worksheetAdapter",
   label: "Adapt worksheet",
   resourceType: "worksheet",
+};
+
+const resourceDocumentSummary: ResourceDocumentSummary = {
+  id: "oak:worksheet:adding-fractions:pupil",
+  title: "Adding fractions worksheet",
+  profile: "worksheet.v0",
+  schemaVersion: "0.1",
+  contentNodeCount: 12,
+  questionCount: 3,
+  assetCount: 0,
+  diagnosticCount: 1,
 };
 
 /** A lesson whose title throws when the flag is set. */
@@ -144,6 +159,17 @@ describe("ResourceAdapterDialog", () => {
 
       expect(screen.queryByText(/Available capability/)).not.toBeInTheDocument();
       expect(screen.getByText(lesson.title)).toBeInTheDocument();
+    });
+
+    it("shows the selected worksheet document summary when supplied", () => {
+      renderDialog({ resourceDocumentSummary });
+
+      expect(screen.getByText(/Worksheet data loaded:/)).toHaveTextContent(
+        "Adding fractions worksheet",
+      );
+      expect(screen.getByText(/Worksheet data loaded:/)).toHaveTextContent(
+        "3 questions and 1 extraction diagnostic, using schema 0.1",
+      );
     });
   });
 

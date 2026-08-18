@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:using-trace-tables:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Using trace tables"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task A: Explain how to trace variable values"
+        }
+      ]
+    },
+    {
+      "id": "question-1",
+      "type": "question",
+      "label": "1",
+      "children": [
+        {
+          "id": "unstable:paragraph-explain-what-a-trace-table-is-and-describe-how-and-why",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Explain what a trace table is and describe how and why programmers use one."
+            }
+          ]
+        },
+        {
+          "id": "question-1-response",
+          "type": "responseSpace",
+          "kind": "lines",
+          "lines": 8
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task B: Trace values in a while loop"
+        }
+      ]
+    },
+    {
+      "id": "question-2",
+      "type": "question",
+      "label": "2",
+      "children": [
+        {
+          "id": "unstable:paragraph-create-a-trace-table-to-trace-the-values-of-line-varia",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Create a trace table to trace the values of line, variable, count and conditions in this program."
+            }
+          ]
+        },
+        {
+          "id": "countdown-program",
+          "type": "unsupported",
+          "description": "Unsupported extraction directive oak-code-block",
+          "original": {
+            "format": "oak-mmd",
+            "value": ":::oak-code-block {id=\"countdown-program\"}\nfrom time import sleep\ncount = 5\nwhile count != 0:\n    print(count)\n    count = count - 1\n    sleep(1)\n:::"
+          }
+        },
+        {
+          "id": "question-2-response",
+          "type": "responseSpace",
+          "kind": "grid"
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "using-trace-tables:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/using-trace-tables"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [
+    {
+      "category": "unsupported-markup",
+      "severity": "warning",
+      "message": "Unsupported extraction directive oak-code-block was preserved without interpretation.",
+      "nodeId": "countdown-program",
+      "fallback": "unsupported-node",
+      "reviewRequired": true
+    }
+  ],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Using trace tables",
+    "subject": {
+      "id": "computing",
+      "label": "Computing"
+    },
+    "keyStage": {
+      "id": "ks4",
+      "label": "Key stage 4"
+    },
+    "yearGroup": {
+      "id": "year-10",
+      "label": "Year 10"
+    }
+  }
+}

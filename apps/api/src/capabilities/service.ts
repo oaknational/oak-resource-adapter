@@ -1,3 +1,5 @@
+import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
+
 import type {
   LessonContext,
   ResourceAdapterCapabilitiesResponse,
@@ -5,6 +7,10 @@ import type {
 
 import { capabilityDefinitions } from "./registry";
 import type { CapabilityDefinition, EligibilityContext } from "./types";
+
+export type EligibilityResolver = (
+  lesson: LessonContext,
+) => Promise<EligibilityContext>;
 
 export function evaluateCapabilities(
   definitions: ReadonlyArray<CapabilityDefinition>,
@@ -17,8 +23,23 @@ export function evaluateCapabilities(
   };
 }
 
-export function getCapabilities(
+/** `originalFileResourceTypes` is caller-supplied, not resolved from Oak. */
+export const resolveEligibility: EligibilityResolver = async (lesson) => ({
+  lesson,
+  originalFileResourceTypes: lesson.availableResources,
+  extractedResourceTypes: await originalResourceDocuments.listExtractedResourceTypes({
+    source: "oak",
+    lessonSlug: lesson.lessonSlug,
+    programmeSlug: lesson.programmeSlug,
+  }),
+});
+
+export async function getCapabilities(
   lesson: LessonContext,
-): ResourceAdapterCapabilitiesResponse {
-  return evaluateCapabilities(Object.values(capabilityDefinitions), { lesson });
+  resolveContext: EligibilityResolver = resolveEligibility,
+): Promise<ResourceAdapterCapabilitiesResponse> {
+  return evaluateCapabilities(
+    Object.values(capabilityDefinitions),
+    await resolveContext(lesson),
+  );
 }

@@ -1,15 +1,31 @@
 .skipLink {
   background: #222222;
+  clip-path: inset(50%);
   color: #ffffff;
-  left: 1rem;
-  padding: 0.75rem 1rem;
+  height: 1px;
+  overflow: hidden;
+  padding: 0;
   position: absolute;
-  top: -4rem;
-  z-index: 1;
+  white-space: nowrap;
+  width: 1px;
 }
 
 .skipLink:focus {
-  top: 1rem;
+  clip-path: none;
+  display: block;
+  height: auto;
+  left: 50%;
+  max-width: calc(100vw - 2rem);
+  overflow: visible;
+  padding: 0.75rem 1rem;
+  position: fixed;
+  text-align: center;
+  text-decoration: underline;
+  top: 0.5rem;
+  transform: translateX(-50%);
+  white-space: normal;
+  width: max-content;
+  z-index: 2;
 }
 
 .header {
@@ -20,6 +36,13 @@
   justify-content: space-between;
   min-height: 4.5rem;
   padding: 1rem clamp(1rem, 5vw, 4rem);
+}
+
+.header > div:first-child {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .brand {
@@ -33,7 +56,7 @@
   border: 1px solid #222222;
   border-radius: 999px;
   font-size: 0.875rem;
-  margin: 0 auto 0 0;
+  margin: 0;
   padding: 0.375rem 0.75rem;
 }
 
@@ -44,7 +67,8 @@
   display: inline-flex;
   font-size: 0.875rem;
   gap: 0.5rem;
-  margin: 0;
+  margin: 0 0 0 auto;
+  min-height: 2.75rem;
   padding: 0.375rem 0.75rem;
 }
 
@@ -57,7 +81,7 @@
 }
 
 .checking {
-  background: #fff7cf;
+  background: #fff7cc;
 }
 
 .healthy {
@@ -65,24 +89,126 @@
 }
 
 .unavailable {
-  background: #ffe5e5;
+  background: #f5e9f2;
+}
+
+.primaryNavigation {
+  background: #ebfbeb;
+  border-bottom: 1px solid #222222;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem clamp(1rem, 5vw, 4rem) 0;
+}
+
+.primaryNavigation a,
+.scenarioNavigation a {
+  color: #222222;
+  text-decoration: none;
+}
+
+.primaryNavigation a {
+  align-items: center;
+  border: 2px solid transparent;
+  border-bottom: 0;
+  display: inline-flex;
+  font-weight: 600;
+  min-height: 2.75rem;
+  padding: 0.625rem 1rem;
+}
+
+.primaryNavigation a[aria-current="page"] {
+  background: #ffffff;
+  border-color: #222222;
+  margin-bottom: -1px;
+}
+
+.primaryNavigation a:focus-visible,
+.scenarioNavigation a:focus-visible,
+.lesson a:focus-visible,
+.markupDetails summary:focus-visible,
+.markupDetails pre:focus-visible,
+.workerTestButton:focus-visible {
+  outline: 3px solid #0d24c4;
+  outline-offset: 3px;
 }
 
 .main {
   margin: 0 auto;
-  max-width: 62rem;
+  max-width: 72rem;
   padding: clamp(1.5rem, 4vw, 4rem);
 }
 
+.scenarioNavigation {
+  margin-bottom: clamp(2rem, 5vw, 3rem);
+}
+
+.scenarioNavigation ul {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.scenarioNavigation a {
+  border: 2px solid #222222;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  height: 100%;
+  justify-content: center;
+  min-height: 5.5rem;
+  padding: 0.75rem;
+}
+
+.scenarioNavigation a:hover {
+  background: #ebfbeb;
+}
+
+.scenarioNavigation a[aria-current="page"] {
+  background: #222222;
+  color: #ffffff;
+}
+
+.scenarioNavigation span {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.scenarioNavigation small {
+  font-size: 0.8125rem;
+}
+
+.lesson,
+.smokeTests {
+  margin: 0 auto;
+  max-width: 62rem;
+}
+
 .lesson h1,
-.lesson h2 {
+.lesson h2,
+.smokeTests h1,
+.smokeTests h2 {
   font-weight: 600;
 }
 
-.lesson h1 {
+.lesson h1,
+.smokeTests h1 {
   font-size: clamp(2rem, 5vw, 3.25rem);
   line-height: 1.1;
   margin: 0.5rem 0 1rem;
+  overflow-wrap: anywhere;
+}
+
+.lesson h2 {
+  margin-top: 2.5rem;
+}
+
+.lesson a {
+  color: #0d24c4;
+  font-weight: 600;
 }
 
 .eyebrow {
@@ -90,19 +216,87 @@
   margin: 0;
 }
 
+.metadataGrid,
+.documentSummary {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 1rem 0;
+}
+
+.metadataGrid > div,
+.documentSummary > div {
+  border-left: 4px solid #222222;
+  padding: 0.25rem 0.75rem;
+}
+
+.metadataGrid dt,
+.documentSummary dt {
+  font-weight: 600;
+}
+
+.metadataGrid dd,
+.documentSummary dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
 .worksheet {
   background: #ebfbeb;
   border-radius: 0.75rem;
-  margin-top: 2rem;
-  padding: 1.5rem;
+  margin-top: 2.5rem;
+  padding: clamp(1rem, 4vw, 1.5rem);
 }
 
 .worksheet h2 {
-  margin-top: 0;
+  margin: 0.25rem 0 0;
 }
 
-.worksheet p {
-  margin-bottom: 0;
+.sectionHeadingRow {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.verifiedBadge {
+  background: #ffffff;
+  border: 1px solid #222222;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.375rem 0.75rem;
+}
+
+.documentSummary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.markupDetails {
+  border-top: 2px solid #222222;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+}
+
+.markupDetails summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 2.75rem;
+  padding: 0.625rem 0;
+}
+
+.markupDetails pre {
+  background: #222222;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0.75rem 0 0;
+  overflow-wrap: anywhere;
+  padding: 1rem;
+  white-space: pre-wrap;
 }
 
 .workerTest {
@@ -140,11 +334,6 @@
   background: #ebfbeb;
 }
 
-.workerTestButton:focus-visible {
-  outline: 3px solid #1d70b8;
-  outline-offset: 3px;
-}
-
 .workerTestButton:disabled {
   cursor: not-allowed;
   opacity: 0.6;
@@ -155,18 +344,107 @@
 }
 
 .createMore {
-  border-top: 2px solid #222222;
-  margin-top: 2rem;
-  padding-top: 2rem;
+  background: #ebfbeb;
+  border: 2px solid #222222;
+  border-radius: 0.75rem;
+  margin-top: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.createMore h2 {
+  margin: 0;
+}
+
+.createMore p {
+  margin: 0.5rem 0 1rem;
+}
+
+@media (max-width: 48rem) {
+  .header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .apiHealth {
+    margin-left: 0;
+  }
+
+  .documentSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 36rem) {
-  .header {
+  .header,
+  .header > div:first-child {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .harnessLabel {
-    margin: 0;
+  .primaryNavigation {
+    overflow-wrap: anywhere;
   }
+
+  .primaryNavigation a {
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .metadataGrid,
+  .documentSummary {
+    grid-template-columns: 1fr;
+  }
+}
+
+.visuallyHidden {
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.matchedResource {
+  color: #0b5c2e;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+/* Always present, so an empty slot reads as "OWA renders nothing here". */
+.owaSlot {
+  background: #ebfbeb;
+  border: 2px solid #222222;
+  border-radius: 0.75rem;
+  margin-top: 2.5rem;
+  padding: clamp(1rem, 4vw, 1.5rem);
+}
+
+.owaSlot > h2 {
+  margin: 0 0 0.75rem;
+}
+
+.owaSlotContent {
+  border: 2px dashed #6a7b6f;
+  border-radius: 0.5rem;
+  min-height: 7rem;
+  padding: 0.75rem;
+}
+
+/* The slot is the green panel, so the nested one must not stack another. */
+.owaSlotContent .createMore {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.owaSlotEmpty {
+  color: #4a4a4a;
+  font-style: italic;
+  margin: 0;
 }
