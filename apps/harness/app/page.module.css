@@ -126,7 +126,7 @@
 .scenarioNavigation a:focus-visible,
 .lesson a:focus-visible,
 .markupDetails summary:focus-visible,
-.markupDetails pre:focus-visible,
+.markupDetails section:focus-visible,
 .workerTestButton:focus-visible {
   outline: 3px solid #0d24c4;
   outline-offset: 3px;
@@ -352,8 +352,8 @@
 .historyActions button:focus-visible,
 .resultPanel button:focus-visible,
 .controlGrid select:focus-visible,
-.resultPanel pre:focus-visible,
-.documentInspector pre:focus-visible {
+.resultPanel section:focus-visible,
+.documentInspector section:focus-visible {
   outline: 3px solid #0d24c4;
   outline-offset: 3px;
 }
@@ -364,12 +364,17 @@
   padding: 0.75rem 1rem;
 }
 
+.resultPanel section,
+.documentInspector section {
+  max-height: 32rem;
+  overflow: auto;
+}
+
 .resultPanel pre,
 .documentInspector pre {
   background: #222222;
   color: #ffffff;
-  max-height: 32rem;
-  overflow: auto;
+  margin: 0;
   padding: 1rem;
   white-space: pre-wrap;
 }

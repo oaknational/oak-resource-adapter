@@ -65,9 +65,12 @@ export function ResourceDocumentInspector({
       </ol>
       <details className={styles.markupDetails}>
         <summary>Raw document JSON</summary>
-        <pre aria-label={`${label} as JSON`} role="region" tabIndex={0}>
-          <code>{JSON.stringify(document, null, 2)}</code>
-        </pre>
+        {/* Focusable so a keyboard can scroll it, which WCAG 2.1.1 requires. */}
+        <section aria-label={`${label} as JSON`} tabIndex={0}>
+          <pre>
+            <code>{JSON.stringify(document, null, 2)}</code>
+          </pre>
+        </section>
       </details>
     </section>
   );

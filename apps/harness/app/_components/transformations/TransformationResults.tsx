@@ -36,9 +36,12 @@ export function TransformationResults({
                 <code>{preview.prompt.identifier}</code>, version{" "}
                 {preview.prompt.version}
               </p>
-              <pre aria-label="Rendered prompt" role="region" tabIndex={0}>
-                <code>{preview.prompt.text}</code>
-              </pre>
+              {/* Focusable so a keyboard can scroll it, which WCAG 2.1.1 requires. */}
+              <section aria-label="Rendered prompt" tabIndex={0}>
+                <pre>
+                  <code>{preview.prompt.text}</code>
+                </pre>
+              </section>
             </>
           )}
         </section>
@@ -59,14 +62,15 @@ export function TransformationResults({
                 {companions.length === 1 ? "" : "s"}
               </summary>
               {companions.map(({ document }) => (
-                <pre
+                <section
                   aria-label={`Companion document ${document.id} as JSON`}
                   key={document.id}
-                  role="region"
                   tabIndex={0}
                 >
-                  <code>{JSON.stringify(document, null, 2)}</code>
-                </pre>
+                  <pre>
+                    <code>{JSON.stringify(document, null, 2)}</code>
+                  </pre>
+                </section>
               ))}
             </details>
           )}

@@ -327,19 +327,15 @@ test(
     // Previewing renders the prompt without invoking a model.
     await page.getByRole("button", { name: "Preview prompt" }).click();
 
-    const preview = page.getByRole("heading", { name: "Prompt preview" });
-    await expect(preview).toBeVisible();
-    await expect(
-      page.getByText("scaffold-add-word-bank", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("YOUR SCAFFOLD: a word bank", { exact: false }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Prompt preview" })).toBeVisible();
+    // Names the prompt it rendered, which the controls above do not.
+    await expect(page.getByText(/scaffold-add-word-bank, version \d+/)).toBeVisible();
+    await expect(page.getByRole("region", { name: "Rendered prompt" })).toContainText(
+      "YOUR SCAFFOLD: a word bank",
+    );
 
     // The material catalogue explains what a prompt can be given, and why not.
-    const material = page.getByRole("table", {
-      name: /which transformations ask for each/,
-    });
+    const material = page.getByRole("region", { name: "Oak lesson material" });
     await expect(
       material.getByRole("rowheader", { name: "Lesson keywords" }),
     ).toBeVisible();
