@@ -4,6 +4,7 @@ const workspaceUnits = {
   "apps/api": [
     "packages/ai",
     "packages/contracts",
+    "packages/curriculum",
     "packages/db",
     "packages/logger",
     "packages/original-resource-documents",

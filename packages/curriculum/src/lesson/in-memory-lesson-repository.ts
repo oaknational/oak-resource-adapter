@@ -4,6 +4,10 @@ import type { Lesson, LessonIdentity, LessonRepository } from "./lesson.js";
 export function buildLesson(overrides: Partial<Lesson> = {}): Lesson {
   return {
     contentGuidance: [],
+    keyLearningPoints: [],
+    keywords: [],
+    misconceptions: [],
+    outcome: null,
     identity: {
       lessonSlug: "adding-fractions",
       programmeSlug: "maths-primary-ks2",
@@ -28,6 +32,7 @@ export function buildLesson(overrides: Partial<Lesson> = {}): Lesson {
       },
     ],
     title: "Adding fractions",
+    transcript: null,
     unit: { slug: "fractions", title: "Fractions" },
     ...overrides,
   };

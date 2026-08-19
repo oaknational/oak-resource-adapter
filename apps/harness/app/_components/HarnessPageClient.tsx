@@ -1,10 +1,10 @@
 "use client";
 
-import { EdgeCaseView } from "./EdgeCaseView";
-import { LessonScenarioView } from "./LessonScenarioView";
-import { PrimaryNavigation } from "./PrimaryNavigation";
-import { SiteHeader } from "./SiteHeader";
-import { SmokeTestsView } from "./SmokeTestsView";
+import { EdgeCaseView } from "./edge-cases";
+import { LessonScenarioView } from "./lessons";
+import { PrimaryNavigation, SiteHeader } from "./shared";
+import { SmokeTestsView } from "./smoke-tests";
+import { TransformationsView } from "./transformations";
 import { resolveApiBaseUrl } from "../harness-api";
 import styles from "../page.module.css";
 import { useApiHealth } from "../_hooks/useApiHealth";
@@ -40,6 +40,12 @@ export function HarnessPageClient({
           />
         )}
         {view.section === "smoke-tests" && <SmokeTestsView />}
+        {view.section === "transformations" && (
+          <TransformationsView
+            scenario={view.scenario}
+            scenarioNavigation={view.navigation}
+          />
+        )}
       </main>
     </>
   );

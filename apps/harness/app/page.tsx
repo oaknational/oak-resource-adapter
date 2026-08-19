@@ -10,7 +10,7 @@ type HarnessPageProps = Readonly<{
 }>;
 
 function parseSection(view: SearchParamValue): HarnessSection {
-  if (view === "smoke-tests" || view === "edge-cases") {
+  if (view === "smoke-tests" || view === "edge-cases" || view === "transformations") {
     return view;
   }
 
@@ -53,6 +53,14 @@ async function resolveView(
       section,
       navigation: edgeCaseNavigation,
       edgeCase: await loadEdgeCase(id),
+    };
+  }
+
+  if (section === "transformations") {
+    return {
+      section,
+      navigation: lessonScenarioNavigation,
+      scenario: await loadLessonScenario(lessonId),
     };
   }
 
