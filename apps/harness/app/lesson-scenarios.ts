@@ -72,6 +72,7 @@ export async function loadLessonScenario(id: string): Promise<LessonScenario> {
     rightsCheckedOn: oakLesson.rightsCheckedOn,
     sourceUrl: oakLesson.sourceUrl,
     markup,
+    document,
     diagnostics: document.diagnostics.map((diagnostic) => ({
       category: diagnostic.category,
       severity: diagnostic.severity,

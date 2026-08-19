@@ -3,6 +3,8 @@ import type {
   ResourceAdapterCapability,
 } from "@oaknational/resource-adapter-contracts";
 
+import type { RegisteredTransformationKind } from "../transformations/registry";
+
 /** Two lists rather than one: they come from different systems and can disagree. */
 export type EligibilityContext = Readonly<{
   lesson: LessonContext;
@@ -13,6 +15,8 @@ export type EligibilityContext = Readonly<{
 export type CapabilityDefinition = Readonly<
   ResourceAdapterCapability & {
     isEligible: (context: EligibilityContext) => boolean;
+    /** The transformations this capability offers, in the order a teacher sees them. */
+    transformations: readonly RegisteredTransformationKind[];
   }
 >;
 

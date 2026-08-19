@@ -39,8 +39,13 @@ export function contentRow(overrides: Partial<LessonContent> = {}): LessonConten
   return lessonContentFixture({
     overrides: {
       content_guidance: null,
+      key_learning_points: [],
+      lesson_keywords: [],
       lesson_slug: "adding-fractions",
       lesson_title: "Adding fractions",
+      misconceptions_and_common_mistakes: [],
+      pupil_lesson_outcome: null,
+      transcript_sentences: null,
       ...overrides,
     },
   });

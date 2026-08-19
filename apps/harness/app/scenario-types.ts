@@ -2,8 +2,10 @@ import type {
   LessonContext,
   ResourceDocumentSummary,
 } from "@oaknational/resource-adapter";
+import type { ResourceDocument } from "@oaknational/resource-document";
 
-export type HarnessSection = "lessons" | "edge-cases" | "smoke-tests";
+export type HarnessSection =
+  "lessons" | "edge-cases" | "smoke-tests" | "transformations";
 
 export type ExtractionDiagnostic = Readonly<{
   category: string;
@@ -40,6 +42,7 @@ export type LessonScenario = Readonly<{
   rightsCheckedOn: string;
   sourceUrl: string;
   markup: string;
+  document: ResourceDocument;
   documentSummary: ResourceDocumentSummary;
   diagnostics: readonly ExtractionDiagnostic[];
   unsupportedNodeIds: readonly string[];
@@ -77,5 +80,10 @@ export type HarnessView =
       section: "edge-cases";
       navigation: readonly EdgeCaseNavigationItem[];
       edgeCase: EdgeCase;
+    }>
+  | Readonly<{
+      section: "transformations";
+      navigation: readonly LessonScenarioNavigationItem[];
+      scenario: LessonScenario;
     }>
   | Readonly<{ section: "smoke-tests" }>;

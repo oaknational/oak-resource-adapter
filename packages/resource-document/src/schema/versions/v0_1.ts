@@ -97,6 +97,28 @@ export interface QuestionNode extends ResourceNodeBase {
   children: ResourceNode[];
 }
 
+export const definitionSourceSchema = z.enum(["generated", "oak-lesson"]);
+
+export interface DefinitionEntry {
+  term: InlineContent;
+  /** Absent for a list of terms alone, such as a word bank without definitions. */
+  definition?: InlineContent | undefined;
+  example?: InlineContent | undefined;
+  /**
+   * Where the wording came from. `oak-lesson` marks a term Oak's own curriculum
+   * defines, which a renderer may distinguish from one written to unlock a task.
+   */
+  source?: z.output<typeof definitionSourceSchema> | undefined;
+}
+
+/** A word bank, glossary or other list of terms, with or without definitions. */
+export interface DefinitionListNode extends ResourceNodeBase {
+  type: "definitionList";
+  /** Introduces the list to the pupil. */
+  lead?: InlineContent | undefined;
+  entries: DefinitionEntry[];
+}
+
 export interface ResponseSpaceNode extends ResourceNodeBase {
   type: "responseSpace";
   kind: z.output<typeof responseSpaceKindSchema>;
@@ -125,9 +147,17 @@ export type ResourceNode =
   | ParagraphNode
   | CalloutNode
   | QuestionNode
+  | DefinitionListNode
   | ResponseSpaceNode
   | FigureNode
   | UnsupportedNode;
+
+export const definitionEntrySchema = z.strictObject({
+  term: inlineContentSchema,
+  definition: inlineContentSchema.optional(),
+  example: inlineContentSchema.optional(),
+  source: definitionSourceSchema.optional(),
+});
 
 const commonNodeShape = {
   id: identifierSchema,
@@ -166,6 +196,12 @@ export const resourceNodeSchema: z.ZodType<ResourceNode> = z.lazy(() =>
       label: nonEmptyStringSchema.optional(),
       marks: z.number().int().nonnegative().optional(),
       children: z.array(resourceNodeSchema),
+    }),
+    z.strictObject({
+      ...commonNodeShape,
+      type: z.literal("definitionList"),
+      lead: inlineContentSchema.optional(),
+      entries: z.array(definitionEntrySchema).min(1),
     }),
     z.strictObject({
       ...commonNodeShape,
