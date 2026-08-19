@@ -37,7 +37,12 @@ export const LESSON_BY_SLUG_QUERY = `
       where: { lesson_slug: { _eq: $lessonSlug }, _state: { _eq: "published" } }
     ) {
       content_guidance
+      key_learning_points
+      lesson_keywords
       lesson_title
+      misconceptions_and_common_mistakes
+      pupil_lesson_outcome
+      transcript_sentences
     }
     assets: ${LESSON_VIEWS.assets}(
       where: { slug: { _eq: $lessonSlug } }

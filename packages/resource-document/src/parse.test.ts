@@ -47,6 +47,42 @@ describe("resource document parsing", () => {
     expect(result).toMatchObject({ success: false, error: { code } });
   });
 
+  it("parses a definition list with and without definitions", () => {
+    const input = {
+      ...genericDocument(),
+      content: [
+        {
+          id: "word-bank-1",
+          type: "definitionList",
+          lead: [{ type: "text", text: "Vocabulary you could use:" }],
+          entries: [
+            { term: [{ type: "text", text: "limestone" }] },
+            {
+              term: [{ type: "text", text: "features" }],
+              definition: [
+                { type: "text", text: "something that forms part of a landscape" },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(parseResourceDocument(input)).toEqual(input);
+  });
+
+  it("rejects a definition list with no entries", () => {
+    const result = safeParseResourceDocument({
+      ...genericDocument(),
+      content: [{ id: "word-bank-1", type: "definitionList", entries: [] }],
+    });
+
+    expect(result).toMatchObject({
+      success: false,
+      error: { code: "invalid_document" },
+    });
+  });
+
   it("rejects unknown keys rather than stripping them", () => {
     const result = safeParseResourceDocument({
       ...genericDocument(),

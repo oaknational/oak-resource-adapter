@@ -17,6 +17,8 @@ import type {
 } from "../resource/resource.js";
 import type {
   CategoryMaxRestriction,
+  LessonKeyword,
+  LessonMisconception,
   Programme,
   RestrictionLevel,
   ThirdPartyMaterialCategory,
@@ -52,19 +54,44 @@ export const browseRowSchema = syntheticUnitvariantLessonsByKsSchema
   }));
 
 export const contentRowSchema = lessonContentSchema
-  .pick({})
+  .pick({
+    key_learning_points: true,
+    lesson_keywords: true,
+    misconceptions_and_common_mistakes: true,
+    pupil_lesson_outcome: true,
+    transcript_sentences: true,
+  })
   .extend({
     content_guidance: z
       .array(contentGuidanceSchema.pick({ contentguidance_label: true }))
       .nullable(),
     lesson_title: z.string().min(1),
   })
-  .transform((row): { contentGuidance: readonly string[]; title: string } => ({
-    contentGuidance: (row.content_guidance ?? []).flatMap((guidance) =>
-      guidance.contentguidance_label === null ? [] : [guidance.contentguidance_label],
-    ),
-    title: row.lesson_title,
-  }));
+  .transform(
+    (
+      row,
+    ): {
+      contentGuidance: readonly string[];
+      keyLearningPoints: readonly string[];
+      keywords: readonly LessonKeyword[];
+      misconceptions: readonly LessonMisconception[];
+      outcome: string | null;
+      title: string;
+      transcript: string | null;
+    } => ({
+      contentGuidance: (row.content_guidance ?? []).flatMap((guidance) =>
+        guidance.contentguidance_label === null ? [] : [guidance.contentguidance_label],
+      ),
+      keyLearningPoints: (row.key_learning_points ?? []).map(
+        ({ key_learning_point }) => key_learning_point,
+      ),
+      keywords: row.lesson_keywords ?? [],
+      misconceptions: row.misconceptions_and_common_mistakes ?? [],
+      outcome: row.pupil_lesson_outcome,
+      title: row.lesson_title,
+      transcript: row.transcript_sentences,
+    }),
+  );
 
 /**
  * The content view also carries `worksheet_asset_object_url` and its siblings,

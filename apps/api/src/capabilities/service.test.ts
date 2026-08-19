@@ -36,6 +36,7 @@ const worksheetGatedCapability: CapabilityDefinition = {
   label: "Worksheet capability",
   resourceType: "worksheet",
   isEligible: (context) => isAdaptable(context, "worksheet"),
+  transformations: ["identity"],
 };
 
 const starterQuizGatedCapability: CapabilityDefinition = {
@@ -43,6 +44,7 @@ const starterQuizGatedCapability: CapabilityDefinition = {
   label: "Starter quiz capability",
   resourceType: "starter-quiz",
   isEligible: (context) => isAdaptable(context, "starter-quiz"),
+  transformations: ["identity"],
 };
 
 const testDefinitions: ReadonlyArray<CapabilityDefinition> = [
@@ -84,6 +86,15 @@ describe("getCapabilities", () => {
     );
 
     expect(capabilities[0]).not.toHaveProperty("isEligible");
+  });
+
+  it("excludes the capability's transformation kinds from the response", async () => {
+    const { capabilities } = await getCapabilities(
+      worksheetLesson,
+      resolverFor(["worksheet"], ["worksheet"]),
+    );
+
+    expect(capabilities[0]).not.toHaveProperty("transformations");
   });
 });
 

@@ -302,3 +302,45 @@ test(
     );
   },
 );
+
+test(
+  "previews a transformation prompt against a fixture",
+  {
+    tag: "@deployment-safe",
+  },
+  async ({ page }) => {
+    await page.goto("/?view=transformations");
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Test transformations" }),
+    ).toBeVisible();
+
+    // The catalogue arrives from the API, so the definition select is the seam
+    // between the registry and the harness.
+    const definition = page.getByLabel("Definition");
+    await expect(definition).toBeEnabled();
+    await definition.selectOption("scaffold-add-word-bank");
+
+    await expect(page.getByLabel("Support level")).toBeVisible();
+    await expect(page.getByLabel("Target node")).toBeVisible();
+
+    // Previewing renders the prompt without invoking a model.
+    await page.getByRole("button", { name: "Preview prompt" }).click();
+
+    await expect(page.getByRole("heading", { name: "Prompt preview" })).toBeVisible();
+    // Names the prompt it rendered, which the controls above do not.
+    await expect(page.getByText(/scaffold-add-word-bank, version \d+/)).toBeVisible();
+    await expect(page.getByRole("region", { name: "Rendered prompt" })).toContainText(
+      "YOUR SCAFFOLD: a word bank",
+    );
+
+    // The material catalogue explains what a prompt can be given, and why not.
+    const material = page.getByRole("region", { name: "Oak lesson material" });
+    await expect(
+      material.getByRole("rowheader", { name: "Lesson keywords" }),
+    ).toBeVisible();
+    await expect(material.getByRole("row", { name: /Lesson slides/ })).toContainText(
+      "Not yet",
+    );
+  },
+);

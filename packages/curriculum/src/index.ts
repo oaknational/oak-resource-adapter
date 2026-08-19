@@ -10,6 +10,8 @@ export type {
   CategoryMaxRestriction,
   Lesson,
   LessonIdentity,
+  LessonKeyword,
+  LessonMisconception,
   LessonRepository,
   Programme,
   RestrictionLevel,

@@ -87,6 +87,13 @@ env:pull:dev` writes them: the two URLs belong with the other non-secret values 
 `env_vars`, and the API key follows [adding a new
 secret](DEVELOPMENT.md#adding-a-new-secret).
 
+Development points at Oak's staging curriculum rather than production, so no
+production credential is needed on a developer machine. An API key is accepted
+only by the endpoint that issued it, so `CURRICULUM_API_URL` and
+`CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY` have to be changed as a
+pair; a key from the wrong environment fails as `Authentication hook
+unauthorized this request`.
+
 Unit tests make no network calls. The integration test reaches Oak for real:
 
 ```sh

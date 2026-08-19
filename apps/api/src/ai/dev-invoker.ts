@@ -3,21 +3,14 @@ import {
   createConsoleInvocationRecorder,
   createModelInvoker,
   createOpenAIResponsesTransport,
-  defineRoleBindings,
   ModelInvocationError,
   type TextModelOutputResult,
 } from "@oaknational/resource-adapter-ai";
 
-const devRoleBindings = defineRoleBindings({
-  "dev-smoke": {
-    model: "gpt-5.6-luna",
-    transport: "openai",
-  },
-});
+import { modelRoleBindings } from "./model-roles";
+import type { ResourceAdapterModelInvoker } from "./model-roles";
 
-export async function invokeDevSmokeText(
-  input: string,
-): Promise<TextModelOutputResult> {
+export function createDevModelInvoker(): ResourceAdapterModelInvoker {
   if (!process.env.OPENAI_API_KEY) {
     throw new ModelInvocationError({
       code: "INVALID_CONFIGURATION",
@@ -25,15 +18,19 @@ export async function invokeDevSmokeText(
     });
   }
 
-  const invoker = createModelInvoker({
+  return createModelInvoker({
     recorder: createConsoleInvocationRecorder(),
-    roleBindings: devRoleBindings,
+    roleBindings: modelRoleBindings,
     transports: {
       openai: createOpenAIResponsesTransport({ client: new OpenAI() }),
     },
   });
+}
 
-  return invoker.invokeText({
+export async function invokeDevSmokeText(
+  input: string,
+): Promise<TextModelOutputResult> {
+  return createDevModelInvoker().invokeText({
     correlationKey: "dev-ai-invoke",
     request: { input, max_output_tokens: 256 },
     role: "dev-smoke",

@@ -27,6 +27,8 @@ export type {
   AnswerAnnotation,
   Asset,
   CalloutNode,
+  DefinitionEntry,
+  DefinitionListNode,
   DocumentProvenance,
   FigureNode,
   GenericDocumentV0_1 as GenericDocument,

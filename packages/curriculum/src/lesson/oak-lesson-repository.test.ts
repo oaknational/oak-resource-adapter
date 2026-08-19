@@ -134,9 +134,10 @@ describe("the request the repository makes", () => {
     const { query } = JSON.parse(init.body as string) as { query: string };
     expect(query).toContain("asset_worksheet");
     expect(query).toContain("quiz_starter");
+    expect(query).toContain("transcript_sentences");
     expect(query).not.toContain("worksheet_asset_object_url");
     expect(query).not.toContain("starter_quiz");
-    expect(query).not.toContain("transcript_sentences");
+    expect(query).not.toContain("teacher_tips");
   });
 
   it("asks the lesson-keyed views for published rows only", async () => {
@@ -160,6 +161,11 @@ describe("the lesson the repository returns", () => {
     ).resolves.toEqual({
       contentGuidance: [],
       identity: addingFractions,
+      keyLearningPoints: [],
+      keywords: [],
+      misconceptions: [],
+      outcome: null,
+      transcript: null,
       maxRestrictions: [],
       programme: {
         examBoard: null,
@@ -214,6 +220,61 @@ describe("the lesson the repository returns", () => {
         tier: "higher",
       },
     });
+  });
+
+  it("returns the lesson text a transformation can be given", async () => {
+    oakResponds({
+      content: [
+        contentRow({
+          key_learning_points: [{ key_learning_point: "A fraction names a part" }],
+          misconceptions_and_common_mistakes: [
+            {
+              misconception: "Adding denominators",
+              response: "Use a common denominator",
+            },
+          ],
+          pupil_lesson_outcome: "I can add fractions",
+          transcript_sentences: "Today we are adding fractions.",
+        }),
+      ],
+    });
+
+    await expect(
+      createOakLessonRepository(config).fetch(addingFractions),
+    ).resolves.toMatchObject({
+      keyLearningPoints: ["A fraction names a part"],
+      misconceptions: [
+        { misconception: "Adding denominators", response: "Use a common denominator" },
+      ],
+      outcome: "I can add fractions",
+      transcript: "Today we are adding fractions.",
+    });
+  });
+
+  it("returns the lesson's keywords with Oak's definitions", async () => {
+    oakResponds({
+      content: [
+        contentRow({
+          lesson_keywords: [
+            { keyword: "numerator", description: "the number above the line" },
+          ],
+        }),
+      ],
+    });
+
+    await expect(
+      createOakLessonRepository(config).fetch(addingFractions),
+    ).resolves.toMatchObject({
+      keywords: [{ keyword: "numerator", description: "the number above the line" }],
+    });
+  });
+
+  it("reports no keywords for a lesson that publishes none", async () => {
+    oakResponds({ content: [contentRow({ lesson_keywords: null })] });
+
+    await expect(
+      createOakLessonRepository(config).fetch(addingFractions),
+    ).resolves.toMatchObject({ keywords: [] });
   });
 
   it("ignores content guidance Oak publishes without a label", async () => {
