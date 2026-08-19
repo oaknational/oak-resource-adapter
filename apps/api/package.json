@@ -16,7 +16,7 @@
     "type-check": "next typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.5.22",
+    "@clerk/nextjs": "^7.7.4",
     "@oaknational/resource-adapter-ai": "workspace:*",
     "@oaknational/resource-adapter-contracts": "workspace:*",
     "@oaknational/resource-adapter-curriculum": "workspace:*",
