@@ -20,7 +20,7 @@
     "@oaknational/resource-adapter-logger": "workspace:*",
     "@oaknational/resource-adapter-original-resource-documents": "workspace:*",
     "@oaknational/resource-document": "workspace:*",
-    "next": "^16.1.0",
+    "next": "^16.2.11",
     "next-cloudinary": "^6.16.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
