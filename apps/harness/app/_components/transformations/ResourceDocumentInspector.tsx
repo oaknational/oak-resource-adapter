@@ -2,7 +2,26 @@ import { walkResourceDocument } from "@oaknational/resource-document";
 
 import { resourceNodeLabel } from "./resource-node-label";
 import styles from "../../page.module.css";
-import type { ResourceDocument } from "@oaknational/resource-document";
+import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
+
+type NodeChange = "added" | "changed" | "removed" | "unchanged";
+
+function changeFor(
+  node: ResourceNode,
+  comparison: Map<string, string> | undefined,
+  missingChange: "added" | "removed",
+): NodeChange {
+  if (comparison === undefined) {
+    return "unchanged";
+  }
+
+  const previous = comparison.get(node.id);
+  if (previous === undefined) {
+    return missingChange;
+  }
+
+  return previous === JSON.stringify(node) ? "unchanged" : "changed";
+}
 
 function nodeMap(document: ResourceDocument): Map<string, string> {
   return new Map(
@@ -24,22 +43,14 @@ export function ResourceDocumentInspector({
   label: string;
   missingChange?: "added" | "removed" | undefined;
 }>) {
-  const comparison = compareWith === undefined ? new Map() : nodeMap(compareWith);
+  const comparison = compareWith === undefined ? undefined : nodeMap(compareWith);
 
   return (
     <section aria-label={label} className={styles.documentInspector}>
       <h3>{label}</h3>
       <ol>
         {Array.from(walkResourceDocument(document), (node) => {
-          const previous = comparison.get(node.id);
-          const change =
-            compareWith === undefined
-              ? "unchanged"
-              : previous === undefined
-                ? missingChange
-                : previous === JSON.stringify(node)
-                  ? "unchanged"
-                  : "changed";
+          const change = changeFor(node, comparison, missingChange);
 
           return (
             <li className={styles[change]} key={node.id}>
@@ -54,7 +65,7 @@ export function ResourceDocumentInspector({
       </ol>
       <details className={styles.markupDetails}>
         <summary>Raw document JSON</summary>
-        <pre tabIndex={0}>
+        <pre aria-label={`${label} as JSON`} role="region" tabIndex={0}>
           <code>{JSON.stringify(document, null, 2)}</code>
         </pre>
       </details>

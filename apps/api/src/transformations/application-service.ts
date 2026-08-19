@@ -1,12 +1,12 @@
 import type { LessonIdentity } from "@oaknational/resource-adapter-curriculum";
 
-import type { PreparePrompt } from "./execute";
 import { TransformationRequestError } from "./errors";
 import {
   executePreparedTransformation,
   prepareTransformation,
   type ExecutePreparedTransformationConfig,
   type PreparedTransformation,
+  type PreparePrompt,
   type TransformationRequest,
   type TransformationRun,
 } from "./execute";
@@ -15,6 +15,7 @@ import type {
   TransformationMaterialRequirement,
 } from "./oak-material/material";
 import { isRegisteredTransformationKind, transformationDefinitions } from "./registry";
+import { executionType } from "./service";
 
 export type TransformationMaterialResolution = Readonly<{
   material: TransformationMaterial;
@@ -92,15 +93,9 @@ export async function previewRegisteredTransformation(
 ): Promise<TransformationPreview> {
   const { prepared, warnings } = await prepareRegisteredTransformation(command, config);
   const { definition, preparedPrompt } = prepared;
-  const execution =
-    definition.execution.strategy === "deterministic"
-      ? "deterministic"
-      : definition.execution.contribution === undefined
-        ? "text-model"
-        : "structured-model";
 
   return {
-    execution,
+    execution: executionType(definition),
     kind: definition.kind,
     prompt:
       definition.execution.strategy === "model" && preparedPrompt !== undefined

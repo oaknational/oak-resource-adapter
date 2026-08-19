@@ -29,8 +29,10 @@ export function resourceNodeLabel(node: ResourceNode): string {
       ]
         .filter(Boolean)
         .join("\n");
-    case "responseSpace":
-      return `${node.kind}${node.lines === undefined ? "" : `, ${node.lines} lines`}`;
+    case "responseSpace": {
+      const lines = node.lines === undefined ? "" : `, ${node.lines} lines`;
+      return `${node.kind}${lines}`;
+    }
     case "figure":
       return inlineText(node.caption) || `Asset ${node.assetId}`;
     case "unsupported":

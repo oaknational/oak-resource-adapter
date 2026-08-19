@@ -288,6 +288,14 @@
   gap: 0.75rem;
 }
 
+.primaryActions,
+.historyActions {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
 .definitionMeta {
   color: #4a4a4a;
   font-size: 0.875rem;

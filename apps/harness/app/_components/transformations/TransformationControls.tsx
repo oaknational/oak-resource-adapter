@@ -76,7 +76,7 @@ export function TransformationControls({
 
       <div className={styles.controlGrid}>
         <label>
-          Definition
+          <span>Definition</span>
           <select
             onChange={(event) => selectKind(event.target.value)}
             value={selectedKind}
@@ -100,7 +100,7 @@ export function TransformationControls({
 
         {selected?.supportLevels !== undefined && (
           <label>
-            Support level
+            <span>Support level</span>
             <select
               onChange={(event) => setSupportLevel(event.target.value)}
               value={supportLevel}
@@ -117,7 +117,7 @@ export function TransformationControls({
 
         {selected?.target.scope === "node" && (
           <label>
-            Target node
+            <span>Target node</span>
             <select
               onChange={(event) => setTargetBlockId(event.target.value)}
               value={targetBlockId}
@@ -140,21 +140,18 @@ export function TransformationControls({
       )}
 
       {unmetMaterial.length > 0 && (
-        <p className={styles.errorMessage} role="status">
+        <output className={styles.errorMessage}>
           {unmetMaterial
             .map(({ label, unavailableBecause }) =>
               `${label} is required but unavailable. ${unavailableBecause ?? ""}`.trim(),
             )
             .join(" ")}
-        </p>
+        </output>
       )}
 
       <div className={styles.actionBar}>
-        <div
-          aria-label="Transformation actions"
-          className={styles.primaryActions}
-          role="group"
-        >
+        <fieldset className={styles.primaryActions}>
+          <legend className={styles.visuallyHidden}>Transformation actions</legend>
           <button
             className={styles.primaryButton}
             disabled={!canSubmit || requestState !== "idle"}
@@ -170,19 +167,16 @@ export function TransformationControls({
           >
             {requestState === "preview" ? "Preparing…" : "Preview prompt"}
           </button>
-        </div>
-        <div
-          aria-label="Document history"
-          className={styles.historyActions}
-          role="group"
-        >
+        </fieldset>
+        <fieldset className={styles.historyActions}>
+          <legend className={styles.visuallyHidden}>Document history</legend>
           <button disabled={historyDepth === 0} onClick={undo} type="button">
             Undo
           </button>
           <button onClick={reset} type="button">
             Reset
           </button>
-        </div>
+        </fieldset>
       </div>
     </section>
   );

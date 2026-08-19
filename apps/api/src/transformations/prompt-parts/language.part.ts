@@ -18,11 +18,13 @@ function audience({ keyStage, targetReadingAge, yearGroup }: LanguageContext): s
     keyStage === undefined ? undefined : KEY_STAGE_AGES[keyStage.toLowerCase()];
   const cohort = [yearGroup, keyStage].filter((part) => part !== undefined).join(", ");
 
-  const lines = [
+  const agedClause = ages === undefined ? "" : `, who are aged ${ages}`;
+  const cohortSentence =
     cohort === ""
       ? "You are writing for pupils in an English school; the resource does not say which year group."
-      : `You are writing for pupils in ${cohort}${ages === undefined ? "" : `, who are aged ${ages}`}.`,
-  ];
+      : `You are writing for pupils in ${cohort}${agedClause}.`;
+
+  const lines = [cohortSentence];
 
   if (targetReadingAge !== undefined) {
     lines.push(

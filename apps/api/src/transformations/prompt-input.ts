@@ -58,11 +58,13 @@ function nodeLines(node: ResourceNode, depth: number): string[] {
   switch (node.type) {
     case "section":
       return [header, ...node.children.flatMap((child) => nodeLines(child, depth + 1))];
-    case "question":
+    case "question": {
+      const label = node.label === undefined ? "" : ` ${node.label}`;
       return [
-        `${header}${node.label === undefined ? "" : ` ${node.label}`}`,
+        `${header}${label}`,
         ...node.children.flatMap((child) => nodeLines(child, depth + 1)),
       ];
+    }
     case "heading":
     case "paragraph":
       return [`${header} ${inlineText(node.content)}`];
@@ -79,14 +81,14 @@ function nodeLines(node: ResourceNode, depth: number): string[] {
           ].join(""),
         ),
       ];
-    case "responseSpace":
-      return [
-        `${header} [${node.kind}${node.lines === undefined ? "" : `, ${node.lines} lines`}]`,
-      ];
-    case "figure":
-      return [
-        `${header} [asset ${node.assetId}]${node.caption === undefined ? "" : ` ${inlineText(node.caption)}`}`,
-      ];
+    case "responseSpace": {
+      const lines = node.lines === undefined ? "" : `, ${node.lines} lines`;
+      return [`${header} [${node.kind}${lines}]`];
+    }
+    case "figure": {
+      const caption = node.caption === undefined ? "" : ` ${inlineText(node.caption)}`;
+      return [`${header} [asset ${node.assetId}]${caption}`];
+    }
     case "unsupported":
       return [`${header} ${node.accessibleText ?? node.description}`];
   }

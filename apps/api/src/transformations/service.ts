@@ -13,7 +13,7 @@ import type {
   TransformationDefinition,
 } from "./types";
 
-function executionType(
+export function executionType(
   definition: TransformationDefinition,
 ): TransformationCatalogueItem["execution"] {
   if (definition.execution.strategy === "deterministic") {
