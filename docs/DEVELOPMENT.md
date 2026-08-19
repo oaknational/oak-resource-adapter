@@ -117,8 +117,8 @@ when only one is selected. Write the summary for package consumers: it becomes a
 changelog entry. Commit the generated `.changeset/*.md` file with the change.
 
 CI compares the pull request with its base branch and checks this metadata when
-`ENFORCE_CHANGESETS=true`. Documentation, CI and API-only changes do not need a
-Changeset.
+`ENFORCE_CHANGESETS=true`; Dependabot pull requests are exempt. Documentation,
+CI and API-only changes do not need a Changeset.
 
 ## How package publishing works
 
