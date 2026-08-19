@@ -22,15 +22,15 @@
     "@oaknational/resource-document": "workspace:*",
     "next": "^16.1.0",
     "next-cloudinary": "^6.16.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "styled-components": "^6.1.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "dotenv-cli": "^11.0.0",
     "vitest": "^4.1.10"
   }
