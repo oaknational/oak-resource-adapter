@@ -84,8 +84,25 @@ variable "curriculum_api_key_production" {
   default     = ""
 }
 
-variable "posthog_api_key" {
-  description = "PostHog project API key, required wherever USE_POSTHOG is set"
+# One PostHog project per environment. Vercel builds every deployment with
+# NODE_ENV=production, which selects the PostHog adapter whatever USE_POSTHOG
+# says, so preview and staging need a key as much as production does.
+variable "posthog_api_key_development" {
+  description = "PostHog project API key for local development"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "posthog_api_key_staging" {
+  description = "PostHog project API key for Preview and staging"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "posthog_api_key_production" {
+  description = "PostHog project API key for production"
   type        = string
   sensitive   = true
   default     = ""
