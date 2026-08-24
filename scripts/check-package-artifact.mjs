@@ -301,6 +301,7 @@ assert.deepEqual(parseResourceDocument(document), document);
     "client.js",
     "errors.js",
     "getResourceAdapterCapabilities.js",
+    "getResourceAdapterCapabilityAvailability.js",
     "getResourceAdapterFeatureFlags.js",
     "capabilities.js",
     "publicTypes.js",
