@@ -2,6 +2,7 @@
 
 import {
   getResourceAdapterCapabilities,
+  getResourceAdapterCapabilityAvailability,
   ResourceAdapterApiError,
   type LessonContext,
   type ResourceAdapterCapability,
@@ -16,6 +17,8 @@ export type CapabilitiesState = "error" | "loading" | "ready" | "signedOut";
 
 export type UseCapabilitiesResult = Readonly<{
   capabilities: readonly ResourceAdapterCapability[];
+  /** Set while signed out too, when `capabilities` cannot be read. */
+  hasAvailableCapabilities: boolean;
   reload: () => void;
   state: CapabilitiesState;
 }>;
@@ -32,6 +35,7 @@ export function useCapabilities({
     readonly ResourceAdapterCapability[]
   >([]);
   const [state, setState] = useState<CapabilitiesState>("loading");
+  const [hasAvailableCapabilities, setHasAvailableCapabilities] = useState(false);
 
   const load = useCallback(async () => {
     if (!isLoaded) {
@@ -40,6 +44,17 @@ export function useCapabilities({
 
     if (!isSignedIn) {
       setCapabilities([]);
+
+      try {
+        setHasAvailableCapabilities(
+          await getResourceAdapterCapabilityAvailability({ apiBaseUrl, lesson }),
+        );
+      } catch (error: unknown) {
+        // A prompt promising something we cannot confirm is worse than none.
+        setHasAvailableCapabilities(false);
+        log.error(error);
+      }
+
       setState("signedOut");
       return;
     }
@@ -55,6 +70,7 @@ export function useCapabilities({
       });
 
       setCapabilities(response.capabilities);
+      setHasAvailableCapabilities(response.capabilities.length > 0);
       setState("ready");
       log.info("Loaded %d capabilities", response.capabilities.length);
     } catch (error: unknown) {
@@ -65,6 +81,8 @@ export function useCapabilities({
         return;
       }
 
+      setHasAvailableCapabilities(false);
+
       log.error(error);
       setState("error");
     }
@@ -74,5 +92,10 @@ export function useCapabilities({
     void load();
   }, [load]);
 
-  return { capabilities, reload: () => void load(), state };
+  return {
+    capabilities,
+    hasAvailableCapabilities,
+    reload: () => void load(),
+    state,
+  };
 }

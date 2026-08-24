@@ -8,11 +8,13 @@ import styles from "../../page.module.css";
 import type { CapabilitiesState } from "../../_hooks/useCapabilities";
 
 export function CreateMorePanel({
+  hasAvailableCapabilities,
   hasCapabilities,
   onOpen,
   onRetry,
   state,
 }: Readonly<{
+  hasAvailableCapabilities: boolean;
   hasCapabilities: boolean;
   onOpen: () => void;
   onRetry: () => void;
@@ -28,7 +30,13 @@ export function CreateMorePanel({
     );
   }
 
+  // Nothing behind the prompt means no prompt: signing in to find an empty
+  // dialog is worse than never being asked.
   if (state === "signedOut") {
+    if (!hasAvailableCapabilities) {
+      return null;
+    }
+
     return (
       <section
         aria-labelledby="resource-adapter-sign-in-heading"

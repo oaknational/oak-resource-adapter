@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   migrate:
-    name: Apply production migrations
+    name: Database
     # The ref check matters for workflow_dispatch, which can be started from any
     # branch and would otherwise deploy that branch to production.
     if: >-

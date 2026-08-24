@@ -54,11 +54,16 @@ locals {
     )
   }
 
+  # No development target. Vercel rejects an environment variable whose key
+  # exists in both `development` and a custom environment, which fails the whole
+  # write, and the staging custom environment is worth more than `env:pull:dev`.
+  # The api_development group above stays defined so restoring it is one line if
+  # that ever changes; Doppler serves local development meanwhile.
+  #
   # Staging inherits preview and overrides only what differs between them.
   api_targets = {
-    development = local.groups.api_development
-    preview     = merge(local.groups.api_shared, local.groups.api_preview)
-    production  = merge(local.groups.api_shared, local.groups.api_production)
+    preview    = merge(local.groups.api_shared, local.groups.api_preview)
+    production = merge(local.groups.api_shared, local.groups.api_production)
   }
   api_staging = merge(
     local.groups.api_shared,

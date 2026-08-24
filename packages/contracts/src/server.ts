@@ -4,8 +4,12 @@ import {
   lessonContextSchema,
   resourceAdapterApiContractVersionV1,
   resourceAdapterCapabilitiesResponseSchema,
+  resourceAdapterCapabilityAvailabilityRequestSchema,
+  resourceAdapterCapabilityAvailabilityResponseSchema,
   type LessonContext,
   type ResourceAdapterCapabilitiesResponse,
+  type ResourceAdapterCapabilityAvailabilityRequest,
+  type ResourceAdapterCapabilityAvailabilityResponse,
 } from "./v1.js";
 import type { ResourceAdapterAuthenticatedTeacher } from "./authentication.js";
 
@@ -17,6 +21,11 @@ export type ResourceAdapterCapabilitiesService = Readonly<{
     lesson: LessonContext,
   ) =>
     Promise<ResourceAdapterCapabilitiesResponse> | ResourceAdapterCapabilitiesResponse;
+  hasCapabilities: (
+    request: ResourceAdapterCapabilityAvailabilityRequest,
+  ) =>
+    | Promise<ResourceAdapterCapabilityAvailabilityResponse>
+    | ResourceAdapterCapabilityAvailabilityResponse;
 }>;
 
 /**
@@ -76,6 +85,17 @@ export const hostRouter = t_host.router({
       .input(lessonContextSchema)
       .output(resourceAdapterCapabilitiesResponseSchema)
       .query(({ ctx, input }) => ctx.capabilities.getCapabilities(input)),
+
+    /**
+     * Deliberately unauthenticated, unlike every other teacher-facing
+     * procedure: a host has to know whether a lesson has anything behind it
+     * before it can decide whether to ask a teacher to sign in. See
+     * docs/API_BOUNDARIES.md.
+     */
+    available: versionedProcedure
+      .input(resourceAdapterCapabilityAvailabilityRequestSchema)
+      .output(resourceAdapterCapabilityAvailabilityResponseSchema)
+      .query(({ ctx, input }) => ctx.capabilities.hasCapabilities(input)),
   }),
 });
 
