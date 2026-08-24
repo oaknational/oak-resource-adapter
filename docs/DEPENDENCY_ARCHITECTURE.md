@@ -17,45 +17,23 @@ The approved workspace edges are:
 | `packages/logger`                      | no workspace package                                                                                |
 | `packages/original-resource-documents` | `resource-document`                                                                                 |
 | `packages/resource-document`           | no workspace package                                                                                |
-| `packages/ui`                          | `contracts`; `resource-document` types only                                                         |
+| `packages/ui`                          | `contracts`, `resource-document`                                                                    |
 
 This is an allowlist, not a requirement to introduce every edge. In particular,
 `resource-document` is application-agnostic: ORA owns persistence,
 transformations and delivery, while the package owns only the stable document
 contract and parsing boundary.
 
-## Using a private package from a published one
+## Published document contract
 
-`contracts` and `ui` are published to npm; `resource-document` is currently
-private at `0.0.0`. This is a packaging constraint, not a secrecy boundary: ORA
-code should freely use the document model where appropriate. A published
-artifact must nevertheless be installable by OWA. Until `resource-document` is
-published or deliberately bundled, an emitted runtime or declaration import
-would refer to a package OWA cannot install from the registry.
-
-`pnpm test:artifact` currently fails on the two published surfaces that can
-expose that unresolved reference:
-
-- a **published manifest** declaring it, because `pnpm pack` rewrites
-  `workspace:*` to the resolved `0.0.0`. Keep it a `devDependency`; consumers
-  never install those.
-- a **published declaration** naming it, because `tsc` emits the module
-  specifier for any exported type that mentions it. Internal use is invisible in
-  the emitted `.d.ts`; a public signature is not. `import type` does not help
-  here — the declaration still carries the specifier.
-
-Runtime source in a published package must additionally use a declared runtime
-dependency or deliberately bundle the implementation; dependency checks reject
-runtime imports from dev-only dependencies. When ORA intentionally makes the
-document package available to OWA, these private-package checks should be
-replaced by the chosen published or bundled packaging arrangement.
-
-For now, Dependency Cruiser permits `packages/ui` to use only type-only imports
-from `resource-document`. A runtime import fails `pnpm deps:check`. Breaking that
-rule requires a deliberate decision to either bundle the required browser-safe
-implementation into the UI artifact or publish `resource-document` as an
-installable runtime dependency. OWA still consumes only the UI package's public
-entry points in either case.
+`contracts`, `resource-document` and `ui` are published as a fixed version group.
+The internal API validates source documents against the canonical schema on the
+way out, so the UI takes the document type from `resource-document` rather than
+copying a second model or re-parsing documents in the host's bundle. Only the
+package's `schema` entry point exposes Zod; the document types are plain
+TypeScript, so nothing in the UI's published surface obliges a host to resolve
+Zod for them. OWA still consumes only the UI package's public entry points and
+receives both supporting packages transitively.
 
 Consumers use package exports rather than internal files. The dependency check
 derives each allowed entry point from the package's `exports` map, so adding a
@@ -73,7 +51,7 @@ pnpm deps:check
 CI runs the same command. It verifies that:
 
 - actual workspace imports follow the allowlist;
-- UI imports from `resource-document` remain type-only;
+- published package dependencies resolve to installable artifacts;
 - workspace dependencies are both declared and used;
 - consumers do not bypass package exports with deep imports;
 - runtime cycles are not introduced;
@@ -84,7 +62,7 @@ CI runs the same command. It verifies that:
 - deprecated Node.js core modules or npm packages are not introduced.
 
 `pnpm test:artifact` covers what only the packed tarballs can show, including
-the private-package rules above.
+the matching fixed-group versions and transitive document dependency above.
 
 There is one documented runtime-cycle exception. Four Drizzle table modules
 form a foreign-key cycle: `adaptations`, `resource-documents`,

@@ -2,7 +2,7 @@ import { isModelInvocationError } from "@oaknational/resource-adapter-ai";
 import {
   parseResourceDocument,
   ResourceDocumentParseError,
-} from "@oaknational/resource-document";
+} from "@oaknational/resource-document/parse";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 

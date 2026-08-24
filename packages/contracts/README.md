@@ -10,10 +10,11 @@ The package publishes four entry points:
 - `@oaknational/resource-adapter-contracts/server`
 - `@oaknational/resource-adapter-contracts/internal/server`
 
-Once releases are enabled, this package is published as a fixed version pair with
+Once releases are enabled, this package is published as a fixed version group with
 [`@oaknational/resource-adapter`](https://www.npmjs.com/package/@oaknational/resource-adapter),
-which depends on it at runtime. Hosts such as OWA install the UI package and
-receive this one transitively; it rarely needs installing directly.
+and `@oaknational/resource-document`. Hosts such as OWA install the UI package
+and receive both supporting packages transitively; they rarely need installing
+directly.
 
 ## Entry points
 
@@ -36,4 +37,4 @@ import type { ResourceAdapterApiContextInternal } from "@oaknational/resource-ad
 ## Releasing
 
 See the [UI package README](https://github.com/oaknational/oak-resource-adapter/tree/main/packages/ui#releasing);
-both packages version and publish together via Changesets.
+all three packages version and publish together via Changesets.

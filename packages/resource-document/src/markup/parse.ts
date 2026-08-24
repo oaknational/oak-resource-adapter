@@ -17,7 +17,7 @@ import type {
   ResourceDocument,
   ResourceDocumentDiagnostic,
   ResourceNode,
-} from "../schema/current.js";
+} from "../schema/types.js";
 import { parseInlineContent } from "./inline.js";
 import type { ResourceMarkupParseResult } from "./types.js";
 

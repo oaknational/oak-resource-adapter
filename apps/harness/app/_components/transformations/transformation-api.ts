@@ -1,4 +1,4 @@
-import { resourceDocumentSchema } from "@oaknational/resource-document";
+import { resourceDocumentSchema } from "@oaknational/resource-document/schema";
 import { z } from "zod";
 
 import { adapterProxyPath } from "../../harness-api";

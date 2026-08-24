@@ -1,8 +1,6 @@
 import { preparePrompt } from "@oaknational/resource-adapter-ai";
-import {
-  getResourceNodeById,
-  parseResourceDocument,
-} from "@oaknational/resource-document";
+import { getResourceNodeById } from "@oaknational/resource-document";
+import { parseResourceDocument } from "@oaknational/resource-document/parse";
 import { z } from "zod";
 
 import type {

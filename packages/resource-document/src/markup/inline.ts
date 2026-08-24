@@ -1,5 +1,5 @@
 import { ResourceDocumentParseError } from "../errors.js";
-import type { InlineContent } from "../schema/current.js";
+import type { InlineContent } from "../schema/types.js";
 
 const mathPattern = /\\\[([\s\S]*?)\\\]|\\\(([\s\S]*?)\\\)/g;
 

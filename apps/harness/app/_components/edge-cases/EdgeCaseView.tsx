@@ -1,6 +1,10 @@
 "use client";
 
-import { ResourceAdapterDialog } from "@oaknational/resource-adapter";
+import {
+  ResourceAdapterDialog,
+  type ResourceAdapterCapability,
+  type ResourceAdapterCapabilityOption,
+} from "@oaknational/resource-adapter";
 import { useAuth } from "@clerk/nextjs";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { useEffect, useState } from "react";
@@ -30,10 +34,32 @@ export function EdgeCaseView({
     lesson,
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedCapability, setSelectedCapability] = useState<
+    ResourceAdapterCapability | undefined
+  >();
 
   useEffect(() => {
     setIsDialogOpen(false);
+    setSelectedCapability(undefined);
   }, [edgeCase.id]);
+
+  function selectCapability(capability: ResourceAdapterCapability) {
+    setSelectedCapability(capability);
+    setIsDialogOpen(true);
+  }
+
+  // The fixture offers a choice the service does not implement, so whichever
+  // one is picked opens the worksheet workflow.
+  function selectFixtureCapability(option: ResourceAdapterCapabilityOption) {
+    selectCapability({
+      id: "worksheetAdapter",
+      label: option.label,
+      resourceType: "worksheet",
+    });
+  }
+
+  const fixtureCapabilities = edgeCase.uiCapabilities;
+  const showCapabilityFixture = fixtureCapabilities !== undefined && state === "ready";
 
   return (
     <>
@@ -55,13 +81,23 @@ export function EdgeCaseView({
         <section aria-labelledby="teachers-see-heading" className={styles.owaSlot}>
           <h2 id="teachers-see-heading">What teachers see</h2>
           <div className={styles.owaSlotContent}>
-            <CreateMorePanel
-              hasAvailableCapabilities={hasAvailableCapabilities}
-              hasCapabilities={capabilities.length > 0}
-              onOpen={() => setIsDialogOpen(true)}
-              onRetry={reload}
-              state={state}
-            />
+            {showCapabilityFixture ? (
+              <CreateMorePanel
+                capabilities={fixtureCapabilities}
+                hasAvailableCapabilities={hasAvailableCapabilities}
+                onSelectCapability={selectFixtureCapability}
+                onRetry={reload}
+                state={state}
+              />
+            ) : (
+              <CreateMorePanel
+                capabilities={capabilities}
+                hasAvailableCapabilities={hasAvailableCapabilities}
+                onSelectCapability={selectCapability}
+                onRetry={reload}
+                state={state}
+              />
+            )}
           </div>
         </section>
 
@@ -73,9 +109,11 @@ export function EdgeCaseView({
         <section aria-labelledby="details-heading">
           <h2 id="details-heading">Details</h2>
           <p data-testid="capability-outcome">
-            {state === "ready"
-              ? `The capabilities endpoint returned ${capabilities.length} capabilities.`
-              : `Capabilities state: ${state}.`}
+            {showCapabilityFixture
+              ? `The UI fixture provides ${fixtureCapabilities.length} capability choices.`
+              : state === "ready"
+                ? `The capabilities endpoint returned ${capabilities.length} capabilities.`
+                : `Capabilities state: ${state}.`}
           </p>
           <dl className={styles.metadataGrid}>
             {edgeCase.facts.map((fact) => (
@@ -87,15 +125,17 @@ export function EdgeCaseView({
           </dl>
         </section>
       </article>
-      <ResourceAdapterDialog
-        apiBaseUrl={apiBaseUrl}
-        capabilities={capabilities}
-        getToken={getToken}
-        isOpen={isDialogOpen}
-        lesson={lesson}
-        onClose={() => setIsDialogOpen(false)}
-        onError={(error) => log.error(error)}
-      />
+      {selectedCapability && (
+        <ResourceAdapterDialog
+          apiBaseUrl={apiBaseUrl}
+          capability={selectedCapability}
+          getToken={getToken}
+          isOpen={isDialogOpen}
+          lesson={lesson}
+          onClose={() => setIsDialogOpen(false)}
+          onError={(error) => log.error(error)}
+        />
+      )}
     </>
   );
 }

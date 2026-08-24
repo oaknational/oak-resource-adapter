@@ -28,7 +28,7 @@ test(
     ).toBeVisible();
 
     const createMoreButton = page.getByRole("button", {
-      name: "Create more with AI",
+      name: "Scaffold practice tasks",
     });
     const createMoreButtonBox = await createMoreButton.boundingBox();
     const metadataHeadingBox = await page
@@ -40,16 +40,22 @@ test(
 
     await createMoreButton.click();
 
-    const sidebar = page.getByRole("dialog", { name: "Create more with Aila" });
+    const sidebar = page.getByRole("dialog", {
+      name: "Scaffold practice tasks",
+    });
     await expect(sidebar).toBeVisible();
     const closeIcon = sidebar.getByRole("button", { name: "Close" }).locator("img");
     await expect
       .poll(async () => closeIcon.evaluate((image) => image.naturalWidth))
       .toBeGreaterThan(0);
-    await expect(sidebar).toContainText("Hello, World!");
-    await expect(sidebar).toContainText("Scaffolded Practice Sheet");
-    await expect(sidebar).toContainText("Worksheet data loaded");
-    await expect(sidebar).toContainText("6 questions");
+    await expect(
+      sidebar.getByRole("article", {
+        name: "Explain how the quotient is affected when the divisor is equal to the dividend",
+      }),
+    ).toBeVisible();
+    await expect(
+      sidebar.getByRole("heading", { level: 5, name: "Question 1" }),
+    ).toBeVisible();
   },
 );
 
@@ -137,7 +143,7 @@ for (const { heading, id, offersCreateMore, outcome } of edgeCases) {
       ).toBeVisible();
       await expect(page.getByTestId("capability-outcome")).toHaveText(outcome);
       await expect(
-        page.getByRole("button", { name: "Create more with AI" }),
+        page.getByRole("button", { name: "Scaffold practice tasks" }),
       ).toHaveCount(offersCreateMore ? 1 : 0);
       await expect(
         page.getByRole("region", { name: "Sign in to create more with Aila" }),
@@ -145,6 +151,32 @@ for (const { heading, id, offersCreateMore, outcome } of edgeCases) {
     },
   );
 }
+
+test(
+  "shows the future multi-capability launcher shape",
+  { tag: "@deployment-safe" },
+  async ({ page }) => {
+    await setupClerkTestingToken({ page });
+    await page.goto("/");
+    await clerk.signIn({ page, emailAddress });
+    await page.goto("/?view=edge-cases&case=multiple-capabilities-ui");
+
+    const trigger = page.getByRole("button", { name: "Create more with AI" });
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await trigger.click();
+
+    const menu = page.getByRole("menu");
+    await expect(menu.getByRole("menuitem")).toHaveCount(2);
+    await menu.getByRole("menuitem", { name: "Scaffold practice tasks" }).click();
+
+    await expect(
+      page.getByRole("dialog", { name: "Scaffold practice tasks" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("article", { name: "Adopting different perspectives" }),
+    ).toBeVisible();
+  },
+);
 
 test(
   "preserves an unknown directive rather than dropping it",
@@ -213,9 +245,9 @@ test(
 
     await expect(fallback).toBeVisible();
     await expect(fallback.getByRole("button", { name: "Try again" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Create more with AI" })).toHaveCount(
-      0,
-    );
+    await expect(
+      page.getByRole("button", { name: "Scaffold practice tasks" }),
+    ).toHaveCount(0);
   },
 );
 
@@ -300,9 +332,9 @@ test(
     await expect(
       page.getByRole("heading", { exact: true, name: "Create more with Aila" }),
     ).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Create more with AI" })).toHaveCount(
-      0,
-    );
+    await expect(
+      page.getByRole("button", { name: "Scaffold practice tasks" }),
+    ).toHaveCount(0);
   },
 );
 
@@ -324,9 +356,9 @@ test(
     await expect(
       page.getByRole("region", { name: "Sign in to create more with Aila" }),
     ).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Create more with AI" })).toHaveCount(
-      0,
-    );
+    await expect(
+      page.getByRole("button", { name: "Scaffold practice tasks" }),
+    ).toHaveCount(0);
   },
 );
 
