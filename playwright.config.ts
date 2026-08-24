@@ -45,7 +45,10 @@ export default defineConfig({
   ],
   use: {
     baseURL,
-    trace: "on-first-retry",
+    // Not `on-first-retry`: retries are off, so that setting never captures
+    // anything. A failure has to carry its own evidence.
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
     ...(bypassSecret
       ? { extraHTTPHeaders: { "x-vercel-protection-bypass": bypassSecret } }
       : {}),
