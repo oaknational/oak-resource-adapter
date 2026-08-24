@@ -26,7 +26,7 @@ variable "env_vars" {
       api_shared      the API's production and preview targets
       api_preview     the API's preview target, inherited by staging
       api_staging     overrides applied on top of api_preview
-      api_development pulled into a local .env by `pnpm env:pull:dev`
+      api_development not written anywhere; see locals.tf
       harness_preview the harness's preview target, inherited by its staging
   EOT
   type = object({
