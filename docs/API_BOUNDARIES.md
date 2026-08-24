@@ -23,6 +23,16 @@ New UI-private procedures — analytics, debug state, communication from UI<->AP
 go on `/trpc/internal`. Nothing stops OWA calling it: it is unsupported, not
 unreachable.
 
+## Authentication on the host router
+
+Every teacher-facing procedure uses `authenticatedProcedure`. One exception:
+`capabilities.available` reports whether a lesson has anything behind it, which a
+host needs _before_ it can decide whether to ask a teacher to sign in. It answers
+a boolean, never the capabilities themselves.
+
+Another unauthenticated procedure has to pass the same test: could a host need it
+before a teacher exists, and does the answer reveal nothing teacher-specific?
+
 ## What may change without a version bump
 
 The internal API has no version header, so a client and a service that disagree

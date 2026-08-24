@@ -14,7 +14,7 @@ const apiHealthLabels: Record<ApiHealthState, string> = {
 export function SiteHeader({
   apiHealthState,
 }: Readonly<{ apiHealthState: ApiHealthState }>) {
-  const { isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
 
   return (
     <header className={styles.header}>
@@ -26,7 +26,7 @@ export function SiteHeader({
         <span aria-hidden="true" className={styles.healthDot} />
         API /health: {apiHealthLabels[apiHealthState]}
       </output>
-      {isSignedIn ? <UserButton /> : <SignInButton mode="modal" />}
+      {isLoaded && (isSignedIn ? <UserButton /> : <SignInButton mode="modal" />)}
     </header>
   );
 }

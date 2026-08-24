@@ -59,6 +59,21 @@ const capabilities = await getResourceAdapterCapabilities({
 The helper wraps the package's internal typed tRPC client, so hosts never
 depend on `@trpc/client` themselves.
 
+### Signed-out teachers
+
+`getResourceAdapterCapabilities` needs a token. Before a teacher signs in, ask
+`getResourceAdapterCapabilityAvailability` instead, which needs none:
+
+```ts
+const canOfferAdaptation = await getResourceAdapterCapabilityAvailability({
+  apiBaseUrl: "https://resource-adapter.example",
+  lesson,
+});
+```
+
+It answers whether _this package version_ could render anything for the lesson,
+so a sign-in prompt gated on it never leads a teacher to an empty dialog.
+
 ## Testing local changes inside a host app like OWA
 
 Sometimes it isn't enough to develop against the local harness and you need to

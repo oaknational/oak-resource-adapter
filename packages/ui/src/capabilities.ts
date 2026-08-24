@@ -3,7 +3,7 @@ import type {
   ResourceAdapterCapability as ServiceCapability,
 } from "@oaknational/resource-adapter-contracts";
 
-const supportedCapabilityIds = ["worksheetAdapter"] as const;
+export const supportedCapabilityIds = ["worksheetAdapter"] as const;
 
 export type ResourceAdapterCapabilityId = (typeof supportedCapabilityIds)[number];
 export type ResourceAdapterCapability = Omit<ServiceCapability, "id"> &

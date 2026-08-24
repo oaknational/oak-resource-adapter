@@ -25,7 +25,7 @@ export function EdgeCaseView({
 }>) {
   const lesson = edgeCase.lesson;
   const { getToken } = useAuth();
-  const { capabilities, reload, state } = useCapabilities({
+  const { capabilities, hasAvailableCapabilities, reload, state } = useCapabilities({
     apiBaseUrl: edgeCase.brokenApiPath ? `${apiBaseUrl}-unreachable` : apiBaseUrl,
     lesson,
   });
@@ -56,6 +56,7 @@ export function EdgeCaseView({
           <h2 id="teachers-see-heading">What teachers see</h2>
           <div className={styles.owaSlotContent}>
             <CreateMorePanel
+              hasAvailableCapabilities={hasAvailableCapabilities}
               hasCapabilities={capabilities.length > 0}
               onOpen={() => setIsDialogOpen(true)}
               onRetry={reload}

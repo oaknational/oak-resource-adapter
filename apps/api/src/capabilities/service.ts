@@ -3,6 +3,8 @@ import { originalResourceDocuments } from "@oaknational/resource-adapter-origina
 import type {
   LessonContext,
   ResourceAdapterCapabilitiesResponse,
+  ResourceAdapterCapabilityAvailabilityRequest,
+  ResourceAdapterCapabilityAvailabilityResponse,
 } from "@oaknational/resource-adapter-contracts";
 
 import { capabilityDefinitions } from "./registry";
@@ -42,4 +44,17 @@ export async function getCapabilities(
     Object.values(capabilityDefinitions),
     await resolveContext(lesson),
   );
+}
+
+/** Shares `getCapabilities`' evaluation so the two answers cannot disagree. */
+export async function hasCapabilities(
+  { supportedCapabilityIds, ...lesson }: ResourceAdapterCapabilityAvailabilityRequest,
+  resolveContext: EligibilityResolver = resolveEligibility,
+): Promise<ResourceAdapterCapabilityAvailabilityResponse> {
+  const { capabilities } = await getCapabilities(lesson, resolveContext);
+  const renderable = supportedCapabilityIds
+    ? capabilities.filter(({ id }) => supportedCapabilityIds.includes(id))
+    : capabilities;
+
+  return { available: renderable.length > 0 };
 }

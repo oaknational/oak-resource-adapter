@@ -25,6 +25,7 @@ const EXPECTED_PUBLIC_API = [
   "ResourceAdapterHostProps",
   "ResourceDocumentSummary",
   "getResourceAdapterCapabilities",
+  "getResourceAdapterCapabilityAvailability",
 ];
 
 /** Export forms that would hide names from the extractor below. */

@@ -282,6 +282,9 @@ test(
     tag: "@deployment-safe",
   },
   async ({ page }) => {
+    // Clerk's bot protection blocks an automated browser on a real domain, and
+    // without it `isLoaded` never settles, so the panel renders nothing.
+    await setupClerkTestingToken({ page });
     await page.goto("/");
 
     const signInPrompt = page.getByRole("region", {
@@ -296,6 +299,30 @@ test(
 
     await expect(
       page.getByRole("heading", { exact: true, name: "Create more with Aila" }),
+    ).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Create more with AI" })).toHaveCount(
+      0,
+    );
+  },
+);
+
+test(
+  "leaves signed-out visitors alone when a lesson has nothing behind it",
+  {
+    tag: "@deployment-safe",
+  },
+  async ({ page }) => {
+    await setupClerkTestingToken({ page });
+    await page.goto("/?view=edge-cases&case=worksheet-without-extraction");
+
+    // Settles only once the unauthenticated availability call has answered, so
+    // the absences below are meaningful rather than merely early.
+    await expect(page.getByTestId("capability-outcome")).toHaveText(
+      "Capabilities state: signedOut.",
+    );
+
+    await expect(
+      page.getByRole("region", { name: "Sign in to create more with Aila" }),
     ).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Create more with AI" })).toHaveCount(
       0,

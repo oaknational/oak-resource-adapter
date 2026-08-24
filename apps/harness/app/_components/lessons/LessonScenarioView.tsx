@@ -29,7 +29,7 @@ export function LessonScenarioView({
 }>) {
   const lesson = scenario.lesson;
   const { getToken } = useAuth();
-  const { capabilities, reload, state } = useCapabilities({
+  const { capabilities, hasAvailableCapabilities, reload, state } = useCapabilities({
     apiBaseUrl,
     lesson,
   });
@@ -59,6 +59,7 @@ export function LessonScenarioView({
         <p>{scenario.description}</p>
 
         <CreateMorePanel
+          hasAvailableCapabilities={hasAvailableCapabilities}
           hasCapabilities={capabilities.length > 0}
           onOpen={() => setIsDialogOpen(true)}
           onRetry={reload}

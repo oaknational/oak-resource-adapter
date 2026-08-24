@@ -5,6 +5,7 @@ export type { ResourceAdapterDialogProps } from "./ResourceAdapterDialog.js";
 export { ResourceAdapterErrorBoundary } from "./ResourceAdapterErrorBoundary.js";
 export type { ResourceAdapterErrorBoundaryProps } from "./ResourceAdapterErrorBoundary.js";
 export { getResourceAdapterCapabilities } from "./getResourceAdapterCapabilities.js";
+export { getResourceAdapterCapabilityAvailability } from "./getResourceAdapterCapabilityAvailability.js";
 export { ResourceAdapterApiError } from "./errors.js";
 
 export type {

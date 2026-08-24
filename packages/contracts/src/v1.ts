@@ -68,10 +68,34 @@ export const resourceAdapterCapabilitiesResponseSchema = z.object({
   capabilities: z.readonly(z.array(resourceAdapterCapabilitySchema)),
 });
 
+/**
+ * `supportedCapabilityIds` is what the calling package can render. Omitting it
+ * asks about every capability the service knows, which overstates availability
+ * for a host older than the service.
+ */
+export const resourceAdapterCapabilityAvailabilityRequestSchema = z.extend(
+  lessonContextSchema,
+  {
+    supportedCapabilityIds: z.optional(z.array(resourceAdapterCapabilityIdSchema)),
+  },
+);
+
+export const resourceAdapterCapabilityAvailabilityResponseSchema = z.object({
+  available: z.boolean(),
+});
+
 export type ResourceAdapterCapabilityId = z.infer<
   typeof resourceAdapterCapabilityIdSchema
 >;
 export type ResourceAdapterCapability = z.infer<typeof resourceAdapterCapabilitySchema>;
 export type ResourceAdapterCapabilitiesResponse = z.infer<
   typeof resourceAdapterCapabilitiesResponseSchema
+>;
+
+export type ResourceAdapterCapabilityAvailabilityResponse = z.infer<
+  typeof resourceAdapterCapabilityAvailabilityResponseSchema
+>;
+
+export type ResourceAdapterCapabilityAvailabilityRequest = z.infer<
+  typeof resourceAdapterCapabilityAvailabilityRequestSchema
 >;

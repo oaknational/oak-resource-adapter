@@ -85,6 +85,7 @@ describe("Resource Adapter API contracts", () => {
               },
             ],
           }),
+          hasCapabilities: () => ({ available: true }),
         },
       });
 
@@ -109,11 +110,57 @@ describe("Resource Adapter API contracts", () => {
         },
         capabilities: {
           getCapabilities: () => ({ capabilities: [] }),
+          hasCapabilities: () => ({ available: false }),
         },
       });
 
       await expect(
         caller.capabilities.get({
+          lessonSlug: "adding-fractions",
+          programmeSlug: "ks2-maths",
+          title: "Adding fractions",
+          subjectSlug: "maths",
+          keyStageSlug: "ks2",
+          availableResources: ["worksheet"],
+        }),
+      ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    });
+
+    it("answers capability availability without authentication", async () => {
+      const caller = hostRouter.createCaller({
+        apiContractVersion: resourceAdapterApiContractVersion,
+        authenticatedTeacher: null,
+        capabilities: {
+          getCapabilities: () => ({ capabilities: [] }),
+          hasCapabilities: () => ({ available: true }),
+        },
+      });
+
+      await expect(
+        caller.capabilities.available({
+          lessonSlug: "adding-fractions",
+          programmeSlug: "ks2-maths",
+          title: "Adding fractions",
+          subjectSlug: "maths",
+          keyStageSlug: "ks2",
+          availableResources: ["worksheet"],
+          supportedCapabilityIds: ["worksheetAdapter"],
+        }),
+      ).resolves.toEqual({ available: true });
+    });
+
+    it("still version-guards capability availability", async () => {
+      const caller = hostRouter.createCaller({
+        apiContractVersion: 999,
+        authenticatedTeacher: null,
+        capabilities: {
+          getCapabilities: () => ({ capabilities: [] }),
+          hasCapabilities: () => ({ available: true }),
+        },
+      });
+
+      await expect(
+        caller.capabilities.available({
           lessonSlug: "adding-fractions",
           programmeSlug: "ks2-maths",
           title: "Adding fractions",
@@ -130,6 +177,7 @@ describe("Resource Adapter API contracts", () => {
         authenticatedTeacher: null,
         capabilities: {
           getCapabilities: () => ({ capabilities: [] }),
+          hasCapabilities: () => ({ available: false }),
         },
       });
 
