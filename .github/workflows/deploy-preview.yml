@@ -180,10 +180,17 @@ jobs:
       #
       # This bypass secret is the harness's own, unlike the one handed to the
       # deploy step above: the browser has to get past the harness's own wall.
+      #
+      # Staging runs against its durable domain, not the deployment URL. The API
+      # derives Clerk's authorized parties from the forwarded origin, and
+      # env_vars.api_staging lists that domain exactly rather than carrying the
+      # Preview wildcard, so a deployment URL is rejected and every signed-in
+      # test reads as signed out. Hardcoded because the domain is meant never to
+      # change; it is also RESOURCE_ADAPTER_ALLOWED_ORIGINS in the workspace.
       - name: Run the deployment-safe browser tests
         env:
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          E2E_BASE_URL: ${{ steps.harness.outputs.url }}
+          E2E_BASE_URL: ${{ github.ref == 'refs/heads/main' && 'https://resource-adapter-harness-staging.thenational.academy' || steps.harness.outputs.url }}
           E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_HARNESS_BYPASS_SECRET }}
