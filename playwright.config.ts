@@ -30,6 +30,11 @@ const localWebServers = [
 
 export default defineConfig({
   testDir: "./e2e",
+  // The github reporter annotates the failing lines on the pull request itself,
+  // so a failure is readable without downloading anything.
+  reporter: process.env.CI
+    ? [["github"], ["html", { open: "never" }], ["list"]]
+    : [["list"]],
   projects: [
     {
       name: "setup",

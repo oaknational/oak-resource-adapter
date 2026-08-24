@@ -195,3 +195,16 @@ jobs:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_HARNESS_BYPASS_SECRET }}
         run: pnpm test:e2e:deployment
+
+      # Traces and screenshots live only on the runner, so a failure is
+      # undiagnosable unless they leave with it.
+      - name: Upload browser test evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-evidence-deployment
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: warn
+          retention-days: 14
