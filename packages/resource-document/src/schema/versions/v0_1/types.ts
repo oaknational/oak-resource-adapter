@@ -218,7 +218,7 @@ export interface GenericMetadata {
   title?: string | undefined;
 }
 
-interface DocumentBaseV0_1 {
+interface DocumentBase {
   schemaVersion: "0.1";
   id: string;
   language: string;
@@ -231,14 +231,14 @@ interface DocumentBaseV0_1 {
   extensions?: NamespacedExtensions | undefined;
 }
 
-export interface WorksheetDocumentV0_1 extends DocumentBaseV0_1 {
+export interface WorksheetDocument extends DocumentBase {
   profile: "worksheet.v0";
   metadata: WorksheetMetadata;
 }
 
-export interface GenericDocumentV0_1 extends DocumentBaseV0_1 {
+export interface GenericDocument extends DocumentBase {
   profile: "generic.v0";
   metadata: GenericMetadata;
 }
 
-export type ResourceDocumentV0_1 = WorksheetDocumentV0_1 | GenericDocumentV0_1;
+export type ResourceDocument = WorksheetDocument | GenericDocument;

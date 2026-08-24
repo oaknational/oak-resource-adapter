@@ -61,6 +61,20 @@ export function EdgeCaseView({
   const fixtureCapabilities = edgeCase.uiCapabilities;
   const showCapabilityFixture = fixtureCapabilities !== undefined && state === "ready";
 
+  function describeCapabilityOutcome() {
+    if (showCapabilityFixture) {
+      return `The UI fixture provides ${fixtureCapabilities.length} capability choices.`;
+    }
+
+    if (state === "ready") {
+      return `The capabilities endpoint returned ${capabilities.length} capabilities.`;
+    }
+
+    return `Capabilities state: ${state}.`;
+  }
+
+  const capabilityOutcome = describeCapabilityOutcome();
+
   return (
     <>
       <ScenarioNavigation
@@ -108,13 +122,7 @@ export function EdgeCaseView({
 
         <section aria-labelledby="details-heading">
           <h2 id="details-heading">Details</h2>
-          <p data-testid="capability-outcome">
-            {showCapabilityFixture
-              ? `The UI fixture provides ${fixtureCapabilities.length} capability choices.`
-              : state === "ready"
-                ? `The capabilities endpoint returned ${capabilities.length} capabilities.`
-                : `Capabilities state: ${state}.`}
-          </p>
+          <p data-testid="capability-outcome">{capabilityOutcome}</p>
           <dl className={styles.metadataGrid}>
             {edgeCase.facts.map((fact) => (
               <div key={fact.term}>

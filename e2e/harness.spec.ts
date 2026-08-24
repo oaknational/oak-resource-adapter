@@ -1,5 +1,5 @@
 import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 
 // Presence is verified by the setup project, which this project depends on.
 const emailAddress = process.env.E2E_CLERK_USER_EMAIL as string;
@@ -7,6 +7,20 @@ const emailAddress = process.env.E2E_CLERK_USER_EMAIL as string;
 // @deployment-safe marks a spec as runnable against a deployed environment, which
 // means two things: it writes no rows another run could see, and it depends on no
 // local-only state. Untagged specs run only against CI's throwaway database.
+/**
+ * The drawer fetches its document on open, so waiting for the worksheet alone
+ * reports a bare timeout whether the request was slow or rejected. Waiting for
+ * either outcome names which one happened.
+ */
+async function expectRenderedWorksheet(drawer: Locator, title: string) {
+  const worksheet = drawer.getByRole("article", { name: title });
+  const failure = drawer.getByTestId("resource-adapter-source-document-error");
+
+  await expect(worksheet.or(failure).first()).toBeVisible({ timeout: 20_000 });
+  await expect(failure).toHaveCount(0);
+  await expect(worksheet).toBeVisible();
+}
+
 test(
   "shows the API state, a capability-based trigger, and the adapter sidebar",
   {
@@ -48,11 +62,10 @@ test(
     await expect
       .poll(async () => closeIcon.evaluate((image) => image.naturalWidth))
       .toBeGreaterThan(0);
-    await expect(
-      sidebar.getByRole("article", {
-        name: "Explain how the quotient is affected when the divisor is equal to the dividend",
-      }),
-    ).toBeVisible();
+    await expectRenderedWorksheet(
+      sidebar,
+      "Explain how the quotient is affected when the divisor is equal to the dividend",
+    );
     await expect(
       sidebar.getByRole("heading", { level: 5, name: "Question 1" }),
     ).toBeVisible();
@@ -169,12 +182,9 @@ test(
     await expect(menu.getByRole("menuitem")).toHaveCount(2);
     await menu.getByRole("menuitem", { name: "Scaffold practice tasks" }).click();
 
-    await expect(
-      page.getByRole("dialog", { name: "Scaffold practice tasks" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("article", { name: "Adopting different perspectives" }),
-    ).toBeVisible();
+    const drawer = page.getByRole("dialog", { name: "Scaffold practice tasks" });
+    await expect(drawer).toBeVisible();
+    await expectRenderedWorksheet(drawer, "Adopting different perspectives");
   },
 );
 

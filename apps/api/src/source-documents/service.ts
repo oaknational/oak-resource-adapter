@@ -31,10 +31,7 @@ export async function getSourceDocument(
   const definitions: Record<string, CapabilityDefinition> = capabilityDefinitions;
   const definition = definitions[capabilityId];
 
-  if (
-    definition === undefined ||
-    !definition.isEligible(await resolveContext(lesson))
-  ) {
+  if (!definition?.isEligible(await resolveContext(lesson))) {
     return null;
   }
 

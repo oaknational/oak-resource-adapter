@@ -4,15 +4,16 @@ import {
   originalResourceDocuments,
 } from "@oaknational/resource-adapter-original-resource-documents";
 
-import type { ResourceAdapterCapabilityOption } from "@oaknational/resource-adapter";
-
 import type {
   EdgeCase,
   EdgeCaseFact,
   EdgeCaseNavigationItem,
   ExtractionDiagnostic,
 } from "./scenario-types";
-import type { LessonContext } from "@oaknational/resource-adapter";
+import type {
+  LessonContext,
+  ResourceAdapterCapabilityOption,
+} from "@oaknational/resource-adapter";
 
 const worksheetLocator = {
   source: "oak",

@@ -71,8 +71,10 @@ export function InlineContentRenderer({
 }: Readonly<{ content: InlineContent }>) {
   return content.map((run, index) =>
     run.type === "text" ? (
-      <span key={index}>{run.text}</span>
+      run.text
     ) : (
+      // Position, because an expression can legitimately repeat within one run
+      // of content, and content is immutable once parsed.
       <MathRun key={index} run={run} />
     ),
   );

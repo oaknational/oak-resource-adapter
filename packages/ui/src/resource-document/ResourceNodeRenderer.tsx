@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type {
   Asset,
+  InlineContent,
   ResourceNode,
   UnsupportedNode,
 } from "@oaknational/resource-document";
@@ -112,6 +113,14 @@ type ParentHeadingLevel = 2 | ContentHeadingLevel;
 
 function assertNever(value: never): never {
   throw new Error(`Unsupported resource node type: ${JSON.stringify(value)}`);
+}
+
+function inlineText(content: InlineContent): string {
+  return content.map((run) => (run.type === "text" ? run.text : run.value)).join("");
+}
+
+function pluralisedMarks(marks: number): string {
+  return `${marks} ${marks === 1 ? "mark" : "marks"}`;
 }
 
 function contentText(node: UnsupportedNode): string {
@@ -259,10 +268,7 @@ export function ResourceNodeRenderer({
     case "question": {
       const label = node.label ? `Question ${node.label}` : "Question";
       const questionHeadingLevel = nestedHeadingLevel(parentHeadingLevel);
-      const marks =
-        node.marks === undefined
-          ? ""
-          : ` (${node.marks} ${node.marks === 1 ? "mark" : "marks"})`;
+      const marks = node.marks === undefined ? "" : ` (${pluralisedMarks(node.marks)})`;
       return (
         <Question>
           <Heading level={questionHeadingLevel}>{`${label}${marks}`}</Heading>
@@ -285,8 +291,8 @@ export function ResourceNodeRenderer({
             </Paragraph>
           )}
           <DefinitionList>
-            {node.entries.map((entry, index) => (
-              <div key={index}>
+            {node.entries.map((entry) => (
+              <div key={inlineText(entry.term)}>
                 <dt>
                   <InlineContentRenderer content={entry.term} />
                 </dt>
