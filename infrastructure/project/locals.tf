@@ -56,9 +56,8 @@ locals {
 
   # Staging inherits preview and overrides only what differs between them.
   api_targets = {
-    development = local.groups.api_development
-    preview     = merge(local.groups.api_shared, local.groups.api_preview)
-    production  = merge(local.groups.api_shared, local.groups.api_production)
+    preview    = merge(local.groups.api_shared, local.groups.api_preview)
+    production = merge(local.groups.api_shared, local.groups.api_production)
   }
   api_staging = merge(
     local.groups.api_shared,
