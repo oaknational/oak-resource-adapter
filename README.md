@@ -74,8 +74,9 @@ pnpm dev
 This starts the harness on port 3000 and the local API on port 3001. The harness page
 uses the workspace UI package helper to resolve capabilities, then renders the
 package-owned drawer with representative lesson context. The drawer resolves
-its own feature flags through the package's internal client helpers. This
-mirrors the OWA/package composition boundary.
+its own source document through the authenticated internal API. This mirrors
+the OWA/package composition boundary without making the host transport or
+render Resource Documents.
 
 One difference from OWA: the harness browser calls its own `/adapter-proxy` route,
 which forwards to the API server-side. That is what lets a deployed harness be
@@ -92,12 +93,13 @@ job and durable-output conventions.
 
 The service API uses tRPC. The typed client is internal to the UI package;
 hosts such as OWA or the harness call `getResourceAdapterCapabilities`, while
-`ResourceAdapterDialog` fetches feature flags internally, so hosts never depend
-on `@trpc/client` themselves:
+`ResourceAdapterDialog` fetches its source document internally, so hosts never
+depend on `@trpc/client` or handle resource documents themselves:
 
 ```ts
 import {
   getResourceAdapterCapabilities,
+  ResourceAdapterButton,
   ResourceAdapterDialog,
 } from "@oaknational/resource-adapter";
 
@@ -107,14 +109,21 @@ const capabilities = await getResourceAdapterCapabilities({
   lesson,
 });
 
-<ResourceAdapterDialog
-  apiBaseUrl="https://resource-adapter.example"
+<ResourceAdapterButton
   capabilities={capabilities.capabilities}
-  getToken={getToken}
-  isOpen={true}
-  lesson={lesson}
-  onClose={() => {}}
+  onSelectCapability={setSelectedCapability}
 />;
+
+{selectedCapability && (
+  <ResourceAdapterDialog
+    apiBaseUrl="https://resource-adapter.example"
+    capability={selectedCapability}
+    getToken={getToken}
+    isOpen={true}
+    lesson={lesson}
+    onClose={() => {}}
+  />
+)}
 ```
 
 ## Local database
@@ -171,8 +180,9 @@ retention implications of storing prompts and worksheet content.
 
 ## Release Versioning
 
-`@oaknational/resource-adapter` and its contracts package release together as
-a fixed version group on public npm and are versioned with Changesets. Once
+`@oaknational/resource-adapter`, its contracts package and the resource-document
+package release together as a fixed version group on public npm and are
+versioned with Changesets. Once
 release automation is enabled, [`release.yml`](.github/workflows/release.yml)
 publishes them from `production`. The operational sequence is described in the
 [release process](docs/RELEASE_PROCESS.md), contributor-facing Changesets

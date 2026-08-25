@@ -1,5 +1,9 @@
 import * as z from "zod/mini";
 
+import type { ResourceDocument } from "@oaknational/resource-document";
+
+import { lessonContextSchema } from "./v1.js";
+
 /**
  * Browser-safe wire contracts for the unversioned internal API used by
  * Resource Adapter-owned clients. Keep request and response schemas, along
@@ -14,3 +18,14 @@ export const resourceAdapterFeatureFlagsResponseSchema = z.readonly(
 export type ResourceAdapterFeatureFlagsResponse = z.infer<
   typeof resourceAdapterFeatureFlagsResponseSchema
 >;
+
+export const resourceAdapterSourceDocumentRequestSchema = z.object({
+  capabilityId: z.string().check(z.minLength(1)),
+  lesson: lessonContextSchema,
+});
+
+export type ResourceAdapterSourceDocumentRequest = z.infer<
+  typeof resourceAdapterSourceDocumentRequestSchema
+>;
+
+export type ResourceAdapterSourceDocumentResponse = ResourceDocument;

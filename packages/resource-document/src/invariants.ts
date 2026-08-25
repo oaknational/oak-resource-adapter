@@ -1,4 +1,4 @@
-import type { ResourceDocument, ResourceNode } from "./schema/current.js";
+import type { ResourceDocument, ResourceNode } from "./schema/types.js";
 
 export type ResourceDocumentInvariantCode =
   | "bounding_box_out_of_bounds"

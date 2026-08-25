@@ -221,6 +221,9 @@ importers:
 
   packages/contracts:
     dependencies:
+      '@oaknational/resource-document':
+        specifier: workspace:*
+        version: link:../resource-document
       '@trpc/server':
         specifier: 11.18.0
         version: 11.18.0(typescript@7.0.2)
@@ -364,6 +367,9 @@ importers:
       '@oaknational/resource-adapter-contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@oaknational/resource-document':
+        specifier: workspace:*
+        version: link:../resource-document
       '@trpc/client':
         specifier: 11.18.0
         version: 11.18.0(@trpc/server@11.18.0(typescript@7.0.2))(typescript@7.0.2)

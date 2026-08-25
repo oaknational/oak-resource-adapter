@@ -118,17 +118,6 @@ export default {
     ...workspaceBoundaryRules,
     ...publicEntryPointRules,
     {
-      name: "ui-may-only-import-resource-document-types",
-      severity: "error",
-      comment:
-        "The published UI may use resource-document types internally, but runtime use requires an explicit bundling or publication decision.",
-      from: { path: "^packages/ui/src/" },
-      to: {
-        path: "^packages/resource-document/",
-        dependencyTypesNot: ["type-only"],
-      },
-    },
-    {
       name: "no-circular-runtime-dependencies",
       severity: "error",
       comment:
@@ -169,7 +158,12 @@ export default {
       comment:
         "Every external dependency must be declared by the workspace unit that imports it.",
       from: {},
-      to: { dependencyTypes: ["npm-no-pkg", "npm-unknown"] },
+      to: {
+        dependencyTypes: ["npm-no-pkg", "npm-unknown"],
+        // An optional peer is declared, but resolves as `npm-no-pkg` because it
+        // need not be installed. Excluding peers keeps the rule to its subject.
+        dependencyTypesNot: ["npm-peer"],
+      },
     },
     {
       name: "no-unresolvable-imports",

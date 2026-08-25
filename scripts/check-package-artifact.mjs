@@ -6,6 +6,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const temporaryDirectory = await mkdtemp(join(tmpdir(), "resource-adapter-package-"));
+const zodFreeTemporaryDirectory = await mkdtemp(
+  join(tmpdir(), "resource-document-zod-free-"),
+);
 
 function run(command, arguments_, cwd) {
   execFileSync(command, arguments_, {
@@ -123,8 +126,13 @@ try {
   const resourceDocumentManifest = readPackedManifest(resourceDocumentTarball);
   const uiManifest = readPackedManifest(uiTarball);
 
-  if (contractsManifest.version !== uiManifest.version) {
-    throw new Error("Published UI and contracts packages must use the same version.");
+  if (
+    contractsManifest.version !== uiManifest.version ||
+    resourceDocumentManifest.version !== uiManifest.version
+  ) {
+    throw new Error(
+      "Published UI, contracts and resource-document packages must use the same version.",
+    );
   }
 
   if (
@@ -134,6 +142,20 @@ try {
     throw new Error(
       "Published UI package must depend on the matching exact contracts version.",
     );
+  }
+
+  for (const [consumerName, manifest] of [
+    ["UI", uiManifest],
+    ["contracts", contractsManifest],
+  ]) {
+    if (
+      manifest.dependencies?.["@oaknational/resource-document"] !==
+      resourceDocumentManifest.version
+    ) {
+      throw new Error(
+        `Published ${consumerName} package must depend on the matching exact resource-document version.`,
+      );
+    }
   }
 
   await writeFile(
@@ -160,6 +182,7 @@ try {
         pnpm: {
           overrides: {
             "@oaknational/resource-adapter-contracts": `file:${contractsTarball}`,
+            "@oaknational/resource-document": `file:${resourceDocumentTarball}`,
           },
         },
       },
@@ -170,53 +193,49 @@ try {
 
   run("pnpm", ["install", "--config.auto-install-peers=false"], temporaryDirectory);
 
+  // Peer, not a dependency: the parsing entries hand out or execute schemas,
+  // and zod throws when a schema meets a foreign major. Optional because the
+  // root runtime and type-only imports need no zod. Declaration reachability
+  // and the isolated runtime smoke test below hold us to both halves.
   if (
-    resourceDocumentManifest.private !== true ||
-    resourceDocumentManifest.version !== "0.0.0"
+    resourceDocumentManifest.peerDependencies?.zod !== "^4" ||
+    resourceDocumentManifest.peerDependenciesMeta?.zod?.optional !== true
   ) {
     throw new Error(
-      "The ORA-local resource-document artifact must remain private at version 0.0.0.",
+      "Resource-document must expose its Zod peer dependency as optional.",
     );
   }
 
-  if (resourceDocumentManifest.peerDependencies?.zod !== "^4.4.3") {
-    throw new Error("Resource-document must expose its Zod 4 peer dependency.");
-  }
-
-  // resource-document is private at 0.0.0, so a consumer cannot resolve it from
-  // the registry. Published code may use it internally, but the moment it
-  // reaches a published manifest or declaration the consuming install breaks —
-  // in OWA rather than here. Both halves matter: pack rewrites workspace:* to
-  // the resolved version, and tsc emits the module specifier for any exported
-  // type that names it.
-  for (const [unit, tarball] of [
-    ["contracts", contractsTarball],
-    ["ui", uiTarball],
+  for (const [entry, needsZod] of [
+    ["index", false],
+    ["markup/index", false],
+    ["parse", false],
+    ["schema/index", true],
   ]) {
-    const manifest = readPackedManifest(tarball);
-    const declaringField = [
-      "dependencies",
-      "peerDependencies",
-      "optionalDependencies",
-    ].find(
-      (field) => manifest[field]?.["@oaknational/resource-document"] !== undefined,
-    );
+    const reached = new Set();
+    const pending = [`package/dist/${entry}.d.ts`];
+    let reachesZod = false;
 
-    if (declaringField) {
-      throw new Error(
-        `Published ${unit} package declares the private @oaknational/resource-document in ${declaringField}. Keep it a devDependency, or publish it.`,
-      );
+    while (pending.length > 0) {
+      const file = pending.pop();
+      if (reached.has(file)) {
+        continue;
+      }
+      reached.add(file);
+      const declaration = readPackedFile(resourceDocumentTarball, file);
+      if (/from "zod/.test(declaration)) {
+        reachesZod = true;
+      }
+      for (const [, specifier] of declaration.matchAll(/from "(\.[^"]*)\.js"/g)) {
+        pending.push(join(dirname(file), `${specifier}.d.ts`).replaceAll("\\", "/"));
+      }
     }
 
-    const leakingDeclarations = listPackedFiles(tarball)
-      .filter((file) => file.endsWith(".d.ts"))
-      .filter((file) =>
-        readPackedFile(tarball, file).includes("@oaknational/resource-document"),
-      );
-
-    if (leakingDeclarations.length > 0) {
+    if (reachesZod !== needsZod) {
       throw new Error(
-        `Published ${unit} declarations name the private @oaknational/resource-document: ${leakingDeclarations.join(", ")}. Keep document types out of the published signature, or publish that package.`,
+        needsZod
+          ? `Published resource-document ${entry} entry no longer exposes the Zod schemas.`
+          : `Published resource-document ${entry} entry reaches zod, so a type-only consumer must install it.`,
       );
     }
   }
@@ -224,6 +243,8 @@ try {
   for (const declaration of [
     "package/dist/index.d.ts",
     "package/dist/markup/index.d.ts",
+    "package/dist/parse.d.ts",
+    "package/dist/schema/index.d.ts",
   ]) {
     readPackedFile(resourceDocumentTarball, declaration);
   }
@@ -243,7 +264,7 @@ try {
 import {
   CURRENT_SCHEMA_VERSION,
   parseResourceDocument,
-} from "@oaknational/resource-document";
+} from "@oaknational/resource-document/parse";
 import {
   CURRENT_MARKUP_VERSION,
   parseResourceMarkup,
@@ -272,6 +293,67 @@ assert.deepEqual(parseResourceDocument(document), document);
   );
   run("node", ["resource-document-smoke.mjs"], temporaryDirectory);
 
+  await writeFile(
+    join(zodFreeTemporaryDirectory, "package.json"),
+    JSON.stringify(
+      {
+        name: "resource-document-zod-free-consumer",
+        private: true,
+        type: "module",
+        dependencies: {
+          "@oaknational/resource-document": `file:${resourceDocumentTarball}`,
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  run(
+    "pnpm",
+    ["install", "--config.auto-install-peers=false"],
+    zodFreeTemporaryDirectory,
+  );
+  await writeFile(
+    join(zodFreeTemporaryDirectory, "root-runtime-smoke.mjs"),
+    `import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+assert.throws(() => require.resolve("zod"), { code: "MODULE_NOT_FOUND" });
+
+const {
+  validateResourceDocumentInvariants,
+  walkResourceDocument,
+} = await import("@oaknational/resource-document");
+const document = {
+  schemaVersion: "0.1",
+  id: "zod-free-smoke",
+  profile: "generic.v0",
+  language: "en-GB",
+  metadata: {},
+  content: [{
+    id: "paragraph",
+    type: "paragraph",
+    content: [{ type: "text", text: "No Zod required." }],
+  }],
+  answers: [],
+  assets: [],
+  provenance: {
+    source: { system: "test", id: "zod-free-smoke" },
+    producer: { name: "artifact-test", version: "1" },
+  },
+  diagnostics: [],
+};
+
+assert.deepEqual(
+  Array.from(walkResourceDocument(document), (node) => node.id),
+  ["paragraph"],
+);
+assert.deepEqual(validateResourceDocumentInvariants(document), []);
+`,
+  );
+  run("node", ["root-runtime-smoke.mjs"], zodFreeTemporaryDirectory);
+
   const rootDeclaration = readPackedFile(uiTarball, "package/dist/index.d.ts");
   for (const exportName of [
     "getResourceAdapterCapabilities",
@@ -295,15 +377,22 @@ assert.deepEqual(parseResourceDocument(document), document);
     "ResourceAdapterButton.js",
     "ResourceAdapterDialog.js",
     "ResourceAdapterErrorBoundary.js",
+    "capabilities/workflowRegistry.js",
+    "capabilities/worksheet-adapter/WorksheetAdapterWorkflow.js",
   ];
   const serverSafeModules = [
     "index.js",
     "client.js",
     "errors.js",
     "getResourceAdapterCapabilities.js",
+    "getResourceAdapterCapabilityAvailability.js",
     "getResourceAdapterFeatureFlags.js",
+    "getResourceAdapterSourceDocument.js",
     "capabilities.js",
     "publicTypes.js",
+    "resource-document/InlineContentRenderer.js",
+    "resource-document/ResourceDocumentRenderer.js",
+    "resource-document/ResourceNodeRenderer.js",
   ];
 
   for (const file of clientModules) {
@@ -324,8 +413,8 @@ assert.deepEqual(parseResourceDocument(document), document);
   // listed above and a build artefact importing packages hosts do not install
   const packedModules = execFileSync("tar", ["-tf", uiTarball], { encoding: "utf8" })
     .split("\n")
-    .filter((path) => /^package\/dist\/[^/]+\.js$/.test(path))
-    .map((path) => basename(path));
+    .filter((path) => /^package\/dist\/.+\.js$/.test(path))
+    .map((path) => path.replace("package/dist/", ""));
   const expectedModules = new Set([...clientModules, ...serverSafeModules]);
   const unexpectedModules = packedModules.filter(
     (module) => !expectedModules.has(module),
@@ -351,5 +440,8 @@ assert.deepEqual(parseResourceDocument(document), document);
 
   console.log(`Verified package artifact: ${basename(uiTarball)}`);
 } finally {
-  await rm(temporaryDirectory, { force: true, recursive: true });
+  await Promise.all([
+    rm(temporaryDirectory, { force: true, recursive: true }),
+    rm(zodFreeTemporaryDirectory, { force: true, recursive: true }),
+  ]);
 }
