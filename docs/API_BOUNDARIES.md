@@ -50,12 +50,12 @@ front of a current service.
 
 ## Where contracts code lives
 
-| Entry point                   | Contents                                     | For example                                 |
-| ----------------------------- | -------------------------------------------- | ------------------------------------------- |
-| `…-contracts`                 | Host-facing schemas and types                | `lessonContextSchema`                       |
-| `…-contracts/internal`        | Wire types for our own clients, browser-safe | `resourceAdapterFeatureFlagsResponseSchema` |
-| `…-contracts/server`          | Host router, context, service boundaries     | `hostRouter`                                |
-| `…-contracts/internal/server` | Internal router, context, service boundaries | `ResourceAdapterFeatureFlagService`         |
+| Entry point                   | Contents                                     | For example                               |
+| ----------------------------- | -------------------------------------------- | ----------------------------------------- |
+| `…-contracts`                 | Host-facing schemas and types                | `lessonContextSchema`                     |
+| `…-contracts/internal`        | Wire types for our own clients, browser-safe | Source-document request, feature flags    |
+| `…-contracts/server`          | Host router, context, service boundaries     | `hostRouter`                              |
+| `…-contracts/internal/server` | Internal router, context, service boundaries | Source-document and feature-flag services |
 
 Use the narrowest entry point that serves the callers, because only the root
 entry may be re-exported to OWA. Implementation details are not contracts and

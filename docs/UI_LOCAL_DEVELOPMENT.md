@@ -28,8 +28,8 @@ commits.
 
 ## Testing UI-only changes
 
-Use this flow when the contracts package is unchanged (its published version
-is fine) and only the UI package has local changes.
+Use this flow when the contracts and resource-document packages are unchanged
+(their published versions are fine) and only the UI package has local changes.
 
 1. In `packages/ui`, run `pnpm publish:local`. This builds the package and
    publishes it to yalc's local store.
@@ -40,33 +40,35 @@ is fine) and only the UI package has local changes.
 3. Start OWA as usual. The linked build is used wherever OWA imports
    `@oaknational/resource-adapter`.
 
-The UI package's dependency on contracts resolves from the public registry as
-normal, so no further setup is needed.
+The UI package's dependencies on contracts and resource-document resolve from
+the public registry as normal, so no further setup is needed.
 
-## Testing UI and contracts changes together
+## Testing published package changes together
 
-Use this flow when the local changes span both packages, or before the first
-publish, when contracts does not exist on npm at all.
+Use this flow when local changes span the published packages, or before their
+first publish.
 
 The extra step exists because yalc cannot resolve pnpm workspace versions:
-the UI package's `workspace:*` dependency on contracts becomes `*` in the
-linked copy, which pnpm tries (and pre-publish, fails) to resolve from the
-registry. An override redirects it to the linked copy.
+the packages' `workspace:*` dependencies become `*` in the linked copies, which
+pnpm tries (and before first publish, fails) to resolve from the registry.
+Overrides redirect them to the linked copies.
 
-1. Run `pnpm publish:local` in `packages/contracts`, then in `packages/ui`.
+1. Run `pnpm publish:local` in `packages/resource-document`, then
+   `packages/contracts`, then `packages/ui`.
 2. In OWA, run
-   `yalc add @oaknational/resource-adapter-contracts @oaknational/resource-adapter`.
+   `yalc add @oaknational/resource-document @oaknational/resource-adapter-contracts @oaknational/resource-adapter`.
 3. Add an override to OWA's `pnpm-workspace.yaml`. It must go there, not in
    `package.json`: pnpm 11 ignores a `pnpm.overrides` field in
    `package.json`.
 
    ```yaml
    overrides:
+     "@oaknational/resource-document": "file:./.yalc/@oaknational/resource-document"
      "@oaknational/resource-adapter-contracts": "file:./.yalc/@oaknational/resource-adapter-contracts"
    ```
 
-4. Run `pnpm install`. Both packages now resolve to the linked copies,
-   including the UI package's own contracts dependency.
+4. Run `pnpm install`. All three packages now resolve to the linked copies,
+   including the UI package's own contracts and document dependencies.
 
 ## Iterating on changes
 
@@ -85,8 +87,9 @@ In OWA:
 
 1. Remove the override from `pnpm-workspace.yaml` if it was added.
 2. Run `yalc remove @oaknational/resource-adapter` (and
-   `@oaknational/resource-adapter-contracts` if linked), or the convenience
-   script `pnpm remove-local-resource-adapter`.
+   `@oaknational/resource-adapter-contracts` and
+   `@oaknational/resource-document` if linked), or the convenience script
+   `pnpm remove-local-resource-adapter`.
 3. Run `pnpm install` to reinstall the published packages.
 
 `git status` in OWA should then show no changes from the linking session.

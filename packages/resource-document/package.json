@@ -1,11 +1,22 @@
 {
   "name": "@oaknational/resource-document",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "Application-agnostic resource document schemas and parsing",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oaknational/oak-resource-adapter.git",
+    "directory": "packages/resource-document"
+  },
+  "homepage": "https://github.com/oaknational/oak-resource-adapter/tree/main/packages/resource-document#readme",
+  "bugs": {
+    "url": "https://github.com/oaknational/oak-resource-adapter/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": "24.x"
   },
@@ -14,6 +25,16 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./parse": {
+      "types": "./dist/parse.d.ts",
+      "import": "./dist/parse.js",
+      "default": "./dist/parse.js"
+    },
+    "./schema": {
+      "types": "./dist/schema/index.d.ts",
+      "import": "./dist/schema/index.js",
+      "default": "./dist/schema/index.js"
     },
     "./markup": {
       "types": "./dist/markup/index.d.ts",
@@ -33,12 +54,14 @@
     "dev": "tsc --project tsconfig.build.json --watch",
     "lint": "eslint src --max-warnings=0",
     "lint:fix": "eslint src --fix",
+    "prepublishOnly": "pnpm build",
+    "publish:local": "pnpm build && yalc publish --no-scripts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
     "type-check": "tsc --noEmit"
   },
   "peerDependencies": {
-    "zod": "^4.4.3"
+    "zod": "^4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -50,5 +73,10 @@
     "typescript-eslint": "^8.65.0",
     "vitest": "^4.1.10",
     "zod": "^4.4.3"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    }
   }
 }

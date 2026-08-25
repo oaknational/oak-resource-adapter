@@ -86,7 +86,7 @@ forward by pushing the fix to `production`. Never undo an applied migration.
 ### 4. Publish the packages
 
 Once CI passes on `production`, `release.yml` opens a version pull request. QA
-merges it after the API is healthy, and CI then publishes both packages to npm
+merges it after the API is healthy, and CI then publishes all three packages to npm
 through OIDC and tags them. Publish a corrected version if something is wrong;
 never overwrite or unpublish one.
 

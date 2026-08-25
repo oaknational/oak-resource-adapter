@@ -1,5 +1,8 @@
 export { ResourceAdapterButton } from "./ResourceAdapterButton.js";
-export type { ResourceAdapterButtonProps } from "./ResourceAdapterButton.js";
+export type {
+  ResourceAdapterButtonProps,
+  ResourceAdapterCapabilityOption,
+} from "./ResourceAdapterButton.js";
 export { ResourceAdapterDialog } from "./ResourceAdapterDialog.js";
 export type { ResourceAdapterDialogProps } from "./ResourceAdapterDialog.js";
 export { ResourceAdapterErrorBoundary } from "./ResourceAdapterErrorBoundary.js";
@@ -18,5 +21,4 @@ export type {
   ResourceAdapterErrorHandler,
   ResourceAdapterErrorInfo,
   ResourceAdapterHostProps,
-  ResourceDocumentSummary,
 } from "./publicTypes.js";

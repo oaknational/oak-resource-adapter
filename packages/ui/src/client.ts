@@ -99,7 +99,7 @@ export function createResourceAdapterClient({
 }
 
 /**
- * Creates a typed tRPC client for the internal API (feature flags and other UI-private procedures).
+ * Creates a typed tRPC client for UI-private procedures.
  * Does not include the contract version header (internal APIs are unversioned).
  */
 export function createResourceAdapterInternalClient({

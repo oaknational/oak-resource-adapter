@@ -1,8 +1,6 @@
-import {
-  getResourceNodesByType,
-  parseResourceDocument,
-} from "@oaknational/resource-document";
+import { getResourceNodesByType } from "@oaknational/resource-document";
 import { parseResourceMarkup } from "@oaknational/resource-document/markup";
+import { parseResourceDocument } from "@oaknational/resource-document/parse";
 import { describe, expect, it } from "vitest";
 
 import {
