@@ -9,11 +9,7 @@ import {
 } from "./catalogue";
 import { lessonKeywordsFrom } from "./lesson-keywords";
 import { OAK_MATERIAL_KEYS } from "./material";
-import {
-  assertRequiredMaterial,
-  readOakMaterial,
-  renderOakMaterial,
-} from "./requirements";
+import { readOakMaterial, renderOakMaterial } from "./requirements";
 
 const keywords = [
   { keyword: "perspective", description: "the position a story is told from" },
@@ -68,38 +64,6 @@ describe("readOakMaterial", () => {
     expect(
       readOakMaterial([{ key: "lesson.slides", required: true }], withKeywords),
     ).toEqual({ material: {}, warnings: [] });
-  });
-});
-
-describe("assertRequiredMaterial", () => {
-  it("accepts a request carrying what a kind requires", () => {
-    expect(() =>
-      assertRequiredMaterial(
-        "test-kind",
-        [{ key: "lesson.keywords", required: true }],
-        { "lesson.keywords": { kind: "keywords", keywords } },
-      ),
-    ).not.toThrow();
-  });
-
-  it("rejects a request missing a required part, and says why it is missing", () => {
-    expect(() =>
-      assertRequiredMaterial(
-        "test-kind",
-        [{ key: "lesson.slides", required: true }],
-        {},
-      ),
-    ).toThrow(/lesson\.slides \(Slide content is not extracted yet/);
-  });
-
-  it("ignores an absent optional part", () => {
-    expect(() =>
-      assertRequiredMaterial(
-        "test-kind",
-        [{ key: "lesson.keywords", required: false }],
-        {},
-      ),
-    ).not.toThrow();
   });
 });
 

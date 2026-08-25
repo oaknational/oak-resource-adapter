@@ -1,7 +1,6 @@
 import type { Lesson } from "@oaknational/resource-adapter-curriculum";
 
 import { OAK_MATERIAL, oakMaterialPromptHeading } from "./catalogue";
-import { TransformationRequestError } from "../transformations/errors";
 import type { OakMaterialValue, OakMaterial, OakMaterialRequirement } from "./material";
 
 /** Reads every requested part from one fetched lesson. */
@@ -31,31 +30,6 @@ export function readOakMaterial(
   }
 
   return { material, warnings };
-}
-
-export function assertRequiredMaterial(
-  kind: string,
-  requirements: readonly OakMaterialRequirement[],
-  material: OakMaterial,
-): void {
-  const missing = requirements.filter(
-    ({ key, required }) => required && material[key] === undefined,
-  );
-
-  if (missing.length === 0) {
-    return;
-  }
-
-  const reasons = missing.map(({ key }) => {
-    const part = OAK_MATERIAL[key];
-    return part.read === null
-      ? `${key} (${part.unavailableBecause ?? "no source exists yet."})`
-      : key;
-  });
-
-  throw new TransformationRequestError(
-    `${kind} needs lesson material it was not given: ${reasons.join(", ")}.`,
-  );
 }
 
 /**

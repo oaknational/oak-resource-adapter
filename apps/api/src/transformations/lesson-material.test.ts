@@ -9,9 +9,9 @@ import type { StructuredModelOutputResult } from "@oaknational/resource-adapter-
 import type { QuestionNode, ResourceDocument } from "@oaknational/resource-document";
 
 import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
-import { addGlossaryQuestionTransformation } from "../transformations/definitions/scaffold-add-glossary-question";
-import { executeTransformation, type PreparePrompt } from "../transformations/execute";
-import { resolveLessonMaterial } from "./from-lesson";
+import { resolveLessonMaterial } from "../oak-material/from-lesson";
+import { addGlossaryQuestionTransformation } from "./definitions/scaffold-add-glossary-question";
+import { executeTransformation, type PreparePrompt } from "./execute";
 
 const identity = {
   lessonSlug: "adopting-different-perspectives",

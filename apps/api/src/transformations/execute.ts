@@ -15,8 +15,8 @@ import { DEFAULT_TRANSFORMATION_ROLE } from "../ai/model-roles";
 import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
 import { TransformationRequestError } from "./errors";
 import type { OakMaterial } from "../oak-material/material";
-import { assertRequiredMaterial } from "../oak-material/requirements";
 import { transformationPromptVariables } from "./prompt-input";
+import { assertRequiredMaterial } from "./required-material";
 import { SUPPORT_LEVELS, type SupportLevel } from "./support-level";
 import type {
   TransformationDefinition,
