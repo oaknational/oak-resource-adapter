@@ -1,7 +1,7 @@
 import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
 import type { z } from "zod";
 
-import type { TransformationMaterial } from "../oak-material/material";
+import type { TransformationMaterial } from "../../oak-material/material";
 import type { SupportLevel } from "../support-level";
 import type { TransformationDocuments, TransformationParams } from "../types";
 

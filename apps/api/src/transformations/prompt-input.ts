@@ -10,8 +10,8 @@ import type {
   ResourceNode,
 } from "@oaknational/resource-document";
 
-import type { TransformationMaterial } from "./oak-material/material";
-import { renderOakMaterial } from "./oak-material/requirements";
+import type { TransformationMaterial } from "../oak-material/material";
+import { renderOakMaterial } from "../oak-material/requirements";
 import { identityPart } from "./prompt-parts/identity.part";
 import { languagePart } from "./prompt-parts/language.part";
 import { scaffoldPrinciplesPart } from "./prompt-parts/scaffold-principles.part";

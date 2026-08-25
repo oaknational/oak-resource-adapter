@@ -1,7 +1,7 @@
 import type { Lesson } from "@oaknational/resource-adapter-curriculum";
 
 import { OAK_MATERIAL, oakMaterialPromptHeading } from "./catalogue";
-import { TransformationRequestError } from "../errors";
+import { TransformationRequestError } from "../transformations/errors";
 import type {
   OakMaterialValue,
   TransformationMaterial,

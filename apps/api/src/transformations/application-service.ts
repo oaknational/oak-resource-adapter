@@ -13,7 +13,7 @@ import {
 import type {
   TransformationMaterial,
   TransformationMaterialRequirement,
-} from "./oak-material/material";
+} from "../oak-material/material";
 import { isRegisteredTransformationKind, transformationDefinitions } from "./registry";
 import { executionType } from "./service";
 

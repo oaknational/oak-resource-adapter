@@ -8,9 +8,9 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { StructuredModelOutputResult } from "@oaknational/resource-adapter-ai";
 import type { QuestionNode, ResourceDocument } from "@oaknational/resource-document";
 
-import type { ResourceAdapterModelInvoker } from "../../ai/model-roles";
-import { addGlossaryQuestionTransformation } from "../definitions/scaffold-add-glossary-question";
-import { executeTransformation, type PreparePrompt } from "../execute";
+import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
+import { addGlossaryQuestionTransformation } from "../transformations/definitions/scaffold-add-glossary-question";
+import { executeTransformation, type PreparePrompt } from "../transformations/execute";
 import { resolveLessonMaterial } from "./from-lesson";
 
 const identity = {

@@ -5,7 +5,7 @@ import {
   type SupportLevel,
   type SupportLevelOptions,
 } from "./support-level";
-import type { TransformationMaterialRequirement } from "./oak-material/material";
+import type { TransformationMaterialRequirement } from "../oak-material/material";
 import type {
   PupilBarrier,
   TransformationAvailabilityContext,

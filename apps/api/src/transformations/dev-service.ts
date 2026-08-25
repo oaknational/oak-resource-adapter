@@ -9,7 +9,7 @@ import {
   listOakMaterial,
   OAK_MATERIAL,
   oakMaterialIsAvailable,
-} from "./oak-material/catalogue";
+} from "../oak-material/catalogue";
 import {
   executeRegisteredTransformation,
   previewRegisteredTransformation,
@@ -18,7 +18,7 @@ import {
 } from "./application-service";
 import type { PreparePrompt } from "./execute";
 import { TransformationDependencyError } from "./errors";
-import { resolveLessonMaterial } from "./oak-material/from-lesson";
+import { resolveLessonMaterial } from "../oak-material/from-lesson";
 import { listRegisteredTransformations } from "./service";
 
 const prepareWithoutPersistence: PreparePrompt = ({ template, variables }) =>

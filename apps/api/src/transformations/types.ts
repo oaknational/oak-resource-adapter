@@ -4,7 +4,7 @@ import type { z } from "zod";
 
 import type { TransformationModelRole } from "../ai/model-roles";
 import type { TransformationContribution } from "./contributions/contribution";
-import type { TransformationMaterialRequirement } from "./oak-material/material";
+import type { TransformationMaterialRequirement } from "../oak-material/material";
 import type { SupportLevel, SupportLevelOptions } from "./support-level";
 
 export type TransformationStatus = "active" | "draft";
