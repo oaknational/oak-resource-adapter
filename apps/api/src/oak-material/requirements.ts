@@ -2,17 +2,13 @@ import type { Lesson } from "@oaknational/resource-adapter-curriculum";
 
 import { OAK_MATERIAL, oakMaterialPromptHeading } from "./catalogue";
 import { TransformationRequestError } from "../transformations/errors";
-import type {
-  OakMaterialValue,
-  TransformationMaterial,
-  TransformationMaterialRequirement,
-} from "./material";
+import type { OakMaterialValue, OakMaterial, OakMaterialRequirement } from "./material";
 
 /** Reads every requested part from one fetched lesson. */
 export function readOakMaterial(
-  requirements: readonly TransformationMaterialRequirement[],
+  requirements: readonly OakMaterialRequirement[],
   lesson: Lesson,
-): Readonly<{ material: TransformationMaterial; warnings: readonly string[] }> {
+): Readonly<{ material: OakMaterial; warnings: readonly string[] }> {
   const material: Record<string, OakMaterialValue> = {};
   const warnings: string[] = [];
 
@@ -39,8 +35,8 @@ export function readOakMaterial(
 
 export function assertRequiredMaterial(
   kind: string,
-  requirements: readonly TransformationMaterialRequirement[],
-  material: TransformationMaterial,
+  requirements: readonly OakMaterialRequirement[],
+  material: OakMaterial,
 ): void {
   const missing = requirements.filter(
     ({ key, required }) => required && material[key] === undefined,
@@ -69,8 +65,8 @@ export function assertRequiredMaterial(
  * transformation may declare what it wants before a source exists.
  */
 export function renderOakMaterial(
-  requirements: readonly TransformationMaterialRequirement[],
-  material: TransformationMaterial,
+  requirements: readonly OakMaterialRequirement[],
+  material: OakMaterial,
 ): string {
   return requirements
     .filter(({ key }) => OAK_MATERIAL[key].read !== null)

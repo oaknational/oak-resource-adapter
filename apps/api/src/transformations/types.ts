@@ -4,7 +4,7 @@ import type { z } from "zod";
 
 import type { TransformationModelRole } from "../ai/model-roles";
 import type { TransformationContribution } from "./contributions/contribution";
-import type { TransformationMaterialRequirement } from "../oak-material/material";
+import type { OakMaterialRequirement } from "../oak-material/material";
 import type { SupportLevel, SupportLevelOptions } from "./support-level";
 
 export type TransformationStatus = "active" | "draft";
@@ -102,7 +102,7 @@ export type TransformationDefinition<
   /** Teacher-facing. */
   label: string;
   /** Oak lesson material this definition selectively consumes. */
-  materialRequirements?: readonly TransformationMaterialRequirement[];
+  materialRequirements?: readonly OakMaterialRequirement[];
   outputs: TransformationOutputs;
   /** Validates `transformations.params`. Derived by `defineTransformation`. */
   params: TParamsSchema;

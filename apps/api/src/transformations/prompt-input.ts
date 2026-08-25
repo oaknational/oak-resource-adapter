@@ -10,7 +10,7 @@ import type {
   ResourceNode,
 } from "@oaknational/resource-document";
 
-import type { TransformationMaterial } from "../oak-material/material";
+import type { OakMaterial } from "../oak-material/material";
 import { renderOakMaterial } from "../oak-material/requirements";
 import { identityPart } from "./prompt-parts/identity.part";
 import { languagePart } from "./prompt-parts/language.part";
@@ -128,7 +128,7 @@ export function serialiseResourceNodeForPrompt(node: ResourceNode): string {
 export function transformationPromptVariables(
   definition: TransformationDefinition,
   document: ResourceDocument,
-  material: TransformationMaterial,
+  material: OakMaterial,
   params: TransformationParams,
   targetNode: ResourceNode | undefined,
   template: string,

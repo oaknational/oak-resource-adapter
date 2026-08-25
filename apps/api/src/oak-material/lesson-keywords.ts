@@ -1,10 +1,6 @@
 import type { LessonKeyword } from "@oaknational/resource-adapter-curriculum";
 
-import type {
-  OakMaterialPart,
-  OakMaterialValue,
-  TransformationMaterial,
-} from "./material";
+import type { OakMaterialPart, OakMaterialValue, OakMaterial } from "./material";
 
 export const lessonKeywordsPart: OakMaterialPart = {
   label: "Lesson keywords",
@@ -28,9 +24,7 @@ ${list}`;
 };
 
 /** For a contribution that needs the keywords themselves, not their prompt text. */
-export function lessonKeywordsFrom(
-  material: TransformationMaterial,
-): readonly LessonKeyword[] {
+export function lessonKeywordsFrom(material: OakMaterial): readonly LessonKeyword[] {
   const value: OakMaterialValue | undefined = material["lesson.keywords"];
   return value?.kind === "keywords" ? value.keywords : [];
 }
