@@ -172,8 +172,29 @@ jobs:
             exit 1
           fi
 
+      - name: Cache the Playwright browser
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-chromium
+          restore-keys: playwright-${{ runner.os }}-
+
+      # Install still runs on a cache hit: it is a ~1s no-op then, and after a
+      # Playwright bump it re-downloads what the restored cache lacks. The
+      # runner image already carries Chromium's shared libraries (no
+      # --with-deps), and the suite is headless throughout (--only-shell).
       - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps chromium
+        id: playwright_install
+        continue-on-error: true
+        timeout-minutes: 5
+        run: pnpm exec playwright install --only-shell chromium
+
+      # A separate step gives the retry its own timeout when GitHub terminates
+      # the first attempt rather than letting the command exit by itself.
+      - name: Retry Playwright browser install
+        if: steps.playwright_install.outcome == 'failure'
+        timeout-minutes: 5
+        run: pnpm exec playwright install --only-shell chromium
 
       # The Clerk values must be the instance the deployed harness verifies
       # against, or the suite dies at sign-in.
