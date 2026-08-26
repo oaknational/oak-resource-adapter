@@ -55,7 +55,7 @@ describe("getResourceAdapterCapabilityAvailability", () => {
 
     const [, request] = fetchMock.mock.calls[0] ?? [];
     expect(JSON.parse(String((request as RequestInit).body))).toEqual({
-      "0": { ...lesson, supportedCapabilityIds: ["worksheetAdapter"] },
+      "0": { ...lesson, supportedCapabilityIds: ["worksheetScaffolding"] },
     });
   });
 

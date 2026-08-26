@@ -94,7 +94,7 @@ describe("transformation harness API", () => {
     respond({
       execution: "structured-model",
       kind: "scaffold-add-word-bank",
-      prompt: { identifier: "scaffold-add-word-bank", text: "Rendered", version: 1 },
+      prompt: { identifier: "scaffold-add-word-bank", text: "Rendered" },
       status: "active",
       warnings: [],
     });

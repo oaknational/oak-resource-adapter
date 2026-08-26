@@ -14,9 +14,9 @@ import type { ResourceDocument, ResourceNode } from "@oaknational/resource-docum
 import { DEFAULT_TRANSFORMATION_ROLE } from "../ai/model-roles";
 import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
 import { TransformationRequestError } from "./errors";
-import type { TransformationMaterial } from "./oak-material/material";
-import { assertRequiredMaterial } from "./oak-material/requirements";
+import type { OakMaterial } from "../oak-material/material";
 import { transformationPromptVariables } from "./prompt-input";
+import { assertRequiredMaterial } from "./required-material";
 import { SUPPORT_LEVELS, type SupportLevel } from "./support-level";
 import type {
   TransformationDefinition,
@@ -30,7 +30,7 @@ export type TransformationRequest = Readonly<{
   contributionId?: string | undefined;
   /** The adaptation head, or the current document in a synchronous experiment. */
   document: ResourceDocument;
-  material?: TransformationMaterial | undefined;
+  material?: OakMaterial | undefined;
   params?: unknown;
   /** Required by a node-targeted kind, and rejected by a document kind. */
   targetBlockId?: string | undefined;
@@ -71,7 +71,7 @@ export type PreparePrompt = (
 export type PreparedTransformation = Readonly<{
   definition: TransformationDefinition;
   document: ResourceDocument;
-  material: TransformationMaterial;
+  material: OakMaterial;
   params: TransformationParams;
   preparedPrompt?: PreparedPrompt | undefined;
   supportLevel?: SupportLevel | undefined;

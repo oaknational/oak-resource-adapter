@@ -21,7 +21,7 @@ function contextFor(
 ): TransformationAvailabilityContext {
   return {
     appliedTransformations: appliedKinds.map((kind) => ({ kind, params: {} })),
-    capabilityId: "worksheetAdapter",
+    capabilityId: "worksheetScaffolding",
     document: worksheet,
   };
 }

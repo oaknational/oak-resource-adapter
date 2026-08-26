@@ -7,6 +7,7 @@ import { z } from "zod";
 export const jobJsonSchema = z.json();
 export const jobIdSchema = z.uuid();
 export const idempotencyKeySchema = z.string().trim().min(1).max(128);
+export const concurrencyKeySchema = z.string().trim().min(1).max(128);
 export const jobFailureSchema = z.strictObject({
   code: z.string().trim().min(1).max(100),
   message: z.string().trim().min(1).max(500),

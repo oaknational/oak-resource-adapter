@@ -11,6 +11,8 @@ import { resourceDocuments } from "./resource-documents.js";
 export const adaptations = resourceAdapterSchema.table(
   "adaptations",
   {
+    /** Set when the teacher chose to start over, so it is never offered back. */
+    abandonedAt: timestamp("abandoned_at", { precision: 3, withTimezone: true }),
     /** Stable ID of the teacher-facing workflow this adaptation belongs to. */
     capabilityId: text("capability_id").notNull(),
     /** Clerk stays the source of truth for identity. No FK, no local user table. */
@@ -41,6 +43,14 @@ export const adaptations = resourceAdapterSchema.table(
     index("adaptations_clerk_user_id_created_at_idx").on(
       table.clerkUserId,
       table.createdAt.desc(),
+    ),
+    /** Supports the lookup for work a teacher can resume on a lesson. */
+    index("adaptations_resumable_idx").on(
+      table.clerkUserId,
+      table.capabilityId,
+      table.lessonSlug,
+      table.programmeSlug,
+      table.updatedAt.desc(),
     ),
   ],
 );

@@ -22,6 +22,12 @@ export function PrimaryNavigation({
         Transformations
       </Link>
       <Link
+        aria-current={section === "suggestions" ? "page" : undefined}
+        href={`/?view=suggestions&lesson=${lessonId}`}
+      >
+        Suggestions
+      </Link>
+      <Link
         aria-current={section === "edge-cases" ? "page" : undefined}
         href="/?view=edge-cases"
       >

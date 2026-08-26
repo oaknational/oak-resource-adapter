@@ -17,6 +17,7 @@ queued -> running -> succeeded
 The row contains:
 
 - an opaque, unique `idempotency_key`;
+- an optional `concurrency_key` for work that must not overlap;
 - an open-ended string `kind`;
 - the lifecycle status and timestamps;
 - validated JSON `input`;
@@ -29,6 +30,11 @@ Starting a job is idempotent: using the same key with the same kind and input
 returns the original job. The workflow claims a queued row atomically, so
 duplicate deliveries cannot both run it. Retrying a request also redispatches
 an original row that was persisted but still has no Workflow run ID.
+
+Different requests may share a concurrency key. While one is queued or running,
+another resolves to that active job instead of starting in parallel. Succeeded
+and failed jobs release the key automatically. Idempotency therefore identifies
+one request; concurrency groups distinct requests that must run one at a time.
 
 ## Durable outputs
 
@@ -43,7 +49,7 @@ in [database](DATABASE.md).
    definition, strict input schema, and Workflow steps.
 2. Register the definition in `registry.ts`. The `kind` remains a string in
    PostgreSQL while the registry gives application code a discriminated union.
-3. Add its workflow orchestration branch in `workflows/run-job.ts`.
+3. Add its executor to the typed map in `workflows/run-job.ts`.
 4. Put work with side effects in `"use step"` functions. Steps can represent a
    real pipeline; they do not require child job rows. External writes must use
    an idempotency key that remains stable across retries (normally Workflow's

@@ -7,6 +7,11 @@ import { requestAuthenticator, type RequestAuthenticator } from "./authenticatio
 import { getCapabilities, hasCapabilities } from "./capabilities/service";
 import { getFeatureFlagService } from "./feature-flags/service";
 import { getSourceDocument } from "./source-documents/service";
+import {
+  enqueueSuggestionApplication,
+  getWorksheetScaffoldingState,
+  openWorksheetScaffolding,
+} from "./worksheet-scaffolding/service";
 import type { ResourceAdapterApiContextHost } from "@oaknational/resource-adapter-contracts/server";
 import type { ResourceAdapterApiContextInternal } from "@oaknational/resource-adapter-contracts/internal/server";
 
@@ -36,5 +41,11 @@ export async function createContextInternal(
     authenticatedTeacher: await authenticateRequest(request),
     featureFlags: getFeatureFlagService(),
     sourceDocuments: { getSourceDocument },
+    worksheetScaffolding: {
+      applySuggestion: (input, target) => enqueueSuggestionApplication(input, target),
+      get: ({ adaptationId }, target) =>
+        getWorksheetScaffoldingState(adaptationId, target),
+      open: (request, target) => openWorksheetScaffolding(request, target),
+    },
   };
 }

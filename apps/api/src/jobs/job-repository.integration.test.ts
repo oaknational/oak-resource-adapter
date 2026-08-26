@@ -57,6 +57,41 @@ describeWithDatabase("job repository integration", () => {
     ).rejects.toBeInstanceOf(IdempotencyConflictError);
   });
 
+  it("coalesces active jobs by concurrency key and releases the key on failure", async () => {
+    const concurrencyKey = `integration-${randomUUID()}`;
+    const first = await createOrGetJob({
+      concurrencyKey,
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { message: "first" },
+      kind: "test.echo",
+    });
+    createdJobIds.push(first.job.id);
+
+    const coalesced = await createOrGetJob({
+      concurrencyKey,
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { message: "second" },
+      kind: "test.echo",
+    });
+    expect(coalesced).toMatchObject({
+      created: false,
+      job: { id: first.job.id },
+    });
+
+    await failJob(first.job.id, null, {
+      code: "test_failure",
+      message: "The first job finished.",
+    });
+    const afterFailure = await createOrGetJob({
+      concurrencyKey,
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { message: "third" },
+      kind: "test.echo",
+    });
+    createdJobIds.push(afterFailure.job.id);
+    expect(afterFailure.created).toBe(true);
+  });
+
   it("allows only one workflow run to claim and complete a job", async () => {
     const created = await createOrGetJob({
       idempotencyKey: `integration-${randomUUID()}`,

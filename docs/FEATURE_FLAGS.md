@@ -36,7 +36,7 @@ Use lower-case, hyphenated names: `<area>-<behaviour>`.
 Write the name so it reads like a true statement when the flag is on:
 
 ```text
-capabilities-worksheet-adapter    offers a capability to a teacher
+capabilities-worksheet-scaffolding    offers a capability to a teacher
 generation-word-export            adds an artifact format alongside PDF
 model-invocation-paused           stops invocation entirely
 ```

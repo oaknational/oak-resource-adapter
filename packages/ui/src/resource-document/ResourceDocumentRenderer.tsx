@@ -1,4 +1,5 @@
-import type { ResourceDocument } from "@oaknational/resource-document";
+import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
+import type { ReactNode } from "react";
 import { parseColor } from "@oaknational/oak-components";
 import { styled } from "styled-components";
 
@@ -35,7 +36,11 @@ const DiagnosticSummary = styled.aside`
 
 export function ResourceDocumentRenderer({
   document,
-}: Readonly<{ document: ResourceDocument }>) {
+  renderAfterNode,
+}: Readonly<{
+  document: ResourceDocument;
+  renderAfterNode?: (node: ResourceNode) => ReactNode;
+}>) {
   const title = document.metadata.title ?? "Untitled resource";
   const { length: diagnosticCount } = document.diagnostics;
 
@@ -51,6 +56,7 @@ export function ResourceDocumentRenderer({
         assets={document.assets}
         nodes={document.content}
         parentHeadingLevel={2}
+        {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
       />
     </Document>
   );

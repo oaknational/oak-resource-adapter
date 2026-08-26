@@ -1,18 +1,13 @@
 import type { Lesson } from "@oaknational/resource-adapter-curriculum";
 
 import { OAK_MATERIAL, oakMaterialPromptHeading } from "./catalogue";
-import { TransformationRequestError } from "../errors";
-import type {
-  OakMaterialValue,
-  TransformationMaterial,
-  TransformationMaterialRequirement,
-} from "./material";
+import type { OakMaterialValue, OakMaterial, OakMaterialRequirement } from "./material";
 
 /** Reads every requested part from one fetched lesson. */
 export function readOakMaterial(
-  requirements: readonly TransformationMaterialRequirement[],
+  requirements: readonly OakMaterialRequirement[],
   lesson: Lesson,
-): Readonly<{ material: TransformationMaterial; warnings: readonly string[] }> {
+): Readonly<{ material: OakMaterial; warnings: readonly string[] }> {
   const material: Record<string, OakMaterialValue> = {};
   const warnings: string[] = [];
 
@@ -37,31 +32,6 @@ export function readOakMaterial(
   return { material, warnings };
 }
 
-export function assertRequiredMaterial(
-  kind: string,
-  requirements: readonly TransformationMaterialRequirement[],
-  material: TransformationMaterial,
-): void {
-  const missing = requirements.filter(
-    ({ key, required }) => required && material[key] === undefined,
-  );
-
-  if (missing.length === 0) {
-    return;
-  }
-
-  const reasons = missing.map(({ key }) => {
-    const part = OAK_MATERIAL[key];
-    return part.read === null
-      ? `${key} (${part.unavailableBecause ?? "no source exists yet."})`
-      : key;
-  });
-
-  throw new TransformationRequestError(
-    `${kind} needs lesson material it was not given: ${reasons.join(", ")}.`,
-  );
-}
-
 /**
  * The `{{lessonMaterial}}` block, in the order the definition declared. A part
  * this lesson happens to lack says so, rather than leaving the model to guess
@@ -69,8 +39,8 @@ export function assertRequiredMaterial(
  * transformation may declare what it wants before a source exists.
  */
 export function renderOakMaterial(
-  requirements: readonly TransformationMaterialRequirement[],
-  material: TransformationMaterial,
+  requirements: readonly OakMaterialRequirement[],
+  material: OakMaterial,
 ): string {
   return requirements
     .filter(({ key }) => OAK_MATERIAL[key].read !== null)

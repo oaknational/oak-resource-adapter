@@ -13,7 +13,8 @@ import { resourceAdapterSchema } from "./pg-schema.js";
 
 /**
  * One change a teacher asked for: a click, or the single request of a one-shot
- * capability. `kind` keys into the TypeScript transformation registry.
+ * capability. Teacher-requested kinds key into the transformation registry;
+ * internal operations use a namespaced kind owned by their workflow registry.
  */
 export const transformations = resourceAdapterSchema.table(
   "transformations",

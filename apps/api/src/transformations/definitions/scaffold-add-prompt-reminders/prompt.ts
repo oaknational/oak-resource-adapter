@@ -29,5 +29,4 @@ For example, "Remember from last lesson: you multiply the numerators, then the d
 THE RESOURCE
 
 {{document}}`,
-  version: 1,
 });

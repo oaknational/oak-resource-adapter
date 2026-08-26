@@ -9,6 +9,14 @@ export const addWordBankTransformation = defineTransformation({
   kind: KIND,
   label: "Add a word bank",
   status: "active",
+  suggestion: {
+    description:
+      "Adds the vocabulary a pupil needs for one question, with optional definitions and examples.",
+    useWhen:
+      "Answering the question depends on recalling or selecting relevant subject vocabulary.",
+    avoidWhen:
+      "The question already supplies the vocabulary, or vocabulary is not the barrier to answering it.",
+  },
   barriers: ["working-memory", "gaps-in-knowledge"],
   supportLevels: [
     {

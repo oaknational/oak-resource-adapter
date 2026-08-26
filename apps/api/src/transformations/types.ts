@@ -4,7 +4,7 @@ import type { z } from "zod";
 
 import type { TransformationModelRole } from "../ai/model-roles";
 import type { TransformationContribution } from "./contributions/contribution";
-import type { TransformationMaterialRequirement } from "./oak-material/material";
+import type { OakMaterialRequirement } from "../oak-material/material";
 import type { SupportLevel, SupportLevelOptions } from "./support-level";
 
 export type TransformationStatus = "active" | "draft";
@@ -21,8 +21,8 @@ export type TransformationTarget =
 export type TransformationOutput = "companion-document" | "revised-resource";
 
 /**
- * What a kind produces, in order. A kind may revise the resource, produce
- * documents alongside it, or both, and execution must match this exactly.
+ * What a transformation produces, in order. A transformation may revise the
+ * resource, produce documents alongside it, or both, and execution must match this exactly.
  */
 export type TransformationOutputs = readonly [
   TransformationOutput,
@@ -40,6 +40,15 @@ export type PupilBarrier =
 
 export type TransformationParams = Readonly<Record<string, unknown>>;
 export type TransformationParamsSchema = z.ZodType<TransformationParams>;
+
+export type TransformationSuggestionGuidance = Readonly<{
+  /** Explains the change in terms useful to an agent choosing between kinds. */
+  description: string;
+  /** Evidence in the current resource that makes this change useful. */
+  useWhen: string;
+  /** Evidence that the change would duplicate support or lower the task's ambition. */
+  avoidWhen: string;
+}>;
 
 /** Documents one run produced, in the order the definition declares. */
 export type TransformationDocuments = readonly [
@@ -78,7 +87,7 @@ export type AppliedTransformationSummary = Readonly<{
 }>;
 
 export type TransformationAvailabilityContext = Readonly<{
-  /** Successfully applied work, oldest first. */
+  /** Work the teacher has asked for and that has not failed, oldest first. */
   appliedTransformations: readonly AppliedTransformationSummary[];
   capabilityId: string;
   /** The adaptation head: the document a new transformation would read. */
@@ -102,12 +111,13 @@ export type TransformationDefinition<
   /** Teacher-facing. */
   label: string;
   /** Oak lesson material this definition selectively consumes. */
-  materialRequirements?: readonly TransformationMaterialRequirement[];
+  materialRequirements?: readonly OakMaterialRequirement[];
   outputs: TransformationOutputs;
   /** Validates `transformations.params`. Derived by `defineTransformation`. */
   params: TParamsSchema;
   /** Drafts are visible to development tooling but never offered to teachers. */
   status: TransformationStatus;
+  suggestion: TransformationSuggestionGuidance;
   /** Weakest first; absent when support level does not apply. */
   supportLevels?: SupportLevelOptions;
   target: TTarget;

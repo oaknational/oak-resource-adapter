@@ -6,7 +6,6 @@ import type { PromptVariables } from "./index.js";
 const template = definePromptTemplate({
   identifier: "lower-reading-age",
   template: "Rewrite for reading age {{readingAge}}.\n\n{{text}}",
-  version: 1,
 });
 
 describe("definePromptTemplate", () => {
@@ -20,7 +19,6 @@ describe("definePromptTemplate", () => {
     const again = definePromptTemplate({
       identifier: "lower-reading-age",
       template: "Rewrite for reading age {{readingAge}}.\n\n{{text}}",
-      version: 1,
     });
 
     expect(again.hash).toBe(template.hash);
@@ -30,27 +28,15 @@ describe("definePromptTemplate", () => {
     const edited = definePromptTemplate({
       identifier: "lower-reading-age",
       template: "Rewrite for reading age {{readingAge}}.\n\n{{text}}\n\nBe concise.",
-      version: 2,
     });
 
     expect(edited.hash).not.toBe(template.hash);
-  });
-
-  it("hashes the same body under a new version to a different value", () => {
-    const bumped = definePromptTemplate({
-      identifier: "lower-reading-age",
-      template: "Rewrite for reading age {{readingAge}}.\n\n{{text}}",
-      version: 2,
-    });
-
-    expect(bumped.hash).not.toBe(template.hash);
   });
 
   it("hashes the same body under a new identifier to a different value", () => {
     const renamed = definePromptTemplate({
       identifier: "simplify-reading-age",
       template: "Rewrite for reading age {{readingAge}}.\n\n{{text}}",
-      version: 1,
     });
 
     expect(renamed.hash).not.toBe(template.hash);
@@ -61,19 +47,8 @@ describe("definePromptTemplate", () => {
       definePromptTemplate({
         identifier: "Lower Reading Age",
         template: "{{text}}",
-        version: 1,
       }),
     ).toThrow(/must be lowercase and hyphen-separated/);
-  });
-
-  it.each([0, -1, 1.5])("rejects the invalid version %s", (version) => {
-    expect(() =>
-      definePromptTemplate({
-        identifier: "lower-reading-age",
-        template: "{{text}}",
-        version,
-      }),
-    ).toThrow(RangeError);
   });
 
   it("rejects an empty body", () => {
@@ -81,7 +56,6 @@ describe("definePromptTemplate", () => {
       definePromptTemplate({
         identifier: "lower-reading-age",
         template: "   ",
-        version: 1,
       }),
     ).toThrow(/empty body/);
   });
@@ -97,7 +71,6 @@ describe("definePromptTemplate", () => {
       definePromptTemplate({
         identifier: "lower-reading-age",
         template: malformedTemplate,
-        version: 1,
       }),
     ).toThrow(/malformed placeholder syntax/);
   });
@@ -114,7 +87,6 @@ describe("renderPromptTemplate", () => {
     const repeated = definePromptTemplate({
       identifier: "repeated",
       template: "{{word}} and {{word}}",
-      version: 1,
     });
 
     expect(renderPromptTemplate(repeated, { word: "again" })).toBe("again and again");
@@ -142,7 +114,6 @@ describe("renderPromptTemplate", () => {
     const braces = definePromptTemplate({
       identifier: "braces",
       template: 'Return { "age": {{readingAge}} }',
-      version: 1,
     });
 
     expect(renderPromptTemplate(braces, { readingAge: "9" })).toBe(

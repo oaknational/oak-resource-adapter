@@ -22,9 +22,7 @@ export type OakMaterialValue =
   | Readonly<{ kind: "text"; text: string }>;
 
 /** What a request carries, keyed by the part it satisfies. */
-export type TransformationMaterial = Readonly<
-  Partial<Record<OakMaterialKey, OakMaterialValue>>
->;
+export type OakMaterial = Readonly<Partial<Record<OakMaterialKey, OakMaterialValue>>>;
 
 /** How a part reads to tooling that lists what a prompt can be given. */
 export type OakMaterialSummary = Readonly<{
@@ -36,7 +34,7 @@ export type OakMaterialSummary = Readonly<{
   unavailableBecause?: string;
 }>;
 
-export type TransformationMaterialRequirement = Readonly<{
+export type OakMaterialRequirement = Readonly<{
   key: OakMaterialKey;
   /** A required part that cannot be resolved stops the run. */
   required: boolean;

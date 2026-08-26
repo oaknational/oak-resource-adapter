@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  OakFlex,
-  OakHeading,
-  OakInformativeModal,
-  OakInformativeModalBody,
-} from "@oaknational/oak-components";
+import { OakModalCenter, OakModalCenterBody } from "@oaknational/oak-components";
 
 import { capabilityWorkflows } from "./capabilities/workflowRegistry.js";
 import {
@@ -31,7 +26,7 @@ export type ResourceAdapterDialogProps = Readonly<{
 }>;
 
 /**
- * The package-owned adapter sidebar. Each selected capability owns its workflow
+ * The package-owned full-screen modal. Each selected capability owns its workflow
  * while this shell owns focus management, dismissal and crash containment.
  */
 export function ResourceAdapterDialog(props: ResourceAdapterDialogProps) {
@@ -76,33 +71,41 @@ function ResourceAdapterDialogInner({
   const titleId = `resource-adapter-${capability.id}-title`;
 
   return (
-    <OakInformativeModal
-      aria-labelledby={titleId}
-      closeOnBackgroundClick={true}
-      isLeftHandSide={false}
+    <OakModalCenter
       isOpen={isOpen}
-      largeScreenMaxWidth={720}
+      modalOuterFlexProps={{
+        $pa: "spacing-12",
+        style: { maxWidth: "min(97vw, 96rem)" },
+      }}
+      // The centred modal names nothing and calls itself an alert, neither of
+      // which suits a worksheet a teacher reads. Both are overridable, and the
+      // supplied style replaces the height cap it would otherwise set.
+      modalFlexProps={{
+        "aria-labelledby": titleId,
+        role: "dialog",
+        style: { maxHeight: "calc(100vh - 1.5rem)" },
+      }}
       onClose={onClose}
     >
-      <OakInformativeModalBody>
-        <OakFlex $flexDirection="column" $gap="spacing-16">
-          <OakHeading $font="heading-4" id={titleId} tag="h2">
-            {capability.label}
-          </OakHeading>
-          <ResourceAdapterErrorBoundary
+      <OakModalCenterBody
+        // The body titles itself h1, which would be a second h1 on the host page.
+        headingOverride={{ id: titleId, tag: "h2" }}
+        iconName="additional-material"
+        title={capability.label}
+      >
+        <ResourceAdapterErrorBoundary
+          {...(onError ? { onError } : {})}
+          resetKeys={resetKeys}
+        >
+          <Workflow
+            apiBaseUrl={apiBaseUrl}
+            getToken={getToken}
+            isOpen={isOpen}
+            lesson={lesson}
             {...(onError ? { onError } : {})}
-            resetKeys={resetKeys}
-          >
-            <Workflow
-              apiBaseUrl={apiBaseUrl}
-              getToken={getToken}
-              isOpen={isOpen}
-              lesson={lesson}
-              {...(onError ? { onError } : {})}
-            />
-          </ResourceAdapterErrorBoundary>
-        </OakFlex>
-      </OakInformativeModalBody>
-    </OakInformativeModal>
+          />
+        </ResourceAdapterErrorBoundary>
+      </OakModalCenterBody>
+    </OakModalCenter>
   );
 }

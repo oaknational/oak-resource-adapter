@@ -7,27 +7,10 @@ import {
   type PromptVariables,
 } from "../prompt-template.js";
 
-const IDENTIFIER_VERSION_CONSTRAINT = "prompt_templates_identifier_version_key";
-
 export type PreparedPrompt = Readonly<{
   promptTemplateId: string;
   text: string;
 }>;
-
-/** Drizzle wraps driver errors, so `constraint` sits down the `cause` chain. */
-function violatedConstraint(error: unknown): string | undefined {
-  let current: unknown = error;
-
-  while (current !== null && typeof current === "object") {
-    if ("constraint" in current && typeof current.constraint === "string") {
-      return current.constraint;
-    }
-
-    current = "cause" in current ? current.cause : null;
-  }
-
-  return undefined;
-}
 
 async function selectIdByHash(hash: string): Promise<string | undefined> {
   const [existing] = await getDatabaseClient()
@@ -42,34 +25,20 @@ async function selectIdByHash(hash: string): Promise<string | undefined> {
 async function insertTemplate(
   promptTemplate: PromptTemplate,
 ): Promise<string | undefined> {
-  try {
-    const [inserted] = await getDatabaseClient()
-      .insert(promptTemplates)
-      .values({
-        gitSha: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
-        hash: promptTemplate.hash,
-        identifier: promptTemplate.identifier,
-        template: promptTemplate.template,
-        version: promptTemplate.version,
-      })
-      // A concurrent first use returns no row rather than raising, so the loser
-      // reads the winner's row below.
-      .onConflictDoNothing({ target: promptTemplates.hash })
-      .returning({ id: promptTemplates.id });
+  const [inserted] = await getDatabaseClient()
+    .insert(promptTemplates)
+    .values({
+      gitSha: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+      hash: promptTemplate.hash,
+      identifier: promptTemplate.identifier,
+      template: promptTemplate.template,
+    })
+    // A concurrent first use returns no row rather than raising, so the loser
+    // reads the winner's row below.
+    .onConflictDoNothing({ target: promptTemplates.hash })
+    .returning({ id: promptTemplates.id });
 
-    return inserted?.id;
-  } catch (error) {
-    // The hash covers the body, so this constraint can only mean the body
-    // changed while the version stayed the same.
-    if (violatedConstraint(error) === IDENTIFIER_VERSION_CONSTRAINT) {
-      throw new Error(
-        `Prompt template "${promptTemplate.identifier}" version ${promptTemplate.version} is already stored with a different body. Bump its version.`,
-        { cause: error },
-      );
-    }
-
-    throw error;
-  }
+  return inserted?.id;
 }
 
 /** Registers a template on first use, returning the ID of its immutable row. */

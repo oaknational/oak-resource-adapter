@@ -37,7 +37,7 @@ const worksheetGatedCapability: CapabilityDefinition = {
   label: "Worksheet capability",
   resourceType: "worksheet",
   isEligible: (context) => isAdaptable(context, "worksheet"),
-  transformations: ["identity"],
+  transformationKinds: ["identity"],
 };
 
 const starterQuizGatedCapability: CapabilityDefinition = {
@@ -45,7 +45,7 @@ const starterQuizGatedCapability: CapabilityDefinition = {
   label: "Starter quiz capability",
   resourceType: "starter-quiz",
   isEligible: (context) => isAdaptable(context, "starter-quiz"),
-  transformations: ["identity"],
+  transformationKinds: ["identity"],
 };
 
 const testDefinitions: ReadonlyArray<CapabilityDefinition> = [
@@ -60,7 +60,7 @@ describe("getCapabilities", () => {
     ).resolves.toEqual({
       capabilities: [
         {
-          id: "worksheetAdapter",
+          id: "worksheetScaffolding",
           label: "Scaffold practice tasks",
           resourceType: "worksheet",
         },

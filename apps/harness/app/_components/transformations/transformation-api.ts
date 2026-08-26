@@ -66,7 +66,6 @@ const previewResponseSchema = z.strictObject({
     .strictObject({
       identifier: z.string(),
       text: z.string(),
-      version: z.number().int().positive(),
     })
     .nullable(),
   status: z.enum(["active", "draft"]),
