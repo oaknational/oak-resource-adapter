@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { LessonKeyword } from "@oaknational/resource-adapter-curriculum";
 import type { DefinitionEntry, InlineContent } from "@oaknational/resource-document";
 
-import { lessonKeywordsFrom } from "../oak-material/lesson-keywords";
+import { lessonKeywordsFrom } from "../../oak-material/lesson-keywords";
 import type { TransformationDocuments } from "../types";
 import { contributionExtensions, type ContributionContext } from "./contribution";
 import { insertBeneath } from "./place";

@@ -5,7 +5,7 @@ import {
   type SupportLevel,
   type SupportLevelOptions,
 } from "./support-level";
-import type { TransformationMaterialRequirement } from "./oak-material/material";
+import type { OakMaterialRequirement } from "../oak-material/material";
 import type {
   PupilBarrier,
   TransformationAvailabilityContext,
@@ -25,7 +25,7 @@ export type TransformationDeclaration = Readonly<{
   isAvailable: (context: TransformationAvailabilityContext) => boolean;
   kind: string;
   label: string;
-  materialRequirements?: readonly TransformationMaterialRequirement[];
+  materialRequirements?: readonly OakMaterialRequirement[];
   outputs: TransformationOutputs;
   /** Arguments beyond the support level, which is derived. */
   params?: ParamsObject;
