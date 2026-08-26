@@ -10,7 +10,10 @@ import type {
   EdgeCaseNavigationItem,
   ExtractionDiagnostic,
 } from "./scenario-types";
-import type { LessonContext } from "@oaknational/resource-adapter";
+import type {
+  LessonContext,
+  ResourceAdapterCapabilityOption,
+} from "@oaknational/resource-adapter";
 
 const worksheetLocator = {
   source: "oak",
@@ -202,6 +205,64 @@ const edgeCaseDefinitions = [
     },
     brokenApiPath: false,
     facts: readUnparseableMarkup,
+  },
+  {
+    id: "one-capability-ui",
+    title: "One capability is enabled",
+    summary: "The launcher has one available teacher action.",
+    expectation: "Expected: a direct capability button",
+    reason:
+      "With only one action available, an extra menu adds no value. Selecting the button opens that capability immediately.",
+    lesson: {
+      lessonSlug: "adopting-different-perspectives",
+      programmeSlug: "english-primary-ks2",
+      title: "Adopting different perspectives",
+      subjectSlug: "english",
+      keyStageSlug: "ks2",
+      availableResources: ["worksheet"],
+    },
+    brokenApiPath: false,
+    uiCapabilities: [{ id: "worksheetAdapter", label: "Scaffold practice tasks" }],
+    facts: () =>
+      Promise.resolve(
+        factsOnly([
+          { term: "Fixture type", value: "Teacher-facing launcher state" },
+          { term: "Capability choices", value: "1" },
+        ]),
+      ),
+  },
+  {
+    id: "multiple-capabilities-ui",
+    title: "Multiple capabilities are enabled",
+    summary: "The launcher offers a menu of teacher actions.",
+    expectation: "Expected: a Create more with AI capability menu",
+    reason:
+      "This deterministic UI fixture shows the future multi-capability shape without adding a fictional capability to the live service registry.",
+    lesson: {
+      lessonSlug: "adopting-different-perspectives",
+      programmeSlug: "english-primary-ks2",
+      title: "Adopting different perspectives",
+      subjectSlug: "english",
+      keyStageSlug: "ks2",
+      availableResources: ["worksheet"],
+    },
+    brokenApiPath: false,
+    uiCapabilities: [
+      { id: "worksheetAdapter", label: "Scaffold practice tasks" },
+      // The launcher needs a second choice to render a menu, and the service
+      // has no second capability to offer.
+      {
+        id: "futureFixture",
+        label: "Another capability (UI fixture)",
+      } as unknown as ResourceAdapterCapabilityOption,
+    ],
+    facts: () =>
+      Promise.resolve(
+        factsOnly([
+          { term: "Fixture type", value: "Teacher-facing launcher state" },
+          { term: "Capability choices", value: "2" },
+        ]),
+      ),
   },
   {
     id: "capabilities-unavailable",

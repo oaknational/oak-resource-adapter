@@ -315,6 +315,19 @@ jobs:
         if: env.CLERK_SECRET_KEY != ''
         run: pnpm test:e2e
 
+      # Traces and screenshots live only on the runner, so a failure is
+      # undiagnosable unless they leave with it.
+      - name: Upload browser test evidence
+        if: failure() && env.CLERK_SECRET_KEY != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-evidence
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Report a skipped suite
         if: env.CLERK_SECRET_KEY == ''
         run: |

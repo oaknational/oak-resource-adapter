@@ -1,6 +1,9 @@
 "use client";
 
-import { ResourceAdapterDialog } from "@oaknational/resource-adapter";
+import {
+  ResourceAdapterDialog,
+  type ResourceAdapterCapability,
+} from "@oaknational/resource-adapter";
 import { useAuth } from "@clerk/nextjs";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { useEffect, useState } from "react";
@@ -34,10 +37,19 @@ export function LessonScenarioView({
     lesson,
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedCapability, setSelectedCapability] = useState<
+    ResourceAdapterCapability | undefined
+  >();
 
   useEffect(() => {
     setIsDialogOpen(false);
+    setSelectedCapability(undefined);
   }, [lesson.lessonSlug]);
+
+  function selectCapability(capability: ResourceAdapterCapability) {
+    setSelectedCapability(capability);
+    setIsDialogOpen(true);
+  }
 
   return (
     <>
@@ -59,25 +71,26 @@ export function LessonScenarioView({
         <p>{scenario.description}</p>
 
         <CreateMorePanel
+          capabilities={capabilities}
           hasAvailableCapabilities={hasAvailableCapabilities}
-          hasCapabilities={capabilities.length > 0}
-          onOpen={() => setIsDialogOpen(true)}
+          onSelectCapability={selectCapability}
           onRetry={reload}
           state={state}
         />
         <LessonMetadata scenario={scenario} />
         <WorksheetPanel scenario={scenario} />
       </article>
-      <ResourceAdapterDialog
-        apiBaseUrl={apiBaseUrl}
-        capabilities={capabilities}
-        getToken={getToken}
-        isOpen={isDialogOpen}
-        lesson={lesson}
-        onClose={() => setIsDialogOpen(false)}
-        onError={(error) => log.error(error)}
-        resourceDocumentSummary={scenario.documentSummary}
-      />
+      {selectedCapability && (
+        <ResourceAdapterDialog
+          apiBaseUrl={apiBaseUrl}
+          capability={selectedCapability}
+          getToken={getToken}
+          isOpen={isDialogOpen}
+          lesson={lesson}
+          onClose={() => setIsDialogOpen(false)}
+          onError={(error) => log.error(error)}
+        />
+      )}
     </>
   );
 }

@@ -15,6 +15,7 @@ import {
 import {
   GET as getFeatureFlags,
   OPTIONS as internalOptions,
+  POST as postInternal,
 } from "../app/trpc/internal/[trpc]/route";
 import {
   OPTIONS as modelInvokeOptions,
@@ -100,6 +101,20 @@ function featureFlagsRequest(): NextRequest {
   });
 }
 
+function sourceDocumentRequest(
+  input: unknown,
+  procedure = "sourceDocuments.get",
+): NextRequest {
+  return request(`http://localhost:3001/trpc/internal/${procedure}?batch=1`, {
+    body: JSON.stringify({ "0": input }),
+    headers: {
+      "Content-Type": "application/json",
+      Origin: "http://localhost:3000",
+    },
+    method: "POST",
+  });
+}
+
 describe("API routes", () => {
   beforeEach(() => {
     vi.stubEnv("ENABLE_DEV_ROUTES", "1");
@@ -154,6 +169,38 @@ describe("API routes", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject([{ result: { data: [] } }]);
+  });
+
+  it("returns an eligible capability's source document", async () => {
+    const response = await postInternal(
+      sourceDocumentRequest({ capabilityId: "worksheetAdapter", lesson }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject([
+      {
+        result: {
+          data: {
+            profile: "worksheet.v0",
+            metadata: { title: "Adopting different perspectives" },
+          },
+        },
+      },
+    ]);
+  });
+
+  it("does not return a source document for an ineligible capability", async () => {
+    const response = await postInternal(
+      sourceDocumentRequest({
+        capabilityId: "worksheetAdapter",
+        lesson: { ...lesson, availableResources: ["starter-quiz"] },
+      }),
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toMatchObject([
+      { error: { data: { code: "NOT_FOUND" } } },
+    ]);
   });
 
   it("rejects an unsupported API contract version", async () => {

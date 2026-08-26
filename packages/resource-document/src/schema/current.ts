@@ -21,30 +21,4 @@ export {
   textRunSchema,
   worksheetDocumentV0_1Schema as worksheetDocumentSchema,
   worksheetMetadataSchema,
-} from "./versions/v0_1.js";
-
-export type {
-  AnswerAnnotation,
-  Asset,
-  CalloutNode,
-  DefinitionEntry,
-  DefinitionListNode,
-  DocumentProvenance,
-  FigureNode,
-  GenericDocumentV0_1 as GenericDocument,
-  HeadingNode,
-  InlineContent,
-  InlineRun,
-  LayoutIntent,
-  NamespacedExtensions,
-  ParagraphNode,
-  QuestionNode,
-  ResourceDocumentDiagnostic,
-  ResourceDocumentV0_1 as ResourceDocument,
-  ResourceNode,
-  ResponseSpaceNode,
-  SectionNode,
-  SourceMap,
-  UnsupportedNode,
-  WorksheetDocumentV0_1 as WorksheetDocument,
-} from "./versions/v0_1.js";
+} from "./versions/v0_1/schemas.js";

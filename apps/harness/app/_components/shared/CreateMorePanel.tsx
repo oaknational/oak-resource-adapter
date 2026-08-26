@@ -6,26 +6,30 @@ import { OakPrimaryButton, OakSecondaryButton } from "@oaknational/oak-component
 
 import styles from "../../page.module.css";
 import type { CapabilitiesState } from "../../_hooks/useCapabilities";
+import type { ResourceAdapterCapabilityOption } from "@oaknational/resource-adapter";
 
-export function CreateMorePanel({
+export function CreateMorePanel<TCapability extends ResourceAdapterCapabilityOption>({
+  capabilities,
   hasAvailableCapabilities,
-  hasCapabilities,
-  onOpen,
+  onSelectCapability,
   onRetry,
   state,
 }: Readonly<{
+  capabilities: readonly TCapability[];
   hasAvailableCapabilities: boolean;
-  hasCapabilities: boolean;
-  onOpen: () => void;
+  onSelectCapability: (capability: TCapability) => void;
   onRetry: () => void;
   state: CapabilitiesState;
 }>) {
-  if (hasCapabilities) {
+  if (capabilities.length > 0) {
     return (
       <section aria-labelledby="create-more-heading" className={styles.createMore}>
         <h2 id="create-more-heading">Create more with Aila</h2>
         <p>Use AI to adapt this lesson&apos;s available resources.</p>
-        <ResourceAdapterButton onClick={onOpen} />
+        <ResourceAdapterButton
+          capabilities={capabilities}
+          onSelectCapability={onSelectCapability}
+        />
       </section>
     );
   }

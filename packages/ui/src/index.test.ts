@@ -16,6 +16,7 @@ const EXPECTED_PUBLIC_API = [
   "ResourceAdapterCapabilitiesResponse",
   "ResourceAdapterCapability",
   "ResourceAdapterCapabilityId",
+  "ResourceAdapterCapabilityOption",
   "ResourceAdapterDialog",
   "ResourceAdapterDialogProps",
   "ResourceAdapterErrorBoundary",
@@ -23,7 +24,6 @@ const EXPECTED_PUBLIC_API = [
   "ResourceAdapterErrorHandler",
   "ResourceAdapterErrorInfo",
   "ResourceAdapterHostProps",
-  "ResourceDocumentSummary",
   "getResourceAdapterCapabilities",
   "getResourceAdapterCapabilityAvailability",
 ];
