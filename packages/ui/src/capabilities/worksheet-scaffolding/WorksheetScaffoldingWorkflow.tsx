@@ -350,6 +350,19 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   const failedJob = state.value.job?.status === "failed" ? state.value.job : undefined;
   const listedSuggestions =
     applyingSuggestion?.listedSuggestions ?? state.value.suggestions;
+  const suggestionsByTarget = new Map<
+    ApplyingSuggestion["targetBlockId"],
+    WorksheetScaffoldingState["suggestions"][number][]
+  >();
+
+  for (const suggestion of listedSuggestions) {
+    const suggestions = suggestionsByTarget.get(suggestion.targetBlockId);
+    if (suggestions === undefined) {
+      suggestionsByTarget.set(suggestion.targetBlockId, [suggestion]);
+    } else {
+      suggestions.push(suggestion);
+    }
+  }
 
   const renderSuggestionItem = (
     suggestion: WorksheetScaffoldingState["suggestions"][number],
@@ -386,9 +399,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   const renderSuggestionGroup = (
     targetBlockId: ApplyingSuggestion["targetBlockId"],
   ) => {
-    const suggestions = listedSuggestions.filter(
-      (suggestion) => suggestion.targetBlockId === targetBlockId,
-    );
+    const suggestions = suggestionsByTarget.get(targetBlockId) ?? [];
 
     if (suggestions.length === 0) {
       return null;
