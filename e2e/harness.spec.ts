@@ -1,5 +1,5 @@
 import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 // Presence is verified by the setup project, which this project depends on.
 const emailAddress = process.env.E2E_CLERK_USER_EMAIL as string;
@@ -21,6 +21,14 @@ async function expectRenderedWorksheet(drawer: Locator, title: string) {
   await expect(worksheet).toBeVisible();
 }
 
+function waitForCapabilities(page: Page) {
+  return page.waitForResponse(
+    (response) =>
+      response.url().includes("/adapter-proxy/trpc/v1/capabilities.get") &&
+      response.request().method() === "POST",
+  );
+}
+
 test(
   "shows the API state, a capability-based trigger, and the adapter sidebar",
   {},
@@ -32,7 +40,9 @@ test(
     await clerk.signIn({ page, emailAddress });
 
     // Reload so the now-authenticated session drives the capabilities fetch.
+    const capabilitiesResponse = waitForCapabilities(page);
     await page.goto("/");
+    expect((await capabilitiesResponse).status()).toBe(200);
 
     await expect(page.getByRole("status")).toHaveText("API /health: Healthy");
     await expect(
@@ -143,11 +153,7 @@ for (const { heading, id, offersCreateMore, outcome } of edgeCases) {
 
       // The same endpoint the eligible lessons use has to be consulted, so an
       // absent button proves an empty response rather than a skipped request.
-      const capabilitiesResponse = page.waitForResponse(
-        (response) =>
-          response.url().includes("/adapter-proxy/") &&
-          response.url().includes("capabilities"),
-      );
+      const capabilitiesResponse = waitForCapabilities(page);
       await page.goto(`/?view=edge-cases&case=${id}`);
       expect((await capabilitiesResponse).status()).toBe(200);
 
