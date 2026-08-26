@@ -214,16 +214,20 @@ function DocumentContent({
   nodes: readonly ResourceNode[];
   renderAfterNode?: (node: ResourceNode) => ReactNode;
 }>) {
-  return documentParts(nodes).map((part) =>
-    part.kind === "task" ? (
-      <TaskAccordion
-        assets={assets}
-        heading={part.heading}
-        key={part.heading.id}
-        nodes={part.children}
-        {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
-      />
-    ) : (
+  return documentParts(nodes).map((part) => {
+    if (part.kind === "task") {
+      return (
+        <TaskAccordion
+          assets={assets}
+          heading={part.heading}
+          key={part.heading.id}
+          nodes={part.children}
+          {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
+        />
+      );
+    }
+
+    return (
       <Fragment key={part.nodes[0]?.id}>
         <ResourceNodeListRenderer
           assets={assets}
@@ -232,8 +236,8 @@ function DocumentContent({
           {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
         />
       </Fragment>
-    ),
-  );
+    );
+  });
 }
 
 export function ResourceDocumentRenderer({

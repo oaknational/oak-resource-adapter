@@ -28,12 +28,12 @@ export function resourceNodeLabel(node: ResourceNode): string {
       const content = firstDescription(node.children);
       // Labels feed a target picker, so an unlabelled and empty question still
       // has to be told apart from its siblings.
-      const label =
-        node.label !== undefined
-          ? `Question ${node.label}`
-          : content === undefined
-            ? `Question ${node.id}`
-            : "Question";
+      let label = "Question";
+      if (node.label !== undefined) {
+        label = `Question ${node.label}`;
+      } else if (content === undefined) {
+        label = `Question ${node.id}`;
+      }
 
       return content === undefined ? label : `${label}: ${content}`;
     }
