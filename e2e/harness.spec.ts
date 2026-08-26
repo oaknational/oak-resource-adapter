@@ -1,5 +1,5 @@
 import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 // Presence is verified by the setup project, which this project depends on.
 const emailAddress = process.env.E2E_CLERK_USER_EMAIL as string;
@@ -7,11 +7,31 @@ const emailAddress = process.env.E2E_CLERK_USER_EMAIL as string;
 // @deployment-safe marks a spec as runnable against a deployed environment, which
 // means two things: it writes no rows another run could see, and it depends on no
 // local-only state. Untagged specs run only against CI's throwaway database.
+/**
+ * The drawer fetches its document on open, so waiting for the worksheet alone
+ * reports a bare timeout whether the request was slow or rejected. Waiting for
+ * either outcome names which one happened.
+ */
+async function expectRenderedWorksheet(drawer: Locator, title: string) {
+  const worksheet = drawer.getByRole("article", { name: title });
+  const failure = drawer.getByTestId("resource-adapter-worksheet-scaffolding-error");
+
+  await expect(worksheet.or(failure).first()).toBeVisible({ timeout: 20_000 });
+  await expect(failure).toHaveCount(0);
+  await expect(worksheet).toBeVisible();
+}
+
+function waitForCapabilities(page: Page) {
+  return page.waitForResponse(
+    (response) =>
+      response.url().includes("/adapter-proxy/trpc/v1/capabilities.get") &&
+      response.request().method() === "POST",
+  );
+}
+
 test(
   "shows the API state, a capability-based trigger, and the adapter sidebar",
-  {
-    tag: "@deployment-safe",
-  },
+  {},
   async ({ page }) => {
     await setupClerkTestingToken({ page });
     await page.goto("/");
@@ -20,7 +40,9 @@ test(
     await clerk.signIn({ page, emailAddress });
 
     // Reload so the now-authenticated session drives the capabilities fetch.
+    const capabilitiesResponse = waitForCapabilities(page);
     await page.goto("/");
+    expect((await capabilitiesResponse).status()).toBe(200);
 
     await expect(page.getByRole("status")).toHaveText("API /health: Healthy");
     await expect(
@@ -28,7 +50,7 @@ test(
     ).toBeVisible();
 
     const createMoreButton = page.getByRole("button", {
-      name: "Create more with AI",
+      name: "Scaffold practice tasks",
     });
     const createMoreButtonBox = await createMoreButton.boundingBox();
     const metadataHeadingBox = await page
@@ -40,16 +62,23 @@ test(
 
     await createMoreButton.click();
 
-    const sidebar = page.getByRole("dialog", { name: "Create more with Aila" });
+    const sidebar = page.getByRole("dialog", {
+      name: "Scaffold practice tasks",
+    });
     await expect(sidebar).toBeVisible();
-    const closeIcon = sidebar.getByRole("button", { name: "Close" }).locator("img");
+    const closeIcon = sidebar
+      .getByRole("button", { name: "Close Modal" })
+      .locator("img");
     await expect
       .poll(async () => closeIcon.evaluate((image) => image.naturalWidth))
       .toBeGreaterThan(0);
-    await expect(sidebar).toContainText("Hello, World!");
-    await expect(sidebar).toContainText("Scaffolded Practice Sheet");
-    await expect(sidebar).toContainText("Worksheet data loaded");
-    await expect(sidebar).toContainText("6 questions");
+    await expectRenderedWorksheet(
+      sidebar,
+      "Explain how the quotient is affected when the divisor is equal to the dividend",
+    );
+    await expect(
+      sidebar.getByRole("heading", { level: 5, name: "Question 1" }),
+    ).toBeVisible();
   },
 );
 
@@ -124,11 +153,7 @@ for (const { heading, id, offersCreateMore, outcome } of edgeCases) {
 
       // The same endpoint the eligible lessons use has to be consulted, so an
       // absent button proves an empty response rather than a skipped request.
-      const capabilitiesResponse = page.waitForResponse(
-        (response) =>
-          response.url().includes("/adapter-proxy/") &&
-          response.url().includes("capabilities"),
-      );
+      const capabilitiesResponse = waitForCapabilities(page);
       await page.goto(`/?view=edge-cases&case=${id}`);
       expect((await capabilitiesResponse).status()).toBe(200);
 
@@ -137,7 +162,7 @@ for (const { heading, id, offersCreateMore, outcome } of edgeCases) {
       ).toBeVisible();
       await expect(page.getByTestId("capability-outcome")).toHaveText(outcome);
       await expect(
-        page.getByRole("button", { name: "Create more with AI" }),
+        page.getByRole("button", { name: "Scaffold practice tasks" }),
       ).toHaveCount(offersCreateMore ? 1 : 0);
       await expect(
         page.getByRole("region", { name: "Sign in to create more with Aila" }),
@@ -145,6 +170,25 @@ for (const { heading, id, offersCreateMore, outcome } of edgeCases) {
     },
   );
 }
+
+test("shows the future multi-capability launcher shape", {}, async ({ page }) => {
+  await setupClerkTestingToken({ page });
+  await page.goto("/");
+  await clerk.signIn({ page, emailAddress });
+  await page.goto("/?view=edge-cases&case=multiple-capabilities-ui");
+
+  const trigger = page.getByRole("button", { name: "Create more with AI" });
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await trigger.click();
+
+  const menu = page.getByRole("menu");
+  await expect(menu.getByRole("menuitem")).toHaveCount(2);
+  await menu.getByRole("menuitem", { name: "Scaffold practice tasks" }).click();
+
+  const drawer = page.getByRole("dialog", { name: "Scaffold practice tasks" });
+  await expect(drawer).toBeVisible();
+  await expectRenderedWorksheet(drawer, "Adopting different perspectives");
+});
 
 test(
   "preserves an unknown directive rather than dropping it",
@@ -213,9 +257,9 @@ test(
 
     await expect(fallback).toBeVisible();
     await expect(fallback.getByRole("button", { name: "Try again" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Create more with AI" })).toHaveCount(
-      0,
-    );
+    await expect(
+      page.getByRole("button", { name: "Scaffold practice tasks" }),
+    ).toHaveCount(0);
   },
 );
 
@@ -282,6 +326,9 @@ test(
     tag: "@deployment-safe",
   },
   async ({ page }) => {
+    // Clerk's bot protection blocks an automated browser on a real domain, and
+    // without it `isLoaded` never settles, so the panel renders nothing.
+    await setupClerkTestingToken({ page });
     await page.goto("/");
 
     const signInPrompt = page.getByRole("region", {
@@ -297,9 +344,33 @@ test(
     await expect(
       page.getByRole("heading", { exact: true, name: "Create more with Aila" }),
     ).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Create more with AI" })).toHaveCount(
-      0,
+    await expect(
+      page.getByRole("button", { name: "Scaffold practice tasks" }),
+    ).toHaveCount(0);
+  },
+);
+
+test(
+  "leaves signed-out visitors alone when a lesson has nothing behind it",
+  {
+    tag: "@deployment-safe",
+  },
+  async ({ page }) => {
+    await setupClerkTestingToken({ page });
+    await page.goto("/?view=edge-cases&case=worksheet-without-extraction");
+
+    // Settles only once the unauthenticated availability call has answered, so
+    // the absences below are meaningful rather than merely early.
+    await expect(page.getByTestId("capability-outcome")).toHaveText(
+      "Capabilities state: signedOut.",
     );
+
+    await expect(
+      page.getByRole("region", { name: "Sign in to create more with Aila" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Scaffold practice tasks" }),
+    ).toHaveCount(0);
   },
 );
 
@@ -328,8 +399,14 @@ test(
     await page.getByRole("button", { name: "Preview prompt" }).click();
 
     await expect(page.getByRole("heading", { name: "Prompt preview" })).toBeVisible();
-    // Names the prompt it rendered, which the controls above do not.
-    await expect(page.getByText(/scaffold-add-word-bank, version \d+/)).toBeVisible();
+    // Prompts are content-addressed, so the panel names the prompt by its
+    // identifier alone; the controls carry the same kind, hence the scoping.
+    const promptPreview = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Prompt preview" }) });
+    await expect(
+      promptPreview.getByText("scaffold-add-word-bank", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("region", { name: "Rendered prompt" })).toContainText(
       "YOUR SCAFFOLD: a word bank",
     );

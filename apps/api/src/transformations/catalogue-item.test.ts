@@ -3,18 +3,19 @@ import { describe, expect, it } from "vitest";
 import { always } from "./availability";
 import { defineTransformation } from "./define-transformation";
 import { listRegisteredTransformations, toCatalogueItem } from "./service";
-import type { TransformationMaterialRequirement } from "./oak-material/material";
+import type { OakMaterialRequirement } from "../oak-material/material";
 import { transformationDefinitions } from "./registry";
 import { glossaryContribution } from "./definitions/scaffold-add-glossary-question/contribution";
 import { addWordBankPrompt } from "./definitions/scaffold-add-word-bank/prompt";
 
 function deterministicWith(
-  materialRequirements: readonly TransformationMaterialRequirement[] = [],
+  materialRequirements: readonly OakMaterialRequirement[] = [],
 ) {
   return defineTransformation({
     kind: "test-deterministic",
     label: "Deterministic",
     status: "draft",
+    suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
     target: { scope: "document" },
     materialRequirements,
     outputs: ["revised-resource"],
@@ -29,6 +30,7 @@ const textModel = defineTransformation({
   kind: "test-text-model",
   label: "Text model",
   status: "draft",
+  suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "node", nodeTypes: ["question"] },
   outputs: ["revised-resource"],
   isAvailable: always,
@@ -39,6 +41,7 @@ const structuredModel = defineTransformation({
   kind: "test-structured-model",
   label: "Structured model",
   status: "draft",
+  suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "node", nodeTypes: ["question"] },
   outputs: ["revised-resource"],
   isAvailable: always,

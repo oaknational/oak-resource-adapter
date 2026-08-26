@@ -111,14 +111,15 @@ published package must include a Changeset:
 pnpm changeset
 ```
 
-Select the affected package and a `patch`, `minor` or `major` bump. The two
-packages form a fixed group, so Changesets gives both the same final version even
-when only one is selected. Write the summary for package consumers: it becomes a
-changelog entry. Commit the generated `.changeset/*.md` file with the change.
+Select the affected package and a `patch`, `minor` or `major` bump. The three
+published packages form a fixed group, so Changesets gives them the same final
+version even when only one is selected. Write the summary for package consumers:
+it becomes a changelog entry. Commit the generated `.changeset/*.md` file with
+the change.
 
 CI compares the pull request with its base branch and checks this metadata when
-`ENFORCE_CHANGESETS=true`. Documentation, CI and API-only changes do not need a
-Changeset.
+`ENFORCE_CHANGESETS=true`; Dependabot pull requests are exempt. Documentation,
+CI and API-only changes do not need a Changeset.
 
 ## How package publishing works
 
@@ -132,7 +133,7 @@ ordinary work into `main`:
 4. Once the corresponding production API is healthy, QA reviews and merges the
    version PR.
 5. CI passes on the version commit and `release.yml` runs `pnpm ci:publish`,
-   publishing both packages, tags and GitHub releases.
+   publishing all three packages, tags and GitHub releases.
 6. The completed release metadata is synced from `production` back into `main`.
 
 The authoritative operational sequence, including API deployment and OWA, is in
@@ -142,16 +143,16 @@ The Changesets `baseBranch` remains `main` because contributors branch from and
 open feature pull requests into `main`. The Release workflow separately sets its
 version PR target to `production`.
 
-The Version Packages PR consumes the Changeset files, updates both package
+The Version Packages PR consumes the Changeset files, updates the package
 versions and changelogs, and updates the lockfile. Further commits to
 `production` with Changesets update the same PR. A run with no pending Changesets
 only attempts to publish versions already present in the checked-out commit but
 not on npm.
 
-`pnpm ci:publish` builds the UI and contracts packages before calling
-`changeset publish`. pnpm rewrites the UI package's `workspace:*` contracts
-dependency to the released version in the published artifact. Each package also
-has a `prepublishOnly` build as a safeguard for manual publishing.
+`pnpm ci:publish` builds the UI, contracts and resource-document packages before
+calling `changeset publish`. pnpm rewrites their `workspace:*` dependencies to
+the released version in the published artifacts. Each package also has a
+`prepublishOnly` build as a safeguard for manual publishing.
 
 ## npm publishing infrastructure
 
@@ -165,11 +166,12 @@ trusted publisher to be configured for an existing package:
 
 ```sh
 pnpm turbo run build --filter=@oaknational/resource-adapter...
+pnpm --filter @oaknational/resource-document publish --access public --no-git-checks
 pnpm --filter @oaknational/resource-adapter-contracts publish --access public --no-git-checks
 pnpm --filter @oaknational/resource-adapter publish --access public --no-git-checks
 ```
 
-The build matters: both packages ship only `dist/`, which is gitignored, so
+The build matters: all three packages ship only `dist/`, which is gitignored, so
 publishing from a clean checkout without building would upload a tarball with no
 code in it, and an npm version cannot be replaced afterwards. Each manifest also
 carries a `prepublishOnly` hook that runs the build, so the publish is safe even

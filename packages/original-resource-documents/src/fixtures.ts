@@ -2,10 +2,8 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-  parseResourceDocument,
-  type ResourceDocument,
-} from "@oaknational/resource-document";
+import type { ResourceDocument } from "@oaknational/resource-document";
+import { parseResourceDocument } from "@oaknational/resource-document/parse";
 
 import {
   OriginalResourceDocumentError,

@@ -21,11 +21,13 @@ jobs:
   changeset:
     name: Check package release metadata
     # The Changesets action's own version pull request consumes the changesets
-    # it is versioning, so this check would always fail against it.
+    # it is versioning, so this check would always fail against it. Dependabot
+    # cannot write changesets, so it would always fail against those too.
     if: >-
       github.event_name == 'pull_request' &&
       vars.ENFORCE_CHANGESETS == 'true' &&
-      github.head_ref != 'changeset-release/production'
+      github.head_ref != 'changeset-release/production' &&
+      !startsWith(github.head_ref, 'dependabot/')
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -276,19 +278,55 @@ jobs:
       - name: Apply database migrations
         run: pnpm --filter @oaknational/resource-adapter-db db:migrate:deploy
 
-      - name: Install Playwright browser
+      - name: Cache the Playwright browser
         if: env.CLERK_SECRET_KEY != ''
-        run: pnpm exec playwright install --with-deps chromium
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-chromium
+          restore-keys: playwright-${{ runner.os }}-
 
-      # Dependabot and fork pull requests carry no repository secrets, so they
-      # have no Clerk credentials to sign in with. Guarded per step, not per job:
+      # Run this even on a cache hit: it takes about a second and re-downloads
+      # the browser after a Playwright bump. The runner image already has the
+      # system libraries, and headless tests only need the headless shell.
+      - name: Install Playwright browser
+        id: playwright_install
+        if: env.CLERK_SECRET_KEY != ''
+        continue-on-error: true
+        timeout-minutes: 5
+        run: pnpm exec playwright install --only-shell chromium
+
+      # A separate step so the retry still runs if the first attempt times out.
+      - name: Retry Playwright browser install
+        if: >-
+          env.CLERK_SECRET_KEY != '' &&
+          steps.playwright_install.outcome == 'failure'
+        timeout-minutes: 5
+        run: pnpm exec playwright install --only-shell chromium
+
+      # Fork pull requests carry no repository secrets, so they have no Clerk
+      # credentials to sign in with; Dependabot pull requests read the Dependabot
+      # secret store, which holds them. Guarded per step, not per job:
       # `Run browser tests` is a required check, and a skipped job blocks a merge
       # just as a failed one does.
       - name: Run browser tests
         if: env.CLERK_SECRET_KEY != ''
         run: pnpm test:e2e
 
+      # Traces and screenshots live only on the runner, so a failure is
+      # undiagnosable unless they leave with it.
+      - name: Upload browser test evidence
+        if: failure() && env.CLERK_SECRET_KEY != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-evidence
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Report a skipped suite
         if: env.CLERK_SECRET_KEY == ''
         run: |
-          echo "::warning::Browser tests skipped: this event carries no repository secrets, so there are no Clerk credentials to sign in with. Expected for Dependabot and fork pull requests."
+          echo "::warning::Browser tests skipped: this event carries no repository secrets, so there are no Clerk credentials to sign in with. Expected for fork pull requests."

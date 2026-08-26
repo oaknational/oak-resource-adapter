@@ -1,11 +1,11 @@
 import type {
   LessonContext,
-  ResourceDocumentSummary,
+  ResourceAdapterCapabilityOption,
 } from "@oaknational/resource-adapter";
 import type { ResourceDocument } from "@oaknational/resource-document";
 
 export type HarnessSection =
-  "lessons" | "edge-cases" | "smoke-tests" | "transformations";
+  "lessons" | "edge-cases" | "smoke-tests" | "suggestions" | "transformations";
 
 export type ExtractionDiagnostic = Readonly<{
   category: string;
@@ -43,7 +43,16 @@ export type LessonScenario = Readonly<{
   sourceUrl: string;
   markup: string;
   document: ResourceDocument;
-  documentSummary: ResourceDocumentSummary;
+  documentSummary: Readonly<{
+    id: string;
+    title: string;
+    profile: string;
+    schemaVersion: string;
+    contentNodeCount: number;
+    questionCount: number;
+    assetCount: number;
+    diagnosticCount: number;
+  }>;
   diagnostics: readonly ExtractionDiagnostic[];
   unsupportedNodeIds: readonly string[];
 }>;
@@ -68,6 +77,8 @@ export type EdgeCase = Readonly<{
   facts: readonly EdgeCaseFact[];
   diagnostics: readonly ExtractionDiagnostic[];
   unsupportedNodeIds: readonly string[];
+  /** Deterministic launcher choices for QA-only UI state cases. */
+  uiCapabilities?: readonly ResourceAdapterCapabilityOption[];
 }>;
 
 export type HarnessView =
@@ -82,7 +93,7 @@ export type HarnessView =
       edgeCase: EdgeCase;
     }>
   | Readonly<{
-      section: "transformations";
+      section: "suggestions" | "transformations";
       navigation: readonly LessonScenarioNavigationItem[];
       scenario: LessonScenario;
     }>

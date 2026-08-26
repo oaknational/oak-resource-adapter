@@ -1,6 +1,9 @@
 "use client";
 
-import { ResourceAdapterDialog } from "@oaknational/resource-adapter";
+import {
+  ResourceAdapterDialog,
+  type ResourceAdapterCapability,
+} from "@oaknational/resource-adapter";
 import { useAuth } from "@clerk/nextjs";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { useEffect, useState } from "react";
@@ -29,15 +32,24 @@ export function LessonScenarioView({
 }>) {
   const lesson = scenario.lesson;
   const { getToken } = useAuth();
-  const { capabilities, reload, state } = useCapabilities({
+  const { capabilities, hasAvailableCapabilities, reload, state } = useCapabilities({
     apiBaseUrl,
     lesson,
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedCapability, setSelectedCapability] = useState<
+    ResourceAdapterCapability | undefined
+  >();
 
   useEffect(() => {
     setIsDialogOpen(false);
+    setSelectedCapability(undefined);
   }, [lesson.lessonSlug]);
+
+  function selectCapability(capability: ResourceAdapterCapability) {
+    setSelectedCapability(capability);
+    setIsDialogOpen(true);
+  }
 
   return (
     <>
@@ -59,24 +71,26 @@ export function LessonScenarioView({
         <p>{scenario.description}</p>
 
         <CreateMorePanel
-          hasCapabilities={capabilities.length > 0}
-          onOpen={() => setIsDialogOpen(true)}
+          capabilities={capabilities}
+          hasAvailableCapabilities={hasAvailableCapabilities}
+          onSelectCapability={selectCapability}
           onRetry={reload}
           state={state}
         />
         <LessonMetadata scenario={scenario} />
         <WorksheetPanel scenario={scenario} />
       </article>
-      <ResourceAdapterDialog
-        apiBaseUrl={apiBaseUrl}
-        capabilities={capabilities}
-        getToken={getToken}
-        isOpen={isDialogOpen}
-        lesson={lesson}
-        onClose={() => setIsDialogOpen(false)}
-        onError={(error) => log.error(error)}
-        resourceDocumentSummary={scenario.documentSummary}
-      />
+      {selectedCapability && (
+        <ResourceAdapterDialog
+          apiBaseUrl={apiBaseUrl}
+          capability={selectedCapability}
+          getToken={getToken}
+          isOpen={isDialogOpen}
+          lesson={lesson}
+          onClose={() => setIsDialogOpen(false)}
+          onError={(error) => log.error(error)}
+        />
+      )}
     </>
   );
 }

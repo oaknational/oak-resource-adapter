@@ -4,25 +4,27 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { OakThemeProvider, oakDefaultTheme } from "@oaknational/oak-components";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { userEvent } from "@testing-library/user-event";
+import type { ResourceDocument } from "@oaknational/resource-document";
 
 import { ResourceAdapterDialog } from "./ResourceAdapterDialog.js";
 import type { ResourceAdapterDialogProps } from "./ResourceAdapterDialog.js";
-import { getResourceAdapterFeatureFlags } from "./getResourceAdapterFeatureFlags.js";
-import type {
-  LessonContext,
-  ResourceAdapterCapability,
-  ResourceDocumentSummary,
-} from "./publicTypes.js";
+import {
+  applyWorksheetScaffoldingSuggestion,
+  getWorksheetScaffolding,
+  openWorksheetScaffolding,
+} from "./worksheetScaffolding.js";
+import type { WorksheetScaffoldingState } from "@oaknational/resource-adapter-contracts/internal";
+import type { LessonContext, ResourceAdapterCapability } from "./publicTypes.js";
 
-// The flag request itself is covered by getResourceAdapterFeatureFlags.test.ts,
-// so these tests own only what the dialog does with the result.
-vi.mock("./getResourceAdapterFeatureFlags.js", () => ({
-  getResourceAdapterFeatureFlags: vi.fn(),
+vi.mock("./worksheetScaffolding.js", () => ({
+  applyWorksheetScaffoldingSuggestion: vi.fn(),
+  getWorksheetScaffolding: vi.fn(),
+  openWorksheetScaffolding: vi.fn(),
 }));
 
-const getFeatureFlagsMock = vi.mocked(getResourceAdapterFeatureFlags);
-
-const smokeTestFlag = "feature-flags-smoke-test-enabled";
+const openWorksheetScaffoldingMock = vi.mocked(openWorksheetScaffolding);
+const getWorksheetScaffoldingMock = vi.mocked(getWorksheetScaffolding);
+const applySuggestionMock = vi.mocked(applyWorksheetScaffoldingSuggestion);
 const apiBaseUrl = "https://resource-adapter-api.example";
 const getToken = async () => "clerk-token";
 
@@ -36,42 +38,55 @@ const lesson: LessonContext = {
 };
 
 const capability: ResourceAdapterCapability = {
-  id: "worksheetAdapter",
-  label: "Adapt worksheet",
+  id: "worksheetScaffolding",
+  label: "Scaffold practice tasks",
   resourceType: "worksheet",
 };
 
-const resourceDocumentSummary: ResourceDocumentSummary = {
-  id: "oak:worksheet:adding-fractions:pupil",
-  title: "Adding fractions worksheet",
-  profile: "worksheet.v0",
+const sourceDocument: ResourceDocument = {
   schemaVersion: "0.1",
-  contentNodeCount: 12,
-  questionCount: 3,
-  assetCount: 0,
-  diagnosticCount: 1,
+  id: "oak:worksheet:adding-fractions:pupil",
+  profile: "worksheet.v0",
+  language: "en-GB",
+  metadata: { title: "Adding fractions worksheet" },
+  content: [
+    {
+      id: "title",
+      type: "heading",
+      level: 1,
+      content: [{ type: "text", text: "Adding fractions worksheet" }],
+    },
+    {
+      id: "question-1",
+      type: "question",
+      label: "1",
+      children: [
+        {
+          id: "question-1-text",
+          type: "paragraph",
+          content: [{ type: "text", text: "What is one half plus one quarter?" }],
+        },
+      ],
+    },
+  ],
+  answers: [],
+  assets: [],
+  provenance: {
+    source: { system: "oak", id: "adding-fractions" },
+    producer: { name: "test", version: "1" },
+  },
+  diagnostics: [],
 };
 
-/** A lesson whose title throws when the flag is set. */
-function crashableLesson(flag: { crash: boolean }): LessonContext {
+// The shell reads `label` only inside the boundary, so a throwing getter
+// stands in for a crash the boundary has to contain.
+function crashingCapability(): ResourceAdapterCapability {
   return {
-    ...lesson,
-    get title(): string {
-      if (flag.crash) {
-        throw new Error("lesson title unavailable");
-      }
-      return "Adding fractions";
-    },
-  };
-}
-
-/** Crashes the shell, which reads the first capability during its render. */
-function shellCrashingCapabilities(): readonly ResourceAdapterCapability[] {
-  return new Proxy([] as ResourceAdapterCapability[], {
-    get() {
+    ...capability,
+    get label(): string {
       throw new Error("dialog shell crash");
     },
-  });
+  };
 }
 
 function dialogProps(
@@ -79,7 +94,7 @@ function dialogProps(
 ): ResourceAdapterDialogProps {
   return {
     apiBaseUrl,
-    capabilities: [capability],
+    capability,
     getToken,
     isOpen: true,
     lesson,
@@ -114,9 +129,66 @@ function renderDialog(overrides: Partial<ResourceAdapterDialogProps> = {}) {
   };
 }
 
+function opened(state: WorksheetScaffoldingState) {
+  return { outcome: "opened", state } as const;
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
+
+const readyWithSuggestion = {
+  adaptationId: "adaptation-1",
+  document: sourceDocument,
+  job: {
+    failureMessage: null,
+    id: "job-1",
+    kind: "suggestions.generate",
+    status: "succeeded",
+  },
+  suggestions: [
+    {
+      id: "suggestion-1",
+      kind: "scaffold-add-word-bank",
+      label: "Add a word bank",
+      params: { supportLevel: "low" },
+      reason: "This question depends on recalling several topic words.",
+      targetBlockId: "question-1",
+    },
+  ],
+} as const;
+
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
-  getFeatureFlagsMock.mockResolvedValue([]);
+  openWorksheetScaffoldingMock.mockResolvedValue(
+    opened({
+      adaptationId: "adaptation-1",
+      document: sourceDocument,
+      job: null,
+      suggestions: [],
+    }),
+  );
+  applySuggestionMock.mockResolvedValue({
+    adaptationId: "adaptation-1",
+    document: sourceDocument,
+    job: {
+      failureMessage: null,
+      id: "job-1",
+      kind: "suggestions.apply",
+      status: "queued",
+    },
+    suggestions: [],
+  });
+  getWorksheetScaffoldingMock.mockResolvedValue({
+    adaptationId: "adaptation-1",
+    document: sourceDocument,
+    job: null,
+    suggestions: [],
+  });
 });
 
 afterEach(() => {
@@ -125,331 +197,428 @@ afterEach(() => {
 });
 
 describe("ResourceAdapterDialog", () => {
-  describe("when open", () => {
-    it("presents the adapter as a labelled dialog", () => {
-      renderDialog();
+  it("labels the dialog with the explicitly selected capability", () => {
+    renderDialog();
 
-      expect(
-        screen.getByRole("dialog", { name: "Create more with Aila" }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("heading", { level: 2, name: "Create more with Aila" }),
-      ).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Scaffold practice tasks" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Scaffold practice tasks" }),
+    ).toBeInTheDocument();
+  });
+
+  it("loads and renders the capability source document", async () => {
+    const { props } = renderDialog();
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Loading worksheet. Getting your worksheet ready.",
+    );
+    const spinner = screen.getByTestId("worksheet-scaffolding-loading-spinner");
+    expect(spinner).toBeVisible();
+    expect(spinner).toHaveStyle({ borderTopStyle: "solid" });
+    expect(
+      await screen.findByRole("article", { name: "Adding fractions worksheet" }),
+    ).toBeVisible();
+    expect(screen.getByText("What is one half plus one quarter?")).toBeVisible();
+    expect(openWorksheetScaffoldingMock).toHaveBeenCalledWith({
+      apiBaseUrl: props.apiBaseUrl,
+      getToken: expect.any(Function),
+      lesson: props.lesson,
     });
+    await expect(
+      openWorksheetScaffoldingMock.mock.calls[0]?.[0].getToken(),
+    ).resolves.toBe("clerk-token");
+  });
 
-    it("renders the lesson and its capability while nothing throws", () => {
-      renderDialog();
+  it("shows a suggestion beside its question and applies its stored parameters", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    renderDialog();
 
-      const dialog = screen.getByRole("dialog", { name: "Create more with Aila" });
-      expect(within(dialog).getByText("Adding fractions")).toBeVisible();
-      expect(within(dialog).getByText("Adapt worksheet")).toBeVisible();
+    const readyBanner = await screen.findByText("Scaffolds ready");
+    expect(readyBanner).toBeVisible();
+    expect(readyBanner.closest("[tabindex]")).toHaveStyle({
+      position: "sticky",
+      top: "0px",
     });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Scaffolds ready. You can now review suggestions",
+    );
+    expect(
+      screen.getByText("This question depends on recalling several topic words."),
+    ).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Add a word bank" }));
 
-    it("announces only the first capability while the picker is unbuilt", () => {
-      renderDialog({
-        capabilities: [capability, { ...capability, label: "Adapt starter quiz" }],
-      });
-
-      expect(screen.getByText("Adapt worksheet")).toBeInTheDocument();
-      expect(screen.queryByText("Adapt starter quiz")).not.toBeInTheDocument();
-    });
-
-    it("omits the capability line when the host has none to offer", () => {
-      renderDialog({ capabilities: [] });
-
-      expect(screen.queryByText(/Available capability/)).not.toBeInTheDocument();
-      expect(screen.getByText(lesson.title)).toBeInTheDocument();
-    });
-
-    it("shows the selected worksheet document summary when supplied", () => {
-      renderDialog({ resourceDocumentSummary });
-
-      expect(screen.getByText(/Worksheet data loaded:/)).toHaveTextContent(
-        "Adding fractions worksheet",
-      );
-      expect(screen.getByText(/Worksheet data loaded:/)).toHaveTextContent(
-        "3 questions and 1 extraction diagnostic, using schema 0.1",
-      );
+    expect(applySuggestionMock).toHaveBeenCalledWith({
+      adaptationId: "adaptation-1",
+      apiBaseUrl,
+      getToken: expect.any(Function),
+      suggestionId: "suggestion-1",
     });
   });
 
-  describe("feature flags", () => {
-    it("requests flags with the host token and base URL", async () => {
-      const { props } = renderDialog();
-
-      await waitFor(() => {
-        expect(getFeatureFlagsMock).toHaveBeenCalledWith({
-          apiBaseUrl: props.apiBaseUrl,
-          getToken: props.getToken,
-        });
-      });
+  it("offers unfinished work back instead of opening the worksheet", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce({
+      outcome: "resumable",
+      resumable: {
+        adaptationId: "adaptation-9",
+        scaffoldCount: 2,
+        updatedAt: "2026-02-03T09:00:00.000Z",
+      },
     });
+    renderDialog();
 
-    it("reveals flagged content once an enabled flag arrives", async () => {
-      getFeatureFlagsMock.mockResolvedValue([smokeTestFlag]);
-      renderDialog();
-
-      expect(
-        await screen.findByText(/New Resource Adapter UI can be rendered here/),
-      ).toBeInTheDocument();
-    });
-
-    it("hides flagged content while the flag is disabled", async () => {
-      getFeatureFlagsMock.mockResolvedValue(["some-other-flag"]);
-      renderDialog();
-
-      await waitFor(() => {
-        expect(getFeatureFlagsMock).toHaveBeenCalled();
-      });
-      expect(
-        screen.queryByText(/New Resource Adapter UI can be rendered here/),
-      ).not.toBeInTheDocument();
-    });
-
-    // A flag outage must not take the dialog down with it: teachers still get
-    // the base experience, minus anything gated.
-    it("keeps the dialog usable and reports a failed flag request", async () => {
-      const error = new Error("service unavailable");
-      const onError = vi.fn();
-      getFeatureFlagsMock.mockRejectedValue(error);
-
-      renderDialog({ onError });
-
-      await waitFor(() => {
-        expect(onError).toHaveBeenCalledWith(error, { componentStack: null });
-      });
-      expect(screen.getByText(lesson.title)).toBeInTheDocument();
-      expect(
-        screen.queryByText(/New Resource Adapter UI can be rendered here/),
-      ).not.toBeInTheDocument();
-    });
-
-    it("survives a host error handler that throws", async () => {
-      getFeatureFlagsMock.mockRejectedValue(new Error("service unavailable"));
-      const onError = vi.fn(() => {
-        throw new Error("host handler broke");
-      });
-
-      renderDialog({ onError });
-
-      await waitFor(() => {
-        expect(onError).toHaveBeenCalled();
-      });
-      expect(screen.getByText(lesson.title)).toBeInTheDocument();
-    });
+    expect(
+      await screen.findByRole("heading", { name: "Carry on with this worksheet?" }),
+    ).toBeVisible();
+    expect(screen.getByText(/You added 2 scaffolds/)).toBeVisible();
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
   });
 
-  describe("when closed", () => {
-    it("renders no dialog", () => {
-      renderDialog({ isOpen: false });
-
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  it("loads the saved adaptation when the teacher carries on", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce({
+      outcome: "resumable",
+      resumable: {
+        adaptationId: "adaptation-9",
+        scaffoldCount: 1,
+        updatedAt: "2026-02-03T09:00:00.000Z",
+      },
     });
+    getWorksheetScaffoldingMock.mockResolvedValue(readyWithSuggestion);
+    renderDialog();
 
-    it("requests no flags", () => {
-      renderDialog({ isOpen: false });
+    await userEvent.click(await screen.findByRole("button", { name: "Carry on" }));
 
-      expect(getFeatureFlagsMock).not.toHaveBeenCalled();
-    });
-
-    it("refetches flags on reopening rather than trusting the previous answer", async () => {
-      const { rerender } = renderDialog();
-      await waitFor(() => {
-        expect(getFeatureFlagsMock).toHaveBeenCalledTimes(1);
-      });
-
-      rerender({ isOpen: false });
-      rerender({ isOpen: true });
-
-      await waitFor(() => {
-        expect(getFeatureFlagsMock).toHaveBeenCalledTimes(2);
-      });
-    });
-
-    // Closing mid-request must not let the late answer paint flagged content
-    // over a dialog the teacher has already dismissed.
-    it("discards a flag response that lands after closing", async () => {
-      let resolveFirstRequest: (flags: readonly string[]) => void = () => {};
-      getFeatureFlagsMock
-        .mockReturnValueOnce(
-          new Promise((resolve) => {
-            resolveFirstRequest = resolve;
-          }),
-        )
-        // Leaving the reopened dialog's own request pending means any flagged
-        // content on screen could only have come from the discarded response.
-        .mockReturnValue(new Promise(() => {}));
-
-      const { rerender } = renderDialog();
-      rerender({ isOpen: false });
-      resolveFirstRequest([smokeTestFlag]);
-      rerender({ isOpen: true });
-
-      await waitFor(() => {
-        expect(screen.getByRole("dialog")).toBeInTheDocument();
-      });
-      expect(
-        screen.queryByText(/New Resource Adapter UI can be rendered here/),
-      ).not.toBeInTheDocument();
-    });
+    expect(getWorksheetScaffoldingMock).toHaveBeenCalledWith(
+      expect.objectContaining({ adaptationId: "adaptation-9" }),
+    );
+    expect(
+      await screen.findByRole("article", { name: "Adding fractions worksheet" }),
+    ).toBeVisible();
   });
 
-  describe("dismissal", () => {
-    it("hands closing back to the host", async () => {
-      const onClose = vi.fn();
-      renderDialog({ onClose });
-
-      await userEvent.click(screen.getByRole("button", { name: "Close" }));
-
-      expect(onClose).toHaveBeenCalledTimes(1);
+  it("replaces the declined adaptation when the teacher starts from the original", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce({
+      outcome: "resumable",
+      resumable: {
+        adaptationId: "adaptation-9",
+        scaffoldCount: 1,
+        updatedAt: "2026-02-03T09:00:00.000Z",
+      },
     });
+    renderDialog();
 
-    // The dialog is presentational about its own visibility: the host owns
-    // `isOpen`, so closing must not be self-applied.
-    it("stays open until the host says otherwise", async () => {
-      renderDialog();
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Start from the original" }),
+    );
 
-      await userEvent.click(screen.getByRole("button", { name: "Close" }));
-
-      expect(screen.getByRole("dialog")).toBeInTheDocument();
-    });
+    await waitFor(() =>
+      expect(openWorksheetScaffoldingMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ replacing: "adaptation-9" }),
+      ),
+    );
+    expect(
+      await screen.findByRole("article", { name: "Adding fractions worksheet" }),
+    ).toBeVisible();
   });
 
-  describe("crash containment", () => {
-    it("shows the fallback inside the still-open modal when content crashes", () => {
-      renderDialog({ lesson: crashableLesson({ crash: true }) });
-
-      const dialog = screen.getByRole("dialog", { name: "Create more with Aila" });
-      expect(
-        within(dialog).getByTestId("resource-adapter-error-fallback"),
-      ).toBeVisible();
-      expect(
-        within(dialog).getByRole("heading", { name: "Create more with Aila" }),
-      ).toBeVisible();
+  it("replaces the failed adaptation when the teacher restarts", async () => {
+    const resumable = {
+      outcome: "resumable",
+      resumable: {
+        adaptationId: "adaptation-9",
+        scaffoldCount: 1,
+        updatedAt: "2026-02-03T09:00:00.000Z",
+      },
+    } as const;
+    const failed = opened({
+      adaptationId: "adaptation-10",
+      document: sourceDocument,
+      job: {
+        failureMessage: null,
+        id: "job-1",
+        kind: "suggestions.generate",
+        status: "failed",
+      },
+      suggestions: [],
     });
+    openWorksheetScaffoldingMock
+      .mockResolvedValueOnce(resumable)
+      .mockResolvedValueOnce(failed);
+    renderDialog();
 
-    it("recovers when the dialog is closed and reopened", () => {
-      const flag = { crash: true };
-      const crashable = crashableLesson(flag);
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Start from the original" }),
+    );
+    const alert = await screen.findByRole("alert");
+    await userEvent.click(within(alert).getByRole("button", { name: "Start again" }));
 
-      const { rerender } = renderDialog({ lesson: crashable });
-      expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
+    await waitFor(() => expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(3));
+    expect(openWorksheetScaffoldingMock.mock.calls[2]?.[0]).toEqual(
+      expect.objectContaining({ replacing: "adaptation-10" }),
+    );
+  });
 
-      flag.crash = false;
-      rerender({ isOpen: false });
-      rerender({ isOpen: true });
+  it("describes each suggestion button by the reason shown with it", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    renderDialog();
 
-      expect(
-        screen.queryByTestId("resource-adapter-error-fallback"),
-      ).not.toBeInTheDocument();
-      expect(screen.getByText("Adding fractions")).toBeVisible();
-    });
+    const button = await screen.findByRole("button", { name: "Add a word bank" });
+    const describedBy = button.getAttribute("aria-describedby");
+    expect(describedBy).not.toBeNull();
+    expect(document.getElementById(describedBy as string)).toHaveTextContent(
+      "This question depends on recalling several topic words.",
+    );
+  });
 
-    it("recovers when the lesson changes", () => {
-      const { rerender } = renderDialog({
-        lesson: crashableLesson({ crash: true }),
-      });
-      expect(screen.getByTestId("resource-adapter-error-fallback")).toBeVisible();
+  it("moves focus to the status banner when the chosen suggestion disappears", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    renderDialog();
 
-      rerender({ lesson: { ...lesson, lessonSlug: "subtracting-fractions" } });
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Add a word bank" }),
+    );
 
-      expect(
-        screen.queryByTestId("resource-adapter-error-fallback"),
-      ).not.toBeInTheDocument();
-      expect(screen.getByText("Adding fractions")).toBeVisible();
-    });
+    // The chosen button has gone, so focus must not fall back to the document.
+    const banner = await screen.findByText("Finding useful scaffolds");
+    const focusTarget = banner.closest("[tabindex]");
+    expect(focusTarget).not.toBeNull();
+    expect(focusTarget).toHaveFocus();
+  });
 
-    it("contains a dialog shell crash and takes focus, sparing the host page", () => {
-      renderWithTheme(
-        <>
-          <p>host page content</p>
-          <ResourceAdapterDialog
-            {...dialogProps({ capabilities: shellCrashingCapabilities() })}
-          />
-        </>,
+  it("ignores an apply response after the lesson changes", async () => {
+    const pending = deferred<WorksheetScaffoldingState>();
+    const nextDocument = {
+      ...sourceDocument,
+      id: "oak:worksheet:multiplying-fractions:pupil",
+      metadata: { title: "Multiplying fractions worksheet" },
+    };
+    openWorksheetScaffoldingMock
+      .mockResolvedValueOnce(opened(readyWithSuggestion))
+      .mockResolvedValueOnce(
+        opened({
+          adaptationId: "adaptation-2",
+          document: nextDocument,
+          job: null,
+          suggestions: [],
+        }),
       );
+    applySuggestionMock.mockReturnValueOnce(pending.promise);
+    const { rerender } = renderDialog();
 
-      expect(screen.getByText("host page content")).toBeVisible();
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-      const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
-      expect(fallback).toHaveAttribute("role", "alert");
-      expect(fallback).toHaveFocus();
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Add a word bank" }),
+    );
+    rerender({
+      lesson: {
+        ...lesson,
+        lessonSlug: "multiplying-fractions",
+        title: "Multiplying fractions",
+      },
     });
+    expect(
+      await screen.findByRole("article", { name: "Multiplying fractions worksheet" }),
+    ).toBeVisible();
 
-    it("lets the teacher dismiss the shell fallback, telling the host to close", () => {
-      const onClose = vi.fn();
-
-      renderDialog({ capabilities: shellCrashingCapabilities(), onClose });
-
-      const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
-
-      fireEvent.click(within(fallback).getByRole("button", { name: "Dismiss" }));
-      expect(onClose).toHaveBeenCalledOnce();
-    });
-
-    it("gives both shell fallback actions an explicit button type", () => {
-      renderDialog({ capabilities: shellCrashingCapabilities() });
-
-      // Without it the default inside a host form would be submit.
-      const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
-      for (const name of ["Try again", "Dismiss"]) {
-        expect(within(fallback).getByRole("button", { name })).toHaveAttribute(
-          "type",
-          "button",
-        );
-      }
-    });
-
-    it("returns focus to the host's trigger when the shell fallback is dismissed", () => {
-      const healthy = [capability];
-
-      // The real sequence: focus on the trigger as the dialog opens, then a crash.
-      const dialog = (
-        capabilities: readonly ResourceAdapterCapability[],
-        isOpen: boolean,
-      ) => (
-        <>
-          <button type="button">Create more with AI</button>
-          <ResourceAdapterDialog {...dialogProps({ capabilities, isOpen })} />
-        </>
-      );
-
-      const { rerenderWithTheme } = renderWithTheme(dialog(healthy, false));
-      const trigger = screen.getByRole("button", { name: "Create more with AI" });
-      trigger.focus();
-
-      rerenderWithTheme(dialog(healthy, true));
-      rerenderWithTheme(dialog(shellCrashingCapabilities(), true));
-
-      const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
-      expect(fallback).toHaveFocus();
-
-      // Dismiss tells the host to close, and that clears the boundary.
-      fireEvent.click(within(fallback).getByRole("button", { name: "Dismiss" }));
-      rerenderWithTheme(dialog(healthy, false));
-
+    pending.resolve(readyWithSuggestion);
+    await waitFor(() =>
       expect(
-        screen.queryByTestId("resource-adapter-dialog-fallback"),
-      ).not.toBeInTheDocument();
-      expect(trigger).toHaveFocus();
+        screen.getByRole("article", { name: "Multiplying fractions worksheet" }),
+      ).toBeVisible(),
+    );
+  });
+
+  it("ignores a resume response after the lesson changes", async () => {
+    const pending = deferred<WorksheetScaffoldingState>();
+    openWorksheetScaffoldingMock.mockResolvedValueOnce({
+      outcome: "resumable",
+      resumable: {
+        adaptationId: "adaptation-9",
+        scaffoldCount: 1,
+        updatedAt: "2026-02-03T09:00:00.000Z",
+      },
     });
+    getWorksheetScaffoldingMock.mockReturnValueOnce(pending.promise);
+    const { rerender } = renderDialog();
 
-    it("adds no heading of its own, leaving the host page's structure intact", () => {
-      renderDialog({ capabilities: shellCrashingCapabilities() });
-
-      const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
-      expect(within(fallback).queryAllByRole("heading")).toHaveLength(0);
+    await userEvent.click(await screen.findByRole("button", { name: "Carry on" }));
+    rerender({
+      lesson: {
+        ...lesson,
+        lessonSlug: "multiplying-fractions",
+        title: "Multiplying fractions",
+      },
     });
+    await waitFor(() => expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(2));
 
-    it("renders nothing for a shell crash while the dialog is closed", () => {
-      renderDialog({ capabilities: shellCrashingCapabilities(), isOpen: false });
+    pending.resolve(readyWithSuggestion);
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Add a word bank" })).toBeNull(),
+    );
+  });
 
-      expect(
-        screen.queryByTestId("resource-adapter-dialog-fallback"),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByTestId("resource-adapter-error-fallback"),
-      ).not.toBeInTheDocument();
+  it("shows suggestion generation as a distinct live loading status", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened({
+        adaptationId: "adaptation-1",
+        document: sourceDocument,
+        job: {
+          failureMessage: null,
+          id: "job-1",
+          kind: "suggestions.generate",
+          status: "running",
+        },
+        suggestions: [],
+      }),
+    );
+    getWorksheetScaffoldingMock.mockResolvedValue({
+      adaptationId: "adaptation-1",
+      document: sourceDocument,
+      job: null,
+      suggestions: [],
     });
+    renderDialog();
+
+    expect(await screen.findByText("Finding useful scaffolds")).toBeVisible();
+    expect(
+      screen.getByText("Reviewing the worksheet for useful scaffolds."),
+    ).toBeVisible();
+    expect(screen.getByTestId("worksheet-scaffolding-loading-spinner")).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Finding useful scaffolds. Reviewing the worksheet for useful scaffolds.",
+    );
+  });
+
+  it("politely explains when a successful run finds no useful scaffolds", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened({
+        adaptationId: "adaptation-1",
+        document: sourceDocument,
+        job: {
+          failureMessage: null,
+          id: "job-1",
+          kind: "suggestions.generate",
+          status: "succeeded",
+        },
+        suggestions: [],
+      }),
+    );
+    renderDialog();
+
+    expect(await screen.findByText("No scaffolds suggested")).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "It may already give pupils the support they need.",
+    );
+  });
+
+  it("shows a helpful error banner when scaffold generation fails", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened({
+        adaptationId: "adaptation-1",
+        document: sourceDocument,
+        job: {
+          failureMessage: "The background job failed while executing.",
+          id: "job-1",
+          kind: "suggestions.generate",
+          status: "failed",
+        },
+        suggestions: [],
+      }),
+    );
+    renderDialog();
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("We couldn't find scaffolds");
+    expect(alert).not.toHaveTextContent("background job");
+    await userEvent.click(within(alert).getByRole("button", { name: "Start again" }));
+    expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("reports a document failure and lets the teacher retry", async () => {
+    const error = new Error("source unavailable");
+    const onError = vi.fn();
+    openWorksheetScaffoldingMock.mockRejectedValueOnce(error);
+    renderDialog({ onError });
+
+    const fallback = await screen.findByTestId(
+      "resource-adapter-worksheet-scaffolding-error",
+    );
+    expect(fallback).toHaveAttribute("role", "alert");
+    expect(onError).toHaveBeenCalledWith(error, { componentStack: null });
+
+    await userEvent.click(within(fallback).getByRole("button", { name: "Try again" }));
+    expect(
+      await screen.findByRole("article", { name: "Adding fractions worksheet" }),
+    ).toBeVisible();
+    expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not load a document while closed and loads it on opening", async () => {
+    const { rerender } = renderDialog({ isOpen: false });
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(openWorksheetScaffoldingMock).not.toHaveBeenCalled();
+
+    rerender({ isOpen: true });
+    await waitFor(() => expect(openWorksheetScaffoldingMock).toHaveBeenCalledOnce());
+  });
+
+  it("does not reload when the host rebuilds the lesson and token props", async () => {
+    const { rerender } = renderDialog();
+
+    await waitFor(() => expect(openWorksheetScaffoldingMock).toHaveBeenCalledOnce());
+    rerender({ lesson: { ...lesson }, getToken: async () => "clerk-token" });
+
+    await expect(
+      screen.findByRole("article", { name: "Adding fractions worksheet" }),
+    ).resolves.toBeVisible();
+    expect(openWorksheetScaffoldingMock).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the shell fallback when the host rebuilds the capability prop", () => {
+    const { rerender } = renderDialog({ capability: crashingCapability() });
+
+    expect(screen.getByTestId("resource-adapter-dialog-fallback")).toBeVisible();
+    rerender({ capability: crashingCapability() });
+
+    expect(screen.getByTestId("resource-adapter-dialog-fallback")).toBeVisible();
+  });
+
+  it("hands closing back to the host", async () => {
+    const onClose = vi.fn();
+    renderDialog({ onClose });
+
+    await userEvent.click(screen.getByRole("button", { name: "Close Modal" }));
+
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("contains a shell crash without removing host content", () => {
+    renderWithTheme(
+      <>
+        <p>Host page content</p>
+        <ResourceAdapterDialog {...dialogProps({ capability: crashingCapability() })} />
+      </>,
+    );
+
+    expect(screen.getByText("Host page content")).toBeVisible();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const fallback = screen.getByTestId("resource-adapter-dialog-fallback");
+    expect(fallback).toHaveFocus();
+    expect(within(fallback).queryByRole("heading")).not.toBeInTheDocument();
+  });
+
+  it("dismisses the shell fallback through the host callback", () => {
+    const onClose = vi.fn();
+    renderDialog({ capability: crashingCapability(), onClose });
+
+    fireEvent.click(
+      within(screen.getByTestId("resource-adapter-dialog-fallback")).getByRole(
+        "button",
+        { name: "Dismiss" },
+      ),
+    );
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

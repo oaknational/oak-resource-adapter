@@ -2,7 +2,7 @@ import { start } from "workflow/api";
 import { JobStatus } from "@oaknational/resource-adapter-db";
 
 import { runJob } from "../../workflows/run-job";
-import { idempotencyKeySchema } from "./domain";
+import { concurrencyKeySchema, idempotencyKeySchema } from "./domain";
 import { createOrGetJob, failJob, recordWorkflowRun } from "./job-repository";
 import { parseJobInput, type RegisteredJobRequest } from "./registry";
 
@@ -21,12 +21,20 @@ const defaultDependencies: EnqueueDependencies = {
 };
 
 export async function enqueueJob(
-  request: RegisteredJobRequest & { idempotencyKey: string },
+  request: RegisteredJobRequest & {
+    concurrencyKey?: string | undefined;
+    idempotencyKey: string;
+  },
   dependencies: EnqueueDependencies = defaultDependencies,
 ) {
   const idempotencyKey = idempotencyKeySchema.parse(request.idempotencyKey);
+  const concurrencyKey =
+    request.concurrencyKey === undefined
+      ? undefined
+      : concurrencyKeySchema.parse(request.concurrencyKey);
   const input = parseJobInput(request.kind, request.input);
   const { created, job } = await dependencies.createOrGet({
+    ...(concurrencyKey === undefined ? {} : { concurrencyKey }),
     idempotencyKey,
     input,
     kind: request.kind,

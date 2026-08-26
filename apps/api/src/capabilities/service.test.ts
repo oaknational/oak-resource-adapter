@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   evaluateCapabilities,
   getCapabilities,
+  hasCapabilities,
   resolveEligibility,
   type EligibilityResolver,
 } from "./service";
@@ -36,7 +37,7 @@ const worksheetGatedCapability: CapabilityDefinition = {
   label: "Worksheet capability",
   resourceType: "worksheet",
   isEligible: (context) => isAdaptable(context, "worksheet"),
-  transformations: ["identity"],
+  transformationKinds: ["identity"],
 };
 
 const starterQuizGatedCapability: CapabilityDefinition = {
@@ -44,7 +45,7 @@ const starterQuizGatedCapability: CapabilityDefinition = {
   label: "Starter quiz capability",
   resourceType: "starter-quiz",
   isEligible: (context) => isAdaptable(context, "starter-quiz"),
-  transformations: ["identity"],
+  transformationKinds: ["identity"],
 };
 
 const testDefinitions: ReadonlyArray<CapabilityDefinition> = [
@@ -53,14 +54,14 @@ const testDefinitions: ReadonlyArray<CapabilityDefinition> = [
 ];
 
 describe("getCapabilities", () => {
-  it("returns the scaffolded practice sheet capability for an adaptable worksheet", async () => {
+  it("returns the scaffold practice tasks capability for an adaptable worksheet", async () => {
     await expect(
       getCapabilities(worksheetLesson, resolverFor(["worksheet"], ["worksheet"])),
     ).resolves.toEqual({
       capabilities: [
         {
-          id: "worksheetAdapter",
-          label: "Scaffolded Practice Sheet",
+          id: "worksheetScaffolding",
+          label: "Scaffold practice tasks",
           resourceType: "worksheet",
         },
       ],
@@ -159,5 +160,34 @@ describe("evaluateCapabilities", () => {
 
     expect(originalFileOnly.capabilities).toEqual([]);
     expect(extractionOnly.capabilities).toEqual([]);
+  });
+});
+
+describe("hasCapabilities", () => {
+  it("reports availability without naming the capabilities", async () => {
+    await expect(
+      hasCapabilities(worksheetLesson, resolverFor(["worksheet"], ["worksheet"])),
+    ).resolves.toEqual({ available: true });
+  });
+
+  it("reports nothing available when the lesson is not eligible", async () => {
+    await expect(
+      hasCapabilities(quizOnlyLesson, resolverFor(["starter-quiz"], [])),
+    ).resolves.toEqual({ available: false });
+  });
+
+  it("counts only capabilities the caller says it can render", async () => {
+    await expect(
+      hasCapabilities(
+        { ...worksheetLesson, supportedCapabilityIds: ["somethingElse"] },
+        resolverFor(["worksheet"], ["worksheet"]),
+      ),
+    ).resolves.toEqual({ available: false });
+  });
+
+  it("counts every capability when the caller does not say", async () => {
+    await expect(
+      hasCapabilities(worksheetLesson, resolverFor(["worksheet"], ["worksheet"])),
+    ).resolves.toEqual({ available: true });
   });
 });

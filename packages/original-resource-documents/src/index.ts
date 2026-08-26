@@ -1,5 +1,5 @@
-import { ResourceDocumentParseError } from "@oaknational/resource-document";
 import { parseResourceMarkup } from "@oaknational/resource-document/markup";
+import { ResourceDocumentParseError } from "@oaknational/resource-document/parse";
 
 import {
   OriginalResourceDocumentError,

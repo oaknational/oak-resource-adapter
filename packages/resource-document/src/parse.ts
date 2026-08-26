@@ -1,7 +1,14 @@
 import { ResourceDocumentParseError } from "./errors.js";
 import { validateResourceDocumentInvariants } from "./invariants.js";
-import { resourceDocumentSchema, type ResourceDocument } from "./schema/current.js";
-import { RESOURCE_DOCUMENT_SCHEMA_VERSION_V0_1 } from "./schema/versions/v0_1.js";
+import { resourceDocumentSchema } from "./schema/current.js";
+import type { ResourceDocument } from "./schema/types.js";
+import { RESOURCE_DOCUMENT_SCHEMA_VERSION_V0_1 } from "./schema/versions/v0_1/schemas.js";
+
+export {
+  ResourceDocumentParseError,
+  type ResourceDocumentParseErrorCode,
+  type ResourceDocumentParseErrorContext,
+} from "./errors.js";
 
 export const CURRENT_SCHEMA_VERSION = RESOURCE_DOCUMENT_SCHEMA_VERSION_V0_1;
 export const supportedSchemaVersions = [CURRENT_SCHEMA_VERSION] as const;

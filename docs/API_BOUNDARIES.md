@@ -23,6 +23,16 @@ New UI-private procedures — analytics, debug state, communication from UI<->AP
 go on `/trpc/internal`. Nothing stops OWA calling it: it is unsupported, not
 unreachable.
 
+## Authentication on the host router
+
+Every teacher-facing procedure uses `authenticatedProcedure`. One exception:
+`capabilities.available` reports whether a lesson has anything behind it, which a
+host needs _before_ it can decide whether to ask a teacher to sign in. It answers
+a boolean, never the capabilities themselves.
+
+Another unauthenticated procedure has to pass the same test: could a host need it
+before a teacher exists, and does the answer reveal nothing teacher-specific?
+
 ## What may change without a version bump
 
 The internal API has no version header, so a client and a service that disagree
@@ -40,12 +50,12 @@ front of a current service.
 
 ## Where contracts code lives
 
-| Entry point                   | Contents                                     | For example                                 |
-| ----------------------------- | -------------------------------------------- | ------------------------------------------- |
-| `…-contracts`                 | Host-facing schemas and types                | `lessonContextSchema`                       |
-| `…-contracts/internal`        | Wire types for our own clients, browser-safe | `resourceAdapterFeatureFlagsResponseSchema` |
-| `…-contracts/server`          | Host router, context, service boundaries     | `hostRouter`                                |
-| `…-contracts/internal/server` | Internal router, context, service boundaries | `ResourceAdapterFeatureFlagService`         |
+| Entry point                   | Contents                                     | For example                               |
+| ----------------------------- | -------------------------------------------- | ----------------------------------------- |
+| `…-contracts`                 | Host-facing schemas and types                | `lessonContextSchema`                     |
+| `…-contracts/internal`        | Wire types for our own clients, browser-safe | Source-document request, feature flags    |
+| `…-contracts/server`          | Host router, context, service boundaries     | `hostRouter`                              |
+| `…-contracts/internal/server` | Internal router, context, service boundaries | Source-document and feature-flag services |
 
 Use the narrowest entry point that serves the callers, because only the root
 entry may be re-exported to OWA. Implementation details are not contracts and

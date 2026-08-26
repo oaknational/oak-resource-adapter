@@ -11,7 +11,6 @@ locals {
     # SENTRY_DSN is one project across every environment; SENTRY_ENVIRONMENT is
     # what separates the events.
     api_shared = {
-      POSTHOG_API_KEY   = var.posthog_api_key
       SENTRY_AUTH_TOKEN = var.sentry_auth_token
       SENTRY_DSN        = var.sentry_dsn
     }
@@ -20,12 +19,14 @@ locals {
       CLERK_SECRET_KEY                                   = var.clerk_secret_key_production
       CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY = var.curriculum_api_key_production
       OPENAI_API_KEY                                     = var.openai_api_key_production
+      POSTHOG_API_KEY                                    = var.posthog_api_key_production
     }
 
     api_preview = {
       CLERK_SECRET_KEY                                   = var.clerk_secret_key_test
       CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY = var.curriculum_api_key_staging
       OPENAI_API_KEY                                     = var.openai_api_key_staging
+      POSTHOG_API_KEY                                    = var.posthog_api_key_staging
     }
 
     api_staging     = {}
@@ -39,6 +40,7 @@ locals {
       CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY = var.curriculum_api_key_development
       E2E_CLERK_USER_EMAIL                               = var.e2e_clerk_user_email
       OPENAI_API_KEY                                     = var.openai_api_key_development
+      POSTHOG_API_KEY                                    = var.posthog_api_key_development
     }
   }
 
@@ -52,11 +54,16 @@ locals {
     )
   }
 
+  # No development target. Vercel rejects an environment variable whose key
+  # exists in both `development` and a custom environment, which fails the whole
+  # write, and the staging custom environment is worth more than `env:pull:dev`.
+  # The api_development group above stays defined so restoring it is one line if
+  # that ever changes; Doppler serves local development meanwhile.
+  #
   # Staging inherits preview and overrides only what differs between them.
   api_targets = {
-    development = local.groups.api_development
-    preview     = merge(local.groups.api_shared, local.groups.api_preview)
-    production  = merge(local.groups.api_shared, local.groups.api_production)
+    preview    = merge(local.groups.api_shared, local.groups.api_preview)
+    production = merge(local.groups.api_shared, local.groups.api_production)
   }
   api_staging = merge(
     local.groups.api_shared,

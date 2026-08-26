@@ -107,6 +107,7 @@ describe("transformationPromptVariables", () => {
     kind: "test-serialisation",
     label: "Serialisation",
     status: "draft",
+    suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
     target: { scope: "document" },
     outputs: ["revised-resource"],
     isAvailable: always,
@@ -140,5 +141,18 @@ describe("transformationPromptVariables", () => {
         "Use {{lessonMaterial}}.",
       ),
     ).toThrow(/asks for \{\{lessonMaterial\}\}/);
+  });
+
+  it("provides the resource's key stage as a prompt variable", () => {
+    expect(
+      transformationPromptVariables(
+        definition,
+        worksheet,
+        {},
+        {},
+        undefined,
+        "This resource is for {{keyStage}}.",
+      ),
+    ).toEqual({ keyStage: "Key stage 2" });
   });
 });

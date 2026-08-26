@@ -4,11 +4,26 @@ Application-agnostic contracts for representing extracted educational resource
 documents. The package owns the versioned Zod schemas, validation, document
 traversal and extraction-markup conversion.
 
+## Entry points
+
+| Import                                  | Contains                                       | Needs Zod |
+| --------------------------------------- | ---------------------------------------------- | --------- |
+| `@oaknational/resource-document`        | Document types, traversal and invariants       | No        |
+| `@oaknational/resource-document/parse`  | Canonical JSON parsing and parse errors        | Yes       |
+| `@oaknational/resource-document/schema` | The Zod schema objects, to validate or compose | Yes       |
+| `@oaknational/resource-document/markup` | Extraction-markup conversion                   | Yes       |
+
+The document types and root runtime helpers are Zod-free, so a consumer that
+only needs the shape or traversal resolves nothing from Zod — which is why the
+peer dependency is optional. Parsing and schema consumers must install the
+peer. `src/schema/versions/v0_1/schemas.ts` asserts every type against the schema
+that validates it, so the two cannot drift apart.
+
 ## Experimental contract
 
-The package remains private at npm version `0.0.0` while ORA is its only
-consumer. In future, we may move it to its own repository and publish it for
-wider consumption.
+The package is published because the Resource Adapter contracts and UI use the
+canonical document type across their package boundary. It remains an
+experimental ORA-owned contract and may move to its own repository in future.
 
 The input markup grammar and canonical JSON schema are independently versioned;
 both are currently `"0.1"`. `worksheet.v0` and `generic.v0` are experimental
@@ -24,12 +39,6 @@ pre-production spike. Once ORA needs persisted compatibility or another
 consumer depends on the package, incompatible changes receive a new version and
 an explicit migration where required.
 
-## Entry points
-
-- `@oaknational/resource-document` — schemas, parsing and traversal helpers.
-- `@oaknational/resource-document/markup` — the provisional extraction-markup
-  parser.
-
 ORA's temporary source-document fixtures and retrieval adapter live in the
 private `@oaknational/resource-adapter-original-resource-documents` workspace package. This
 keeps application data and server-side I/O out of the portable document contract.
@@ -44,8 +53,10 @@ The versioned Zod model is the source of truth.
 
 For a pre-production refinement of the current experimental contract:
 
-1. Update `src/schema/versions/v0_1.ts`. Put cross-document rules that Zod
-   cannot express locally in `src/invariants.ts`.
+1. Update `src/schema/versions/v0_1/schemas.ts` and the matching type in
+   `src/schema/versions/v0_1/types.ts` — changing one without the other fails to
+   compile. Put cross-document rules that Zod cannot express locally in
+   `src/invariants.ts`.
 2. Update parsing, markup conversion and traversal code when the changed shape
    affects those boundaries.
 3. Add or update focused tests and the rights-safe conformance corpus in

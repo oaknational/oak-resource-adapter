@@ -33,5 +33,4 @@ THE RESOURCE
 THE TASK TO SUPPORT
 
 {{block}}`,
-  version: 1,
 });

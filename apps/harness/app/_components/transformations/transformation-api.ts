@@ -1,4 +1,4 @@
-import { resourceDocumentSchema } from "@oaknational/resource-document";
+import { resourceDocumentSchema } from "@oaknational/resource-document/schema";
 import { z } from "zod";
 
 import { adapterProxyPath } from "../../harness-api";
@@ -66,7 +66,6 @@ const previewResponseSchema = z.strictObject({
     .strictObject({
       identifier: z.string(),
       text: z.string(),
-      version: z.number().int().positive(),
     })
     .nullable(),
   status: z.enum(["active", "draft"]),

@@ -1,7 +1,7 @@
 import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
 import type { z } from "zod";
 
-import type { TransformationMaterial } from "../oak-material/material";
+import type { OakMaterial } from "../../oak-material/material";
 import type { SupportLevel } from "../support-level";
 import type { TransformationDocuments, TransformationParams } from "../types";
 
@@ -13,7 +13,7 @@ export type ContributionContext = Readonly<{
   /** Identifies every node this run adds, for later removal or replacement. */
   contributionId: string;
   document: ResourceDocument;
-  material: TransformationMaterial;
+  material: OakMaterial;
   params: TransformationParams;
   /** Validated against the definition's declared levels, or absent by design. */
   supportLevel?: SupportLevel | undefined;

@@ -20,18 +20,16 @@ export type PromptTemplate<TTemplate extends string = string> = Readonly<{
   /** The stable logical name, such as "lower-reading-age". */
   identifier: string;
   template: TTemplate;
-  version: number;
 }>;
 
 export type PromptTemplateDefinition<TTemplate extends string = string> = Readonly<{
   identifier: string;
   template: TTemplate;
-  version: number;
 }>;
 
 function hashTemplate(definition: PromptTemplateDefinition): string {
   return createHash("sha256")
-    .update(`${definition.identifier}\n${definition.version}\n${definition.template}`)
+    .update(`${definition.identifier}\n${definition.template}`)
     .digest("hex");
 }
 
@@ -39,12 +37,6 @@ function validate(definition: PromptTemplateDefinition): void {
   if (!IDENTIFIER_PATTERN.test(definition.identifier)) {
     throw new Error(
       `Prompt template identifier "${definition.identifier}" must be lowercase and hyphen-separated.`,
-    );
-  }
-
-  if (!Number.isInteger(definition.version) || definition.version < 1) {
-    throw new RangeError(
-      `Prompt template "${definition.identifier}" must have an integer version of at least 1.`,
     );
   }
 
@@ -78,7 +70,6 @@ export function definePromptTemplate<const TTemplate extends string>(
     hash: hashTemplate(definition),
     identifier: definition.identifier,
     template: definition.template,
-    version: definition.version,
   };
 }
 

@@ -12,7 +12,7 @@
     "start": "dotenv -e ../../.env -- next start --port 3001",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
-    "test:integration": "RUN_DATABASE_INTEGRATION_TESTS=1 vitest run src/jobs/job-repository.integration.test.ts",
+    "test:integration": "RUN_DATABASE_INTEGRATION_TESTS=1 vitest run integration.test",
     "type-check": "next typegen && tsc --noEmit"
   },
   "dependencies": {

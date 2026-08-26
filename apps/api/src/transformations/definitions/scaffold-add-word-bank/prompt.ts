@@ -10,14 +10,15 @@ export const addWordBankPrompt = defineTransformationPrompt({
 
 YOUR SCAFFOLD: a word bank
 
-Identify the vocabulary a pupil needs in order to answer one task correctly, and give them those words to use.
+Identify the vocabulary a pupil needs in order to answer one task correctly or help develop thinking, and give them those words to use.
 
-The barrier here is recalling the right words, not understanding the question. Where the resource carries a model answer, the words a pupil needs are usually the ones it uses.
+The barrier here is recalling the words that are needed, not understanding the question. Where the resource carries a model answer, the words a pupil needs are usually the ones it uses.
 
 Choose a word when it is:
 
 - a keyword the lesson taught for this task;
 - a subject-specific word the pupil is expected to use in their answer.
+- a referential noun the pupil is expected to use in their answer.
 
 Leave out lesson keywords that this particular task does not call for.
 
@@ -34,5 +35,4 @@ THE RESOURCE
 THE TASK TO SUPPORT
 
 {{block}}`,
-  version: 1,
 });

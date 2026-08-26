@@ -1,4 +1,4 @@
-import type { ResourceDocument } from "../schema/current.js";
+import type { ResourceDocument } from "../schema/types.js";
 
 export type ResourceMarkupParseResult =
   | { success: true; data: ResourceDocument }

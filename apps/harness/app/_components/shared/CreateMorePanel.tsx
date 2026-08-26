@@ -6,29 +6,41 @@ import { OakPrimaryButton, OakSecondaryButton } from "@oaknational/oak-component
 
 import styles from "../../page.module.css";
 import type { CapabilitiesState } from "../../_hooks/useCapabilities";
+import type { ResourceAdapterCapabilityOption } from "@oaknational/resource-adapter";
 
-export function CreateMorePanel({
-  hasCapabilities,
-  onOpen,
+export function CreateMorePanel<TCapability extends ResourceAdapterCapabilityOption>({
+  capabilities,
+  hasAvailableCapabilities,
+  onSelectCapability,
   onRetry,
   state,
 }: Readonly<{
-  hasCapabilities: boolean;
-  onOpen: () => void;
+  capabilities: readonly TCapability[];
+  hasAvailableCapabilities: boolean;
+  onSelectCapability: (capability: TCapability) => void;
   onRetry: () => void;
   state: CapabilitiesState;
 }>) {
-  if (hasCapabilities) {
+  if (capabilities.length > 0) {
     return (
       <section aria-labelledby="create-more-heading" className={styles.createMore}>
         <h2 id="create-more-heading">Create more with Aila</h2>
         <p>Use AI to adapt this lesson&apos;s available resources.</p>
-        <ResourceAdapterButton onClick={onOpen} />
+        <ResourceAdapterButton
+          capabilities={capabilities}
+          onSelectCapability={onSelectCapability}
+        />
       </section>
     );
   }
 
+  // Nothing behind the prompt means no prompt: signing in to find an empty
+  // dialog is worse than never being asked.
   if (state === "signedOut") {
+    if (!hasAvailableCapabilities) {
+      return null;
+    }
+
     return (
       <section
         aria-labelledby="resource-adapter-sign-in-heading"

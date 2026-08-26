@@ -35,7 +35,6 @@ const roleBindings = defineRoleBindings({
 const template = definePromptTemplate({
   identifier: "integration-lower-reading-age",
   template: "Rewrite for reading age {{readingAge}}.",
-  version: 1,
 });
 
 /**
@@ -109,7 +108,7 @@ describeWithDatabase("model invocation persistence", () => {
     const [adaptation] = await database()
       .insert(adaptations)
       .values({
-        capabilityId: "worksheetAdapter",
+        capabilityId: "worksheetScaffolding",
         clerkUserId: `user_test_${randomUUID().replaceAll("-", "")}`,
       })
       .returning({ id: adaptations.id });
@@ -206,7 +205,6 @@ describeWithDatabase("model invocation persistence", () => {
       gitSha: "abc123",
       identifier: template.identifier,
       template: "Rewrite for reading age {{readingAge}}.",
-      version: 1,
     });
   });
 
@@ -375,27 +373,34 @@ describeWithDatabase("model invocation persistence", () => {
     expect(rows).toHaveLength(0);
   });
 
-  it("refuses a body that changed without a version bump", async () => {
-    trackTemplate("integration-drifted");
+  it("stores changed bodies under one identifier as distinct templates", async () => {
+    const identifier = "integration-edited";
+    trackTemplate(identifier);
 
-    await preparePrompt({
+    const original = await preparePrompt({
       template: definePromptTemplate({
-        identifier: "integration-drifted",
+        identifier,
         template: "The original body.",
-        version: 1,
+      }),
+      variables: {},
+    });
+    const edited = await preparePrompt({
+      template: definePromptTemplate({
+        identifier,
+        template: "An edited body.",
       }),
       variables: {},
     });
 
-    await expect(
-      preparePrompt({
-        template: definePromptTemplate({
-          identifier: "integration-drifted",
-          template: "An edited body.",
-          version: 1,
-        }),
-        variables: {},
-      }),
-    ).rejects.toThrow(/is already stored with a different body. Bump its version./);
+    const rows = await database()
+      .select({ template: promptTemplates.template })
+      .from(promptTemplates)
+      .where(eq(promptTemplates.identifier, identifier));
+
+    expect(edited.promptTemplateId).not.toBe(original.promptTemplateId);
+    expect(rows.map(({ template: body }) => body).sort()).toEqual([
+      "An edited body.",
+      "The original body.",
+    ]);
   });
 });

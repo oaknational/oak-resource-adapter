@@ -2,8 +2,12 @@ import type { z } from "zod";
 
 import type { JobJsonValue } from "./domain";
 import { testEchoJob } from "./test-echo/definition";
+import { applySuggestionJob } from "./suggestions/apply-definition";
+import { generateSuggestionsJob } from "./suggestions/generate-definition";
 
 export const jobDefinitions = {
+  [applySuggestionJob.kind]: applySuggestionJob,
+  [generateSuggestionsJob.kind]: generateSuggestionsJob,
   [testEchoJob.kind]: testEchoJob,
 } as const;
 

@@ -10,8 +10,8 @@ import type {
   ResourceNode,
 } from "@oaknational/resource-document";
 
-import type { TransformationMaterial } from "./oak-material/material";
-import { renderOakMaterial } from "./oak-material/requirements";
+import type { OakMaterial } from "../oak-material/material";
+import { renderOakMaterial } from "../oak-material/requirements";
 import { identityPart } from "./prompt-parts/identity.part";
 import { languagePart } from "./prompt-parts/language.part";
 import { scaffoldPrinciplesPart } from "./prompt-parts/scaffold-principles.part";
@@ -28,6 +28,7 @@ export type TransformationPromptVariableName =
   | "block"
   | "document"
   | "identity"
+  | "keyStage"
   | "language"
   | "lessonMaterial"
   | "scaffoldPrinciples"
@@ -128,7 +129,7 @@ export function serialiseResourceNodeForPrompt(node: ResourceNode): string {
 export function transformationPromptVariables(
   definition: TransformationDefinition,
   document: ResourceDocument,
-  material: TransformationMaterial,
+  material: OakMaterial,
   params: TransformationParams,
   targetNode: ResourceNode | undefined,
   template: string,
@@ -142,6 +143,10 @@ export function transformationPromptVariables(
       targetNode === undefined ? undefined : serialiseResourceNodeForPrompt(targetNode),
     document: serialiseResourceDocumentForPrompt(document),
     identity: identityPart(),
+    keyStage:
+      "keyStage" in metadata
+        ? (metadata.keyStage?.label ?? metadata.keyStage?.id)
+        : undefined,
     language: languagePart({
       keyStage: "keyStage" in metadata ? metadata.keyStage?.label : undefined,
       targetReadingAge:

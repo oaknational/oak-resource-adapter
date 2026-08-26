@@ -18,7 +18,7 @@ const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 const localWebServers = [
   {
     command: "pnpm --filter @oaknational/resource-adapter-api dev",
-    port: 3001,
+    url: "http://localhost:3001/health",
     reuseExistingServer: !process.env.CI,
   },
   {
@@ -30,6 +30,11 @@ const localWebServers = [
 
 export default defineConfig({
   testDir: "./e2e",
+  // The github reporter annotates the failing lines on the pull request itself,
+  // so a failure is readable without downloading anything.
+  reporter: process.env.CI
+    ? [["github"], ["html", { open: "never" }], ["list"]]
+    : [["list"]],
   projects: [
     {
       name: "setup",
@@ -45,7 +50,10 @@ export default defineConfig({
   ],
   use: {
     baseURL,
-    trace: "on-first-retry",
+    // Not `on-first-retry`: retries are off, so that setting never captures
+    // anything. A failure has to carry its own evidence.
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
     ...(bypassSecret
       ? { extraHTTPHeaders: { "x-vercel-protection-bypass": bypassSecret } }
       : {}),

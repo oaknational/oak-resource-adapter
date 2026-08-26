@@ -1,5 +1,24 @@
 import * as z from "zod";
 
+import type {
+  AnswerAnnotation,
+  Asset,
+  DefinitionEntry,
+  DocumentProvenance,
+  GenericDocument,
+  GenericMetadata,
+  InlineContent,
+  InlineRun,
+  LayoutIntent,
+  NamespacedExtensions,
+  ResourceDocumentDiagnostic,
+  ResourceDocument,
+  ResourceNode,
+  SourceMap,
+  WorksheetDocument,
+  WorksheetMetadata,
+} from "./types.js";
+
 export const RESOURCE_DOCUMENT_SCHEMA_VERSION_V0_1 = "0.1" as const;
 
 const nonEmptyStringSchema = z.string().trim().min(1);
@@ -14,8 +33,12 @@ const namespacedExtensionKeySchema = z
     "Extension keys must be namespaced, for example oak:source-kind",
   );
 
-export const extensionsSchema = z.record(namespacedExtensionKeySchema, z.json());
-export type NamespacedExtensions = z.output<typeof extensionsSchema>;
+// Annotated so the inferred type names our own JsonValue: `z.json()` otherwise
+// leaks zod's internal JSONType, which consumers cannot name portably.
+export const extensionsSchema: z.ZodType<NamespacedExtensions> = z.record(
+  namespacedExtensionKeySchema,
+  z.json(),
+);
 
 export const textRunSchema = z.strictObject({
   type: z.literal("text"),
@@ -34,9 +57,6 @@ export const inlineRunSchema = z.discriminatedUnion("type", [
 ]);
 export const inlineContentSchema = z.array(inlineRunSchema).min(1);
 
-export type InlineRun = z.output<typeof inlineRunSchema>;
-export type InlineContent = z.output<typeof inlineContentSchema>;
-
 export const layoutBreakSchema = z.enum(["auto", "page"]);
 export const preferredWidthSchema = z.enum(["content", "full", "half"]);
 
@@ -47,30 +67,6 @@ export const layoutIntentSchema = z.strictObject({
   breakAfter: layoutBreakSchema.optional(),
   preferredWidth: preferredWidthSchema.optional(),
 });
-export type LayoutIntent = z.output<typeof layoutIntentSchema>;
-
-interface ResourceNodeBase {
-  id: string;
-  sourceRef?: string | undefined;
-  layout?: LayoutIntent | undefined;
-  extensions?: NamespacedExtensions | undefined;
-}
-
-export interface SectionNode extends ResourceNodeBase {
-  type: "section";
-  children: ResourceNode[];
-}
-
-export interface HeadingNode extends ResourceNodeBase {
-  type: "heading";
-  level: number;
-  content: InlineContent;
-}
-
-export interface ParagraphNode extends ResourceNodeBase {
-  type: "paragraph";
-  content: InlineContent;
-}
 
 export const calloutRoleSchema = z.enum([
   "learning-objective",
@@ -81,76 +77,8 @@ export const calloutRoleSchema = z.enum([
 export const responseSpaceKindSchema = z.enum(["lines", "box", "grid"]);
 export const answerPlacementSchema = z.enum(["append", "replace-response"]);
 export const assetAlternativeOriginSchema = z.enum(["source", "inferred", "authored"]);
-
-export const HEADING_LEVELS = { minimum: 1, maximum: 6 } as const;
-
-export interface CalloutNode extends ResourceNodeBase {
-  type: "callout";
-  role: z.output<typeof calloutRoleSchema>;
-  content: InlineContent;
-}
-
-export interface QuestionNode extends ResourceNodeBase {
-  type: "question";
-  label?: string | undefined;
-  marks?: number | undefined;
-  children: ResourceNode[];
-}
-
 export const definitionSourceSchema = z.enum(["generated", "oak-lesson"]);
-
-export interface DefinitionEntry {
-  term: InlineContent;
-  /** Absent for a list of terms alone, such as a word bank without definitions. */
-  definition?: InlineContent | undefined;
-  example?: InlineContent | undefined;
-  /**
-   * Where the wording came from. `oak-lesson` marks a term Oak's own curriculum
-   * defines, which a renderer may distinguish from one written to unlock a task.
-   */
-  source?: z.output<typeof definitionSourceSchema> | undefined;
-}
-
-/** A word bank, glossary or other list of terms, with or without definitions. */
-export interface DefinitionListNode extends ResourceNodeBase {
-  type: "definitionList";
-  /** Introduces the list to the pupil. */
-  lead?: InlineContent | undefined;
-  entries: DefinitionEntry[];
-}
-
-export interface ResponseSpaceNode extends ResourceNodeBase {
-  type: "responseSpace";
-  kind: z.output<typeof responseSpaceKindSchema>;
-  lines?: number | undefined;
-}
-
-export interface FigureNode extends ResourceNodeBase {
-  type: "figure";
-  assetId: string;
-  caption?: InlineContent | undefined;
-}
-
-export interface UnsupportedNode extends ResourceNodeBase {
-  type: "unsupported";
-  description: string;
-  accessibleText?: string | undefined;
-  original: {
-    format: string;
-    value: string;
-  };
-}
-
-export type ResourceNode =
-  | SectionNode
-  | HeadingNode
-  | ParagraphNode
-  | CalloutNode
-  | QuestionNode
-  | DefinitionListNode
-  | ResponseSpaceNode
-  | FigureNode
-  | UnsupportedNode;
+export const HEADING_LEVELS = { minimum: 1, maximum: 6 } as const;
 
 export const definitionEntrySchema = z.strictObject({
   term: inlineContentSchema,
@@ -236,7 +164,6 @@ export const answerAnnotationSchema = z.strictObject({
   sourceRef: identifierSchema.optional(),
   extensions: extensionsSchema.optional(),
 });
-export type AnswerAnnotation = z.output<typeof answerAnnotationSchema>;
 
 export const assetSchema = z.strictObject({
   id: identifierSchema,
@@ -262,7 +189,6 @@ export const assetSchema = z.strictObject({
   sourceRef: identifierSchema.optional(),
   extensions: extensionsSchema.optional(),
 });
-export type Asset = z.output<typeof assetSchema>;
 
 export const sourceRegionSchema = z.strictObject({
   source: nonEmptyStringSchema,
@@ -277,7 +203,6 @@ export const sourceRegionSchema = z.strictObject({
   confidence: z.number().min(0).max(1).optional(),
 });
 export const sourceMapSchema = z.record(identifierSchema, sourceRegionSchema);
-export type SourceMap = z.output<typeof sourceMapSchema>;
 
 export const resourceDocumentDiagnosticSchema = z.strictObject({
   category: z.enum([
@@ -298,9 +223,6 @@ export const resourceDocumentDiagnosticSchema = z.strictObject({
   fallback: nonEmptyStringSchema.optional(),
   reviewRequired: z.boolean(),
 });
-export type ResourceDocumentDiagnostic = z.output<
-  typeof resourceDocumentDiagnosticSchema
->;
 
 const checksumSchema = z.strictObject({
   algorithm: z.literal("sha256"),
@@ -319,7 +241,6 @@ export const documentProvenanceSchema = z.strictObject({
     version: nonEmptyStringSchema,
   }),
 });
-export type DocumentProvenance = z.output<typeof documentProvenanceSchema>;
 
 const curriculumContextSchema = z.strictObject({
   id: identifierSchema,
@@ -368,6 +289,30 @@ export const resourceDocumentV0_1Schema = z.discriminatedUnion("profile", [
   genericDocumentV0_1Schema,
 ]);
 
-export type WorksheetDocumentV0_1 = z.output<typeof worksheetDocumentV0_1Schema>;
-export type GenericDocumentV0_1 = z.output<typeof genericDocumentV0_1Schema>;
-export type ResourceDocumentV0_1 = z.output<typeof resourceDocumentV0_1Schema>;
+type Exact<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
+type Expect<T extends true> = T;
+
+/**
+ * Compile-time proof that every hand-declared type in `types.ts` still matches
+ * the schema that validates it. Changing one without the other fails here.
+ */
+export type SchemaTypeAssertions = [
+  Expect<Exact<NamespacedExtensions, z.output<typeof extensionsSchema>>>,
+  Expect<Exact<InlineRun, z.output<typeof inlineRunSchema>>>,
+  Expect<Exact<InlineContent, z.output<typeof inlineContentSchema>>>,
+  Expect<Exact<LayoutIntent, z.output<typeof layoutIntentSchema>>>,
+  Expect<Exact<DefinitionEntry, z.output<typeof definitionEntrySchema>>>,
+  Expect<Exact<AnswerAnnotation, z.output<typeof answerAnnotationSchema>>>,
+  Expect<Exact<Asset, z.output<typeof assetSchema>>>,
+  Expect<Exact<SourceMap, z.output<typeof sourceMapSchema>>>,
+  Expect<
+    Exact<ResourceDocumentDiagnostic, z.output<typeof resourceDocumentDiagnosticSchema>>
+  >,
+  Expect<Exact<DocumentProvenance, z.output<typeof documentProvenanceSchema>>>,
+  Expect<Exact<WorksheetMetadata, z.output<typeof worksheetMetadataSchema>>>,
+  Expect<Exact<GenericMetadata, z.output<typeof genericMetadataSchema>>>,
+  Expect<Exact<WorksheetDocument, z.output<typeof worksheetDocumentV0_1Schema>>>,
+  Expect<Exact<GenericDocument, z.output<typeof genericDocumentV0_1Schema>>>,
+  Expect<Exact<ResourceDocument, z.output<typeof resourceDocumentV0_1Schema>>>,
+];

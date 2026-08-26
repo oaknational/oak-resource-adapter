@@ -1,0 +1,91 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    # .npmrc sets shared-workspace-lockfile=true, so there is one root
+    # lockfile; per-package entries would conflict over it.
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/London
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+      exclude:
+        - "@oaknational/*"
+    commit-message:
+      prefix: chore
+      include: scope
+    ignore:
+      # @types/node tracks .nvmrc (Node 24).
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # A dependency joins the first group it matches, so react must come
+      # before dev-tooling or @types/react* would land there.
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
+        update-types: [minor, patch]
+      sentry:
+        patterns: ["@sentry/*"]
+        update-types: [minor, patch]
+      opentelemetry:
+        patterns: ["@opentelemetry/*"]
+        update-types: [minor, patch]
+      # drizzle-kit generates what drizzle-orm consumes, so they move together.
+      drizzle:
+        patterns: [drizzle-orm, drizzle-kit]
+        update-types: [minor, patch]
+      clerk:
+        patterns: ["@clerk/*"]
+        update-types: [minor, patch]
+      dev-tooling:
+        patterns:
+          - eslint
+          - "@eslint/*"
+          - typescript-eslint
+          - globals
+          - prettier
+          - vitest
+          - "@vitest/*"
+          - "@testing-library/*"
+          - jsdom
+          - typescript
+          - "@typescript/native"
+          - turbo
+          - husky
+          - "@commitlint/*"
+          - dependency-cruiser
+          - tsup
+          - "@playwright/test"
+          - dotenv-cli
+          - vercel
+          - "@changesets/cli"
+          - "@types/*"
+        exclude-patterns:
+          - "@types/react"
+          - "@types/react-dom"
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/London
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      github-actions:
+        patterns: ["*"]
+        update-types: [minor, patch]

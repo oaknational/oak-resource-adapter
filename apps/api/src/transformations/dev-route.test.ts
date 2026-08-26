@@ -93,7 +93,7 @@ describe("development transformation routes", () => {
     service.preview.mockResolvedValue({
       execution: "structured-model",
       kind: "scaffold-add-word-bank",
-      prompt: { identifier: "scaffold-add-word-bank", text: "prompt", version: 1 },
+      prompt: { identifier: "scaffold-add-word-bank", text: "prompt" },
       status: "active",
       warnings: [],
     });

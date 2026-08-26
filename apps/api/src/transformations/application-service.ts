@@ -10,20 +10,17 @@ import {
   type TransformationRequest,
   type TransformationRun,
 } from "./execute";
-import type {
-  TransformationMaterial,
-  TransformationMaterialRequirement,
-} from "./oak-material/material";
+import type { OakMaterial, OakMaterialRequirement } from "../oak-material/material";
 import { isRegisteredTransformationKind, transformationDefinitions } from "./registry";
 import { executionType } from "./service";
 
 export type TransformationMaterialResolution = Readonly<{
-  material: TransformationMaterial;
+  material: OakMaterial;
   warnings: readonly string[];
 }>;
 
 export type ResolveTransformationMaterial = (
-  requirements: readonly TransformationMaterialRequirement[],
+  requirements: readonly OakMaterialRequirement[],
   lesson: LessonIdentity | undefined,
 ) => Promise<TransformationMaterialResolution>;
 
@@ -31,7 +28,7 @@ export type RegisteredTransformationCommand = Omit<TransformationRequest, "mater
   Readonly<{
     kind: string;
     lesson?: LessonIdentity | undefined;
-    material?: TransformationMaterial | undefined;
+    material?: OakMaterial | undefined;
   }>;
 
 export type PrepareRegisteredTransformationConfig = Readonly<{
@@ -81,7 +78,6 @@ export type TransformationPreview = Readonly<{
   prompt: null | Readonly<{
     identifier: string;
     text: string;
-    version: number;
   }>;
   status: "active" | "draft";
   warnings: readonly string[];
@@ -102,7 +98,6 @@ export async function previewRegisteredTransformation(
         ? {
             identifier: definition.execution.prompt.identifier,
             text: preparedPrompt.text,
-            version: definition.execution.prompt.version,
           }
         : null,
     status: definition.status,
