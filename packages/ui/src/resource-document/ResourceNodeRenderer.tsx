@@ -16,6 +16,22 @@ const ContentSection = styled.section`
   gap: 1rem;
 `;
 
+const AppliedTransformation = styled.div`
+  background: ${parseColor("bg-primary")};
+  border: 1px solid ${parseColor("border-neutral-lighter")};
+  border-left: 0.25rem solid ${parseColor("border-decorative2")};
+  border-radius: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+`;
+
+const AppliedTransformationLabel = styled.span`
+  font-size: 0.875rem;
+  font-weight: 700;
+`;
+
 const Paragraph = styled.p`
   line-height: 1.6;
   margin: 0;
@@ -30,7 +46,7 @@ const Callout = styled.aside`
 `;
 
 const Question = styled.div`
-  border-top: 1px solid ${parseColor("border-neutral")};
+  border-top: 1px solid ${parseColor("border-neutral-lighter")};
   padding-top: 1rem;
 `;
 
@@ -127,6 +143,11 @@ function contentText(node: UnsupportedNode): string {
   return node.accessibleText ?? node.description;
 }
 
+function contributionId(node: ResourceNode): string | undefined {
+  const value = node.extensions?.["oak:contribution"];
+  return typeof value === "string" ? value : undefined;
+}
+
 function headingLevel(level: number): ContentHeadingLevel {
   switch (Math.min(level + 2, 6)) {
     case 3:
@@ -163,11 +184,13 @@ function Heading({
 export function ResourceNodeListRenderer({
   assets,
   nodes,
+  parentContributionId,
   parentHeadingLevel,
   renderAfterNode,
 }: Readonly<{
   assets: readonly Asset[];
   nodes: readonly ResourceNode[];
+  parentContributionId?: string | undefined;
   parentHeadingLevel: ParentHeadingLevel;
   renderAfterNode?: (node: ResourceNode) => ReactNode;
 }>) {
@@ -175,19 +198,32 @@ export function ResourceNodeListRenderer({
 
   return nodes.map((node) => {
     const nodeParentHeadingLevel = currentHeadingLevel;
+    const nodeContributionId = contributionId(node);
 
     if (node.type === "heading") {
       currentHeadingLevel = headingLevel(node.level);
     }
 
+    const renderedNode = (
+      <ResourceNodeRenderer
+        assets={assets}
+        node={node}
+        parentHeadingLevel={nodeParentHeadingLevel}
+        {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
+      />
+    );
+
     return (
       <Fragment key={node.id}>
-        <ResourceNodeRenderer
-          assets={assets}
-          node={node}
-          parentHeadingLevel={nodeParentHeadingLevel}
-          {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
-        />
+        {nodeContributionId !== undefined &&
+        nodeContributionId !== parentContributionId ? (
+          <AppliedTransformation>
+            <AppliedTransformationLabel>Added support</AppliedTransformationLabel>
+            {renderedNode}
+          </AppliedTransformation>
+        ) : (
+          renderedNode
+        )}
         {renderAfterNode?.(node)}
       </Fragment>
     );
@@ -249,6 +285,7 @@ export function ResourceNodeRenderer({
           <ResourceNodeListRenderer
             assets={assets}
             nodes={node.children}
+            parentContributionId={contributionId(node)}
             parentHeadingLevel={parentHeadingLevel}
             {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
           />
@@ -284,6 +321,7 @@ export function ResourceNodeRenderer({
             <ResourceNodeListRenderer
               assets={assets}
               nodes={node.children}
+              parentContributionId={contributionId(node)}
               parentHeadingLevel={questionHeadingLevel}
               {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
             />

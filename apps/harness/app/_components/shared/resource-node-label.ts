@@ -6,14 +6,37 @@ function inlineText(content: InlineContent | undefined): string {
     .join(" ");
 }
 
+function firstDescription(nodes: readonly ResourceNode[]): string | undefined {
+  for (const node of nodes) {
+    const description = resourceNodeLabel(node).trim();
+
+    if (description !== "") {
+      return description;
+    }
+  }
+
+  return undefined;
+}
+
 export function resourceNodeLabel(node: ResourceNode): string {
   switch (node.type) {
     case "heading":
     case "paragraph":
     case "callout":
       return inlineText(node.content);
-    case "question":
-      return node.label ?? `Question ${node.id}`;
+    case "question": {
+      const content = firstDescription(node.children);
+      // Labels feed a target picker, so an unlabelled and empty question still
+      // has to be told apart from its siblings.
+      const label =
+        node.label !== undefined
+          ? `Question ${node.label}`
+          : content === undefined
+            ? `Question ${node.id}`
+            : "Question";
+
+      return content === undefined ? label : `${label}: ${content}`;
+    }
     case "definitionList":
       return [
         inlineText(node.lead),

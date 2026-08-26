@@ -17,10 +17,10 @@ beforeAll(async () => {
   });
 });
 
-function context(): ContributionContext {
+function context(document: ResourceDocument = worksheet): ContributionContext {
   return {
     contributionId: "prompt-questions-1",
-    document: worksheet,
+    document,
     material: {},
     params: { supportLevel: "low" },
     supportLevel: "low",
@@ -47,9 +47,11 @@ describe("promptQuestionsContribution", () => {
     const [document] = prepared.apply({
       questions: ["What is perspective?", "Which tense should you use?"],
     });
-    const section = document.content.at(-1) as SectionNode;
+    const section = document.content[1] as SectionNode;
 
     expect(prepared.name).toBe("prompt_questions");
+    expect(document.content[0]).toBe(worksheet.content[0]);
+    expect(document.content.slice(2)).toEqual(worksheet.content.slice(1));
     expect(section).toMatchObject({
       id: "prompt-questions-1-prompt-questions",
       type: "section",
@@ -90,5 +92,23 @@ describe("promptQuestionsContribution", () => {
       ],
     });
     expect(worksheet.content).toHaveLength(document.content.length - 1);
+  });
+
+  it("uses the first position when the document has no leading title", () => {
+    const withoutTitle = { ...worksheet, content: worksheet.content.slice(1) };
+    const prepared = promptQuestionsContribution.prepare(context(withoutTitle));
+    const [document] = prepared.apply({ questions: ["What is perspective?"] });
+
+    expect(document.content[0]?.id).toBe("prompt-questions-1-prompt-questions");
+    expect(document.content.slice(1)).toEqual(withoutTitle.content);
+  });
+
+  it("places support after a title when the document has no body yet", () => {
+    const titleOnly = { ...worksheet, content: worksheet.content.slice(0, 1) };
+    const prepared = promptQuestionsContribution.prepare(context(titleOnly));
+    const [document] = prepared.apply({ questions: ["What is perspective?"] });
+
+    expect(document.content[0]).toBe(titleOnly.content[0]);
+    expect(document.content[1]?.id).toBe("prompt-questions-1-prompt-questions");
   });
 });

@@ -13,13 +13,15 @@ import type {
 } from "../../scenario-types";
 
 export function TransformationsView({
+  initialKind,
   scenario,
   scenarioNavigation,
 }: Readonly<{
+  initialKind?: string | undefined;
   scenario: LessonScenario;
   scenarioNavigation: readonly LessonScenarioNavigationItem[];
 }>) {
-  const workbench = useTransformationWorkbench(scenario);
+  const workbench = useTransformationWorkbench(scenario, initialKind);
 
   return (
     <>

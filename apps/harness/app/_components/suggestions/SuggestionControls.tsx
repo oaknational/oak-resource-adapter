@@ -45,18 +45,26 @@ export function SuggestionControls({
           >
             {flows.map((flow) => (
               <option key={flow.id} value={flow.id}>
-                {flow.id}
+                {flow.label}
               </option>
             ))}
           </select>
         </label>
       </div>
       {selectedFlow !== undefined && (
-        <p className={styles.definitionMeta}>
-          <span>Up to {selectedFlow.maxSuggestions} suggestions</span>
-          <span>{selectedFlow.transformationKinds.length} registered kinds</span>
-          <code>{selectedFlow.role}</code>
-        </p>
+        <div className={styles.flowSummary}>
+          <p className={styles.profileKicker}>What the agent is deciding</p>
+          <h3>{selectedFlow.label}</h3>
+          <p>
+            Reviews this worksheet and can recommend up to {selectedFlow.maxSuggestions}{" "}
+            suitable changes from {selectedFlow.transformationKinds.length} available
+            transformations.
+          </p>
+          <p className={styles.definitionMeta}>
+            <code>{selectedFlow.id}</code>
+            <code>{selectedFlow.role}</code>
+          </p>
+        </div>
       )}
       <div className={styles.actionBar}>
         <fieldset className={styles.primaryActions}>

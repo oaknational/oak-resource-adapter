@@ -43,6 +43,7 @@ function respond(body: unknown, status = 200) {
 const flow = {
   capabilityId: "worksheetScaffolding",
   id: "worksheet-scaffolding",
+  label: "Scaffold practice tasks",
   maxSuggestions: 5,
   role: "worksheet-scaffolding-suggester",
   transformationKinds: ["scaffold-add-word-bank"],
@@ -63,6 +64,11 @@ describe("suggestion harness API", () => {
           kind: "scaffold-add-word-bank",
           label: "Add a word bank",
           outputs: ["revised-resource"],
+          suggestion: {
+            avoidWhen: "The question already supplies the vocabulary.",
+            description: "Adds vocabulary for one question.",
+            useWhen: "Relevant vocabulary needs recalling.",
+          },
           supportLevels: [{ description: "Words only.", level: "low" }],
           target: { nodeTypes: ["question"], scope: "node" },
         },
@@ -75,7 +81,12 @@ describe("suggestion harness API", () => {
     });
 
     await expect(previewSuggestions(command())).resolves.toMatchObject({
-      candidates: [{ kind: "scaffold-add-word-bank" }],
+      candidates: [
+        {
+          kind: "scaffold-add-word-bank",
+          suggestion: { description: "Adds vocabulary for one question." },
+        },
+      ],
       prompt: { text: "Prompt" },
     });
     expect(fetch).toHaveBeenCalledWith(

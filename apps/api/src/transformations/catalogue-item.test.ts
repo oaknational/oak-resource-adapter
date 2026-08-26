@@ -96,6 +96,7 @@ describe("toCatalogueItem", () => {
       label: "Structured model",
       outputs: ["revised-resource"],
       status: "draft",
+      suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
       target: { scope: "node", nodeTypes: ["question"] },
     });
   });

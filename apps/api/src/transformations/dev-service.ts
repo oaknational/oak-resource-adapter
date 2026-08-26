@@ -1,6 +1,7 @@
 import { renderPromptTemplate } from "@oaknational/resource-adapter-ai";
 
 import { createDevModelInvoker } from "../ai/dev-invoker";
+import { capabilityDefinitions } from "../capabilities/registry";
 import { listOakMaterial } from "../oak-material/catalogue";
 import { resolveApplicationMaterial } from "./application-material-resolver";
 import {
@@ -19,6 +20,15 @@ const prepareWithoutPersistence: PreparePrompt = ({ template, variables }) =>
 
 export function getDevTransformationCatalogue() {
   return {
+    capabilities: Object.values(capabilityDefinitions).map(
+      ({ id, label, resourceType, suggestionFlowId, transformationKinds }) => ({
+        id,
+        label,
+        resourceType,
+        suggestionFlowId,
+        transformationKinds,
+      }),
+    ),
     material: listOakMaterial(),
     transformations: listRegisteredTransformations(),
   };

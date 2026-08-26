@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, within } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
 import { OakThemeProvider, oakDefaultTheme } from "@oaknational/oak-components";
 import { describe, expect, it } from "vitest";
 import type { ResourceDocument } from "@oaknational/resource-document";
@@ -148,8 +149,8 @@ describe("ResourceDocumentRenderer", () => {
     ).toBeVisible();
   });
 
-  it("nests question headings beneath the active worksheet task", () => {
-    renderDocument({
+  it("renders worksheet tasks as independently collapsible heading regions", async () => {
+    const taskDocument: ResourceDocument = {
       ...document,
       content: [
         document.content[0]!,
@@ -171,9 +172,22 @@ describe("ResourceDocumentRenderer", () => {
           label: "2",
           children: [],
         },
+        {
+          id: "task-b",
+          type: "heading",
+          level: 2,
+          content: [{ type: "text", text: "Task B" }],
+        },
+        {
+          id: "question-3",
+          type: "question",
+          label: "3",
+          children: [],
+        },
       ],
       diagnostics: [],
-    });
+    };
+    const { rerender } = renderDocument(taskDocument);
 
     const worksheet = screen.getByRole("article", {
       name: "Renderer test worksheet",
@@ -181,15 +195,48 @@ describe("ResourceDocumentRenderer", () => {
     expect(
       within(worksheet).getByRole("heading", { level: 3, name: "Practice" }),
     ).toBeVisible();
-    expect(
-      within(worksheet).getByRole("heading", { level: 4, name: "Task A" }),
-    ).toBeVisible();
+    const taskAToggle = within(worksheet).getByRole("button", { name: "Task A" });
+    const taskARegion = within(worksheet).getByRole("region", { name: "Task A" });
+    const taskBRegion = within(worksheet).getByRole("region", { name: "Task B" });
+
+    expect(taskAToggle).toHaveAttribute("aria-expanded", "true");
+    expect(taskAToggle).toHaveAttribute("aria-controls", taskARegion.id);
+    expect(taskARegion).toBeVisible();
+    expect(taskBRegion).toBeVisible();
     expect(
       within(worksheet).getByRole("heading", { level: 5, name: "Question 1" }),
     ).toBeVisible();
     expect(
       within(worksheet).getByRole("heading", { level: 5, name: "Question 2" }),
     ).toBeVisible();
+
+    await userEvent.click(taskAToggle);
+
+    expect(taskAToggle).toHaveAttribute("aria-expanded", "false");
+    expect(taskARegion).not.toBeVisible();
+    expect(taskBRegion).toBeVisible();
+
+    rerender(
+      <OakThemeProvider theme={oakDefaultTheme}>
+        <ResourceDocumentRenderer
+          document={{
+            ...taskDocument,
+            metadata: { title: "Updated renderer test worksheet" },
+          }}
+        />
+      </OakThemeProvider>,
+    );
+
+    expect(screen.getByRole("button", { name: "Task A" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+
+    taskAToggle.focus();
+    await userEvent.keyboard("{Enter}");
+
+    expect(taskAToggle).toHaveAttribute("aria-expanded", "true");
+    expect(taskARegion).toBeVisible();
   });
 
   it("speaks maths markup it cannot render as symbols", () => {
@@ -212,6 +259,32 @@ describe("ResourceDocumentRenderer", () => {
       "Mathematical expression: 3 over 4 × x squared",
     );
     expect(expression).toHaveAttribute("tabindex", "0");
+  });
+
+  it("highlights an applied transformation as one contribution", () => {
+    renderDocument({
+      ...document,
+      content: [
+        {
+          id: "added-section",
+          type: "section",
+          extensions: { "oak:contribution": "contribution-1" },
+          children: [
+            {
+              id: "added-guidance",
+              type: "paragraph",
+              extensions: { "oak:contribution": "contribution-1" },
+              content: [{ type: "text", text: "Try one step at a time." }],
+            },
+          ],
+        },
+      ],
+      diagnostics: [],
+    });
+
+    expect(screen.getByText("Added support")).toBeVisible();
+    expect(screen.getAllByText("Added support")).toHaveLength(1);
+    expect(screen.getByText("Try one step at a time.")).toBeVisible();
   });
 
   it("shows a readable fallback when a figure asset is missing", () => {

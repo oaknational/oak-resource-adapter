@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { preferredSelection } from "../shared/preferred-selection";
 import {
   fetchTransformationCatalogue,
   type OakMaterialSummary,
@@ -19,13 +20,16 @@ function orderedCatalogue(
   });
 }
 
-export function useTransformationCatalogue() {
+export function useTransformationCatalogue(initialKind?: string | undefined) {
   const [catalogue, setCatalogue] = useState<readonly TransformationCatalogueItem[]>(
     [],
   );
   const [material, setMaterial] = useState<readonly OakMaterialSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedKind, setSelectedKind] = useState("");
+  // Pinned to the first render: a later prop change must not override a choice
+  // the user has since made.
+  const requestedKindRef = useRef(initialKind);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,9 +42,11 @@ export function useTransformationCatalogue() {
         setCatalogue(ordered);
         setMaterial(parts);
         setSelectedKind((current) =>
-          ordered.some(({ kind }) => kind === current)
-            ? current
-            : (ordered[0]?.kind ?? ""),
+          preferredSelection(
+            requestedKindRef.current,
+            current,
+            ordered.map(({ kind }) => kind),
+          ),
         );
         setError(null);
       })

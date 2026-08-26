@@ -2,16 +2,14 @@ import { resourceDocumentSchema } from "@oaknational/resource-document/schema";
 import { z } from "zod";
 
 import { adapterProxyPath } from "../../harness-api";
+import {
+  suggestionGuidanceSchema,
+  supportLevelSchema,
+  targetSchema,
+  transformationOutputsSchema,
+} from "../shared/catalogue-schemas";
 import type { LessonScenario } from "../../scenario-types";
 import type { ResourceDocument } from "@oaknational/resource-document";
-
-const targetSchema = z.discriminatedUnion("scope", [
-  z.strictObject({ scope: z.literal("document") }),
-  z.strictObject({
-    scope: z.literal("node"),
-    nodeTypes: z.array(z.string()).min(1),
-  }),
-]);
 
 const materialRequirementSchema = z.strictObject({
   available: z.boolean(),
@@ -21,19 +19,15 @@ const materialRequirementSchema = z.strictObject({
   unavailableBecause: z.string().optional(),
 });
 
-const supportLevelSchema = z.strictObject({
-  description: z.string(),
-  level: z.enum(["low", "mid", "high"]),
-});
-
 const transformationCatalogueItemSchema = z.strictObject({
   barriers: z.array(z.string()).optional(),
   execution: z.enum(["deterministic", "structured-model", "text-model"]),
   kind: z.string(),
   label: z.string(),
   materialRequirements: z.array(materialRequirementSchema),
-  outputs: z.array(z.enum(["companion-document", "revised-resource"])).min(1),
+  outputs: transformationOutputsSchema,
   status: z.enum(["active", "draft"]),
+  suggestion: suggestionGuidanceSchema,
   supportLevels: z.array(supportLevelSchema).min(1).optional(),
   target: targetSchema,
 });
@@ -48,7 +42,18 @@ const oakMaterialSchema = z.strictObject({
 
 export type OakMaterialSummary = z.infer<typeof oakMaterialSchema>;
 
+const capabilityCatalogueItemSchema = z.strictObject({
+  id: z.string(),
+  label: z.string(),
+  resourceType: z.string(),
+  suggestionFlowId: z.string().optional(),
+  transformationKinds: z.array(z.string()),
+});
+
+export type CapabilityCatalogueItem = z.infer<typeof capabilityCatalogueItemSchema>;
+
 const catalogueResponseSchema = z.strictObject({
+  capabilities: z.array(capabilityCatalogueItemSchema),
   material: z.array(oakMaterialSchema),
   transformations: z.array(transformationCatalogueItemSchema),
 });

@@ -61,6 +61,7 @@ describe("evaluateTransformations", () => {
         kind: "test-offered",
         label: "Offered",
         outputs: ["revised-resource"],
+        suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
         target: { scope: "document" },
       },
     ]);
@@ -108,6 +109,14 @@ describe("listTransformationsForCapability", () => {
       kind: "scaffold-add-word-bank",
       label: "Add a word bank",
       outputs: ["revised-resource"],
+      suggestion: {
+        description:
+          "Adds the vocabulary a pupil needs for one question, with optional definitions and examples.",
+        useWhen:
+          "Answering the question depends on recalling or selecting relevant subject vocabulary.",
+        avoidWhen:
+          "The question already supplies the vocabulary, or vocabulary is not the barrier to answering it.",
+      },
       supportLevels: [
         {
           level: "low",

@@ -27,6 +27,7 @@ import type {
 import {
   jobIsBusy,
   useWorksheetScaffolding,
+  type ApplyingSuggestion,
   type WorkflowState,
 } from "./useWorksheetScaffolding.js";
 
@@ -50,13 +51,13 @@ const LOADING_STATUS: WorkflowStatus = {
   tone: "working",
 };
 
-const Suggestion = styled.div`
-  background: ${parseColor("bg-neutral")};
-  border: 1px solid ${parseColor("border-neutral")};
+const SuggestionGroup = styled.div`
+  background: ${parseColor("bg-primary")};
+  border: 1px solid ${parseColor("border-neutral-lighter")};
   border-radius: 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin: 0.5rem 0 1rem;
   padding: 0.75rem;
 
@@ -64,6 +65,42 @@ const Suggestion = styled.div`
   button {
     scroll-margin-top: 7rem;
   }
+`;
+
+const SuggestionList = styled.ul`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+`;
+
+const SuggestionItem = styled.li`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  & + & {
+    border-top: 1px solid ${parseColor("border-neutral")};
+    padding-top: 0.75rem;
+  }
+`;
+
+const LocalWorking = styled.div`
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  min-height: 3rem;
+`;
+
+const ResetActions = styled.div`
+  align-items: flex-start;
+  border-top: 1px solid ${parseColor("border-neutral")};
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1rem;
 `;
 
 const StickyWorkflowStatus = styled.div`
@@ -164,7 +201,9 @@ function readyStatus(
   state: WorksheetScaffoldingState,
   isApplying: boolean,
 ): WorkflowStatus | null {
-  if (isApplying) {
+  const isApplyingJob = state.job?.kind === "suggestions.apply" && jobIsBusy(state);
+
+  if (isApplying || isApplyingJob) {
     return {
       message: "Updating the worksheet with your chosen scaffold.",
       title: "Applying scaffold",
@@ -244,7 +283,8 @@ function ResumeChoice({
 export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflowProps) {
   const {
     applySuggestion,
-    applyingSuggestionId,
+    applyingSuggestion,
+    documentIsVisible,
     resume,
     startFresh,
     state,
@@ -252,12 +292,13 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     tryAgain,
   } = useWorksheetScaffolding(props);
   const reasonIdPrefix = useId();
+  const groupIdPrefix = useId();
 
   if (state.status === "idle") {
     return null;
   }
 
-  const status = workflowStatus(state, applyingSuggestionId !== null);
+  const status = workflowStatus(state, applyingSuggestion !== null);
 
   // One region for the whole workflow: a region mounted alongside its own text
   // is announced unreliably, whereas changing the text of a mounted region is not.
@@ -305,15 +346,17 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     );
   }
 
-  const isWorking = applyingSuggestionId !== null || jobIsBusy(state.value);
+  const isWorking = applyingSuggestion !== null || jobIsBusy(state.value);
   const failedJob = state.value.job?.status === "failed" ? state.value.job : undefined;
+  const listedSuggestions =
+    applyingSuggestion?.listedSuggestions ?? state.value.suggestions;
 
-  const renderSuggestion = (
+  const renderSuggestionItem = (
     suggestion: WorksheetScaffoldingState["suggestions"][number],
   ) => {
     const reasonId = `${reasonIdPrefix}-${suggestion.id}`;
     return (
-      <Suggestion key={suggestion.id}>
+      <SuggestionItem key={suggestion.id}>
         <OakP id={reasonId}>{suggestion.reason}</OakP>
         <div>
           <OakSecondaryButton
@@ -324,21 +367,56 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
             {suggestion.label}
           </OakSecondaryButton>
         </div>
-      </Suggestion>
+      </SuggestionItem>
     );
   };
-  const renderAfterNode = (node: ResourceNode) =>
-    state.value.suggestions
-      .filter(({ targetBlockId }) => targetBlockId === node.id)
-      .map(renderSuggestion);
-  const documentSuggestions = state.value.suggestions.filter(
-    ({ targetBlockId }) => targetBlockId === null,
+
+  const renderWorkingItem = (suggestionId: string) => (
+    <SuggestionItem key={suggestionId}>
+      <LocalWorking>
+        <VisibleLoadingSpinner
+          aria-hidden="true"
+          data-testid="worksheet-scaffolding-local-spinner"
+        />
+        <OakP $font="body-2-bold">Working&hellip;</OakP>
+      </LocalWorking>
+    </SuggestionItem>
   );
+
+  const renderSuggestionGroup = (
+    targetBlockId: ApplyingSuggestion["targetBlockId"],
+  ) => {
+    const suggestions = listedSuggestions.filter(
+      (suggestion) => suggestion.targetBlockId === targetBlockId,
+    );
+
+    if (suggestions.length === 0) {
+      return null;
+    }
+
+    const headingId = `${groupIdPrefix}-${targetBlockId ?? "document"}`;
+
+    return (
+      <SuggestionGroup aria-labelledby={headingId} role="group">
+        <OakP $font="heading-7" id={headingId}>
+          Suggested scaffolds
+        </OakP>
+        <SuggestionList>
+          {suggestions.map((suggestion) =>
+            suggestion.id === applyingSuggestion?.id
+              ? renderWorkingItem(suggestion.id)
+              : renderSuggestionItem(suggestion),
+          )}
+        </SuggestionList>
+      </SuggestionGroup>
+    );
+  };
+
+  const renderAfterNode = (node: ResourceNode) => renderSuggestionGroup(node.id);
 
   return (
     <OakFlex $flexDirection="column" $gap="spacing-16">
       {announcement}
-      <OakP>Review the worksheet and choose any scaffolds that suit your class.</OakP>
       {status !== null && (
         <StickyWorkflowStatus ref={statusRef} tabIndex={-1}>
           {status.tone === "working" ? (
@@ -374,11 +452,26 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           />
         </StickyWorkflowStatus>
       )}
-      {documentSuggestions.map(renderSuggestion)}
-      <ResourceDocumentRenderer
-        document={state.value.document}
-        renderAfterNode={renderAfterNode}
-      />
+      {documentIsVisible && (
+        <>
+          <OakP>
+            Review the worksheet and choose any scaffolds that suit your class.
+          </OakP>
+          {renderSuggestionGroup(null)}
+          <ResourceDocumentRenderer
+            document={state.value.document}
+            renderAfterNode={renderAfterNode}
+          />
+          <ResetActions>
+            <OakP>
+              Return to Oak&rsquo;s original worksheet and find new scaffolds.
+            </OakP>
+            <OakSecondaryButton onClick={() => startFresh(state.value.adaptationId)}>
+              Start again
+            </OakSecondaryButton>
+          </ResetActions>
+        </>
+      )}
     </OakFlex>
   );
 }
