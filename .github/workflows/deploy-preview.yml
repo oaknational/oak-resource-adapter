@@ -179,18 +179,16 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-chromium
           restore-keys: playwright-${{ runner.os }}-
 
-      # Install still runs on a cache hit: it is a ~1s no-op then, and after a
-      # Playwright bump it re-downloads what the restored cache lacks. The
-      # runner image already carries Chromium's shared libraries (no
-      # --with-deps), and the suite is headless throughout (--only-shell).
+      # Run this even on a cache hit: it takes about a second and re-downloads
+      # the browser after a Playwright bump. The runner image already has the
+      # system libraries, and headless tests only need the headless shell.
       - name: Install Playwright browser
         id: playwright_install
         continue-on-error: true
         timeout-minutes: 5
         run: pnpm exec playwright install --only-shell chromium
 
-      # A separate step gives the retry its own timeout when GitHub terminates
-      # the first attempt rather than letting the command exit by itself.
+      # A separate step so the retry still runs if the first attempt times out.
       - name: Retry Playwright browser install
         if: steps.playwright_install.outcome == 'failure'
         timeout-minutes: 5
