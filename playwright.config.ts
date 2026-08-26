@@ -18,7 +18,7 @@ const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 const localWebServers = [
   {
     command: "pnpm --filter @oaknational/resource-adapter-api dev",
-    port: 3001,
+    url: "http://localhost:3001/health",
     reuseExistingServer: !process.env.CI,
   },
   {
