@@ -49,7 +49,6 @@ export type WorksheetScaffoldingService = Readonly<{
     target: ResourceAdapterAuthenticatedTeacher,
   ) => Promise<WorksheetScaffoldingEntry | null>;
 }>;
-
 /** Internal API context served from `/trpc/internal`. */
 export type ResourceAdapterApiContextInternal = Readonly<{
   authenticatedTeacher: ResourceAdapterAuthenticatedTeacher | null;

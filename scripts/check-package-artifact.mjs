@@ -379,6 +379,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "ResourceAdapterErrorBoundary.js",
     "capabilities/workflowRegistry.js",
     "capabilities/worksheet-scaffolding/WorksheetScaffoldingWorkflow.js",
+    "capabilities/worksheet-scaffolding/useWorksheetScaffolding.js",
   ];
   const serverSafeModules = [
     "index.js",

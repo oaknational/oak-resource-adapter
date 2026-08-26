@@ -31,7 +31,6 @@ const worksheetScaffolding = {
   get: () => Promise.resolve(null),
   open: () => Promise.resolve(null),
 };
-
 describe("Resource Adapter API contracts", () => {
   it.each([
     ["1", 1],
