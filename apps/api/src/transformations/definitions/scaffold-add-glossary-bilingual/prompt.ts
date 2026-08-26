@@ -28,5 +28,4 @@ For example, a science resource asking pupils to "describe how the substance dis
 THE RESOURCE
 
 {{document}}`,
-  version: 1,
 });

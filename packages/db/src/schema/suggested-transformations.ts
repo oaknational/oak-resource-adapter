@@ -33,6 +33,8 @@ export const suggestedTransformations = resourceAdapterSchema.table(
     /** Arguments to apply if accepted, validated by the registry. */
     params: jsonb("params").notNull().default({}),
     position: integer("position").notNull(),
+    /** The short explanation shown with the suggestion. */
+    reason: text("reason").notNull().default(""),
     /** The document this offer is about, which is not always what produced it. */
     resourceDocumentId: uuid("resource_document_id").notNull(),
     /** The block this offer targets. Null when it applies to the whole document. */

@@ -52,7 +52,7 @@ export function EdgeCaseView({
   // one is picked opens the worksheet workflow.
   function selectFixtureCapability(option: ResourceAdapterCapabilityOption) {
     selectCapability({
-      id: "worksheetAdapter",
+      id: "worksheetScaffolding",
       label: option.label,
       resourceType: "worksheet",
     });

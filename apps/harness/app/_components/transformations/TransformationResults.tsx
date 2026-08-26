@@ -33,8 +33,7 @@ export function TransformationResults({
           ) : (
             <>
               <p>
-                <code>{preview.prompt.identifier}</code>, version{" "}
-                {preview.prompt.version}
+                <code>{preview.prompt.identifier}</code>
               </p>
               {/* Focusable so a keyboard can scroll it, which WCAG 2.1.1 requires. */}
               <section aria-label="Rendered prompt" tabIndex={0}>

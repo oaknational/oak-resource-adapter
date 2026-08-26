@@ -14,7 +14,7 @@ const emailAddress = process.env.E2E_CLERK_USER_EMAIL as string;
  */
 async function expectRenderedWorksheet(drawer: Locator, title: string) {
   const worksheet = drawer.getByRole("article", { name: title });
-  const failure = drawer.getByTestId("resource-adapter-source-document-error");
+  const failure = drawer.getByTestId("resource-adapter-worksheet-scaffolding-error");
 
   await expect(worksheet.or(failure).first()).toBeVisible({ timeout: 20_000 });
   await expect(failure).toHaveCount(0);
@@ -58,7 +58,9 @@ test(
       name: "Scaffold practice tasks",
     });
     await expect(sidebar).toBeVisible();
-    const closeIcon = sidebar.getByRole("button", { name: "Close" }).locator("img");
+    const closeIcon = sidebar
+      .getByRole("button", { name: "Close Modal" })
+      .locator("img");
     await expect
       .poll(async () => closeIcon.evaluate((image) => image.naturalWidth))
       .toBeGreaterThan(0);
@@ -397,8 +399,14 @@ test(
     await page.getByRole("button", { name: "Preview prompt" }).click();
 
     await expect(page.getByRole("heading", { name: "Prompt preview" })).toBeVisible();
-    // Names the prompt it rendered, which the controls above do not.
-    await expect(page.getByText(/scaffold-add-word-bank, version \d+/)).toBeVisible();
+    // Prompts are content-addressed, so the panel names the prompt by its
+    // identifier alone; the controls carry the same kind, hence the scoping.
+    const promptPreview = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Prompt preview" }) });
+    await expect(
+      promptPreview.getByText("scaffold-add-word-bank", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("region", { name: "Rendered prompt" })).toContainText(
       "YOUR SCAFFOLD: a word bank",
     );

@@ -14,6 +14,7 @@ import type {
   TransformationOutputs,
   TransformationParams,
   TransformationStatus,
+  TransformationSuggestionGuidance,
   TransformationTarget,
 } from "./types";
 
@@ -30,6 +31,7 @@ export type TransformationDeclaration = Readonly<{
   /** Arguments beyond the support level, which is derived. */
   params?: ParamsObject;
   status: TransformationStatus;
+  suggestion: TransformationSuggestionGuidance;
   supportLevels?: SupportLevelOptions;
   target: TransformationTarget;
 }>;

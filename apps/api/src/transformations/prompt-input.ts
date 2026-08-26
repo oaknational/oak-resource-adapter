@@ -28,6 +28,7 @@ export type TransformationPromptVariableName =
   | "block"
   | "document"
   | "identity"
+  | "keyStage"
   | "language"
   | "lessonMaterial"
   | "scaffoldPrinciples"
@@ -142,6 +143,10 @@ export function transformationPromptVariables(
       targetNode === undefined ? undefined : serialiseResourceNodeForPrompt(targetNode),
     document: serialiseResourceDocumentForPrompt(document),
     identity: identityPart(),
+    keyStage:
+      "keyStage" in metadata
+        ? (metadata.keyStage?.label ?? metadata.keyStage?.id)
+        : undefined,
     language: languagePart({
       keyStage: "keyStage" in metadata ? metadata.keyStage?.label : undefined,
       targetReadingAge:

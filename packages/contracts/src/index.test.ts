@@ -26,6 +26,12 @@ const sourceDocument: ResourceDocument = {
   diagnostics: [],
 };
 
+const worksheetScaffolding = {
+  applySuggestion: () => Promise.resolve(null),
+  get: () => Promise.resolve(null),
+  open: () => Promise.resolve(null),
+};
+
 describe("Resource Adapter API contracts", () => {
   it.each([
     ["1", 1],
@@ -59,14 +65,14 @@ describe("Resource Adapter API contracts", () => {
       resourceAdapterCapabilitiesResponseSchema.parse({
         capabilities: [
           {
-            id: "worksheetAdapter",
+            id: "worksheetScaffolding",
             label: "Adapt worksheet",
             resourceType: "worksheet",
           },
         ],
       }),
     ).toMatchObject({
-      capabilities: [{ id: "worksheetAdapter" }],
+      capabilities: [{ id: "worksheetScaffolding" }],
     });
   });
 
@@ -96,7 +102,7 @@ describe("Resource Adapter API contracts", () => {
           getCapabilities: () => ({
             capabilities: [
               {
-                id: "worksheetAdapter",
+                id: "worksheetScaffolding",
                 label: "Adapt worksheet",
                 resourceType: "worksheet",
               },
@@ -115,7 +121,7 @@ describe("Resource Adapter API contracts", () => {
           keyStageSlug: "ks2",
           availableResources: ["worksheet"],
         }),
-      ).resolves.toMatchObject({ capabilities: [{ id: "worksheetAdapter" }] });
+      ).resolves.toMatchObject({ capabilities: [{ id: "worksheetScaffolding" }] });
     });
 
     it("rejects an unsupported API contract version", async () => {
@@ -161,7 +167,7 @@ describe("Resource Adapter API contracts", () => {
           subjectSlug: "maths",
           keyStageSlug: "ks2",
           availableResources: ["worksheet"],
-          supportedCapabilityIds: ["worksheetAdapter"],
+          supportedCapabilityIds: ["worksheetScaffolding"],
         }),
       ).resolves.toEqual({ available: true });
     });
@@ -199,11 +205,12 @@ describe("Resource Adapter API contracts", () => {
           getSourceDocument: () =>
             ({ id: "not-a-document" }) as unknown as ResourceDocument,
         },
+        worksheetScaffolding,
       });
 
       await expect(
         caller.sourceDocuments.get({
-          capabilityId: "worksheetAdapter",
+          capabilityId: "worksheetScaffolding",
           lesson: {
             lessonSlug: "adding-fractions",
             programmeSlug: "ks2-maths",
@@ -252,6 +259,7 @@ describe("Resource Adapter API contracts", () => {
         sourceDocuments: {
           getSourceDocument: () => sourceDocument,
         },
+        worksheetScaffolding,
       });
 
       await expect(caller.featureFlags.get()).resolves.toEqual([
@@ -268,11 +276,12 @@ describe("Resource Adapter API contracts", () => {
         },
         featureFlags: { getEnabledFlags: () => [] },
         sourceDocuments: { getSourceDocument },
+        worksheetScaffolding,
       });
 
       await expect(
         caller.sourceDocuments.get({
-          capabilityId: "worksheetAdapter",
+          capabilityId: "worksheetScaffolding",
           lesson: {
             lessonSlug: "adding-fractions",
             programmeSlug: "ks2-maths",
@@ -284,7 +293,7 @@ describe("Resource Adapter API contracts", () => {
         }),
       ).resolves.toEqual(sourceDocument);
       expect(getSourceDocument).toHaveBeenCalledWith(
-        expect.objectContaining({ capabilityId: "worksheetAdapter" }),
+        expect.objectContaining({ capabilityId: "worksheetScaffolding" }),
         { organisationId: "org-123", teacherId: "teacher-456" },
       );
     });
@@ -297,6 +306,7 @@ describe("Resource Adapter API contracts", () => {
         },
         featureFlags: { getEnabledFlags: () => [] },
         sourceDocuments: { getSourceDocument: () => null },
+        worksheetScaffolding,
       });
 
       await expect(
@@ -323,6 +333,7 @@ describe("Resource Adapter API contracts", () => {
         sourceDocuments: {
           getSourceDocument: () => null,
         },
+        worksheetScaffolding,
       });
 
       await expect(caller.featureFlags.get()).rejects.toMatchObject({

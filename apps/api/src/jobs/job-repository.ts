@@ -18,54 +18,80 @@ export type ClaimedJob = { outcome: "claimed"; kind: string } | { outcome: "igno
 
 function matchesRequest(
   job: Job,
-  request: { kind: string; input: JobJsonValue },
+  request: {
+    concurrencyKey?: string | undefined;
+    kind: string;
+    input: JobJsonValue;
+  },
 ): boolean {
-  return job.kind === request.kind && isDeepStrictEqual(job.input, request.input);
+  return (
+    job.concurrencyKey === (request.concurrencyKey ?? null) &&
+    job.kind === request.kind &&
+    isDeepStrictEqual(job.input, request.input)
+  );
 }
 
 export async function createOrGetJob(request: {
+  concurrencyKey?: string | undefined;
   idempotencyKey: string;
   kind: string;
   input: JobJsonValue;
 }): Promise<{ job: Job; created: boolean }> {
   const database = getDatabaseClient();
+  const concurrencyKey = request.concurrencyKey ?? null;
 
-  // Let PostgreSQL arbitrate the race on the idempotency key. An insert that
-  // loses returns no row rather than raising, so the duplicate path is ordinary
-  // control flow instead of an exception carrying a driver error code.
-  const [created] = await database
-    .insert(jobs)
-    .values({
-      idempotencyKey: request.idempotencyKey,
-      input: request.input,
-      kind: request.kind,
-    })
-    .onConflictDoNothing({ target: jobs.idempotencyKey })
-    .returning();
+  for (let insertAttempt = 0; insertAttempt < 2; insertAttempt += 1) {
+    // Either unique key may arbitrate the race. A loser resolves the row that
+    // won instead of depending on a wrapped driver error's constraint name.
+    const [created] = await database
+      .insert(jobs)
+      .values({
+        concurrencyKey,
+        idempotencyKey: request.idempotencyKey,
+        input: request.input,
+        kind: request.kind,
+      })
+      .onConflictDoNothing()
+      .returning();
 
-  if (created) {
-    return { created: true, job: created };
+    if (created) {
+      return { created: true, job: created };
+    }
+
+    const [idempotent] = await database
+      .select()
+      .from(jobs)
+      .where(eq(jobs.idempotencyKey, request.idempotencyKey))
+      .limit(1);
+    if (idempotent !== undefined) {
+      if (!matchesRequest(idempotent, request)) {
+        throw new IdempotencyConflictError(
+          "The idempotency key is already attached to a different job request.",
+        );
+      }
+      return { created: false, job: idempotent };
+    }
+
+    if (request.concurrencyKey !== undefined) {
+      const [active] = await database
+        .select()
+        .from(jobs)
+        .where(
+          and(
+            eq(jobs.concurrencyKey, request.concurrencyKey),
+            inArray(jobs.status, [JobStatus.QUEUED, JobStatus.RUNNING]),
+          ),
+        )
+        .limit(1);
+      if (active !== undefined) {
+        return { created: false, job: active };
+      }
+    }
   }
 
-  const [existing] = await database
-    .select()
-    .from(jobs)
-    .where(eq(jobs.idempotencyKey, request.idempotencyKey))
-    .limit(1);
-
-  if (!existing) {
-    throw new Error(
-      `Job with idempotency key ${request.idempotencyKey} was neither inserted nor found.`,
-    );
-  }
-
-  if (!matchesRequest(existing, request)) {
-    throw new IdempotencyConflictError(
-      "The idempotency key is already attached to a different job request.",
-    );
-  }
-
-  return { created: false, job: existing };
+  throw new Error(
+    `Job with idempotency key ${request.idempotencyKey} was neither inserted nor found.`,
+  );
 }
 
 export async function getJob(id: string): Promise<Job | null> {

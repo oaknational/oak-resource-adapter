@@ -3,6 +3,8 @@
 A transformation is one change a teacher can ask for. `apps/api/src/transformations`
 holds the registry that names them; `transformations.kind` and
 `suggested_transformations.kind` in the database key into it.
+Suggestion-generation attempts are internal operations and use a namespaced
+kind owned by the suggestion-flow registry.
 
 The registry also holds draft prompt experiments. Drafts are visible to the
 development harness but cannot be exposed by a product capability.
@@ -40,6 +42,7 @@ A definition carries:
 | `kind`                 | The stable internal name stored in the database.                       |
 | `status`               | `draft` for experiments or `active` for product-ready work.            |
 | `label`                | What the teacher reads.                                                |
+| `suggestion`           | What a suggestion flow uses to decide when this change is useful.      |
 | `params`               | Strict arguments beyond the support level, if it takes any.            |
 | `target`               | The whole document, or one node selected from declared node types.     |
 | `outputs`              | What it produces, in order: a revision, companion documents, or both.  |
@@ -72,9 +75,9 @@ product transformation.
 
 Prompts are defined with `defineTransformationPrompt`, which delegates to the AI
 package while restricting placeholders to the transformation input vocabulary,
-and take the same identifier as their kind.
-Bump the prompt's `version` whenever its body changes, as
-[model invocation](MODEL_INVOCATION.md) describes.
+and take the same identifier as their kind. The identifier and template body
+determine the prompt's content hash, so editing a prompt creates a new immutable
+identity without a manual version bump.
 
 A placeholder is a requirement rather than an option. The executor sends a prompt
 exactly the placeholders it declares and refuses to run one whose material the
@@ -82,6 +85,10 @@ request does not carry. So a prompt asking for `{{lessonContext}}` cannot be run
 against the worksheet alone, and a prompt covering several support levels
 receives `{{supportLevel}}` and branches on it. Where the levels need genuinely
 different instructions, a directory can hold a prompt each.
+
+`{{keyStage}}` carries the resource's key-stage label, falling back to its stable
+ID when no label is present. A prompt that declares it cannot run for a document
+without key-stage metadata.
 
 The text every prompt shares lives in `prompt-parts/` and arrives the same way,
 as placeholders: `{{identity}}`, `{{scaffoldPrinciples}}`, `{{language}}` and
@@ -102,8 +109,8 @@ teacher answers, not on the incidental representation of a document schema
 version.
 
 Because the parts are variables, a stored template body stays stable when shared
-text changes, so editing a part does not invalidate every prompt's version. The
-exact text sent is recorded against each invocation either way.
+text changes. The exact rendered text sent is recorded against each invocation,
+so a shared-part change remains reproducible without creating new template rows.
 
 ## Running a transformation
 
@@ -152,14 +159,14 @@ Changing the model or the gateway behind a role is an edit to that table alone.
 2. Register it in `registry.ts`.
 3. Keep it `draft` while it returns experimental text.
 4. Give it a structured contribution and mark it `active`.
-5. Add its active kind to each capability that should offer it.
+5. Add its kind to each capability that should own it.
 
 ## Which kinds a capability offers
 
-A capability definition in `apps/api/src/capabilities` lists the kinds it offers,
-in the order a teacher sees them, and the list is typed against the registry's
-keys. Capability definitions may list only active kinds. Being registered exposes
-nothing on its own.
+A capability definition in `apps/api/src/capabilities` lists the kinds it owns,
+in display order, and the list is typed against the registry's keys. It is the
+single source for both direct offerings and that capability's suggestion flow,
+and may include draft kinds. Being registered exposes nothing on its own.
 
 `isAvailable` decides whether a listed kind is offered for a particular document
 and adaptation. The rules live in `availability.ts` and compose: `always`,
@@ -170,6 +177,25 @@ applying a scaffold to two different questions as the same work.
 
 `listTransformationsForCapability` in `service.ts` resolves a capability's kinds
 and applies those rules, returning what a teacher needs to choose between them.
+
+## Suggesting kinds
+
+A suggestion flow derives its typed allow-list from its capability rather than
+maintaining a second catalogue. Candidate resolution keeps only active kinds
+that are available for the current document. Activating an already-listed kind
+therefore makes it eligible everywhere the capability uses its catalogue.
+
+The model receives each candidate's `suggestion` guidance, targets, barriers and
+support-level descriptions. Its structured response is validated again through
+the transformation's params, target and availability rules. An offer that fails
+that second pass, or repeats a change already offered for the same target, is
+dropped rather than failing the batch. Returning no suggestions is valid.
+
+Suggestion parameters are stored with the offer. Accepting an offer uses those
+parameters by default, while the application request can supply a validated
+override for a future support-level chooser. Acceptance is keyed on the offer,
+which can only be accepted once, so repeating the request is the same work
+rather than a second application.
 
 ## Development harness
 

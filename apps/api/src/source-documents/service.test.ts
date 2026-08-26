@@ -7,7 +7,7 @@ import type { ResourceDocument } from "@oaknational/resource-document";
 import { getSourceDocument } from "./service";
 
 const request: ResourceAdapterSourceDocumentRequest = {
-  capabilityId: "worksheetAdapter",
+  capabilityId: "worksheetScaffolding",
   lesson: {
     lessonSlug: "adopting-different-perspectives",
     programmeSlug: "english-primary-ks2",

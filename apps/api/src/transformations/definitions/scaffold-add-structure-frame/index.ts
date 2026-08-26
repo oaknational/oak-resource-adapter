@@ -6,6 +6,14 @@ export const addStructureFrameTransformation = defineTransformation({
   kind: "scaffold-add-structure-frame",
   label: "Add a writing frame",
   status: "draft",
+  suggestion: {
+    description:
+      "Adds headings or sentence starts that structure an extended written response.",
+    useWhen:
+      "A question requires a multi-part written response and organising it is an unnecessary barrier.",
+    avoidWhen:
+      "The response is short, the structure is already supplied, or choosing a structure is being assessed.",
+  },
   barriers: ["working-memory", "cognitive-flexibility"],
   supportLevels: [
     {

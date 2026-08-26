@@ -4,6 +4,7 @@ import type {
 } from "@oaknational/resource-adapter-contracts";
 
 import type { RegisteredTransformationKind } from "../transformations/registry";
+import type { RegisteredSuggestionFlowId } from "../suggestions/flow-ids";
 
 /** Two lists rather than one: they come from different systems and can disagree. */
 export type EligibilityContext = Readonly<{
@@ -15,8 +16,9 @@ export type EligibilityContext = Readonly<{
 export type CapabilityDefinition = Readonly<
   ResourceAdapterCapability & {
     isEligible: (context: EligibilityContext) => boolean;
-    /** The transformations this capability offers, in the order a teacher sees them. */
-    transformations: readonly RegisteredTransformationKind[];
+    /** Every kind owned by this capability, including drafts, in display order. */
+    transformationKinds: readonly RegisteredTransformationKind[];
+    suggestionFlowId?: RegisteredSuggestionFlowId;
   }
 >;
 

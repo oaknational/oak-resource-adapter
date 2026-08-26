@@ -222,7 +222,7 @@ const edgeCaseDefinitions = [
       availableResources: ["worksheet"],
     },
     brokenApiPath: false,
-    uiCapabilities: [{ id: "worksheetAdapter", label: "Scaffold practice tasks" }],
+    uiCapabilities: [{ id: "worksheetScaffolding", label: "Scaffold practice tasks" }],
     facts: () =>
       Promise.resolve(
         factsOnly([
@@ -248,7 +248,7 @@ const edgeCaseDefinitions = [
     },
     brokenApiPath: false,
     uiCapabilities: [
-      { id: "worksheetAdapter", label: "Scaffold practice tasks" },
+      { id: "worksheetScaffolding", label: "Scaffold practice tasks" },
       // The launcher needs a second choice to render a menu, and the service
       // has no second capability to offer.
       {

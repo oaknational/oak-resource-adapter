@@ -12,7 +12,7 @@ export const promptTemplates = resourceAdapterSchema.table(
       .defaultNow(),
     /** The commit the template was compiled from. */
     gitSha: text("git_sha"),
-    /** The upsert target: a hash over the identifier, version and body together. */
+    /** The upsert target: a hash over the identifier and body together. */
     hash: text("hash").notNull().unique(),
     id: uuid("id")
       .primaryKey()
@@ -20,7 +20,8 @@ export const promptTemplates = resourceAdapterSchema.table(
     /** The stable logical name, such as "lower-reading-age". */
     identifier: text("identifier").notNull(),
     template: text("template").notNull(),
-    version: integer("version").notNull(),
+    /** Nullable so application versions deployed before content addressing can write. */
+    version: integer("version"),
   },
   (table) => [
     unique("prompt_templates_identifier_version_key").on(

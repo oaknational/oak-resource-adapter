@@ -185,6 +185,7 @@
 
 .lesson,
 .smokeTests,
+.suggestions,
 .transformations {
   margin: 0 auto;
   max-width: 62rem;
@@ -195,6 +196,9 @@
 .lesson h2,
 .smokeTests h1,
 .smokeTests h2,
+.suggestions h1,
+.suggestions h2,
+.suggestions h3,
 .transformations h1,
 .transformations h2,
 .transformations h3 {
@@ -203,6 +207,7 @@
 
 .lesson h1,
 .smokeTests h1,
+.suggestions h1,
 .transformations h1 {
   font-size: clamp(2rem, 5vw, 3.25rem);
   line-height: 1.1;
@@ -286,6 +291,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+}
+
+.requestStatus {
+  margin: 0;
+  min-height: 1.5rem;
 }
 
 .primaryActions,
@@ -377,6 +387,47 @@
   margin: 0;
   padding: 1rem;
   white-space: pre-wrap;
+}
+
+.candidateList,
+.suggestionList {
+  display: grid;
+  gap: 0.75rem;
+  padding-left: 1.5rem;
+}
+
+.candidateList li {
+  padding-left: 0.25rem;
+}
+
+.candidateList small {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.suggestionCard {
+  border: 1px solid #222222;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.suggestionCard h3 {
+  margin: 0;
+}
+
+.suggestionCard dl {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+
+.suggestionCard dt {
+  font-weight: 600;
+}
+
+.suggestionCard dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
 }
 
 .documentComparison {

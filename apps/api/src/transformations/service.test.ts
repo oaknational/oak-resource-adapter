@@ -4,8 +4,9 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import type { ResourceDocument } from "@oaknational/resource-document";
 
-import { worksheetAdapterCapability } from "../capabilities/definitions/worksheet-adapter";
+import { worksheetScaffoldingCapability } from "../capabilities/definitions/worksheet-scaffolding";
 import { defineTransformation } from "./define-transformation";
+import { transformationDefinitions } from "./registry";
 import {
   evaluateTransformations,
   listTransformationsForCapability,
@@ -17,7 +18,7 @@ import type { TransformationAvailabilityContext } from "./types";
 let worksheet: ResourceDocument;
 
 function contextFor(
-  capabilityId = "worksheetAdapter",
+  capabilityId = "worksheetScaffolding",
 ): TransformationAvailabilityContext {
   return { appliedTransformations: [], capabilityId, document: worksheet };
 }
@@ -26,6 +27,7 @@ const offered = defineTransformation({
   kind: "test-offered",
   label: "Offered",
   status: "active",
+  suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "document" },
   outputs: ["revised-resource"],
   isAvailable: () => true,
@@ -36,6 +38,7 @@ const withheld = defineTransformation({
   kind: "test-withheld",
   label: "Withheld",
   status: "active",
+  suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "node", nodeTypes: ["question"] },
   outputs: ["revised-resource"],
   isAvailable: () => false,
@@ -83,8 +86,12 @@ describe("evaluateTransformations", () => {
 describe("transformationsForCapability", () => {
   it("resolves the kinds the worksheet capability declares, in order", () => {
     expect(
-      transformationsForCapability("worksheetAdapter").map(({ kind }) => kind),
-    ).toEqual([...worksheetAdapterCapability.transformations]);
+      transformationsForCapability("worksheetScaffolding").map(({ kind }) => kind),
+    ).toEqual(
+      worksheetScaffoldingCapability.transformationKinds.filter(
+        (kind) => transformationDefinitions[kind].status === "active",
+      ),
+    );
   });
 
   it("rejects an unknown capability rather than offering nothing", () => {
@@ -129,13 +136,17 @@ describe("listTransformationsForCapability", () => {
   });
 
   it("withholds the kinds that cannot run yet", () => {
-    const kinds = listTransformationsForCapability(contextFor()).map(
+    const offeredKinds = listTransformationsForCapability(contextFor()).map(
       ({ kind }) => kind,
     );
+    // Named by status rather than by kind, so activating one does not make this
+    // assert the opposite of what it means.
+    const draftKinds = worksheetScaffoldingCapability.transformationKinds.filter(
+      (kind) => transformationDefinitions[kind].status === "draft",
+    );
 
-    expect(kinds).not.toContain("scaffold-add-prompt-questions");
-    expect(kinds).not.toContain("scaffold-add-prompt-reminders");
-    expect(kinds).not.toContain("scaffold-add-knowledge-summary");
+    expect(draftKinds.length).toBeGreaterThan(0);
+    expect(offeredKinds).toEqual(expect.not.arrayContaining(draftKinds));
   });
 
   it("withdraws an additive kind already applied to the selected target", () => {

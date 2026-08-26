@@ -378,7 +378,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "ResourceAdapterDialog.js",
     "ResourceAdapterErrorBoundary.js",
     "capabilities/workflowRegistry.js",
-    "capabilities/worksheet-adapter/WorksheetAdapterWorkflow.js",
+    "capabilities/worksheet-scaffolding/WorksheetScaffoldingWorkflow.js",
   ];
   const serverSafeModules = [
     "index.js",
@@ -387,7 +387,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "getResourceAdapterCapabilities.js",
     "getResourceAdapterCapabilityAvailability.js",
     "getResourceAdapterFeatureFlags.js",
-    "getResourceAdapterSourceDocument.js",
+    "worksheetScaffolding.js",
     "capabilities.js",
     "publicTypes.js",
     "resource-document/InlineContentRenderer.js",

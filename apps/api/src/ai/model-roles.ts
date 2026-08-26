@@ -16,6 +16,10 @@ export const modelRoleBindings = defineRoleBindings({
     model: "gpt-5.6-luna",
     transport: "openai",
   },
+  "worksheet-scaffolding-suggester": {
+    model: "gpt-5.6-luna",
+    transport: "openai",
+  },
 });
 
 export type ModelRoleName = ModelRole<typeof modelRoleBindings>;
@@ -31,3 +35,9 @@ export type TransformationModelRole = (typeof TRANSFORMATION_ROLES)[number];
 
 export const DEFAULT_TRANSFORMATION_ROLE: TransformationModelRole =
   "worksheet-scaffold";
+
+export const SUGGESTION_ROLES = [
+  "worksheet-scaffolding-suggester",
+] as const satisfies readonly ModelRoleName[];
+
+export type SuggestionModelRole = (typeof SUGGESTION_ROLES)[number];

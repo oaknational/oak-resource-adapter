@@ -127,13 +127,9 @@ export function transformationsForCapability(
     throw new Error(`Unknown capability ${JSON.stringify(capabilityId)}.`);
   }
 
-  return capability.transformations.map((kind) => {
-    const definition = transformationDefinitions[kind];
-    if (definition.status !== "active") {
-      throw new Error(`${kind} is draft and cannot be offered by ${capabilityId}.`);
-    }
-    return definition;
-  });
+  return capability.transformationKinds
+    .map((kind) => transformationDefinitions[kind])
+    .filter((definition) => definition.status === "active");
 }
 
 export function listTransformationsForCapability(

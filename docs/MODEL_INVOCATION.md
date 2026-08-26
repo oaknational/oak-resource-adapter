@@ -117,7 +117,6 @@ the variables argument, and rendering rejects missing or unused variables.
 const LOWER_READING_AGE = definePromptTemplate({
   identifier: "lower-reading-age",
   template: "Rewrite for reading age {{readingAge}}.\n\n{{text}}",
-  version: 1,
 });
 
 const prompt = await preparePrompt({
@@ -132,9 +131,12 @@ await ai.invokeText({
 });
 ```
 
-`preparePrompt` renders and registers a template on first use. Change the
-version whenever the body changes; reusing an identifier and version with a new
-body is rejected. `renderPromptTemplate` renders without registration.
+`preparePrompt` renders and registers a template on first use. A template's
+identifier and body determine its content hash: editing the body registers a new
+immutable row automatically, while concurrent uses of the same body reuse one
+row. Different bodies under one identifier can coexist, including bodies from
+contrasting preview branches. `renderPromptTemplate` renders without
+registration.
 
 ## Persistence
 
