@@ -86,12 +86,12 @@ export async function executeGenerateSuggestions(
 ): Promise<void> {
   const { repository } = dependencies;
   const job = await dependencies.readJob(jobId);
-  if (job === null || job.kind !== generateSuggestionsJob.kind) {
+  if (job?.kind !== generateSuggestionsJob.kind) {
     throw new Error("The suggestion job does not exist or has the wrong kind.");
   }
   const input = generateSuggestionsJob.input.parse(job.input);
   const head = await repository.getAdaptationHead(input.adaptationId);
-  if (head === null || head.storedDocument.id !== input.resourceDocumentId) {
+  if (head?.storedDocument.id !== input.resourceDocumentId) {
     throw new Error("The suggestion job no longer targets the adaptation head.");
   }
 
@@ -169,7 +169,7 @@ export async function executeApplySuggestion(
 ): Promise<void> {
   const { repository } = dependencies;
   const job = await dependencies.readJob(jobId);
-  if (job === null || job.kind !== applySuggestionJob.kind) {
+  if (job?.kind !== applySuggestionJob.kind) {
     throw new Error(
       "The suggestion application job does not exist or has the wrong kind.",
     );

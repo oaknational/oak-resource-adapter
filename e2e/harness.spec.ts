@@ -23,9 +23,7 @@ async function expectRenderedWorksheet(drawer: Locator, title: string) {
 
 test(
   "shows the API state, a capability-based trigger, and the adapter sidebar",
-  {
-    tag: "@deployment-safe",
-  },
+  {},
   async ({ page }) => {
     await setupClerkTestingToken({ page });
     await page.goto("/");
@@ -167,28 +165,24 @@ for (const { heading, id, offersCreateMore, outcome } of edgeCases) {
   );
 }
 
-test(
-  "shows the future multi-capability launcher shape",
-  { tag: "@deployment-safe" },
-  async ({ page }) => {
-    await setupClerkTestingToken({ page });
-    await page.goto("/");
-    await clerk.signIn({ page, emailAddress });
-    await page.goto("/?view=edge-cases&case=multiple-capabilities-ui");
+test("shows the future multi-capability launcher shape", {}, async ({ page }) => {
+  await setupClerkTestingToken({ page });
+  await page.goto("/");
+  await clerk.signIn({ page, emailAddress });
+  await page.goto("/?view=edge-cases&case=multiple-capabilities-ui");
 
-    const trigger = page.getByRole("button", { name: "Create more with AI" });
-    await expect(trigger).toHaveAttribute("aria-expanded", "false");
-    await trigger.click();
+  const trigger = page.getByRole("button", { name: "Create more with AI" });
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await trigger.click();
 
-    const menu = page.getByRole("menu");
-    await expect(menu.getByRole("menuitem")).toHaveCount(2);
-    await menu.getByRole("menuitem", { name: "Scaffold practice tasks" }).click();
+  const menu = page.getByRole("menu");
+  await expect(menu.getByRole("menuitem")).toHaveCount(2);
+  await menu.getByRole("menuitem", { name: "Scaffold practice tasks" }).click();
 
-    const drawer = page.getByRole("dialog", { name: "Scaffold practice tasks" });
-    await expect(drawer).toBeVisible();
-    await expectRenderedWorksheet(drawer, "Adopting different perspectives");
-  },
-);
+  const drawer = page.getByRole("dialog", { name: "Scaffold practice tasks" });
+  await expect(drawer).toBeVisible();
+  await expectRenderedWorksheet(drawer, "Adopting different perspectives");
+});
 
 test(
   "preserves an unknown directive rather than dropping it",

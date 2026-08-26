@@ -1,7 +1,20 @@
 import type { SuggestionWorkbench } from "./useSuggestionWorkbench";
+import type { SuggestionPreviewResponse } from "./suggestion-api";
 import styles from "../../page.module.css";
 
 type SuggestionResultsProps = Pick<SuggestionWorkbench, "error" | "preview" | "result">;
+type SuggestionCandidate = SuggestionPreviewResponse["candidates"][number];
+
+function describeEligibleTargets({
+  eligibleTargets,
+  target,
+}: SuggestionCandidate): string {
+  if (eligibleTargets.scope === "document") {
+    return "Whole document";
+  }
+  const nodeTypes = target.scope === "node" ? target.nodeTypes.join("/") : "node";
+  return `Eligible ${nodeTypes} IDs: ${eligibleTargets.blockIds.join(", ")}`;
+}
 
 export function SuggestionResults({ error, preview, result }: SuggestionResultsProps) {
   return (
@@ -24,14 +37,10 @@ export function SuggestionResults({ error, preview, result }: SuggestionResultsP
           </p>
           {preview.candidates.length > 0 && (
             <ul className={styles.candidateList}>
-              {preview.candidates.map(({ eligibleTargets, kind, label, target }) => (
-                <li key={kind}>
-                  <strong>{label}</strong> <code>{kind}</code>
-                  <small>
-                    {eligibleTargets.scope === "document"
-                      ? "Whole document"
-                      : `Eligible ${target.scope === "node" ? target.nodeTypes.join("/") : "node"} IDs: ${eligibleTargets.blockIds.join(", ")}`}
-                  </small>
+              {preview.candidates.map((candidate) => (
+                <li key={candidate.kind}>
+                  <strong>{candidate.label}</strong> <code>{candidate.kind}</code>
+                  <small>{describeEligibleTargets(candidate)}</small>
                 </li>
               ))}
             </ul>

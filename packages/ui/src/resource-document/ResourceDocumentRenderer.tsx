@@ -1,5 +1,4 @@
-import type { ResourceDocument } from "@oaknational/resource-document";
-import type { ResourceNode } from "@oaknational/resource-document";
+import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
 import type { ReactNode } from "react";
 import { parseColor } from "@oaknational/oak-components";
 import { styled } from "styled-components";

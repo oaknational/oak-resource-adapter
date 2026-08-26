@@ -6,6 +6,7 @@ import {
   fetchSuggestionCatalogue,
   previewSuggestions,
   runSuggestions,
+  type SuggestionCommand,
   type SuggestionFlow,
   type SuggestionPreviewResponse,
   type SuggestionRunResponse,
@@ -13,6 +14,21 @@ import {
 import type { LessonScenario } from "../../scenario-types";
 
 export type SuggestionRequestState = "idle" | "preview" | "run";
+
+type CompletedSuggestionRequest =
+  | Readonly<{ action: "preview"; value: SuggestionPreviewResponse }>
+  | Readonly<{ action: "run"; value: SuggestionRunResponse }>;
+
+async function requestSuggestions(
+  action: Exclude<SuggestionRequestState, "idle">,
+  command: SuggestionCommand,
+  signal: AbortSignal,
+): Promise<CompletedSuggestionRequest> {
+  if (action === "preview") {
+    return { action, value: await previewSuggestions(command, signal) };
+  }
+  return { action, value: await runSuggestions(command, signal) };
+}
 
 export function useSuggestionWorkbench(scenario: LessonScenario) {
   const [flows, setFlows] = useState<readonly SuggestionFlow[]>([]);
@@ -94,12 +110,14 @@ export function useSuggestionWorkbench(scenario: LessonScenario) {
 
     try {
       const command = { document: scenario.document, flowId: selectedFlowId };
-      if (action === "preview") {
-        const response = await previewSuggestions(command, controller.signal);
-        if (requestGeneration.current === generation) setPreview(response);
+      const completed = await requestSuggestions(action, command, controller.signal);
+      if (requestGeneration.current !== generation) {
+        return;
+      }
+      if (completed.action === "preview") {
+        setPreview(completed.value);
       } else {
-        const response = await runSuggestions(command, controller.signal);
-        if (requestGeneration.current === generation) setResult(response);
+        setResult(completed.value);
       }
     } catch (cause) {
       if (requestGeneration.current === generation && !controller.signal.aborted) {
