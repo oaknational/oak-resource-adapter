@@ -150,7 +150,7 @@ describe("API routes", () => {
     const response = await getCapabilities(capabilitiesRequest(lesson));
 
     await expect(response.json()).resolves.toMatchObject([
-      { result: { data: { capabilities: [{ id: "worksheetAdapter" }] } } },
+      { result: { data: { capabilities: [{ id: "worksheetScaffolding" }] } } },
     ]);
   });
 
@@ -173,7 +173,7 @@ describe("API routes", () => {
 
   it("returns an eligible capability's source document", async () => {
     const response = await postInternal(
-      sourceDocumentRequest({ capabilityId: "worksheetAdapter", lesson }),
+      sourceDocumentRequest({ capabilityId: "worksheetScaffolding", lesson }),
     );
 
     expect(response.status).toBe(200);
@@ -192,7 +192,7 @@ describe("API routes", () => {
   it("does not return a source document for an ineligible capability", async () => {
     const response = await postInternal(
       sourceDocumentRequest({
-        capabilityId: "worksheetAdapter",
+        capabilityId: "worksheetScaffolding",
         lesson: { ...lesson, availableResources: ["starter-quiz"] },
       }),
     );

@@ -1,6 +1,6 @@
-import { worksheetAdapterCapability } from "./definitions/worksheet-adapter";
+import { worksheetScaffoldingCapability } from "./definitions/worksheet-scaffolding";
 
 /** Add new capability definitions to this map; the service evaluates every entry. */
 export const capabilityDefinitions = {
-  [worksheetAdapterCapability.id]: worksheetAdapterCapability,
+  [worksheetScaffoldingCapability.id]: worksheetScaffoldingCapability,
 } as const;

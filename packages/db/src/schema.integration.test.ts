@@ -136,7 +136,7 @@ describeWithDatabase("schema integration", () => {
     const [adaptation] = await database()
       .insert(adaptations)
       .values({
-        capabilityId: "worksheetAdapter",
+        capabilityId: "worksheetScaffolding",
         clerkUserId,
         lessonSlug: "photosynthesis",
         programmeSlug: "science-secondary-ks3",
@@ -239,7 +239,7 @@ describeWithDatabase("schema integration", () => {
     return document;
   }
 
-  async function insertPromptTemplate(identifier: string, version = 1) {
+  async function insertPromptTemplate(identifier: string) {
     const [template] = await database()
       .insert(promptTemplates)
       .values({
@@ -247,7 +247,6 @@ describeWithDatabase("schema integration", () => {
         hash: randomUUID().replaceAll("-", ""),
         identifier,
         template: "Rewrite the worksheet for reading age {{targetReadingAge}}.",
-        version,
       })
       .returning();
 
@@ -354,7 +353,7 @@ describeWithDatabase("schema integration", () => {
       where: eq(adaptations.id, adaptation.id),
     });
     expect(stored).toMatchObject({
-      capabilityId: "worksheetAdapter",
+      capabilityId: "worksheetScaffolding",
       headResourceDocumentId: output.id,
       lessonSlug: "photosynthesis",
     });

@@ -78,7 +78,6 @@ export type TransformationPreview = Readonly<{
   prompt: null | Readonly<{
     identifier: string;
     text: string;
-    version: number;
   }>;
   status: "active" | "draft";
   warnings: readonly string[];
@@ -99,7 +98,6 @@ export async function previewRegisteredTransformation(
         ? {
             identifier: definition.execution.prompt.identifier,
             text: preparedPrompt.text,
-            version: definition.execution.prompt.version,
           }
         : null,
     status: definition.status,

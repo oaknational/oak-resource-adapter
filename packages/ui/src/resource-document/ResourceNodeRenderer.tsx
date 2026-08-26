@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import type {
   Asset,
   InlineContent,
@@ -164,10 +164,12 @@ export function ResourceNodeListRenderer({
   assets,
   nodes,
   parentHeadingLevel,
+  renderAfterNode,
 }: Readonly<{
   assets: readonly Asset[];
   nodes: readonly ResourceNode[];
   parentHeadingLevel: ParentHeadingLevel;
+  renderAfterNode?: (node: ResourceNode) => ReactNode;
 }>) {
   let currentHeadingLevel = parentHeadingLevel;
 
@@ -179,12 +181,15 @@ export function ResourceNodeListRenderer({
     }
 
     return (
-      <ResourceNodeRenderer
-        assets={assets}
-        key={node.id}
-        node={node}
-        parentHeadingLevel={nodeParentHeadingLevel}
-      />
+      <Fragment key={node.id}>
+        <ResourceNodeRenderer
+          assets={assets}
+          node={node}
+          parentHeadingLevel={nodeParentHeadingLevel}
+          {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
+        />
+        {renderAfterNode?.(node)}
+      </Fragment>
     );
   });
 }
@@ -230,10 +235,12 @@ export function ResourceNodeRenderer({
   assets,
   node,
   parentHeadingLevel,
+  renderAfterNode,
 }: Readonly<{
   assets: readonly Asset[];
   node: ResourceNode;
   parentHeadingLevel: ParentHeadingLevel;
+  renderAfterNode?: (node: ResourceNode) => ReactNode;
 }>) {
   switch (node.type) {
     case "section":
@@ -243,6 +250,7 @@ export function ResourceNodeRenderer({
             assets={assets}
             nodes={node.children}
             parentHeadingLevel={parentHeadingLevel}
+            {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
           />
         </ContentSection>
       );
@@ -277,6 +285,7 @@ export function ResourceNodeRenderer({
               assets={assets}
               nodes={node.children}
               parentHeadingLevel={questionHeadingLevel}
+              {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
             />
           </QuestionContent>
         </Question>

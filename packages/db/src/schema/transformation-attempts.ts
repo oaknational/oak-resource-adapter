@@ -11,6 +11,8 @@ export const transformationAttempts = resourceAdapterSchema.table(
   {
     /** Starts at 1 and is unique within a transformation to prevent duplicate retries. */
     attemptNumber: integer("attempt_number").notNull(),
+    /** Set when the attempt finished its work, including a run that produced nothing. */
+    completedAt: timestamp("completed_at", { precision: 3, withTimezone: true }),
     createdAt: timestamp("created_at", { precision: 3, withTimezone: true })
       .notNull()
       .defaultNow(),

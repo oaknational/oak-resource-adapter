@@ -58,6 +58,7 @@ const identity = defineTransformation({
   kind: "test-identity",
   label: "Identity",
   status: "draft",
+  suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "document" },
   outputs: ["revised-resource"],
   isAvailable: always,
@@ -72,6 +73,7 @@ const blockScaffold = defineTransformation({
     { level: "mid", description: "Defines the words." },
   ],
   status: "draft",
+  suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "node", nodeTypes: ["question"] },
   outputs: ["revised-resource"],
   isAvailable: always,
@@ -80,7 +82,6 @@ const blockScaffold = defineTransformation({
     prompt: definePromptTemplate({
       identifier: "test-block-scaffold",
       template: "Support {{block}} at {{supportLevel}} within {{document}}.",
-      version: 1,
     }),
   },
 });
@@ -89,6 +90,7 @@ const contextHungry = defineTransformation({
   kind: "test-context-hungry",
   label: "Context hungry",
   status: "draft",
+  suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "document" },
   outputs: ["revised-resource"],
   isAvailable: always,
@@ -97,7 +99,6 @@ const contextHungry = defineTransformation({
     prompt: definePromptTemplate({
       identifier: "test-context-hungry",
       template: "Use {{lessonContext}} against {{document}}.",
-      version: 1,
     }),
   },
 });
@@ -106,6 +107,7 @@ const vocabularyScaffold = defineTransformation({
   kind: "test-vocabulary-scaffold",
   label: "Vocabulary scaffold",
   status: "draft",
+  suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   materialRequirements: [{ key: "lesson.keywords", required: false }],
   target: { scope: "node", nodeTypes: ["question"] },
   outputs: ["revised-resource"],
@@ -115,7 +117,6 @@ const vocabularyScaffold = defineTransformation({
     prompt: definePromptTemplate({
       identifier: "test-vocabulary-scaffold",
       template: "Define words in {{block}} of {{document}}, given {{lessonMaterial}}.",
-      version: 1,
     }),
   },
 });

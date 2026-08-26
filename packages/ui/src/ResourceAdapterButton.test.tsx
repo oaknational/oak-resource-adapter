@@ -8,7 +8,7 @@ import { ResourceAdapterButton } from "./ResourceAdapterButton.js";
 import type { ResourceAdapterCapability } from "./publicTypes.js";
 
 const worksheet: ResourceAdapterCapability = {
-  id: "worksheetAdapter",
+  id: "worksheetScaffolding",
   label: "Scaffold practice tasks",
   resourceType: "worksheet",
 };

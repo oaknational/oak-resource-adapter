@@ -20,6 +20,7 @@ function echoJob(overrides: Partial<Job> = {}): Job {
   const now = new Date("2026-07-23T12:00:00.000Z");
   return {
     completedAt: null,
+    concurrencyKey: null,
     createdAt: now,
     failureCode: null,
     failureMessage: null,

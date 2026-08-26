@@ -27,5 +27,4 @@ At {{supportLevel}} support, keep the summary to what the tasks need. A summary 
 THE RESOURCE
 
 {{document}}`,
-  version: 1,
 });

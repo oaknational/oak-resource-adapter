@@ -1,5 +1,13 @@
 import { sql } from "drizzle-orm";
-import { index, jsonb, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  index,
+  jsonb,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 
 import { resourceAdapterSchema } from "./pg-schema.js";
 
@@ -24,6 +32,7 @@ export const jobs = resourceAdapterSchema.table(
   "jobs",
   {
     completedAt: timestamp("completed_at", { precision: 3, withTimezone: true }),
+    concurrencyKey: varchar("concurrency_key", { length: 128 }),
     createdAt: timestamp("created_at", { precision: 3, withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -44,7 +53,17 @@ export const jobs = resourceAdapterSchema.table(
       .$onUpdate(() => new Date()),
     workflowRunId: text("workflow_run_id").unique(),
   },
-  (table) => [index("jobs_status_created_at_idx").on(table.status, table.createdAt)],
+  (table) => [
+    index("jobs_status_created_at_idx").on(table.status, table.createdAt),
+    index("jobs_concurrency_key_created_at_idx")
+      .on(table.concurrencyKey, table.createdAt.desc())
+      .where(sql`${table.concurrencyKey} is not null`),
+    uniqueIndex("jobs_active_concurrency_key_unique")
+      .on(table.concurrencyKey)
+      .where(
+        sql`${table.concurrencyKey} is not null and ${table.status} in ('queued', 'running')`,
+      ),
+  ],
 );
 
 export type Job = typeof jobs.$inferSelect;

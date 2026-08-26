@@ -7,6 +7,7 @@ function queuedJob(overrides: Partial<Job> = {}): Job {
   const now = new Date("2026-07-23T12:00:00.000Z");
   return {
     completedAt: null,
+    concurrencyKey: null,
     createdAt: now,
     failureCode: null,
     failureMessage: null,
@@ -44,6 +45,7 @@ describe("enqueueJob", () => {
     await expect(
       enqueueJob(
         {
+          concurrencyKey: "worksheet:adaptation-1:document-1",
           idempotencyKey: "request-1",
           input: { message: " hello " },
           kind: "test.echo",
@@ -53,6 +55,7 @@ describe("enqueueJob", () => {
     ).resolves.toMatchObject({ id: queuedJob().id });
 
     expect(deps.createOrGet).toHaveBeenCalledWith({
+      concurrencyKey: "worksheet:adaptation-1:document-1",
       idempotencyKey: "request-1",
       input: { message: "hello" },
       kind: "test.echo",

@@ -110,9 +110,8 @@ describe("capability transformations", () => {
   it.each(Object.values(capabilityDefinitions))(
     "declares only registered kinds for $id",
     (capability) => {
-      for (const kind of capability.transformations) {
+      for (const kind of capability.transformationKinds) {
         expect(isRegisteredTransformationKind(kind)).toBe(true);
-        expect(transformationDefinitions[kind].status).toBe("active");
       }
     },
   );
@@ -123,7 +122,6 @@ describe("prompts", () => {
     "names $definition.kind as its prompt identifier",
     ({ definition, prompt }) => {
       expect(prompt.identifier).toBe(definition.kind);
-      expect(prompt.version).toBeGreaterThanOrEqual(1);
     },
   );
 

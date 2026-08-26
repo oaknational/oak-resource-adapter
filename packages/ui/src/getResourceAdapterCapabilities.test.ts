@@ -25,7 +25,7 @@ describe("getResourceAdapterCapabilities", () => {
               data: {
                 capabilities: [
                   {
-                    id: "worksheetAdapter",
+                    id: "worksheetScaffolding",
                     label: "Adapt worksheet",
                     resourceType: "worksheet",
                   },
@@ -45,7 +45,7 @@ describe("getResourceAdapterCapabilities", () => {
         lesson,
       }),
     ).resolves.toMatchObject({
-      capabilities: [{ id: "worksheetAdapter" }],
+      capabilities: [{ id: "worksheetScaffolding" }],
     });
 
     const [url, request] = fetchMock.mock.calls[0] ?? [];

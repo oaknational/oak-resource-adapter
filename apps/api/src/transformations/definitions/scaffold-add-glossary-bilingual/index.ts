@@ -6,6 +6,14 @@ export const addGlossaryBilingualTransformation = defineTransformation({
   kind: "scaffold-add-glossary-bilingual",
   label: "Add a bilingual glossary",
   status: "draft",
+  suggestion: {
+    description:
+      "Adds a whole-resource glossary showing key vocabulary in English and a pupil's first language.",
+    useWhen:
+      "Language of instruction is the barrier and the required first language is known.",
+    avoidWhen:
+      "The pupil's first language is unknown, or an English glossary would address the barrier.",
+  },
   barriers: ["language-of-instruction"],
   supportLevels: [
     {

@@ -4,12 +4,12 @@ import type { ComponentType } from "react";
 
 import type { ResourceAdapterCapabilityId } from "../publicTypes.js";
 import {
-  WorksheetAdapterWorkflow,
-  type WorksheetAdapterWorkflowProps,
-} from "./worksheet-adapter/WorksheetAdapterWorkflow.js";
+  WorksheetScaffoldingWorkflow,
+  type WorksheetScaffoldingWorkflowProps,
+} from "./worksheet-scaffolding/WorksheetScaffoldingWorkflow.js";
 
-export type CapabilityWorkflowProps = WorksheetAdapterWorkflowProps;
+export type CapabilityWorkflowProps = WorksheetScaffoldingWorkflowProps;
 
 export const capabilityWorkflows = {
-  worksheetAdapter: WorksheetAdapterWorkflow,
+  worksheetScaffolding: WorksheetScaffoldingWorkflow,
 } satisfies Record<ResourceAdapterCapabilityId, ComponentType<CapabilityWorkflowProps>>;

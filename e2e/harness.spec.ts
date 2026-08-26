@@ -14,7 +14,7 @@ const emailAddress = process.env.E2E_CLERK_USER_EMAIL as string;
  */
 async function expectRenderedWorksheet(drawer: Locator, title: string) {
   const worksheet = drawer.getByRole("article", { name: title });
-  const failure = drawer.getByTestId("resource-adapter-source-document-error");
+  const failure = drawer.getByTestId("resource-adapter-worksheet-scaffolding-error");
 
   await expect(worksheet.or(failure).first()).toBeVisible({ timeout: 20_000 });
   await expect(failure).toHaveCount(0);
@@ -23,9 +23,7 @@ async function expectRenderedWorksheet(drawer: Locator, title: string) {
 
 test(
   "shows the API state, a capability-based trigger, and the adapter sidebar",
-  {
-    tag: "@deployment-safe",
-  },
+  {},
   async ({ page }) => {
     await setupClerkTestingToken({ page });
     await page.goto("/");
@@ -58,7 +56,9 @@ test(
       name: "Scaffold practice tasks",
     });
     await expect(sidebar).toBeVisible();
-    const closeIcon = sidebar.getByRole("button", { name: "Close" }).locator("img");
+    const closeIcon = sidebar
+      .getByRole("button", { name: "Close Modal" })
+      .locator("img");
     await expect
       .poll(async () => closeIcon.evaluate((image) => image.naturalWidth))
       .toBeGreaterThan(0);
@@ -165,28 +165,24 @@ for (const { heading, id, offersCreateMore, outcome } of edgeCases) {
   );
 }
 
-test(
-  "shows the future multi-capability launcher shape",
-  { tag: "@deployment-safe" },
-  async ({ page }) => {
-    await setupClerkTestingToken({ page });
-    await page.goto("/");
-    await clerk.signIn({ page, emailAddress });
-    await page.goto("/?view=edge-cases&case=multiple-capabilities-ui");
+test("shows the future multi-capability launcher shape", {}, async ({ page }) => {
+  await setupClerkTestingToken({ page });
+  await page.goto("/");
+  await clerk.signIn({ page, emailAddress });
+  await page.goto("/?view=edge-cases&case=multiple-capabilities-ui");
 
-    const trigger = page.getByRole("button", { name: "Create more with AI" });
-    await expect(trigger).toHaveAttribute("aria-expanded", "false");
-    await trigger.click();
+  const trigger = page.getByRole("button", { name: "Create more with AI" });
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await trigger.click();
 
-    const menu = page.getByRole("menu");
-    await expect(menu.getByRole("menuitem")).toHaveCount(2);
-    await menu.getByRole("menuitem", { name: "Scaffold practice tasks" }).click();
+  const menu = page.getByRole("menu");
+  await expect(menu.getByRole("menuitem")).toHaveCount(2);
+  await menu.getByRole("menuitem", { name: "Scaffold practice tasks" }).click();
 
-    const drawer = page.getByRole("dialog", { name: "Scaffold practice tasks" });
-    await expect(drawer).toBeVisible();
-    await expectRenderedWorksheet(drawer, "Adopting different perspectives");
-  },
-);
+  const drawer = page.getByRole("dialog", { name: "Scaffold practice tasks" });
+  await expect(drawer).toBeVisible();
+  await expectRenderedWorksheet(drawer, "Adopting different perspectives");
+});
 
 test(
   "preserves an unknown directive rather than dropping it",
@@ -397,8 +393,14 @@ test(
     await page.getByRole("button", { name: "Preview prompt" }).click();
 
     await expect(page.getByRole("heading", { name: "Prompt preview" })).toBeVisible();
-    // Names the prompt it rendered, which the controls above do not.
-    await expect(page.getByText(/scaffold-add-word-bank, version \d+/)).toBeVisible();
+    // Prompts are content-addressed, so the panel names the prompt by its
+    // identifier alone; the controls carry the same kind, hence the scoping.
+    const promptPreview = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Prompt preview" }) });
+    await expect(
+      promptPreview.getByText("scaffold-add-word-bank", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("region", { name: "Rendered prompt" })).toContainText(
       "YOUR SCAFFOLD: a word bank",
     );

@@ -6,6 +6,11 @@ export const identityTransformation = defineTransformation({
   kind: "identity",
   label: "Leave unchanged",
   status: "draft",
+  suggestion: {
+    description: "Leaves the resource unchanged.",
+    useWhen: "No scaffold would improve access to the task.",
+    avoidWhen: "A specific barrier can be addressed by an available scaffold.",
+  },
   target: { scope: "document" },
   outputs: ["revised-resource"],
   isAvailable: always,

@@ -128,9 +128,15 @@ creates a transformation of the same kind, recorded in
 `accepted_transformation_id`; a row where that is null was offered and ignored,
 which is how the suggestion model is evaluated. Offers are keyed to a document
 version, so moving the head back reveals the offers that version already had.
-`kind` on both tables keys into the same TypeScript registry, and
+An offered `kind` keys into the transformation registry. The attempt that
+produces offers uses the suggestion flow's namespaced operation kind instead.
 `target_block_id` references a block inside the document envelope, so it has no
-foreign key.
+foreign key. `reason` records the short explanation shown to the teacher.
+
+An adaptation is offered back to the teacher who started it when they reopen the
+same lesson and capability, provided they changed the worksheet and did not
+choose to start over. Choosing to start over sets `abandoned_at`, so the same
+question is not asked again.
 
 **A document's `origin` says where it originally came from, not how it is being
 used.** For example, a generated worksheet can later become an input to another
@@ -140,8 +146,9 @@ transformation. Input usage is therefore recorded separately in
 **Prompt templates live in source-controlled code, not in the database.** The
 database keeps an immutable copy of each template that was actually used, so
 every model invocation can reference the exact prompt it was rendered from.
-Templates are reused by content hash, which covers the identifier and version
-alongside the body.
+Templates are reused by content hash, which covers the identifier and body.
+Different bodies under one identifier remain separate rows, so contrasting
+preview branches cannot reserve or collide on a manually assigned version.
 
 The stored template is the body with its `{{placeholders}}` intact, not the text
 that was sent. The rendered text, with the teacher's content substituted in,

@@ -10,7 +10,12 @@ type HarnessPageProps = Readonly<{
 }>;
 
 function parseSection(view: SearchParamValue): HarnessSection {
-  if (view === "smoke-tests" || view === "edge-cases" || view === "transformations") {
+  if (
+    view === "smoke-tests" ||
+    view === "edge-cases" ||
+    view === "suggestions" ||
+    view === "transformations"
+  ) {
     return view;
   }
 
@@ -56,7 +61,7 @@ async function resolveView(
     };
   }
 
-  if (section === "transformations") {
+  if (section === "transformations" || section === "suggestions") {
     return {
       section,
       navigation: lessonScenarioNavigation,
