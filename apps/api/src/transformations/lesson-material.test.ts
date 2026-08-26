@@ -8,10 +8,10 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { StructuredModelOutputResult } from "@oaknational/resource-adapter-ai";
 import type { QuestionNode, ResourceDocument } from "@oaknational/resource-document";
 
-import type { ResourceAdapterModelInvoker } from "../../ai/model-roles";
-import { addGlossaryQuestionTransformation } from "../definitions/scaffold-add-glossary-question";
-import { executeTransformation, type PreparePrompt } from "../execute";
-import { resolveLessonMaterial } from "./from-lesson";
+import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
+import { resolveLessonMaterial } from "../oak-material/from-lesson";
+import { addGlossaryQuestionTransformation } from "./definitions/scaffold-add-glossary-question";
+import { executeTransformation, type PreparePrompt } from "./execute";
 
 const identity = {
   lessonSlug: "adopting-different-perspectives",

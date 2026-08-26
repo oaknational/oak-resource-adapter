@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest";
 import { always } from "./availability";
 import { defineTransformation } from "./define-transformation";
 import { listRegisteredTransformations, toCatalogueItem } from "./service";
-import type { TransformationMaterialRequirement } from "./oak-material/material";
+import type { OakMaterialRequirement } from "../oak-material/material";
 import { transformationDefinitions } from "./registry";
 import { glossaryContribution } from "./definitions/scaffold-add-glossary-question/contribution";
 import { addWordBankPrompt } from "./definitions/scaffold-add-word-bank/prompt";
 
 function deterministicWith(
-  materialRequirements: readonly TransformationMaterialRequirement[] = [],
+  materialRequirements: readonly OakMaterialRequirement[] = [],
 ) {
   return defineTransformation({
     kind: "test-deterministic",

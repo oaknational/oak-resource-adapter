@@ -91,17 +91,21 @@ ID when no label is present. A prompt that declares it cannot run for a document
 without key-stage metadata.
 
 The text every prompt shares lives in `prompt-parts/` and arrives the same way,
-as placeholders: `{{identity}}`, `{{scaffoldPrinciples}}`, `{{language}}` and
-`{{lessonKeywords}}`. A part is a function of the request rather than a constant,
-which is what `{{language}}` needs — it states the ages behind the resource's own
-key stage and year group, and cannot be known when the template is defined.
+as placeholders: `{{identity}}`, `{{scaffoldPrinciples}}` and `{{language}}`. A
+part is a function of the request rather than a constant, which is what
+`{{language}}` needs — it states the ages behind the resource's own key stage and
+year group, and cannot be known when the template is defined.
 
-Material from outside the resource is declared through `materialRequirements`
-and selectively resolved. `lesson.keywords` is the first such projection, not a
-special case in the document model. Future projections can add other useful
-parts of the original Oak lesson without sending every available field to every
-transformation. `{{lessonKeywords}}` carries Oak's own keywords and definitions,
-which a vocabulary scaffold prefers over model-authored wording for the same term.
+Oak lesson material is defined in `apps/api/src/oak-material/`. `OakMaterial`
+holds the available lesson parts, and `OakMaterialRequirement` describes a part
+that a transformation needs.
+
+A transformation lists these requirements in `materialRequirements`. The
+requested parts are resolved and passed to the prompt as `{{lessonMaterial}}`.
+For example, `lesson.keywords` provides Oak's keywords and definitions.
+
+Required material is checked in `transformations/required-material.ts`. A
+transformation cannot run if its request is missing a required part.
 
 `prompt-input.ts` serialises the resource as stable semantic text rather than raw
 storage JSON. Prompts therefore depend on headings, questions, pupil content and

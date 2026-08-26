@@ -4,7 +4,7 @@ import {
 } from "@oaknational/resource-document";
 
 import { capabilityDefinitions } from "../capabilities/registry";
-import { OAK_MATERIAL, oakMaterialIsAvailable } from "./oak-material/catalogue";
+import { OAK_MATERIAL, oakMaterialIsAvailable } from "../oak-material/catalogue";
 import { transformationDefinitions } from "./registry";
 import type {
   AvailableTransformation,

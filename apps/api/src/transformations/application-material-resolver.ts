@@ -3,10 +3,10 @@ import {
   oakCurriculumConfigFromEnv,
 } from "@oaknational/resource-adapter-curriculum";
 
-import type { ResolveTransformationMaterial } from "../application-service";
-import { TransformationDependencyError } from "../errors";
-import { OAK_MATERIAL, oakMaterialIsAvailable } from "./catalogue";
-import { resolveLessonMaterial } from "./from-lesson";
+import { OAK_MATERIAL, oakMaterialIsAvailable } from "../oak-material/catalogue";
+import { resolveLessonMaterial } from "../oak-material/from-lesson";
+import type { ResolveTransformationMaterial } from "./application-service";
+import { TransformationDependencyError } from "./errors";
 
 export const resolveApplicationMaterial: ResolveTransformationMaterial = async (
   requirements,

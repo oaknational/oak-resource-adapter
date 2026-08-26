@@ -6,8 +6,8 @@ import { applySuggestionJob } from "../jobs/suggestions/apply-definition";
 import { generateSuggestionsJob } from "../jobs/suggestions/generate-definition";
 import { suggestionFlowDefinitions } from "../suggestions/registry";
 import { generateSuggestions } from "../suggestions/service";
+import { resolveApplicationMaterial } from "../transformations/application-material-resolver";
 import { executeRegisteredTransformation } from "../transformations/application-service";
-import { resolveApplicationMaterial } from "../transformations/oak-material/application-resolver";
 import {
   isRegisteredTransformationKind,
   transformationDefinitions,
