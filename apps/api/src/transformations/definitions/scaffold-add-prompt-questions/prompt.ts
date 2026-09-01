@@ -10,9 +10,13 @@ export const addPromptQuestionsPrompt = defineTransformationPrompt({
 
 YOUR SCAFFOLD: recall questions
 
-Create up to three questions prompting pupils to recall information needed to complete the task.
+Create up to three pupil-facing questions that prompt recall before the pupil attempts the worksheet's tasks.
 
-The question set can either be knowledge-based or sequence-based, depending on the task focus. Questions must not directly tell pupils what the knowledge is or how to complete the task.
+Treat the resource as one worksheet. Choose the questions that best support it as a whole. If its tasks need different knowledge, prioritise knowledge used across tasks and then knowledge needed earliest. Make this choice yourself from the lesson material and resource. Never ask the teacher or pupil which task or question to support, and never ask for clarification.
+
+Ask one thing per question, order the questions as the tasks will need them, and only ask about knowledge the tasks actually depend on.
+
+The question set can be knowledge-based or sequence-based, depending on the worksheet's main barrier. Questions must not directly tell pupils what the knowledge is or how to complete a task.
 
 Think: if a pupil gave a poor or incorrect response, would this be primarily because:
 

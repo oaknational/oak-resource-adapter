@@ -3,7 +3,7 @@ import {
   getResourceNodesByType,
 } from "@oaknational/resource-document";
 
-import { capabilityDefinitions } from "../capabilities/registry";
+import { requireCapability } from "../capabilities/registry";
 import { OAK_MATERIAL, oakMaterialIsAvailable } from "../oak-material/catalogue";
 import { transformationDefinitions } from "./registry";
 import type {
@@ -34,6 +34,7 @@ export function toCatalogueItem(
     materialRequirements = [],
     outputs,
     status,
+    suggestion,
     supportLevels,
     target,
   } = definition;
@@ -59,6 +60,7 @@ export function toCatalogueItem(
     }),
     outputs,
     status,
+    suggestion,
     supportLevels,
     target,
   };
@@ -105,11 +107,12 @@ export function evaluateTransformations(
         hasEligibleTarget(definition, context) &&
         definition.isAvailable(context),
     )
-    .map(({ barriers, kind, label, outputs, supportLevels, target }) => ({
+    .map(({ barriers, kind, label, outputs, suggestion, supportLevels, target }) => ({
       barriers,
       kind,
       label,
       outputs,
+      suggestion,
       supportLevels,
       target,
     }));
@@ -119,16 +122,8 @@ export function evaluateTransformations(
 export function transformationsForCapability(
   capabilityId: string,
 ): ReadonlyArray<TransformationDefinition> {
-  const capability = Object.hasOwn(capabilityDefinitions, capabilityId)
-    ? capabilityDefinitions[capabilityId as keyof typeof capabilityDefinitions]
-    : undefined;
-
-  if (capability === undefined) {
-    throw new Error(`Unknown capability ${JSON.stringify(capabilityId)}.`);
-  }
-
-  return capability.transformationKinds
-    .map((kind) => transformationDefinitions[kind])
+  return requireCapability(capabilityId)
+    .transformationKinds.map((kind) => transformationDefinitions[kind])
     .filter((definition) => definition.status === "active");
 }
 

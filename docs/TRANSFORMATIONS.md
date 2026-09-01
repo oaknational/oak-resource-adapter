@@ -139,10 +139,11 @@ output rather than prose. A contribution prepares its exact schema against the
 validated request, so support level can change both the model contract and the
 document it produces. `invokeStructured` enforces that schema. Placement is the
 contribution's decision, so a prompt cannot move a scaffold somewhere the
-transformation did not intend — a scaffold lands beneath its task and before the
-space a pupil writes in. Every node a contribution adds carries the contribution
-ID in its extensions, which is how a later transformation removes or replaces
-exactly this work.
+transformation did not intend. Task-targeted support lands beneath its task and
+before the space a pupil writes in; document-wide support can instead lead the
+worksheet body. Every node a contribution adds carries the contribution ID in its
+extensions, which is how a later transformation removes or replaces exactly this
+work.
 
 A run ends in one of three outcomes: `APPLIED` with an ordered list of validated
 document outputs and their `revised-resource` or `companion-document` purpose;

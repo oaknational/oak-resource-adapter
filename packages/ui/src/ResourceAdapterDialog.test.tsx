@@ -162,6 +162,21 @@ const readyWithSuggestion = {
   ],
 } as const;
 
+const readyWithGroupedSuggestions = {
+  ...readyWithSuggestion,
+  suggestions: [
+    readyWithSuggestion.suggestions[0],
+    {
+      id: "suggestion-2",
+      kind: "scaffold-add-recall-questions",
+      label: "Add recall questions",
+      params: { supportLevel: "medium" },
+      reason: "A short recall prompt would help pupils retrieve prior knowledge.",
+      targetBlockId: "question-1",
+    },
+  ],
+} as const;
+
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
   openWorksheetScaffoldingMock.mockResolvedValue(
@@ -231,6 +246,20 @@ describe("ResourceAdapterDialog", () => {
     ).resolves.toBe("clerk-token");
   });
 
+  it("keeps the workflow at a stable width inside the temporary modal", async () => {
+    renderDialog();
+
+    const worksheet = await screen.findByRole("article", {
+      name: "Adding fractions worksheet",
+    });
+    const workflowContainer = worksheet.parentElement?.parentElement;
+
+    expect(workflowContainer).toHaveStyle({ minWidth: "0", width: "100%" });
+    expect(screen.getByTestId("modal-main-content")).toHaveStyle({
+      scrollbarGutter: "stable",
+    });
+  });
+
   it("shows a suggestion beside its question and applies its stored parameters", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
     renderDialog();
@@ -249,12 +278,88 @@ describe("ResourceAdapterDialog", () => {
     ).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: "Add a word bank" }));
 
+    expect(screen.getByTestId("worksheet-scaffolding-local-spinner")).toBeVisible();
+    expect(screen.getByText("Working…")).toBeVisible();
     expect(applySuggestionMock).toHaveBeenCalledWith({
       adaptationId: "adaptation-1",
       apiBaseUrl,
       getToken: expect.any(Function),
       suggestionId: "suggestion-1",
     });
+  });
+
+  it("groups suggestions that target the same document point", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(readyWithGroupedSuggestions),
+    );
+    renderDialog();
+
+    const group = await screen.findByRole("group", { name: "Suggested scaffolds" });
+
+    expect(within(group).getAllByRole("button")).toHaveLength(2);
+    expect(
+      within(group).getByRole("button", { name: "Add a word bank" }),
+    ).toBeVisible();
+    expect(
+      within(group).getByRole("button", { name: "Add recall questions" }),
+    ).toBeVisible();
+
+    await userEvent.click(
+      within(group).getByRole("button", { name: "Add a word bank" }),
+    );
+
+    expect(
+      within(group).queryByRole("button", { name: "Add a word bank" }),
+    ).not.toBeInTheDocument();
+    expect(within(group).getByText("Working…")).toBeVisible();
+    expect(
+      within(group).getByRole("button", { name: "Add recall questions" }),
+    ).toBeDisabled();
+  });
+
+  it("shows application progress at the document insertion point", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened({
+        ...readyWithSuggestion,
+        suggestions: [{ ...readyWithSuggestion.suggestions[0], targetBlockId: null }],
+      }),
+    );
+    renderDialog();
+
+    const worksheet = await screen.findByRole("article", {
+      name: "Adding fractions worksheet",
+    });
+    const group = screen.getByRole("group", { name: "Suggested scaffolds" });
+    expect(group.compareDocumentPosition(worksheet)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+
+    await userEvent.click(
+      within(group).getByRole("button", { name: "Add a word bank" }),
+    );
+
+    expect(within(group).getByText("Working…")).toBeVisible();
+  });
+
+  it("can start again from the action beneath the worksheet", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    renderDialog();
+
+    const worksheet = await screen.findByRole("article", {
+      name: "Adding fractions worksheet",
+    });
+    const startAgain = screen.getByRole("button", { name: "Start again" });
+    expect(worksheet.compareDocumentPosition(startAgain)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+
+    await userEvent.click(startAgain);
+
+    await waitFor(() =>
+      expect(openWorksheetScaffoldingMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ replacing: "adaptation-1" }),
+      ),
+    );
   });
 
   it("offers unfinished work back instead of opening the worksheet", async () => {
@@ -295,6 +400,36 @@ describe("ResourceAdapterDialog", () => {
     expect(
       await screen.findByRole("article", { name: "Adding fractions worksheet" }),
     ).toBeVisible();
+  });
+
+  it("shows resumed work while its suggestions are still being generated", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce({
+      outcome: "resumable",
+      resumable: {
+        adaptationId: "adaptation-9",
+        scaffoldCount: 1,
+        updatedAt: "2026-02-03T09:00:00.000Z",
+      },
+    });
+    getWorksheetScaffoldingMock.mockResolvedValue({
+      adaptationId: "adaptation-9",
+      document: sourceDocument,
+      job: {
+        failureMessage: null,
+        id: "job-2",
+        kind: "suggestions.generate",
+        status: "running",
+      },
+      suggestions: [],
+    });
+    renderDialog();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Carry on" }));
+
+    expect(
+      await screen.findByRole("article", { name: "Adding fractions worksheet" }),
+    ).toBeVisible();
+    expect(screen.getByText("Finding useful scaffolds")).toBeVisible();
   });
 
   it("replaces the declined adaptation when the teacher starts from the original", async () => {
@@ -380,10 +515,33 @@ describe("ResourceAdapterDialog", () => {
     );
 
     // The chosen button has gone, so focus must not fall back to the document.
-    const banner = await screen.findByText("Finding useful scaffolds");
+    const banner = await screen.findByText("Applying scaffold");
     const focusTarget = banner.closest("[tabindex]");
     expect(focusTarget).not.toBeNull();
     expect(focusTarget).toHaveFocus();
+  });
+
+  it("shows the background application job as applying", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened({
+        adaptationId: "adaptation-1",
+        document: sourceDocument,
+        job: {
+          failureMessage: null,
+          id: "job-1",
+          kind: "suggestions.apply",
+          status: "running",
+        },
+        suggestions: [],
+      }),
+    );
+    renderDialog();
+
+    expect(await screen.findByText("Applying scaffold")).toBeVisible();
+    expect(screen.queryByText("Finding useful scaffolds")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Applying scaffold. Updating the worksheet with your chosen scaffold.",
+    );
   });
 
   it("ignores an apply response after the lesson changes", async () => {
@@ -458,6 +616,7 @@ describe("ResourceAdapterDialog", () => {
   });
 
   it("shows suggestion generation as a distinct live loading status", async () => {
+    const pending = deferred<WorksheetScaffoldingState>();
     openWorksheetScaffoldingMock.mockResolvedValueOnce(
       opened({
         adaptationId: "adaptation-1",
@@ -471,12 +630,7 @@ describe("ResourceAdapterDialog", () => {
         suggestions: [],
       }),
     );
-    getWorksheetScaffoldingMock.mockResolvedValue({
-      adaptationId: "adaptation-1",
-      document: sourceDocument,
-      job: null,
-      suggestions: [],
-    });
+    getWorksheetScaffoldingMock.mockReturnValue(pending.promise);
     renderDialog();
 
     expect(await screen.findByText("Finding useful scaffolds")).toBeVisible();
@@ -487,6 +641,61 @@ describe("ResourceAdapterDialog", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       "Finding useful scaffolds. Reviewing the worksheet for useful scaffolds.",
     );
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Review the worksheet and choose any scaffolds"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Start again" }),
+    ).not.toBeInTheDocument();
+
+    pending.resolve({
+      adaptationId: "adaptation-1",
+      document: sourceDocument,
+      job: null,
+      suggestions: [],
+    });
+    expect(
+      await screen.findByRole("article", { name: "Adding fractions worksheet" }),
+    ).toBeVisible();
+  });
+
+  it("keeps the worksheet visible while finding subsequent suggestions", async () => {
+    const polledDocument = {
+      ...sourceDocument,
+      metadata: { title: "Polled adding fractions worksheet" },
+    };
+    const generating = {
+      adaptationId: "adaptation-1",
+      document: sourceDocument,
+      job: {
+        failureMessage: null,
+        id: "job-2",
+        kind: "suggestions.generate",
+        status: "running",
+      },
+      suggestions: [],
+    } as const;
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    applySuggestionMock.mockResolvedValueOnce(generating);
+    getWorksheetScaffoldingMock.mockResolvedValueOnce({
+      ...generating,
+      document: polledDocument,
+    });
+    renderDialog();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Add a word bank" }),
+    );
+
+    expect(await screen.findByText("Finding useful scaffolds")).toBeVisible();
+    await waitFor(() => expect(getWorksheetScaffoldingMock).toHaveBeenCalledOnce());
+    expect(
+      await screen.findByRole("article", {
+        name: "Polled adding fractions worksheet",
+      }),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Start again" })).toBeVisible();
   });
 
   it("politely explains when a successful run finds no useful scaffolds", async () => {
@@ -530,6 +739,9 @@ describe("ResourceAdapterDialog", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("We couldn't find scaffolds");
     expect(alert).not.toHaveTextContent("background job");
+    expect(
+      screen.getByRole("article", { name: "Adding fractions worksheet" }),
+    ).toBeVisible();
     await userEvent.click(within(alert).getByRole("button", { name: "Start again" }));
     expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(2);
   });

@@ -2,6 +2,7 @@ import { renderPromptTemplate } from "@oaknational/resource-adapter-ai";
 import type { ResourceDocument } from "@oaknational/resource-document";
 
 import { createDevModelInvoker } from "../ai/dev-invoker";
+import { requireCapability } from "../capabilities/registry";
 import { suggestionFlowDefinitions } from "./registry";
 import {
   generateSuggestions,
@@ -40,6 +41,7 @@ function describeFlow(flow: ReturnType<typeof resolveFlow>) {
   return {
     capabilityId: flow.capabilityId,
     id: flow.id,
+    label: requireCapability(flow.capabilityId).label,
     maxSuggestions: flow.maxSuggestions,
     role: flow.role,
     transformationKinds: flow.transformationKinds,

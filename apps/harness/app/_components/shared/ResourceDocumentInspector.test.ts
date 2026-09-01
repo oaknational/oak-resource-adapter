@@ -16,6 +16,23 @@ function definitionList(
 }
 
 describe("resourceNodeLabel", () => {
+  it("gives a question its readable content as context", () => {
+    expect(
+      resourceNodeLabel({
+        id: "question-1",
+        type: "question",
+        label: "1",
+        children: [
+          {
+            id: "question-text",
+            type: "paragraph",
+            content: [{ type: "text", text: "Explain the character's choice." }],
+          },
+        ],
+      }),
+    ).toBe("Question 1: Explain the character's choice.");
+  });
+
   it("shows a words-only entry", () => {
     expect(
       resourceNodeLabel(

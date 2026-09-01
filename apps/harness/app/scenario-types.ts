@@ -5,7 +5,12 @@ import type {
 import type { ResourceDocument } from "@oaknational/resource-document";
 
 export type HarnessSection =
-  "lessons" | "edge-cases" | "smoke-tests" | "suggestions" | "transformations";
+  | "lessons"
+  | "capabilities"
+  | "edge-cases"
+  | "smoke-tests"
+  | "suggestions"
+  | "transformations";
 
 export type ExtractionDiagnostic = Readonly<{
   category: string;
@@ -93,8 +98,10 @@ export type HarnessView =
       edgeCase: EdgeCase;
     }>
   | Readonly<{
+      initialSelection?: string | undefined;
       section: "suggestions" | "transformations";
       navigation: readonly LessonScenarioNavigationItem[];
       scenario: LessonScenario;
     }>
+  | Readonly<{ section: "capabilities" }>
   | Readonly<{ section: "smoke-tests" }>;

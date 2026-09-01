@@ -76,10 +76,6 @@ function rawSuggestionSchemaFor(
 function renderCandidates(candidates: readonly SuggestionCandidate[]): string {
   return candidates
     .map((candidate) => {
-      if (!isRegisteredTransformationKind(candidate.kind)) {
-        throw new Error(`Unknown transformation ${candidate.kind}.`);
-      }
-      const definition = transformationDefinitions[candidate.kind];
       const target =
         candidate.eligibleTargets.scope === "document"
           ? "whole document"
@@ -91,9 +87,9 @@ function renderCandidates(candidates: readonly SuggestionCandidate[]): string {
       return [
         `Kind: ${candidate.kind}`,
         `Label: ${candidate.label}`,
-        `Description: ${definition.suggestion.description}`,
-        `Use when: ${definition.suggestion.useWhen}`,
-        `Avoid when: ${definition.suggestion.avoidWhen}`,
+        `Description: ${candidate.suggestion.description}`,
+        `Use when: ${candidate.suggestion.useWhen}`,
+        `Avoid when: ${candidate.suggestion.avoidWhen}`,
         `Target: ${target}`,
         ...(levels === undefined ? [] : [`Support levels: ${levels}`]),
       ].join("\n");

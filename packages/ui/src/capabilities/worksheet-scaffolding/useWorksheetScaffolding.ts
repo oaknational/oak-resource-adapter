@@ -26,6 +26,19 @@ export type WorkflowState =
   | Readonly<{ status: "ready"; value: WorksheetScaffoldingState }>
   | Readonly<{ status: "error" }>;
 
+type WorksheetSuggestion = WorksheetScaffoldingState["suggestions"][number];
+
+/**
+ * `listedSuggestions` is the list as it stood when applying began. The applied
+ * suggestion leaves `state` before its job finishes, so rendering from the live
+ * list would drop the row the pupil-facing spinner belongs in.
+ */
+export type ApplyingSuggestion = Readonly<{
+  id: WorksheetSuggestion["id"];
+  listedSuggestions: WorksheetScaffoldingState["suggestions"];
+  targetBlockId: WorksheetSuggestion["targetBlockId"];
+}>;
+
 type OpenRequest = Readonly<{
   key: string;
   promise: Promise<WorksheetScaffoldingEntry>;
@@ -41,6 +54,14 @@ function stateFromEntry(entry: WorksheetScaffoldingEntry): WorkflowState {
 
 export function jobIsBusy(state: WorksheetScaffoldingState): boolean {
   return state.job?.status === "queued" || state.job?.status === "running";
+}
+
+function suggestionGenerationIsBusy(state: WorksheetScaffoldingState): boolean {
+  return state.job?.kind === "suggestions.generate" && jobIsBusy(state);
+}
+
+function suggestionApplicationIsBusy(state: WorksheetScaffoldingState): boolean {
+  return state.job?.kind === "suggestions.apply" && jobIsBusy(state);
 }
 
 function useLatestRef<T>(value: T) {
@@ -65,7 +86,9 @@ export function useWorksheetScaffolding({
   onError?: ResourceAdapterErrorHandler;
 }>) {
   const [state, setState] = useState<WorkflowState>({ status: "idle" });
-  const [applyingSuggestionId, setApplyingSuggestionId] = useState<string | null>(null);
+  const [applyingSuggestion, setApplyingSuggestion] =
+    useState<ApplyingSuggestion | null>(null);
+  const [documentIsVisible, setDocumentIsVisible] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [pollCount, setPollCount] = useState(0);
   const openRequestRef = useRef<OpenRequest | null>(null);
@@ -76,6 +99,11 @@ export function useWorksheetScaffolding({
   const lessonRef = useLatestRef(lesson);
   const onErrorRef = useLatestRef(onError);
   const lessonKey = JSON.stringify(lesson);
+
+  const hideWorkflowDocument = useCallback(() => {
+    setApplyingSuggestion(null);
+    setDocumentIsVisible(false);
+  }, []);
 
   const failWith = useCallback(
     (error: unknown) => {
@@ -91,11 +119,12 @@ export function useWorksheetScaffolding({
     if (!isOpen) {
       openRequestRef.current = null;
       replacingRef.current = null;
-      setApplyingSuggestionId(null);
+      hideWorkflowDocument();
       setState({ status: "idle" });
       return;
     }
 
+    hideWorkflowDocument();
     setState({ status: "loading" });
     const replacing = replacingRef.current;
     const requestKey = `${apiBaseUrl}:${lessonKey}:${retryCount}:${replacing ?? ""}`;
@@ -118,6 +147,9 @@ export function useWorksheetScaffolding({
         // again would be refused.
         replacingRef.current = null;
         if (!cancelled) {
+          if (entry.outcome === "opened") {
+            setDocumentIsVisible(!suggestionGenerationIsBusy(entry.state));
+          }
           setState(stateFromEntry(entry));
         }
       })
@@ -130,7 +162,16 @@ export function useWorksheetScaffolding({
     return () => {
       cancelled = true;
     };
-  }, [apiBaseUrl, failWith, getTokenRef, isOpen, lessonKey, lessonRef, retryCount]);
+  }, [
+    apiBaseUrl,
+    failWith,
+    getTokenRef,
+    hideWorkflowDocument,
+    isOpen,
+    lessonKey,
+    lessonRef,
+    retryCount,
+  ]);
 
   const adaptationId = state.status === "ready" ? state.value.adaptationId : null;
   const busy = state.status === "ready" && jobIsBusy(state.value);
@@ -148,6 +189,12 @@ export function useWorksheetScaffolding({
       })
         .then((value) => {
           if (!cancelled) {
+            if (!suggestionGenerationIsBusy(value)) {
+              setDocumentIsVisible(true);
+            }
+            if (!suggestionApplicationIsBusy(value)) {
+              setApplyingSuggestion(null);
+            }
             setState({ status: "ready", value });
             setPollCount((count) => count + 1);
           }
@@ -168,21 +215,31 @@ export function useWorksheetScaffolding({
   // Applying removes the chosen suggestion from the document, so focus moves to
   // the status banner rather than falling back to the top of the dialog.
   useEffect(() => {
-    if (applyingSuggestionId !== null) {
+    if (applyingSuggestion !== null) {
       statusRef.current?.focus();
     }
-  }, [applyingSuggestionId]);
+  }, [applyingSuggestion]);
 
   const applySuggestion = useCallback(
     (suggestionId: string) => {
       if (
         state.status !== "ready" ||
         jobIsBusy(state.value) ||
-        applyingSuggestionId !== null
+        applyingSuggestion !== null
       ) {
         return;
       }
-      setApplyingSuggestionId(suggestionId);
+      const suggestion = state.value.suggestions.find(
+        (candidate) => candidate.id === suggestionId,
+      );
+      if (suggestion === undefined) {
+        return;
+      }
+      setApplyingSuggestion({
+        id: suggestion.id,
+        listedSuggestions: state.value.suggestions,
+        targetBlockId: suggestion.targetBlockId,
+      });
       const workflowGeneration = workflowGenerationRef.current;
       void applyWorksheetScaffoldingSuggestion({
         adaptationId: state.value.adaptationId,
@@ -194,22 +251,25 @@ export function useWorksheetScaffolding({
           if (workflowGenerationRef.current !== workflowGeneration) {
             return;
           }
-          setApplyingSuggestionId(null);
+          if (!suggestionApplicationIsBusy(value)) {
+            setApplyingSuggestion(null);
+          }
           setState({ status: "ready", value });
         })
         .catch((error: unknown) => {
           if (workflowGenerationRef.current !== workflowGeneration) {
             return;
           }
-          setApplyingSuggestionId(null);
+          setApplyingSuggestion(null);
           failWith(error);
         });
     },
-    [apiBaseUrl, applyingSuggestionId, failWith, getTokenRef, state],
+    [apiBaseUrl, applyingSuggestion, failWith, getTokenRef, state],
   );
 
   const resume = useCallback(
     (adaptationId_: string) => {
+      setDocumentIsVisible(true);
       setState({ status: "loading" });
       const workflowGeneration = workflowGenerationRef.current;
       void getWorksheetScaffolding({
@@ -231,21 +291,27 @@ export function useWorksheetScaffolding({
     [apiBaseUrl, failWith, getTokenRef],
   );
 
-  const startFresh = useCallback((adaptationId_: string) => {
-    replacingRef.current = adaptationId_;
-    setRetryCount((count) => count + 1);
-  }, []);
+  const startFresh = useCallback(
+    (adaptationId_: string) => {
+      replacingRef.current = adaptationId_;
+      hideWorkflowDocument();
+      setRetryCount((count) => count + 1);
+    },
+    [hideWorkflowDocument],
+  );
 
   const tryAgain = useCallback(() => {
     if (state.status === "ready" && state.value.job?.status === "failed") {
       replacingRef.current = state.value.adaptationId;
     }
+    hideWorkflowDocument();
     setRetryCount((count) => count + 1);
-  }, [state]);
+  }, [hideWorkflowDocument, state]);
 
   return {
     applySuggestion,
-    applyingSuggestionId,
+    applyingSuggestion,
+    documentIsVisible,
     resume,
     startFresh,
     state,

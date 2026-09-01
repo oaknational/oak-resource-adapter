@@ -1,6 +1,7 @@
-import { resourceNodeLabel } from "./resource-node-label";
+import { resourceNodeLabel } from "../shared/resource-node-label";
 import type { TransformationCatalogueItem } from "./transformation-api";
 import type { TransformationWorkbench } from "./useTransformationWorkbench";
+import { readableIdentifier } from "../shared/readable-identifier";
 import styles from "../../page.module.css";
 
 type TransformationControlsProps = Pick<
@@ -33,6 +34,23 @@ function executionLabel(execution: TransformationCatalogueItem["execution"]): st
     case "text-model":
       return "Text model";
   }
+}
+
+function placementLabel(selected: TransformationCatalogueItem): string {
+  if (selected.target.scope === "document") {
+    return "Uses the whole worksheet";
+  }
+  return `At the selected ${selected.target.nodeTypes
+    .map((type) => readableIdentifier(type).toLowerCase())
+    .join(" or ")}`;
+}
+
+function outputLabel(selected: TransformationCatalogueItem): string {
+  return selected.outputs
+    .map((output) =>
+      output === "revised-resource" ? "Revised worksheet" : "Companion resource",
+    )
+    .join(" and ");
 }
 
 export function TransformationControls({
@@ -137,6 +155,63 @@ export function TransformationControls({
           <span>{executionLabel(selected.execution)}</span>
           <code>{selected.kind}</code>
         </p>
+      )}
+
+      {selected !== undefined && (
+        <section
+          aria-labelledby="selected-transformation-profile"
+          className={styles.transformationProfile}
+        >
+          <div className={styles.profileIntroduction}>
+            <p className={styles.profileKicker}>What this transformation does</p>
+            <h3 id="selected-transformation-profile">{selected.label}</h3>
+            <p>{selected.suggestion.description}</p>
+          </div>
+
+          <div className={styles.guidanceGrid}>
+            <div className={styles.useGuidance}>
+              <h4>Use when</h4>
+              <p>{selected.suggestion.useWhen}</p>
+            </div>
+            <div className={styles.avoidGuidance}>
+              <h4>Avoid when</h4>
+              <p>{selected.suggestion.avoidWhen}</p>
+            </div>
+          </div>
+
+          <div className={styles.expectedOutput}>
+            <div>
+              <p className={styles.profileKicker}>Expected pupil-facing result</p>
+              <h4>
+                {selectedLevel === undefined
+                  ? selected.label
+                  : `${readableIdentifier(selectedLevel.level)} support`}
+              </h4>
+              <p>{selectedLevel?.description ?? selected.suggestion.description}</p>
+            </div>
+            <dl className={styles.outputFacts}>
+              <div>
+                <dt>Placement</dt>
+                <dd>{placementLabel(selected)}</dd>
+              </div>
+              <div>
+                <dt>Produces</dt>
+                <dd>{outputLabel(selected)}</dd>
+              </div>
+            </dl>
+          </div>
+
+          {selected.barriers !== undefined && (
+            <div className={styles.barrierSummary}>
+              <h4>Barriers addressed</h4>
+              <ul className={styles.tagList}>
+                {selected.barriers.map((barrier) => (
+                  <li key={barrier}>{readableIdentifier(barrier)}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
       )}
 
       {unmetMaterial.length > 0 && (

@@ -8,7 +8,7 @@ import type {
   ResourceNode,
 } from "@oaknational/resource-document";
 
-import { insertBeneath } from "./place";
+import { insertBefore, insertBeneath } from "./place";
 
 let worksheet: ResourceDocument;
 let question: QuestionNode;
@@ -108,6 +108,43 @@ describe("insertBeneath", () => {
 
   it("refuses a target the document does not contain", () => {
     expect(() => insertBeneath(worksheet, scaffold, "not-a-node")).toThrow(
+      /not in the document's content/,
+    );
+  });
+});
+
+describe("insertBefore", () => {
+  it("places a contribution immediately before a top-level target", () => {
+    const placed = insertBefore(worksheet, scaffold, question.id);
+    const targetIndex = placed.content.findIndex((node) => node.id === question.id);
+
+    expect(placed.content[targetIndex - 1]).toBe(scaffold);
+  });
+
+  it("places a contribution before a nested target in the same parent", () => {
+    const document = {
+      ...worksheet,
+      content: [{ id: "section-1", type: "section" as const, children: [question] }],
+    };
+
+    const placed = insertBefore(document, scaffold, question.id);
+    const section = placed.content[0];
+
+    expect(section?.type).toBe("section");
+    expect(section?.type === "section" ? section.children : []).toEqual([
+      scaffold,
+      question,
+    ]);
+  });
+
+  it("leaves the document it was given untouched", () => {
+    insertBefore(worksheet, scaffold, question.id);
+
+    expect(getResourceNodeById(worksheet, "scaffold-1")).toBeUndefined();
+  });
+
+  it("refuses a target the document does not contain", () => {
+    expect(() => insertBefore(worksheet, scaffold, "not-a-node")).toThrow(
       /not in the document's content/,
     );
   });

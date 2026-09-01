@@ -6,7 +6,7 @@ import {
   contributionExtensions,
   definePreparedContribution,
 } from "../../contributions/contribution";
-import { insertBeneath } from "../../contributions/place";
+import { insertAtStartOfBody } from "../../contributions/place";
 import type {
   ContributionContext,
   TransformationContribution,
@@ -15,7 +15,13 @@ import type {
 const LEAD = "Look back at the lesson so far and consider these questions:";
 
 const promptQuestionsSchema = z.strictObject({
-  questions: z.array(z.string().trim().min(1).max(200)).min(1).max(3),
+  questions: z
+    .array(z.string().trim().min(1).max(200))
+    .min(1)
+    .max(3)
+    .describe(
+      "Pupil-facing recall questions supporting the worksheet as a whole, in use order.",
+    ),
 });
 
 function text(value: string): InlineContent {
@@ -67,10 +73,9 @@ export const promptQuestionsContribution: TransformationContribution = {
       name: "prompt_questions",
       schema: promptQuestionsSchema,
       apply: (output) => [
-        insertBeneath(
+        insertAtStartOfBody(
           context.document,
           promptQuestions(context, output.questions),
-          context.targetNode?.id,
         ),
       ],
     }),

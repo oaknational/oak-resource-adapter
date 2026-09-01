@@ -16,6 +16,12 @@ export function PrimaryNavigation({
         Lesson scenarios
       </Link>
       <Link
+        aria-current={section === "capabilities" ? "page" : undefined}
+        href={`/?view=capabilities&lesson=${lessonId}`}
+      >
+        Capabilities
+      </Link>
+      <Link
         aria-current={section === "transformations" ? "page" : undefined}
         href={`/?view=transformations&lesson=${lessonId}`}
       >

@@ -1,6 +1,7 @@
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { worksheetScaffoldingCapability } from "../capabilities/definitions/worksheet-scaffolding";
 import type { QuestionNode, ResourceDocument } from "@oaknational/resource-document";
 
 const curriculum = vi.hoisted(() => ({ fetch: vi.fn() }));
@@ -60,6 +61,16 @@ describe("getDevTransformationCatalogue", () => {
 
     expect(catalogue.transformations.length).toBeGreaterThan(0);
     expect(catalogue.material.map(({ key }) => key)).toContain("lesson.keywords");
+  });
+
+  it("shows which transformations each capability configures", () => {
+    expect(getDevTransformationCatalogue().capabilities).toContainEqual({
+      id: worksheetScaffoldingCapability.id,
+      label: worksheetScaffoldingCapability.label,
+      resourceType: worksheetScaffoldingCapability.resourceType,
+      suggestionFlowId: worksheetScaffoldingCapability.suggestionFlowId,
+      transformationKinds: worksheetScaffoldingCapability.transformationKinds,
+    });
   });
 });
 

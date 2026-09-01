@@ -1,5 +1,6 @@
 "use client";
 
+import { CapabilitiesView } from "./capabilities";
 import { EdgeCaseView } from "./edge-cases";
 import { LessonScenarioView } from "./lessons";
 import { PrimaryNavigation, SiteHeader } from "./shared";
@@ -26,6 +27,7 @@ export function HarnessPageClient({
       <SiteHeader apiHealthState={apiHealthState} />
       <PrimaryNavigation lessonId={lessonId} section={view.section} />
       <main className={styles.main} id="main-content">
+        {view.section === "capabilities" && <CapabilitiesView lessonId={lessonId} />}
         {view.section === "lessons" && (
           <LessonScenarioView
             apiBaseUrl={apiBaseUrl}
@@ -43,12 +45,14 @@ export function HarnessPageClient({
         {view.section === "smoke-tests" && <SmokeTestsView />}
         {view.section === "transformations" && (
           <TransformationsView
+            initialKind={view.initialSelection}
             scenario={view.scenario}
             scenarioNavigation={view.navigation}
           />
         )}
         {view.section === "suggestions" && (
           <SuggestionsView
+            initialFlowId={view.initialSelection}
             scenario={view.scenario}
             scenarioNavigation={view.navigation}
           />

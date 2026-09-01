@@ -52,6 +52,15 @@ function respond(body: unknown, status = 200) {
 describe("transformation harness API", () => {
   it("reads the serialisable registry catalogue", async () => {
     respond({
+      capabilities: [
+        {
+          id: "worksheetScaffolding",
+          label: "Scaffold practice tasks",
+          resourceType: "worksheet",
+          suggestionFlowId: "worksheet-scaffolding",
+          transformationKinds: ["scaffold-add-word-bank"],
+        },
+      ],
       material: [
         {
           available: true,
@@ -75,6 +84,11 @@ describe("transformation harness API", () => {
           ],
           outputs: ["revised-resource"],
           status: "active",
+          suggestion: {
+            avoidWhen: "The question already supplies the vocabulary.",
+            description: "Adds vocabulary for one question.",
+            useWhen: "Relevant vocabulary needs recalling.",
+          },
           supportLevels: [
             { level: "low", description: "Words only." },
             { level: "mid", description: "Words and definitions." },
@@ -85,8 +99,20 @@ describe("transformation harness API", () => {
     });
 
     await expect(fetchTransformationCatalogue()).resolves.toMatchObject({
+      capabilities: [
+        {
+          id: "worksheetScaffolding",
+          transformationKinds: ["scaffold-add-word-bank"],
+        },
+      ],
       material: [{ key: "lesson.keywords", promptHeading: "LESSON KEYWORDS" }],
-      transformations: [{ kind: "scaffold-add-word-bank", status: "active" }],
+      transformations: [
+        {
+          kind: "scaffold-add-word-bank",
+          status: "active",
+          suggestion: { description: "Adds vocabulary for one question." },
+        },
+      ],
     });
   });
 
