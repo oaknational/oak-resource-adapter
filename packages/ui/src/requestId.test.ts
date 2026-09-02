@@ -18,7 +18,7 @@ describe("newRequestId", () => {
     expect(first).not.toBe(second);
   });
 
-  it("still returns a v4 identifier where randomUUID is unavailable", () => {
+  it("falls back to getRandomValues where randomUUID is unavailable", () => {
     const { getRandomValues } = globalThis.crypto;
     vi.stubGlobal("crypto", {
       getRandomValues: getRandomValues.bind(globalThis.crypto),
@@ -28,5 +28,22 @@ describe("newRequestId", () => {
 
     expect(identifier).toMatch(UUID_V4);
     expect(identifier).not.toBe(newRequestId());
+  });
+
+  // A handler must not throw just because the runtime has no Web Crypto at all,
+  // which is how some test environments are set up.
+  it("still returns a v4 identifier where crypto is absent entirely", () => {
+    vi.stubGlobal("crypto", undefined);
+
+    const identifier = newRequestId();
+
+    expect(identifier).toMatch(UUID_V4);
+    expect(identifier).not.toBe(newRequestId());
+  });
+
+  it("does not throw where crypto exists but offers neither function", () => {
+    vi.stubGlobal("crypto", {});
+
+    expect(newRequestId()).toMatch(UUID_V4);
   });
 });
