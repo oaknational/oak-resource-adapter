@@ -43,7 +43,7 @@ function respond(body: unknown, status = 200) {
 const flow = {
   capabilityId: "worksheetScaffolding",
   id: "worksheet-scaffolding",
-  label: "Scaffold practice tasks",
+  label: "Add extra scaffolding",
   maxSuggestions: 5,
   role: "worksheet-scaffolding-suggester",
   transformationKinds: ["scaffold-add-word-bank"],

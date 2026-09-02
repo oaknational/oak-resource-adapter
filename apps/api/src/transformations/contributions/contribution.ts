@@ -1,12 +1,14 @@
-import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
+import {
+  CONTRIBUTION_EXTENSION_KEY,
+  type ResourceDocument,
+  type ResourceNode,
+} from "@oaknational/resource-document";
 import type { z } from "zod";
 
 import type { OakMaterial } from "../../oak-material/material";
 import type { SupportLevel } from "../support-level";
 import type { TransformationDocuments, TransformationParams } from "../types";
 
-/** Namespaced so a contribution stays identifiable in an exported document. */
-export const CONTRIBUTION_EXTENSION_KEY = "oak:contribution";
 export const TRANSFORMATION_KIND_EXTENSION_KEY = "oak:transformation-kind";
 
 export type ContributionContext = Readonly<{

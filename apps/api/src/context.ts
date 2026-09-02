@@ -8,9 +8,14 @@ import { getCapabilities, hasCapabilities } from "./capabilities/service";
 import { getFeatureFlagService } from "./feature-flags/service";
 import { getSourceDocument } from "./source-documents/service";
 import {
+  acceptWorksheetScaffoldingReview,
   enqueueSuggestionApplication,
+  enqueueWorksheetScaffoldingRetry,
   getWorksheetScaffoldingState,
   openWorksheetScaffolding,
+  enqueueWorksheetScaffoldingRemoval,
+  enqueueWorksheetScaffoldingDismissal,
+  undoWorksheetScaffoldingReview,
 } from "./worksheet-scaffolding/service";
 import type { ResourceAdapterApiContextHost } from "@oaknational/resource-adapter-contracts/server";
 import type { ResourceAdapterApiContextInternal } from "@oaknational/resource-adapter-contracts/internal/server";
@@ -42,10 +47,15 @@ export async function createContextInternal(
     featureFlags: getFeatureFlagService(),
     sourceDocuments: { getSourceDocument },
     worksheetScaffolding: {
+      accept: (input, target) => acceptWorksheetScaffoldingReview(input, target),
       applySuggestion: (input, target) => enqueueSuggestionApplication(input, target),
       get: ({ adaptationId }, target) =>
         getWorksheetScaffoldingState(adaptationId, target),
       open: (request, target) => openWorksheetScaffolding(request, target),
+      remove: (input, target) => enqueueWorksheetScaffoldingRemoval(input, target),
+      retry: (input, target) => enqueueWorksheetScaffoldingRetry(input, target),
+      dismiss: (input, target) => enqueueWorksheetScaffoldingDismissal(input, target),
+      undo: (input, target) => undoWorksheetScaffoldingReview(input, target),
     },
   };
 }

@@ -77,9 +77,20 @@ describe("chunkTasksContribution", () => {
     ).toBe(false);
   });
 
+  it("rejects a step containing only a number", () => {
+    const { schema } = chunkTasksContribution.prepare(context());
+
+    expect(schema.safeParse({ steps: ["1.", "2. Write the scene"] }).success).toBe(
+      false,
+    );
+  });
+
   it("places attributed numbered steps beneath the task before its response space", () => {
     const prepared = chunkTasksContribution.prepare(context());
-    const [document] = prepared.apply({ steps: ["Plan the scene", "Write the scene"] });
+    const output = prepared.schema.parse({
+      steps: ["1. Plan the scene", "Step 2: Write the scene"],
+    });
+    const [document] = prepared.apply(output);
     const transformedQuestion = document.content.find(
       (node): node is QuestionNode => node.id === question.id,
     );

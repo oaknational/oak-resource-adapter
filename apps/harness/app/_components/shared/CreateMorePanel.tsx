@@ -21,16 +21,14 @@ export function CreateMorePanel<TCapability extends ResourceAdapterCapabilityOpt
   onRetry: () => void;
   state: CapabilitiesState;
 }>) {
+  // Bare on purpose. The OWA slot renders this panel to show only what OWA itself
+  // renders, so any harness framing belongs to the page that wants it.
   if (capabilities.length > 0) {
     return (
-      <section aria-labelledby="create-more-heading" className={styles.createMore}>
-        <h2 id="create-more-heading">Create more with Aila</h2>
-        <p>Use AI to adapt this lesson&apos;s available resources.</p>
-        <ResourceAdapterButton
-          capabilities={capabilities}
-          onSelectCapability={onSelectCapability}
-        />
-      </section>
+      <ResourceAdapterButton
+        capabilities={capabilities}
+        onSelectCapability={onSelectCapability}
+      />
     );
   }
 

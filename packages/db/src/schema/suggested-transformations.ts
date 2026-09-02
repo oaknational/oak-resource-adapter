@@ -41,9 +41,15 @@ export const suggestedTransformations = resourceAdapterSchema.table(
     targetBlockId: text("target_block_id"),
     /** The attempt that generated the offer, for tracing it to its model call. */
     transformationAttemptId: uuid("transformation_attempt_id").notNull(),
+    /**
+     * Rises each time an acceptance of this offer is undone. Job idempotency keys
+     * include it, so re-accepting an offer is a new request rather than a replay.
+     */
+    undoCount: integer("undo_count").notNull().default(0),
   },
   (table) => [
     check("suggested_transformations_position_check", sql`${table.position} >= 0`),
+    check("suggested_transformations_undo_count_check", sql`${table.undoCount} >= 0`),
     unique("suggested_transformations_attempt_position_key").on(
       table.transformationAttemptId,
       table.position,

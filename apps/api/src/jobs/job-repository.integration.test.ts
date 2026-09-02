@@ -8,6 +8,7 @@ import {
   claimJob,
   completeJob,
   createOrGetJob,
+  ConcurrencyConflictError,
   failJob,
   getJob,
   IdempotencyConflictError,
@@ -57,7 +58,7 @@ describeWithDatabase("job repository integration", () => {
     ).rejects.toBeInstanceOf(IdempotencyConflictError);
   });
 
-  it("coalesces active jobs by concurrency key and releases the key on failure", async () => {
+  it("rejects a different active request and releases its concurrency key on failure", async () => {
     const concurrencyKey = `integration-${randomUUID()}`;
     const first = await createOrGetJob({
       concurrencyKey,
@@ -67,16 +68,14 @@ describeWithDatabase("job repository integration", () => {
     });
     createdJobIds.push(first.job.id);
 
-    const coalesced = await createOrGetJob({
-      concurrencyKey,
-      idempotencyKey: `integration-${randomUUID()}`,
-      input: { message: "second" },
-      kind: "test.echo",
-    });
-    expect(coalesced).toMatchObject({
-      created: false,
-      job: { id: first.job.id },
-    });
+    await expect(
+      createOrGetJob({
+        concurrencyKey,
+        idempotencyKey: `integration-${randomUUID()}`,
+        input: { message: "second" },
+        kind: "test.echo",
+      }),
+    ).rejects.toBeInstanceOf(ConcurrencyConflictError);
 
     await failJob(first.job.id, null, {
       code: "test_failure",

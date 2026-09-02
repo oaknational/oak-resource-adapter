@@ -4,10 +4,16 @@ import type { JobJsonValue } from "./domain";
 import { testEchoJob } from "./test-echo/definition";
 import { applySuggestionJob } from "./suggestions/apply-definition";
 import { generateSuggestionsJob } from "./suggestions/generate-definition";
+import { removeTransformationJob } from "./transformations/remove-definition";
+import { retryTransformationJob } from "./transformations/retry-definition";
+import { dismissTransformationsJob } from "./transformations/dismiss-definition";
 
 export const jobDefinitions = {
   [applySuggestionJob.kind]: applySuggestionJob,
   [generateSuggestionsJob.kind]: generateSuggestionsJob,
+  [removeTransformationJob.kind]: removeTransformationJob,
+  [retryTransformationJob.kind]: retryTransformationJob,
+  [dismissTransformationsJob.kind]: dismissTransformationsJob,
   [testEchoJob.kind]: testEchoJob,
 } as const;
 

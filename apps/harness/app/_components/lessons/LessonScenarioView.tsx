@@ -70,13 +70,18 @@ export function LessonScenarioView({
         <h1>{lesson.title}</h1>
         <p>{scenario.description}</p>
 
-        <CreateMorePanel
-          capabilities={capabilities}
-          hasAvailableCapabilities={hasAvailableCapabilities}
-          onSelectCapability={selectCapability}
-          onRetry={reload}
-          state={state}
-        />
+        {/* Only the launcher gets the framing; the other states bring their own. */}
+        <div
+          className={capabilities.length > 0 ? styles.lessonAdapterAction : undefined}
+        >
+          <CreateMorePanel
+            capabilities={capabilities}
+            hasAvailableCapabilities={hasAvailableCapabilities}
+            onSelectCapability={selectCapability}
+            onRetry={reload}
+            state={state}
+          />
+        </div>
         <LessonMetadata scenario={scenario} />
         <WorksheetPanel scenario={scenario} />
       </article>

@@ -29,6 +29,8 @@ export const adaptations = resourceAdapterSchema.table(
     lessonSlug: text("lesson_slug"),
     /** Optional launch context. Null for work outside an Oak programme. */
     programmeSlug: text("programme_slug"),
+    /** Deduplicates an explicit request to replace a previous adaptation. */
+    replacementRequestId: uuid("replacement_request_id").unique(),
     updatedAt: timestamp("updated_at", { precision: 3, withTimezone: true })
       .notNull()
       .defaultNow()
