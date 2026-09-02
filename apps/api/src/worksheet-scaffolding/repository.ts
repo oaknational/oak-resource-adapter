@@ -646,12 +646,11 @@ export async function replaceAdaptationWithSourceDocument(input: {
           ),
         )
         .limit(1);
-      return replacement === undefined || replacement.resourceDocumentId === null
-        ? null
-        : {
-            adaptationId: replacement.adaptationId,
-            resourceDocumentId: replacement.resourceDocumentId,
-          };
+      if (replacement === undefined) {
+        return null;
+      }
+      const { adaptationId, resourceDocumentId } = replacement;
+      return resourceDocumentId === null ? null : { adaptationId, resourceDocumentId };
     };
 
     const replay = await findReplacement();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import {
   OakFlex,
   OakHeading,
@@ -341,6 +341,30 @@ function readyStatus(
   return null;
 }
 
+function WorkflowStatusBanner({
+  cta,
+  status,
+}: Readonly<{ cta: ReactNode; status: WorkflowStatus }>) {
+  if (status.tone === "working") {
+    return (
+      <LoadingStatusBanner message={status.message} title={status.title ?? "Working"} />
+    );
+  }
+
+  return (
+    <OakInlineBanner
+      isOpen
+      cta={cta}
+      icon="ai"
+      message={status.message}
+      {...(status.title === undefined ? {} : { title: status.title })}
+      titleTag="h3"
+      type={status.tone}
+      variant="regular"
+    />
+  );
+}
+
 function PendingReviewControls({
   disabled,
   onAccept,
@@ -635,35 +659,20 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
       {announcement(status)}
       {status !== null && (
         <StickyWorkflowStatus data-testid="worksheet-scaffolding-status">
-          {status.tone === "working" ? (
-            <LoadingStatusBanner
-              message={status.message}
-              title={status.title ?? "Working"}
-            />
-          ) : (
-            <OakInlineBanner
-              isOpen
-              {...(addedCount === 0
-                ? {}
-                : {
-                    cta: (
-                      <OakTertiaryButton
-                        disabled={isWorking}
-                        iconName="trash"
-                        onClick={() => startFresh(state.value.adaptationId)}
-                      >
-                        Remove all scaffolds
-                      </OakTertiaryButton>
-                    ),
-                  })}
-              icon="ai"
-              message={status.message}
-              {...(status.title === undefined ? {} : { title: status.title })}
-              titleTag="h3"
-              type={status.tone}
-              variant="regular"
-            />
-          )}
+          <WorkflowStatusBanner
+            cta={
+              addedCount === 0 ? undefined : (
+                <OakTertiaryButton
+                  disabled={isWorking}
+                  iconName="trash"
+                  onClick={() => startFresh(state.value.adaptationId)}
+                >
+                  Remove all scaffolds
+                </OakTertiaryButton>
+              )
+            }
+            status={status}
+          />
         </StickyWorkflowStatus>
       )}
       {failedJob !== undefined && (

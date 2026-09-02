@@ -1,7 +1,6 @@
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import type { Job } from "@oaknational/resource-adapter-db";
 import type { ResourceDocument } from "@oaknational/resource-document";
-import type * as scaffoldingRepository from "./repository";
 import type {
   AcceptedSuggestion,
   PendingReview,
@@ -281,16 +280,16 @@ export function dismissJob(
   );
 }
 
+type ScaffoldingRepository = typeof import("./repository");
+
 type AsyncRepositoryFunction = (...args: never[]) => Promise<unknown>;
 
 type RepositoryResults = {
   [
-    K in keyof typeof scaffoldingRepository as (typeof scaffoldingRepository)[K] extends AsyncRepositoryFunction
+    K in keyof ScaffoldingRepository as ScaffoldingRepository[K] extends AsyncRepositoryFunction
       ? K
       : never
-  ]: Awaited<
-    ReturnType<Extract<(typeof scaffoldingRepository)[K], AsyncRepositoryFunction>>
-  >;
+  ]: Awaited<ReturnType<Extract<ScaffoldingRepository[K], AsyncRepositoryFunction>>>;
 };
 
 /**

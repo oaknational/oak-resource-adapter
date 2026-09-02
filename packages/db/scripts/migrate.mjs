@@ -38,6 +38,7 @@ if (!Number.isFinite(LOCK_WAIT_SECONDS) || LOCK_WAIT_SECONDS < 0) {
  */
 const MIGRATIONS_SCHEMA = "drizzle";
 const MIGRATIONS_TABLE = "__drizzle_migrations";
+const MIGRATIONS_RELATION = `${MIGRATIONS_SCHEMA}.${MIGRATIONS_TABLE}`;
 
 /**
  * Caps how long a statement waits for a table lock. Without it, DDL queued behind
@@ -87,7 +88,7 @@ async function acquireMigrationLock() {
 /** Zero before the first migration, when the migrator's own table does not exist. */
 async function appliedMigrationCount() {
   const { rows: journal } = await database.execute(
-    sql`SELECT to_regclass(${`${MIGRATIONS_SCHEMA}.${MIGRATIONS_TABLE}`}) IS NOT NULL AS present`,
+    sql`SELECT to_regclass(${MIGRATIONS_RELATION}) IS NOT NULL AS present`,
   );
   if (journal[0]?.present !== true) {
     return 0;
