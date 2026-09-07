@@ -8,6 +8,7 @@ import type {
   InlineContent,
   ResourceDocument,
   ResourceNode,
+  TableCell,
 } from "@oaknational/resource-document";
 
 import type { OakMaterial } from "../oak-material/material";
@@ -52,6 +53,17 @@ function inlineText(content: InlineContent | undefined): string {
     .join(" ");
 }
 
+function cellText(cell: TableCell): string {
+  switch (cell.kind) {
+    case "content":
+      return inlineText(cell.content);
+    case "answer":
+      return "[answer blank]";
+    case "empty":
+      return "[empty]";
+  }
+}
+
 function nodeLines(node: ResourceNode, depth: number): string[] {
   const indent = "  ".repeat(depth);
   const header = `${indent}<${node.type} id=${JSON.stringify(node.id)}>`;
@@ -90,6 +102,17 @@ function nodeLines(node: ResourceNode, depth: number): string[] {
       const caption = node.caption === undefined ? "" : ` ${inlineText(node.caption)}`;
       return [`${header} [asset ${node.assetId}]${caption}`];
     }
+    case "table":
+      return [
+        `${header} [${node.role}]`,
+        ...(node.header === undefined ? [] : [node.header.map(cellText).join(" | ")]),
+        ...node.rows.map((row) => row.map(cellText).join(" | ")),
+      ];
+    case "codeBlock":
+      return [
+        `${header}${node.language === undefined ? "" : ` [${node.language}]`}`,
+        node.source,
+      ];
     case "unsupported":
       return [`${header} ${node.accessibleText ?? node.description}`];
   }

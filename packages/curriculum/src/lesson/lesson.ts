@@ -63,3 +63,16 @@ export type Lesson = Readonly<{
 export interface LessonRepository {
   fetch(identity: LessonIdentity): Promise<Lesson>;
 }
+
+export const ADAPTABLE_RESTRICTION_LEVELS: readonly RestrictionLevel[] = [
+  "ogl-compatible",
+  "ogl-equivalent",
+];
+
+export function hasAdaptableRights(
+  restrictions: readonly CategoryMaxRestriction[],
+): boolean {
+  return restrictions.every(({ maxLevel }) =>
+    ADAPTABLE_RESTRICTION_LEVELS.includes(maxLevel),
+  );
+}

@@ -449,3 +449,14 @@ describe("API routes", () => {
     ]);
   });
 });
+
+vi.mock("@oaknational/resource-adapter-curriculum", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("@oaknational/resource-adapter-curriculum")
+  >()),
+  oakCurriculumConfigFromEnv: () => ({
+    endpoint: "https://curriculum.test",
+    apiKey: "test",
+  }),
+  createOakLessonRestrictionReader: () => async () => [],
+}));

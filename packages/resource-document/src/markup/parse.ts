@@ -1,3 +1,8 @@
+import type {
+  ResourceDirectiveName,
+  ResourceNodeType,
+  resourceVocabulary,
+} from "../vocabulary.js";
 import { ResourceDocumentParseError } from "../errors.js";
 import { parseResourceDocument } from "../parse.js";
 import {
@@ -17,6 +22,8 @@ import type {
   ResourceDocument,
   ResourceDocumentDiagnostic,
   ResourceNode,
+  TableCell,
+  TableNode,
 } from "../schema/types.js";
 import { parseInlineContent } from "./inline.js";
 import type { ResourceMarkupParseResult } from "./types.js";
@@ -219,17 +226,21 @@ function parseDirective(
     throw invalidMarkup("Invalid directive opening.");
   }
 
-  let depth = 1;
+  const stack = [opening[1]];
   let closingIndex = startIndex + 1;
   for (; closingIndex < lines.length; closingIndex += 1) {
     const line = lines[closingIndex];
     if (line === ":::") {
-      depth -= 1;
-      if (depth === 0) {
+      stack.pop();
+      if (stack.length === 0) {
         break;
       }
-    } else if (line && directiveOpenPattern.test(line)) {
-      depth += 1;
+    } else if (
+      stack.at(-1) !== "oak-code-block" &&
+      line &&
+      directiveOpenPattern.test(line)
+    ) {
+      stack.push(line.match(directiveOpenPattern)?.[1] ?? "");
     }
   }
 
@@ -541,16 +552,28 @@ function registerAsset(state: ParserState, asset: Asset): void {
   state.assets.set(asset.id, asset);
 }
 
-type DirectiveHandler = (
+type DirectiveHandler<Node extends ResourceNode | undefined> = (
   directive: ParsedDirective,
   state: ParserState,
-) => ResourceNode | undefined;
+) => Node;
+
+type DirectiveHandlers = {
+  [
+    Type in ResourceNodeType as (typeof resourceVocabulary.nodes)[Type]["directives"][number]
+  ]: DirectiveHandler<Extract<ResourceNode, { type: Type }>>;
+} & {
+  [
+    Name in typeof resourceVocabulary.annotations.answer.directive
+  ]: DirectiveHandler<undefined>;
+};
 
 function hasContent(inner: readonly string[]): boolean {
   return inner.some((line) => line.trim().length > 0);
 }
 
-function calloutDirective(role: CalloutNode["role"] | undefined): DirectiveHandler {
+function calloutDirective(
+  role: CalloutNode["role"] | undefined,
+): DirectiveHandler<CalloutNode> {
   return ({ attributes, inner, name }) => {
     assertAttributes(
       attributes,
@@ -566,7 +589,62 @@ function calloutDirective(role: CalloutNode["role"] | undefined): DirectiveHandl
   };
 }
 
-const directiveHandlers: Record<string, DirectiveHandler> = {
+function splitRowCells(line: string): string[] {
+  const trimmed = line.trim();
+  const cells =
+    trimmed.length > 1 && trimmed.startsWith("|") && trimmed.endsWith("|")
+      ? trimmed.slice(1, -1)
+      : trimmed;
+  return cells.split("|").map((cell) => cell.trim());
+}
+
+function parseTableCell(cell: string): TableCell {
+  switch (cell) {
+    case "?":
+      return { kind: "answer" };
+    case "~":
+      return { kind: "empty" };
+    case "":
+      throw invalidMarkup("Use ? for an answer blank or ~ for an empty table cell.");
+    default:
+      return { kind: "content", content: parseInlineContent(cell) };
+  }
+}
+
+function tableDirective(role?: string): DirectiveHandler<TableNode> {
+  return ({ attributes, inner, name }) => {
+    assertAttributes(attributes, [...commonAttributeNames, "role", "header"], name);
+    const hasHeader =
+      attributes.header === undefined
+        ? true
+        : parseBoolean(attributes.header, `${name} header`);
+    const rows = inner
+      .filter((line) => line.trim().length > 0)
+      .map((line) => splitRowCells(line).map(parseTableCell));
+    const header = hasHeader ? rows.shift() : undefined;
+    return {
+      ...commonNodeFields(attributes, name),
+      type: "table",
+      role: attributes.role ?? role ?? "table",
+      ...(header === undefined ? {} : { header }),
+      rows,
+    };
+  };
+}
+
+const directiveHandlers: DirectiveHandlers = {
+  "oak-table": tableDirective(),
+  "oak-ion-table": tableDirective("ions"),
+  "oak-rhythm-grid": tableDirective("rhythm"),
+  "oak-code-block": ({ attributes, inner, name }) => {
+    assertAttributes(attributes, [...commonAttributeNames, "language"], name);
+    return {
+      ...commonNodeFields(attributes, name),
+      type: "codeBlock",
+      source: inner.join("\n"),
+      ...(attributes.language === undefined ? {} : { language: attributes.language }),
+    };
+  },
   "oak-answer": (directive, state) => {
     const { attributes, inner, name } = directive;
     assertAttributes(attributes, ["id", "target", "placement", "extensions"], name);
@@ -715,7 +793,9 @@ function directiveToNode(
   directive: ParsedDirective,
   state: ParserState,
 ): ResourceNode | undefined {
-  const handler = directiveHandlers[directive.name];
+  const handler = Object.hasOwn(directiveHandlers, directive.name)
+    ? directiveHandlers[directive.name as ResourceDirectiveName]
+    : undefined;
   return handler
     ? handler(directive, state)
     : preserveUnknownDirective(directive, state);

@@ -18,3 +18,6 @@ export {
   contributionIdsInDocument,
   CONTRIBUTION_EXTENSION_KEY,
 } from "./contributions.js";
+
+export { resourceVocabulary } from "./vocabulary.js";
+export type { ResourceNodeType, ResourceDirectiveName } from "./vocabulary.js";

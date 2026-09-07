@@ -3,7 +3,11 @@ import type { ResourceAdapterSourceDocumentRequest } from "@oaknational/resource
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 import type { ResourceDocument } from "@oaknational/resource-document";
 
-import { resolveEligibility, type EligibilityResolver } from "../capabilities/service";
+import {
+  isCapabilityEligible,
+  resolveEligibility,
+  type EligibilityResolver,
+} from "../capabilities/service";
 import { capabilityDefinitions } from "../capabilities/registry";
 import type { CapabilityDefinition } from "../capabilities/types";
 
@@ -17,10 +21,8 @@ type SourceDocumentReader = Readonly<{
 }>;
 
 /**
- * Resolves only documents belonging to capabilities that are currently
- * eligible for the authenticated lesson context. The teacher argument makes
- * the authentication boundary explicit; document ownership is not
- * teacher-specific.
+ * Source documents require authentication but are not teacher-owned.
+ * Eligibility is checked at source entry, not on stored adaptations.
  */
 export async function getSourceDocument(
   { capabilityId, lesson }: ResourceAdapterSourceDocumentRequest,
@@ -31,7 +33,7 @@ export async function getSourceDocument(
   const definitions: Record<string, CapabilityDefinition> = capabilityDefinitions;
   const definition = definitions[capabilityId];
 
-  if (!definition?.isEligible(await resolveContext(lesson))) {
+  if (!definition || !isCapabilityEligible(definition, await resolveContext(lesson))) {
     return null;
   }
 

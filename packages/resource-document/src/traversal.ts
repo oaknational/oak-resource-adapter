@@ -8,7 +8,7 @@ function* walkNodes(nodes: readonly ResourceNode[]): Generator<ResourceNode> {
   for (const node of nodes) {
     yield node;
 
-    if (node.type === "section" || node.type === "question") {
+    if ("children" in node) {
       yield* walkNodes(node.children);
     }
   }
@@ -67,7 +67,7 @@ function mapNodes(
   }
 
   for (const [position, node] of nodes.entries()) {
-    if (node.type !== "section" && node.type !== "question") {
+    if (!("children" in node)) {
       continue;
     }
     const children = mapNodes(node.children, id, update);
@@ -113,7 +113,7 @@ function keepNodes(
     if (!shouldKeep(node)) {
       continue;
     }
-    if (node.type === "section" || node.type === "question") {
+    if ("children" in node) {
       kept.push({ ...node, children: keepNodes(node.children, shouldKeep) });
     } else {
       kept.push(node);

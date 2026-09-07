@@ -15,6 +15,8 @@ import type {
   ResourceDocument,
   ResourceNode,
   SourceMap,
+  TableCell,
+  TableNode,
   WorksheetDocument,
   WorksheetMetadata,
 } from "./types.js";
@@ -94,8 +96,40 @@ const commonNodeShape = {
   extensions: extensionsSchema.optional(),
 };
 
+const tableCellSchema = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("content"), content: inlineContentSchema }),
+  z.strictObject({ kind: z.literal("answer") }),
+  z.strictObject({ kind: z.literal("empty") }),
+]);
+const tableRowSchema = z.array(tableCellSchema).min(1);
+
+export const tableNodeSchema = z
+  .strictObject({
+    ...commonNodeShape,
+    type: z.literal("table"),
+    role: nonEmptyStringSchema,
+    header: tableRowSchema.optional(),
+    rows: z.array(tableRowSchema).min(1),
+  })
+  .refine(
+    (table) =>
+      table.rows.every(
+        (row) => row.length === (table.header?.length ?? table.rows[0]?.length),
+      ),
+    {
+      message: "Table rows and header must have the same number of cells",
+    },
+  );
+
 export const resourceNodeSchema: z.ZodType<ResourceNode> = z.lazy(() =>
   z.discriminatedUnion("type", [
+    tableNodeSchema,
+    z.strictObject({
+      ...commonNodeShape,
+      type: z.literal("codeBlock"),
+      language: nonEmptyStringSchema.optional(),
+      source: z.string(),
+    }),
     z.strictObject({
       ...commonNodeShape,
       type: z.literal("section"),
@@ -298,6 +332,8 @@ type Expect<T extends true> = T;
  * the schema that validates it. Changing one without the other fails here.
  */
 export type SchemaTypeAssertions = [
+  Expect<Exact<TableCell, z.output<typeof tableCellSchema>>>,
+  Expect<Exact<TableNode, z.output<typeof tableNodeSchema>>>,
   Expect<Exact<NamespacedExtensions, z.output<typeof extensionsSchema>>>,
   Expect<Exact<InlineRun, z.output<typeof inlineRunSchema>>>,
   Expect<Exact<InlineContent, z.output<typeof inlineContentSchema>>>,

@@ -1,4 +1,7 @@
 export type {
+  TableNode,
+  TableCell,
+  CodeBlockNode,
   AnswerAnnotation,
   AnswerPlacement,
   Asset,

@@ -1,4 +1,20 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { createOakLessonRestrictionReader } from "@oaknational/resource-adapter-curriculum";
+
+const { readRestrictions } = vi.hoisted(() => ({
+  readRestrictions: vi.fn<ReturnType<typeof createOakLessonRestrictionReader>>(),
+}));
+
+vi.mock("@oaknational/resource-adapter-curriculum", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("@oaknational/resource-adapter-curriculum")
+  >()),
+  oakCurriculumConfigFromEnv: () => ({
+    endpoint: "https://curriculum.test",
+    apiKey: "test",
+  }),
+  createOakLessonRestrictionReader: () => readRestrictions,
+}));
 
 import {
   evaluateCapabilities,
@@ -9,6 +25,10 @@ import {
 } from "./service";
 import { isAdaptable, type CapabilityDefinition } from "./types";
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
+
+beforeEach(() => {
+  readRestrictions.mockReset().mockResolvedValue([]);
+});
 
 const worksheetLesson: LessonContext = {
   lessonSlug: "adopting-different-perspectives",
@@ -29,7 +49,12 @@ function resolverFor(
   extractedResourceTypes: readonly string[],
 ): EligibilityResolver {
   return (lesson) =>
-    Promise.resolve({ lesson, originalFileResourceTypes, extractedResourceTypes });
+    Promise.resolve({
+      lesson,
+      maxRestrictions: [],
+      originalFileResourceTypes,
+      extractedResourceTypes,
+    });
 }
 
 const worksheetGatedCapability: CapabilityDefinition = {
@@ -100,8 +125,34 @@ describe("getCapabilities", () => {
 });
 
 describe("resolveEligibility", () => {
+  it.each(["restricted", "highly-restricted"] as const)(
+    "uses Oak's %s result in both capability endpoints",
+    async (maxLevel) => {
+      readRestrictions.mockResolvedValue([{ category: "works", maxLevel }]);
+
+      await expect(getCapabilities(worksheetLesson)).resolves.toEqual({
+        capabilities: [],
+      });
+      await expect(hasCapabilities(worksheetLesson)).resolves.toEqual({
+        available: false,
+      });
+      expect(readRestrictions).toHaveBeenCalledTimes(2);
+      expect(readRestrictions).toHaveBeenNthCalledWith(1, worksheetLesson);
+      expect(readRestrictions).toHaveBeenNthCalledWith(2, worksheetLesson);
+    },
+  );
+
+  it("does not offer capabilities when the restriction lookup fails", async () => {
+    const error = new Error("Curriculum unavailable");
+    readRestrictions.mockRejectedValue(error);
+
+    await expect(getCapabilities(worksheetLesson)).rejects.toBe(error);
+    await expect(hasCapabilities(worksheetLesson)).rejects.toBe(error);
+  });
+
   it("reads extracted resource types from the fixture corpus", async () => {
     await expect(resolveEligibility(worksheetLesson)).resolves.toMatchObject({
+      maxRestrictions: [],
       originalFileResourceTypes: ["worksheet"],
       extractedResourceTypes: ["worksheet"],
     });
@@ -118,6 +169,7 @@ describe("evaluateCapabilities", () => {
   it("evaluates each definition's predicate independently", () => {
     const response = evaluateCapabilities(testDefinitions, {
       lesson: quizOnlyLesson,
+      maxRestrictions: [],
       originalFileResourceTypes: ["starter-quiz"],
       extractedResourceTypes: ["starter-quiz"],
     });
@@ -136,6 +188,7 @@ describe("evaluateCapabilities", () => {
   it("preserves definition order in the response", () => {
     const response = evaluateCapabilities(testDefinitions, {
       lesson: worksheetLesson,
+      maxRestrictions: [],
       originalFileResourceTypes: ["worksheet", "starter-quiz"],
       extractedResourceTypes: ["worksheet", "starter-quiz"],
     });
@@ -149,11 +202,13 @@ describe("evaluateCapabilities", () => {
   it("requires both an original file and an extraction", () => {
     const originalFileOnly = evaluateCapabilities([worksheetGatedCapability], {
       lesson: worksheetLesson,
+      maxRestrictions: [],
       originalFileResourceTypes: ["worksheet"],
       extractedResourceTypes: [],
     });
     const extractionOnly = evaluateCapabilities([worksheetGatedCapability], {
       lesson: worksheetLesson,
+      maxRestrictions: [],
       originalFileResourceTypes: [],
       extractedResourceTypes: ["worksheet"],
     });
@@ -189,5 +244,28 @@ describe("hasCapabilities", () => {
     await expect(
       hasCapabilities(worksheetLesson, resolverFor(["worksheet"], ["worksheet"])),
     ).resolves.toEqual({ available: true });
+  });
+});
+
+describe("capability rights gate", () => {
+  it.each([
+    "ogl-compatible",
+    "ogl-equivalent",
+    "restricted",
+    "highly-restricted",
+  ] as const)("applies %s to both endpoints", async (maxLevel) => {
+    const resolve: EligibilityResolver = async (lesson) => ({
+      lesson,
+      originalFileResourceTypes: ["worksheet"],
+      extractedResourceTypes: ["worksheet"],
+      maxRestrictions: [{ category: "works", maxLevel }],
+    });
+    const allowed = maxLevel === "ogl-compatible" || maxLevel === "ogl-equivalent";
+    expect(
+      (await getCapabilities(worksheetLesson, resolve)).capabilities.length > 0,
+    ).toBe(allowed);
+    await expect(hasCapabilities(worksheetLesson, resolve)).resolves.toEqual({
+      available: allowed,
+    });
   });
 });

@@ -16,6 +16,8 @@ describe("original resource document markup conformance", () => {
       const document = parseResourceMarkup(fixture.markup);
 
       expect(document).toEqual(fixture.expectedDocument);
+      expect(getResourceNodesByType(document, "unsupported")).toEqual([]);
+      expect(document.diagnostics).toEqual([]);
       expect(parseResourceDocument(document)).toEqual(document);
     },
   );
@@ -28,7 +30,7 @@ describe("original resource document markup conformance", () => {
     expect(document.assets).toEqual([
       expect.objectContaining({
         id: "balance-model-image",
-        contentRef: "https://example.test/assets/balance-model.svg",
+        contentRef: "/fixtures/balance-model.svg",
       }),
     ]);
   });

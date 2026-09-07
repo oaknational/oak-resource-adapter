@@ -29,10 +29,7 @@ export interface OakLessonFixtureMetadata {
   lessonSlug: string;
   programmeSlug: string;
   sourceUrl: string;
-  /**
-   * When this lesson last passed scripts/verify-original-resource-document-fixture-rights.mjs.
-   * The corpus is a snapshot, so the date is the claim, not an ongoing guarantee.
-   */
+  /** Last successful live rights check; not an ongoing clearance guarantee. */
   rightsCheckedOn: string;
   programme: {
     examBoard: string | null;
@@ -71,8 +68,8 @@ const oakOriginalFileResourceTypes = [
 
 const oakLessonBaseUrl = "https://www.thenational.academy/teachers/lessons";
 const oakRights =
-  "Oak lesson verified with no recorded third-party material restrictions.";
-const rightsCheckedOn = "2026-08-17";
+  "Oak worksheet verified: every recorded third-party material restriction is OGL compatible or OGL equivalent, or no restriction is recorded.";
+const rightsCheckedOn = "2026-09-07";
 
 function oakWorksheetFixture(
   lesson: Readonly<{
@@ -86,6 +83,8 @@ function oakWorksheetFixture(
     subjectSlug: string;
     examBoard?: string;
     tier?: string;
+    contentGuidance?: readonly string[];
+    originalFileResourceTypes?: readonly string[];
     unitSlug: string;
     unitTitle: string;
   }>,
@@ -112,8 +111,9 @@ function oakWorksheetFixture(
         tier: lesson.tier ?? null,
       },
       unit: { slug: lesson.unitSlug, title: lesson.unitTitle },
-      contentGuidance: [],
-      originalFileResourceTypes: oakOriginalFileResourceTypes,
+      contentGuidance: lesson.contentGuidance ?? [],
+      originalFileResourceTypes:
+        lesson.originalFileResourceTypes ?? oakOriginalFileResourceTypes,
     },
   };
 }
@@ -156,18 +156,6 @@ export const originalResourceDocumentFixtureManifest = [
     unitTitle: "'A Kind of Spark': narrative writing",
   }),
   oakWorksheetFixture({
-    lessonSlug: "composing-in-a-samba-style",
-    title: "Composing in a samba style",
-    description: "Provisional extraction markup for an Oak KS3 music worksheet.",
-    programmeSlug: "music-secondary-ks3",
-    keyStage: "KS3",
-    keyStageSlug: "ks3",
-    subject: "Music",
-    subjectSlug: "music",
-    unitSlug: "the-bass-hooks-and-grooves-of-80s-pop-5262",
-    unitTitle: "Samba music",
-  }),
-  oakWorksheetFixture({
     lessonSlug: "forming-ions-for-ionic-bonding",
     title: "Forming ions for ionic bonding",
     description: "Provisional extraction markup for an Oak KS4 chemistry worksheet.",
@@ -193,6 +181,107 @@ export const originalResourceDocumentFixtureManifest = [
     examBoard: "AQA",
     unitSlug: "programming-iteration",
     unitTitle: "Programming: iteration",
+  }),
+  oakWorksheetFixture({
+    lessonSlug: "accidents-and-emergencies-er-verbs-in-the-perfect-tense-with-etre",
+    title: "Accidents and emergencies: -er verbs in the perfect tense with 'être'",
+    description:
+      "Provisional worksheet excerpt for Oak KS3 French; tables and diagrams adapted for parser coverage.",
+    programmeSlug: "french-secondary-ks3",
+    keyStage: "KS3",
+    keyStageSlug: "ks3",
+    subject: "French",
+    subjectSlug: "french",
+    unitSlug: "past-and-present-events-perfect-tense-negation-questions",
+    unitTitle: "Past and present events: perfect tense, negation, questions",
+    originalFileResourceTypes: [
+      "slide-deck",
+      "supplementary",
+      "worksheet",
+      "worksheet-answers",
+      "exit-quiz",
+      "exit-quiz-answers",
+      "starter-quiz",
+      "starter-quiz-answers",
+    ],
+  }),
+  oakWorksheetFixture({
+    lessonSlug: "actions-to-tackle-climate-change",
+    title: "Actions to tackle climate change",
+    description:
+      "Provisional worksheet excerpt for Oak KS3 Geography; tables and diagrams adapted for parser coverage.",
+    programmeSlug: "geography-secondary-ks3",
+    keyStage: "KS3",
+    keyStageSlug: "ks3",
+    subject: "Geography",
+    subjectSlug: "geography",
+    unitSlug: "weather-and-climate-why-does-our-weather-and-climate-change",
+    unitTitle: "Weather and climate: how do they vary?",
+  }),
+  oakWorksheetFixture({
+    lessonSlug: "air-resistance-do-and-review",
+    title: "Air resistance: do and review",
+    description:
+      "Provisional worksheet excerpt for Oak KS2 Science; tables and diagrams adapted for parser coverage.",
+    programmeSlug: "science-primary-ks2",
+    keyStage: "KS2",
+    keyStageSlug: "ks2",
+    subject: "Science",
+    subjectSlug: "science",
+    unitSlug: "forces-including-simple-machines",
+    unitTitle: "Forces including simple machines",
+    contentGuidance: ["Risk assessment required - equipment"],
+    originalFileResourceTypes: [
+      "slide-deck",
+      "supplementary",
+      "worksheet",
+      "worksheet-answers",
+      "exit-quiz",
+      "exit-quiz-answers",
+      "starter-quiz",
+      "starter-quiz-answers",
+    ],
+  }),
+  oakWorksheetFixture({
+    lessonSlug: "the-river-nile",
+    title: "The River Nile",
+    description:
+      "Provisional worksheet excerpt for Oak KS2 History; tables and diagrams adapted for parser coverage.",
+    programmeSlug: "history-primary-ks2",
+    keyStage: "KS2",
+    keyStageSlug: "ks2",
+    subject: "History",
+    subjectSlug: "history",
+    unitSlug: "ancient-egypt-what-stayed-the-same-across-3-000-years",
+    unitTitle: "Ancient Egypt: what stayed the same across 3,000 years?",
+  }),
+  oakWorksheetFixture({
+    lessonSlug: "adrenaline-thyroxine-and-negative-feedback",
+    title: "Adrenaline, thyroxine and negative feedback",
+    description:
+      "Provisional worksheet excerpt for Oak KS4 Biology; tables and diagrams adapted for parser coverage.",
+    programmeSlug: "biology-secondary-ks4-higher-aqa",
+    keyStage: "KS4",
+    keyStageSlug: "ks4",
+    subject: "Biology",
+    subjectSlug: "biology",
+    unitSlug: "coordination-and-control-hormones-and-the-human-endocrine-system",
+    unitTitle: "Coordination and control: hormones and the human endocrine system",
+    examBoard: "AQA",
+    tier: "higher",
+  }),
+  oakWorksheetFixture({
+    lessonSlug: "adding-rhythmic-variation-to-ground-bass",
+    title: "Adding rhythmic variation to ground bass",
+    description:
+      "Provisional worksheet excerpt for Oak KS3 Music; tables and diagrams adapted for parser coverage.",
+    programmeSlug: "music-secondary-ks3",
+    keyStage: "KS3",
+    keyStageSlug: "ks3",
+    subject: "Music",
+    subjectSlug: "music",
+    unitSlug: "harmonic-progressions-bass-lines-and-shuffle",
+    unitTitle: "Harmonic progressions and bass lines",
   }),
 ] as const satisfies readonly OriginalResourceDocumentFixtureManifestEntry[];
 

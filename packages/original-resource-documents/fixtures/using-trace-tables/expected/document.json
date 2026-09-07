@@ -76,12 +76,8 @@
         },
         {
           "id": "countdown-program",
-          "type": "unsupported",
-          "description": "Unsupported extraction directive oak-code-block",
-          "original": {
-            "format": "oak-mmd",
-            "value": ":::oak-code-block {id=\"countdown-program\"}\nfrom time import sleep\ncount = 5\nwhile count != 0:\n    print(count)\n    count = count - 1\n    sleep(1)\n:::"
-          }
+          "type": "codeBlock",
+          "source": "from time import sleep\ncount = 5\nwhile count != 0:\n    print(count)\n    count = count - 1\n    sleep(1)"
         },
         {
           "id": "question-2-response",
@@ -104,16 +100,7 @@
       "version": "0.1.0"
     }
   },
-  "diagnostics": [
-    {
-      "category": "unsupported-markup",
-      "severity": "warning",
-      "message": "Unsupported extraction directive oak-code-block was preserved without interpretation.",
-      "nodeId": "countdown-program",
-      "fallback": "unsupported-node",
-      "reviewRequired": true
-    }
-  ],
+  "diagnostics": [],
   "profile": "worksheet.v0",
   "metadata": {
     "title": "Using trace tables",

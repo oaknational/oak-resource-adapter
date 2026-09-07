@@ -113,3 +113,137 @@ describe("resource markup", () => {
     });
   });
 });
+
+describe("tables and code", () => {
+  it.each(["oak-table", "oak-ion-table", "oak-rhythm-grid"])(
+    "parses %s with explicit answer and empty cells",
+    (directive) => {
+      const doc = parseResourceMarkup(
+        `${genericFrontmatter}\n:::${directive} {id="table"}\nName | Answer | Unused\nÉlève | ? | ~\n:::`,
+      );
+      expect(doc.content[0]).toMatchObject({
+        type: "table",
+        header: [
+          { kind: "content", content: [{ type: "text", text: "Name" }] },
+          { kind: "content", content: [{ type: "text", text: "Answer" }] },
+          { kind: "content", content: [{ type: "text", text: "Unused" }] },
+        ],
+        rows: [
+          [
+            { kind: "content", content: [{ type: "text", text: "Élève" }] },
+            { kind: "answer" },
+            { kind: "empty" },
+          ],
+        ],
+      });
+      expect(doc.diagnostics).toEqual([]);
+    },
+  );
+  it("supports a headerless table and rejects inconsistent widths", () => {
+    const doc = parseResourceMarkup(
+      `${genericFrontmatter}\n:::oak-table {id="table" header="false"}\na | ?\n:::`,
+    );
+    expect(doc.content[0]).not.toHaveProperty("header");
+    expect(() =>
+      parseResourceMarkup(
+        `${genericFrontmatter}\n:::oak-table {id="table"}\na | b\nc\n:::`,
+      ),
+    ).toThrow();
+  });
+  it("preserves literal code, indentation, blank lines and trailing spaces", () => {
+    const source = 'if ready:\n\tprint("é")  \n\n:::oak-question {id="literal"}';
+    const doc = parseResourceMarkup(
+      `${genericFrontmatter}\n:::oak-section {id="section"}\n:::oak-code-block {id="code" language="python"}\n${source}\n:::\n:::`,
+    );
+    expect(doc.content[0]).toMatchObject({
+      children: [{ type: "codeBlock", language: "python", source }],
+    });
+  });
+  it("normalises CRLF inside code so the canonical document is not editor-dependent", () => {
+    const doc = parseResourceMarkup(
+      `${genericFrontmatter}\n:::oak-code-block {id="code"}\r\nfirst\r\n  second\r\n:::`,
+    );
+    expect(doc.content[0]).toMatchObject({
+      type: "codeBlock",
+      source: "first\n  second",
+    });
+  });
+  it("accepts paired outer pipes", () => {
+    const doc = parseResourceMarkup(
+      `${genericFrontmatter}\n:::oak-table {id="table"}\n| Name | Answer |\n| Élève | ? |\n:::`,
+    );
+    expect(doc.content[0]).toMatchObject({
+      header: [
+        { kind: "content", content: [{ type: "text", text: "Name" }] },
+        { kind: "content", content: [{ type: "text", text: "Answer" }] },
+      ],
+      rows: [
+        [
+          { kind: "content", content: [{ type: "text", text: "Élève" }] },
+          { kind: "answer" },
+        ],
+      ],
+    });
+  });
+
+  it.each([false, true])(
+    "uses the same cells for headers and body rows (outer pipes: %s)",
+    (outerPipes) => {
+      const content = "~ | ? | Élève \\(x\\) | ?";
+      const row = outerPipes ? `| ${content} |` : content;
+      const doc = parseResourceMarkup(
+        `${genericFrontmatter}\n:::oak-table {id="table"}\n${row}\n${row}\n:::`,
+      );
+      const cells = [
+        { kind: "empty" },
+        { kind: "answer" },
+        {
+          kind: "content",
+          content: [
+            { type: "text", text: "Élève " },
+            { type: "math", value: "x", display: false },
+          ],
+        },
+        { kind: "answer" },
+      ];
+      expect(doc.content[0]).toMatchObject({ header: cells, rows: [cells] });
+    },
+  );
+
+  it("preserves answer blanks at both ends of a row", () => {
+    const doc = parseResourceMarkup(
+      `${genericFrontmatter}\n:::oak-table {id="table"}\nA | B | C\n? | text | ?\n:::`,
+    );
+    expect(doc.content[0]).toMatchObject({
+      rows: [
+        [
+          { kind: "answer" },
+          { kind: "content", content: [{ type: "text", text: "text" }] },
+          { kind: "answer" },
+        ],
+      ],
+    });
+  });
+
+  it("preserves single-column answer rows and ignores formatting blank lines", () => {
+    const doc = parseResourceMarkup(
+      `${genericFrontmatter}\n:::oak-table {id="table"}\nA\n\n?\n \n~\n?\n:::`,
+    );
+    expect(doc.content[0]).toMatchObject({
+      rows: [[{ kind: "answer" }], [{ kind: "empty" }], [{ kind: "answer" }]],
+    });
+  });
+
+  it.each(["A | | B", " | B", "A | "])(
+    "rejects implicit empty cells in headers and body rows: %s",
+    (row) => {
+      for (const header of [true, false]) {
+        expect(() =>
+          parseResourceMarkup(
+            `${genericFrontmatter}\n:::oak-table {id="table" header="${header}"}\n${row}\nA | B\n:::`,
+          ),
+        ).toThrow("Use ? for an answer blank or ~ for an empty table cell.");
+      }
+    },
+  );
+});

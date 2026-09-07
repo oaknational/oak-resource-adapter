@@ -42,12 +42,136 @@
         },
         {
           "id": "positive-ion-table",
-          "type": "unsupported",
-          "description": "Unsupported extraction directive oak-ion-table",
-          "original": {
-            "format": "oak-mmd",
-            "value": ":::oak-ion-table {id=\"positive-ion-table\"}\nmetal     | charge | metal ion\nsodium    | 1+     | Na+\ncalcium   |        |\nmagnesium |        |\naluminium |        |\npotassium |        |\n:::"
-          }
+          "type": "table",
+          "role": "ions",
+          "header": [
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "metal"
+                }
+              ]
+            },
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "charge"
+                }
+              ]
+            },
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "metal ion"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "sodium"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "1+"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Na+"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "calcium"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "magnesium"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "aluminium"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "potassium"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              }
+            ]
+          ]
         }
       ]
     },
@@ -119,16 +243,7 @@
       "version": "0.1.0"
     }
   },
-  "diagnostics": [
-    {
-      "category": "unsupported-markup",
-      "severity": "warning",
-      "message": "Unsupported extraction directive oak-ion-table was preserved without interpretation.",
-      "nodeId": "positive-ion-table",
-      "fallback": "unsupported-node",
-      "reviewRequired": true
-    }
-  ],
+  "diagnostics": [],
   "profile": "worksheet.v0",
   "metadata": {
     "title": "Forming ions for ionic bonding",

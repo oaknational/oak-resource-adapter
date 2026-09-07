@@ -13,6 +13,7 @@ describe("resource-document public API", () => {
       "filterResourceNodes",
       "getResourceNodeById",
       "getResourceNodesByType",
+      "resourceVocabulary",
       "updateResourceNodeById",
       "validateResourceDocumentInvariants",
       "walkResourceDocument",

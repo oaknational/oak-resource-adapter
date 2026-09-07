@@ -56,3 +56,13 @@ export const LESSON_BY_SLUG_QUERY = `
     }
   }
 `;
+
+export const LESSON_RESTRICTIONS_QUERY = `
+  query LessonRestrictions($lessonSlug: String!) {
+    restrictionLevels: ${LESSON_VIEWS.restrictionLevels}(
+      where: { slug: { _eq: $lessonSlug }, _state: { _eq: "published" } }
+    ) {
+      ${RESTRICTION_COLUMNS.join("\n      ")}
+    }
+  }
+`;

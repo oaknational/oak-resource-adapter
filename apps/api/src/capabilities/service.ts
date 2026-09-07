@@ -1,3 +1,8 @@
+import {
+  createOakLessonRestrictionReader,
+  hasAdaptableRights,
+  oakCurriculumConfigFromEnv,
+} from "@oaknational/resource-adapter-curriculum";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 
 import type {
@@ -14,13 +19,21 @@ export type EligibilityResolver = (
   lesson: LessonContext,
 ) => Promise<EligibilityContext>;
 
+/** Capability-specific predicates cannot override the lesson's rights gate. */
+export function isCapabilityEligible(
+  definition: CapabilityDefinition,
+  context: EligibilityContext,
+): boolean {
+  return hasAdaptableRights(context.maxRestrictions) && definition.isEligible(context);
+}
+
 export function evaluateCapabilities(
   definitions: ReadonlyArray<CapabilityDefinition>,
   context: EligibilityContext,
 ): ResourceAdapterCapabilitiesResponse {
   return {
     capabilities: definitions
-      .filter((definition) => definition.isEligible(context))
+      .filter((definition) => isCapabilityEligible(definition, context))
       .map(({ id, label, resourceType }) => ({ id, label, resourceType })),
   };
 }
@@ -28,6 +41,9 @@ export function evaluateCapabilities(
 /** `originalFileResourceTypes` is caller-supplied, not resolved from Oak. */
 export const resolveEligibility: EligibilityResolver = async (lesson) => ({
   lesson,
+  maxRestrictions: await createOakLessonRestrictionReader(
+    oakCurriculumConfigFromEnv(process.env),
+  )(lesson),
   originalFileResourceTypes: lesson.availableResources,
   extractedResourceTypes: await originalResourceDocuments.listExtractedResourceTypes({
     source: "oak",
@@ -46,7 +62,6 @@ export async function getCapabilities(
   );
 }
 
-/** Shares `getCapabilities`' evaluation so the two answers cannot disagree. */
 export async function hasCapabilities(
   { supportedCapabilityIds, ...lesson }: ResourceAdapterCapabilityAvailabilityRequest,
   resolveContext: EligibilityResolver = resolveEligibility,

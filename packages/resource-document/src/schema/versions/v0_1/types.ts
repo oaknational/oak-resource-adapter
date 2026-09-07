@@ -118,7 +118,25 @@ export interface UnsupportedNode extends ResourceNodeBase {
   };
 }
 
+export type TableCell =
+  { kind: "content"; content: InlineContent } | { kind: "answer" } | { kind: "empty" };
+
+export interface TableNode extends ResourceNodeBase {
+  type: "table";
+  role: string;
+  header?: TableCell[] | undefined;
+  rows: TableCell[][];
+}
+
+export interface CodeBlockNode extends ResourceNodeBase {
+  type: "codeBlock";
+  language?: string | undefined;
+  source: string;
+}
+
 export type ResourceNode =
+  | TableNode
+  | CodeBlockNode
   | SectionNode
   | HeadingNode
   | ParagraphNode
