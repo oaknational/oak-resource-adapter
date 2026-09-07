@@ -1,5 +1,5 @@
 import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 // Presence is verified by the setup project, which this project depends on.
 const emailAddress = process.env.E2E_CLERK_USER_EMAIL as string;
@@ -21,6 +21,14 @@ async function expectRenderedWorksheet(drawer: Locator, title: string) {
   await expect(worksheet).toBeVisible();
 }
 
+function waitForCapabilities(page: Page) {
+  return page.waitForResponse(
+    (response) =>
+      response.url().includes("/adapter-proxy/trpc/v1/capabilities.get") &&
+      response.request().method() === "POST",
+  );
+}
+
 test(
   "shows the API state, a capability-based trigger, and the adapter sidebar",
   {},
@@ -32,16 +40,15 @@ test(
     await clerk.signIn({ page, emailAddress });
 
     // Reload so the now-authenticated session drives the capabilities fetch.
+    const capabilitiesResponse = waitForCapabilities(page);
     await page.goto("/");
+    expect((await capabilitiesResponse).status()).toBe(200);
 
     await expect(page.getByRole("status")).toHaveText("API /health: Healthy");
-    await expect(
-      page.getByRole("heading", { name: "Create more with Aila" }).first(),
-    ).toBeVisible();
-
     const createMoreButton = page.getByRole("button", {
-      name: "Scaffold practice tasks",
+      name: "Add extra scaffolding",
     });
+    await expect(createMoreButton).toBeVisible();
     const createMoreButtonBox = await createMoreButton.boundingBox();
     const metadataHeadingBox = await page
       .getByRole("heading", { name: "Lesson metadata" })
@@ -53,7 +60,7 @@ test(
     await createMoreButton.click();
 
     const sidebar = page.getByRole("dialog", {
-      name: "Scaffold practice tasks",
+      name: "Add extra scaffolding",
     });
     await expect(sidebar).toBeVisible();
     const closeIcon = sidebar
@@ -143,11 +150,7 @@ for (const { heading, id, offersCreateMore, outcome } of edgeCases) {
 
       // The same endpoint the eligible lessons use has to be consulted, so an
       // absent button proves an empty response rather than a skipped request.
-      const capabilitiesResponse = page.waitForResponse(
-        (response) =>
-          response.url().includes("/adapter-proxy/") &&
-          response.url().includes("capabilities"),
-      );
+      const capabilitiesResponse = waitForCapabilities(page);
       await page.goto(`/?view=edge-cases&case=${id}`);
       expect((await capabilitiesResponse).status()).toBe(200);
 
@@ -156,7 +159,7 @@ for (const { heading, id, offersCreateMore, outcome } of edgeCases) {
       ).toBeVisible();
       await expect(page.getByTestId("capability-outcome")).toHaveText(outcome);
       await expect(
-        page.getByRole("button", { name: "Scaffold practice tasks" }),
+        page.getByRole("button", { name: "Add extra scaffolding" }),
       ).toHaveCount(offersCreateMore ? 1 : 0);
       await expect(
         page.getByRole("region", { name: "Sign in to create more with Aila" }),
@@ -171,15 +174,15 @@ test("shows the future multi-capability launcher shape", {}, async ({ page }) =>
   await clerk.signIn({ page, emailAddress });
   await page.goto("/?view=edge-cases&case=multiple-capabilities-ui");
 
-  const trigger = page.getByRole("button", { name: "Create more with AI" });
+  const trigger = page.getByRole("button", { name: "Adapt with AI" });
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
   await trigger.click();
 
   const menu = page.getByRole("menu");
   await expect(menu.getByRole("menuitem")).toHaveCount(2);
-  await menu.getByRole("menuitem", { name: "Scaffold practice tasks" }).click();
+  await menu.getByRole("menuitem", { name: "Add extra scaffolding" }).click();
 
-  const drawer = page.getByRole("dialog", { name: "Scaffold practice tasks" });
+  const drawer = page.getByRole("dialog", { name: "Add extra scaffolding" });
   await expect(drawer).toBeVisible();
   await expectRenderedWorksheet(drawer, "Adopting different perspectives");
 });
@@ -252,7 +255,7 @@ test(
     await expect(fallback).toBeVisible();
     await expect(fallback.getByRole("button", { name: "Try again" })).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Scaffold practice tasks" }),
+      page.getByRole("button", { name: "Add extra scaffolding" }),
     ).toHaveCount(0);
   },
 );
@@ -339,7 +342,7 @@ test(
       page.getByRole("heading", { exact: true, name: "Create more with Aila" }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "Scaffold practice tasks" }),
+      page.getByRole("button", { name: "Add extra scaffolding" }),
     ).toHaveCount(0);
   },
 );
@@ -363,7 +366,7 @@ test(
       page.getByRole("region", { name: "Sign in to create more with Aila" }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "Scaffold practice tasks" }),
+      page.getByRole("button", { name: "Add extra scaffolding" }),
     ).toHaveCount(0);
   },
 );

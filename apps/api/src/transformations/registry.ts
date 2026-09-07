@@ -1,6 +1,5 @@
 import { identityTransformation } from "./definitions/identity";
 import { addGlossaryBilingualTransformation } from "./definitions/scaffold-add-glossary-bilingual";
-import { addGlossaryQuestionTransformation } from "./definitions/scaffold-add-glossary-question";
 import { addKnowledgeSummaryTransformation } from "./definitions/scaffold-add-knowledge-summary";
 import { addModelledExampleTransformation } from "./definitions/scaffold-add-modelled-example";
 import { addPromptQuestionsTransformation } from "./definitions/scaffold-add-prompt-questions";
@@ -18,7 +17,6 @@ import { simplifyInstructionsTransformation } from "./definitions/scaffold-simpl
 export const transformationDefinitions = {
   [identityTransformation.kind]: identityTransformation,
   [addWordBankTransformation.kind]: addWordBankTransformation,
-  [addGlossaryQuestionTransformation.kind]: addGlossaryQuestionTransformation,
   [addGlossaryBilingualTransformation.kind]: addGlossaryBilingualTransformation,
   [simplifyInstructionsTransformation.kind]: simplifyInstructionsTransformation,
   [addKnowledgeSummaryTransformation.kind]: addKnowledgeSummaryTransformation,

@@ -1,24 +1,18 @@
 import { z } from "zod";
 
 import { adapterProxyPath } from "../../harness-api";
+import {
+  suggestionGuidanceSchema,
+  supportLevelSchema,
+  targetSchema,
+  transformationOutputsSchema,
+} from "../shared/catalogue-schemas";
 import type { ResourceDocument } from "@oaknational/resource-document";
-
-const targetSchema = z.discriminatedUnion("scope", [
-  z.strictObject({ scope: z.literal("document") }),
-  z.strictObject({
-    nodeTypes: z.array(z.string()).min(1),
-    scope: z.literal("node"),
-  }),
-]);
-
-const supportLevelSchema = z.strictObject({
-  description: z.string(),
-  level: z.enum(["low", "mid", "high"]),
-});
 
 const flowSchema = z.strictObject({
   capabilityId: z.string(),
   id: z.string(),
+  label: z.string(),
   maxSuggestions: z.number().int().positive(),
   role: z.string(),
   transformationKinds: z.array(z.string()),
@@ -35,7 +29,8 @@ const candidateSchema = z.strictObject({
   ]),
   kind: z.string(),
   label: z.string(),
-  outputs: z.array(z.enum(["companion-document", "revised-resource"])).min(1),
+  outputs: transformationOutputsSchema,
+  suggestion: suggestionGuidanceSchema,
   supportLevels: z.array(supportLevelSchema).min(1).optional(),
   target: targetSchema,
 });

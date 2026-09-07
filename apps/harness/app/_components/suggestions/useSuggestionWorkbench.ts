@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { preferredSelection } from "../shared/preferred-selection";
 import {
   fetchSuggestionCatalogue,
   previewSuggestions,
@@ -30,9 +31,15 @@ async function requestSuggestions(
   return { action, value: await runSuggestions(command, signal) };
 }
 
-export function useSuggestionWorkbench(scenario: LessonScenario) {
+export function useSuggestionWorkbench(
+  scenario: LessonScenario,
+  initialFlowId?: string | undefined,
+) {
   const [flows, setFlows] = useState<readonly SuggestionFlow[]>([]);
   const [selectedFlowId, setSelectedFlowId] = useState("");
+  // Pinned to the first render: a later prop change must not override a choice
+  // the user has since made.
+  const requestedFlowIdRef = useRef(initialFlowId);
   const [catalogueError, setCatalogueError] = useState<string | null>(null);
   const [preview, setPreview] = useState<SuggestionPreviewResponse | null>(null);
   const [result, setResult] = useState<SuggestionRunResponse | null>(null);
@@ -58,9 +65,11 @@ export function useSuggestionWorkbench(scenario: LessonScenario) {
         if (cancelled) return;
         setFlows(availableFlows);
         setSelectedFlowId((current) =>
-          availableFlows.some(({ id }) => id === current)
-            ? current
-            : (availableFlows[0]?.id ?? ""),
+          preferredSelection(
+            requestedFlowIdRef.current,
+            current,
+            availableFlows.map(({ id }) => id),
+          ),
         );
         setCatalogueError(null);
       })

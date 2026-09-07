@@ -45,7 +45,7 @@ function invokerReturning(output: unknown): ResourceAdapterModelInvoker {
 function command(overrides: Record<string, unknown> = {}) {
   return {
     document: worksheet,
-    kind: "scaffold-add-glossary-question",
+    kind: "scaffold-add-word-bank",
     lesson,
     params: { supportLevel: "low" },
     targetBlockId: question.id,
@@ -86,6 +86,8 @@ describe("prepareRegisteredTransformation", () => {
       [
         { key: "lesson.slides", required: false },
         { key: "lesson.keywords", required: false },
+        { key: "lesson.keyLearningPoints", required: false },
+        { key: "lesson.misconceptions", required: false },
       ],
       lesson,
     );
@@ -129,7 +131,7 @@ describe("previewRegisteredTransformation", () => {
 
     expect(preview).toMatchObject({
       execution: "structured-model",
-      kind: "scaffold-add-glossary-question",
+      kind: "scaffold-add-word-bank",
       status: "active",
     });
     expect(preview.prompt?.text).toContain("rendered with");

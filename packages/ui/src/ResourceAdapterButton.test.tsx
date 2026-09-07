@@ -9,7 +9,7 @@ import type { ResourceAdapterCapability } from "./publicTypes.js";
 
 const worksheet: ResourceAdapterCapability = {
   id: "worksheetScaffolding",
-  label: "Scaffold practice tasks",
+  label: "Add extra scaffolding",
   resourceType: "worksheet",
 };
 
@@ -46,22 +46,21 @@ describe("ResourceAdapterButton", () => {
 
   it("renders a direct capability action when exactly one is available", () => {
     const onSelectCapability = renderButton([worksheet]);
-
-    fireEvent.click(screen.getByRole("button", { name: "Scaffold practice tasks" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add extra scaffolding" }));
     expect(onSelectCapability).toHaveBeenCalledWith(worksheet);
   });
 
   it("renders a capability menu when more than one is available", async () => {
     const onSelectCapability = renderButton([worksheet, futureCapability]);
 
-    const trigger = screen.getByRole("button", { name: "Create more with AI" });
+    const trigger = screen.getByRole("button", { name: "Adapt with AI" });
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(trigger);
 
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     const menu = screen.getByRole("menu");
     await userEvent.click(
-      within(menu).getByRole("menuitem", { name: "Scaffold practice tasks" }),
+      within(menu).getByRole("menuitem", { name: "Add extra scaffolding" }),
     );
     expect(onSelectCapability).toHaveBeenCalledWith(worksheet);
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
@@ -70,12 +69,12 @@ describe("ResourceAdapterButton", () => {
   it("reopens a closed menu after a selection", async () => {
     renderButton([worksheet, futureCapability]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Create more with AI" }));
+    fireEvent.click(screen.getByRole("button", { name: "Adapt with AI" }));
     await userEvent.click(
-      screen.getByRole("menuitem", { name: "Scaffold practice tasks" }),
+      screen.getByRole("menuitem", { name: "Add extra scaffolding" }),
     );
 
-    const trigger = screen.getByRole("button", { name: "Create more with AI" });
+    const trigger = screen.getByRole("button", { name: "Adapt with AI" });
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(trigger);
     expect(screen.getAllByRole("menuitem")).toHaveLength(2);
@@ -84,7 +83,7 @@ describe("ResourceAdapterButton", () => {
   it("closes the capability menu with Escape", () => {
     renderButton([worksheet, futureCapability]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Create more with AI" }));
+    fireEvent.click(screen.getByRole("button", { name: "Adapt with AI" }));
     fireEvent.keyDown(document, { key: "Escape" });
 
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
@@ -93,14 +92,14 @@ describe("ResourceAdapterButton", () => {
   it("opens and selects a capability using only the keyboard", async () => {
     const user = userEvent.setup();
     const onSelectCapability = renderButton([worksheet, futureCapability]);
-    const trigger = screen.getByRole("button", { name: "Create more with AI" });
+    const trigger = screen.getByRole("button", { name: "Adapt with AI" });
 
     await user.tab();
     expect(trigger).toHaveFocus();
     await user.keyboard("{Enter}");
 
     const firstCapability = within(screen.getByRole("menu")).getByRole("menuitem", {
-      name: "Scaffold practice tasks",
+      name: "Add extra scaffolding",
     });
     await user.tab();
     expect(firstCapability).toHaveFocus();

@@ -1,5 +1,12 @@
 import { sql } from "drizzle-orm";
-import { foreignKey, integer, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import {
+  check,
+  foreignKey,
+  integer,
+  timestamp,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 import { jobs } from "./jobs.js";
 import { resourceAdapterSchema } from "./pg-schema.js";
@@ -9,6 +16,8 @@ import { transformations } from "./transformations.js";
 export const transformationAttempts = resourceAdapterSchema.table(
   "transformation_attempts",
   {
+    /** Set when the teacher approves this attempt's generated result. */
+    acceptedAt: timestamp("accepted_at", { precision: 3, withTimezone: true }),
     /** Starts at 1 and is unique within a transformation to prevent duplicate retries. */
     attemptNumber: integer("attempt_number").notNull(),
     /** Set when the attempt finished its work, including a run that produced nothing. */
@@ -27,6 +36,14 @@ export const transformationAttempts = resourceAdapterSchema.table(
       .$onUpdate(() => new Date()),
   },
   (table) => [
+    check(
+      "transformation_attempts_attempt_number_check",
+      sql`${table.attemptNumber} >= 1`,
+    ),
+    check(
+      "transformation_attempts_acceptance_check",
+      sql`${table.acceptedAt} IS NULL OR ${table.completedAt} IS NOT NULL`,
+    ),
     unique("transformation_attempts_number_key").on(
       table.transformationId,
       table.attemptNumber,

@@ -3,6 +3,7 @@
 import { SuggestionControls } from "./SuggestionControls";
 import { SuggestionResults } from "./SuggestionResults";
 import { useSuggestionWorkbench } from "./useSuggestionWorkbench";
+import { ResourceDocumentInspector } from "../shared/ResourceDocumentInspector";
 import { ScenarioNavigation } from "../shared/ScenarioNavigation";
 import styles from "../../page.module.css";
 import type {
@@ -11,13 +12,15 @@ import type {
 } from "../../scenario-types";
 
 export function SuggestionsView({
+  initialFlowId,
   scenario,
   scenarioNavigation,
 }: Readonly<{
+  initialFlowId?: string | undefined;
   scenario: LessonScenario;
   scenarioNavigation: readonly LessonScenarioNavigationItem[];
 }>) {
-  const workbench = useSuggestionWorkbench(scenario);
+  const workbench = useSuggestionWorkbench(scenario, initialFlowId);
 
   return (
     <>
@@ -46,7 +49,21 @@ export function SuggestionsView({
         )}
 
         <SuggestionControls {...workbench} />
-        <SuggestionResults {...workbench} />
+        <section
+          aria-labelledby="suggestion-agent-context"
+          className={styles.agentContext}
+        >
+          <h2 id="suggestion-agent-context">Worksheet context</h2>
+          <p>
+            This is the worksheet structure and content the agent considers before it
+            chooses a transformation.
+          </p>
+          <ResourceDocumentInspector
+            document={scenario.document}
+            label="Worksheet available to the agent"
+          />
+        </section>
+        <SuggestionResults {...workbench} document={scenario.document} />
       </article>
     </>
   );

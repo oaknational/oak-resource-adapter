@@ -139,10 +139,23 @@ output rather than prose. A contribution prepares its exact schema against the
 validated request, so support level can change both the model contract and the
 document it produces. `invokeStructured` enforces that schema. Placement is the
 contribution's decision, so a prompt cannot move a scaffold somewhere the
-transformation did not intend — a scaffold lands beneath its task and before the
-space a pupil writes in. Every node a contribution adds carries the contribution
-ID in its extensions, which is how a later transformation removes or replaces
-exactly this work.
+transformation did not intend. Task-targeted support lands beneath its task and
+before the space a pupil writes in; document-wide support can instead lead the
+worksheet body. Every node a contribution adds carries the contribution ID in its
+extensions, which is how a later transformation removes or replaces exactly this
+work.
+
+The initial-scaffolding workflow treats only the transformation that produced the
+current head as pending review. Retry creates another attempt for the same
+transformation, using the same input, target and parameters. Accept sets the
+successful attempt's `accepted_at`; its contribution IDs remain on the document for
+provenance and future editing, but it is no longer rendered as pending support.
+
+Undo moves the head back to the transformation's immutable primary input and deletes
+the transformation. Its attempts and generated documents cascade away, and
+`suggested_transformations.accepted_transformation_id` returns to null, which reopens
+the offer with the same ID. `undo_count` rises on that offer so the next acceptance
+gets its own job idempotency key rather than replaying the one that was undone.
 
 A run ends in one of three outcomes: `APPLIED` with an ordered list of validated
 document outputs and their `revised-resource` or `companion-document` purpose;
@@ -194,6 +207,12 @@ support-level descriptions. Its structured response is validated again through
 the transformation's params, target and availability rules. An offer that fails
 that second pass, or repeats a change already offered for the same target, is
 dropped rather than failing the batch. Returning no suggestions is valid.
+
+When a teacher chooses **No scaffold required**, the workflow creates a generated
+revision with an invisible `oak:transformations-dismissed` extension on that node
+or on the document. Suggestion preparation excludes only that scope. The marker is
+generic to transformations rather than tied to scaffolding, and remains internal
+metadata that a future export path can omit.
 
 Suggestion parameters are stored with the offer. Accepting an offer uses those
 parameters by default, while the application request can supply a validated

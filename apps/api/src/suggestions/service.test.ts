@@ -9,6 +9,7 @@ import {
 } from "@oaknational/resource-document";
 
 import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
+import { dismissTransformationsAt } from "../transformations/dismissal";
 import { worksheetScaffoldingSuggestionFlow } from "./definitions/worksheet-scaffolding";
 import { generateSuggestions, prepareSuggestionFlow } from "./service";
 
@@ -82,8 +83,6 @@ beforeAll(async () => {
 
 describe("worksheet scaffolding suggestions", () => {
   it("keeps every worksheet scaffold in the flow while offering only active kinds", async () => {
-    expect(worksheetScaffoldingSuggestionFlow.transformationKinds).toHaveLength(11);
-
     const result = await prepareSuggestionFlow(
       worksheetScaffoldingSuggestionFlow,
       worksheet,
@@ -93,7 +92,6 @@ describe("worksheet scaffolding suggestions", () => {
 
     expect(result.candidates.map(({ kind }) => kind)).toEqual([
       "scaffold-add-word-bank",
-      "scaffold-add-glossary-question",
       "scaffold-add-prompt-questions",
       "scaffold-chunk-tasks",
     ]);
@@ -111,7 +109,7 @@ describe("worksheet scaffolding suggestions", () => {
       worksheet,
       [
         {
-          kind: "scaffold-add-glossary-question",
+          kind: "scaffold-add-word-bank",
           params: { supportLevel: "low" },
           targetBlockId: questionId,
         },
@@ -119,10 +117,27 @@ describe("worksheet scaffolding suggestions", () => {
       prepare,
     );
 
-    const glossary = result.candidates.find(
-      ({ kind }) => kind === "scaffold-add-glossary-question",
+    const wordBank = result.candidates.find(
+      ({ kind }) => kind === "scaffold-add-word-bank",
     );
-    expect(glossary?.eligibleTargets).toEqual({
+    expect(wordBank?.eligibleTargets).toEqual({
+      blockIds: questionIds.filter((id) => id !== questionId),
+      scope: "node",
+    });
+  });
+
+  it("does not offer node transformations at a target the teacher dismissed", async () => {
+    const result = await prepareSuggestionFlow(
+      worksheetScaffoldingSuggestionFlow,
+      dismissTransformationsAt(worksheet, questionId),
+      [],
+      prepare,
+    );
+
+    const wordBank = result.candidates.find(
+      ({ kind }) => kind === "scaffold-add-word-bank",
+    );
+    expect(wordBank?.eligibleTargets).toEqual({
       blockIds: questionIds.filter((id) => id !== questionId),
       scope: "node",
     });
@@ -223,7 +238,7 @@ describe("worksheet scaffolding suggestions", () => {
         worksheet,
         [
           {
-            kind: "scaffold-add-glossary-question",
+            kind: "scaffold-add-word-bank",
             params: { supportLevel: "low" },
             targetBlockId: questionId,
           },
@@ -232,9 +247,9 @@ describe("worksheet scaffolding suggestions", () => {
           invoker: invokerWith({
             suggestions: [
               {
-                kind: "scaffold-add-glossary-question",
+                kind: "scaffold-add-word-bank",
                 params: { supportLevel: "low" },
-                reason: "Explain the words in this question.",
+                reason: "Supply the words needed for this question.",
                 targetBlockId: questionId,
               },
             ],
@@ -253,11 +268,7 @@ describe("worksheet scaffolding suggestions", () => {
         params: { supportLevel: "low" },
       },
       ...questionIds.flatMap((targetBlockId) =>
-        [
-          "scaffold-add-word-bank",
-          "scaffold-add-glossary-question",
-          "scaffold-chunk-tasks",
-        ].map((kind) => ({
+        ["scaffold-add-word-bank", "scaffold-chunk-tasks"].map((kind) => ({
           kind,
           params: { supportLevel: "low" },
           targetBlockId,
