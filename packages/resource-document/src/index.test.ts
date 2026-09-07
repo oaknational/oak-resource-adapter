@@ -7,8 +7,13 @@ import * as schemaApi from "./schema/index.js";
 describe("resource-document public API", () => {
   it("exports the intentionally small root surface", () => {
     expect(Object.keys(publicApi).sort()).toEqual([
+      "CONTRIBUTION_EXTENSION_KEY",
+      "contributionIdOf",
+      "contributionIdsInDocument",
+      "filterResourceNodes",
       "getResourceNodeById",
       "getResourceNodesByType",
+      "updateResourceNodeById",
       "validateResourceDocumentInvariants",
       "walkResourceDocument",
     ]);

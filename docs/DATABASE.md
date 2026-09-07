@@ -106,6 +106,17 @@ exactly one row to check against.
 
 **A transformation is one requested change; an attempt is one try at making it.**
 Retrying creates a new attempt with its own job, preserving each try separately.
+`completed_at` records that execution finished; `accepted_at` separately records
+that the teacher approved that attempt's output. The current generated head can
+therefore remain pending review without inventing a second kind of document or
+discarding the audit trail when the teacher retries it.
+The schema enforces that attempt numbers start at one, accepted attempts are
+complete, and suggestion undo counts cannot become negative.
+
+**Starting over is an idempotent replacement.** The client supplies a fresh
+`replacement_request_id` for each deliberate replacement and reuses it when the
+same request is retransmitted. This lets the transaction return the replacement
+it already created instead of abandoning that replacement in turn.
 
 **Inputs belong to the transformation, outputs to the attempt.** A retry of the
 same request reads the same documents, so `transformation_inputs` hangs off the

@@ -1,11 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  OakButtonWithDropdown,
-  OakPrimaryButton,
-  OakSecondaryButton,
-} from "@oaknational/oak-components";
+import { OakButtonWithDropdown, OakSecondaryButton } from "@oaknational/oak-components";
 
 import type { ResourceAdapterCapabilityId } from "./publicTypes.js";
 
@@ -38,9 +34,12 @@ export function ResourceAdapterButton<
 
   if (capabilities.length === 1 && onlyCapability) {
     return (
-      <OakPrimaryButton onClick={() => onSelectCapability(onlyCapability)}>
+      <OakSecondaryButton
+        iconName="ai"
+        onClick={() => onSelectCapability(onlyCapability)}
+      >
         {onlyCapability.label}
-      </OakPrimaryButton>
+      </OakSecondaryButton>
     );
   }
 
@@ -49,14 +48,15 @@ export function ResourceAdapterButton<
   // and keydown, unmounting the item before its click handler runs.
   return (
     <OakButtonWithDropdown
-      ariaLabel="Create more with AI"
-      buttonComponent={OakPrimaryButton}
+      buttonComponent={OakSecondaryButton}
       key={menuInstance}
-      primaryActionText="Create more with AI"
+      primaryActionIcon="ai"
+      primaryActionText="Adapt with AI"
     >
       {capabilities.map((capability) => (
         <OakSecondaryButton
           element="button"
+          iconName="ai"
           key={capability.id}
           onClick={() => {
             onSelectCapability(capability);

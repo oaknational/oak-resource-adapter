@@ -1,4 +1,5 @@
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
+import { buildLesson } from "@oaknational/resource-adapter-curriculum";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { worksheetScaffoldingCapability } from "../capabilities/definitions/worksheet-scaffolding";
@@ -6,7 +7,12 @@ import type { QuestionNode, ResourceDocument } from "@oaknational/resource-docum
 
 const curriculum = vi.hoisted(() => ({ fetch: vi.fn() }));
 
-vi.mock("@oaknational/resource-adapter-curriculum", () => ({
+vi.mock("@oaknational/resource-adapter-curriculum", async () => ({
+  buildLesson: (
+    await vi.importActual<typeof import("@oaknational/resource-adapter-curriculum")>(
+      "@oaknational/resource-adapter-curriculum",
+    )
+  ).buildLesson,
   createOakLessonRepository: () => ({ fetch: curriculum.fetch }),
   oakCurriculumConfigFromEnv: () => ({
     apiKey: "test-key",
@@ -28,7 +34,7 @@ let question: QuestionNode;
 function command(overrides: Record<string, unknown> = {}) {
   return {
     document: worksheet,
-    kind: "scaffold-add-glossary-question",
+    kind: "scaffold-add-word-bank",
     lesson,
     params: { supportLevel: "low" },
     targetBlockId: question.id,
@@ -76,9 +82,14 @@ describe("getDevTransformationCatalogue", () => {
 
 describe("previewDevTransformation", () => {
   it("renders a prompt from the lesson material Oak supplied", async () => {
-    curriculum.fetch.mockResolvedValue({
-      keywords: [{ keyword: "perspective", description: "whose eyes we see through" }],
-    });
+    curriculum.fetch.mockResolvedValue(
+      buildLesson({
+        identity: lesson,
+        keywords: [
+          { keyword: "perspective", description: "whose eyes we see through" },
+        ],
+      }),
+    );
 
     const preview = await previewDevTransformation(command());
 
@@ -86,7 +97,7 @@ describe("previewDevTransformation", () => {
   });
 
   it("warns about a part Oak cannot supply rather than failing", async () => {
-    curriculum.fetch.mockResolvedValue({ keywords: [] });
+    curriculum.fetch.mockResolvedValue(buildLesson({ identity: lesson }));
 
     const preview = await previewDevTransformation(command());
 

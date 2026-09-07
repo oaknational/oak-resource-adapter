@@ -18,7 +18,8 @@ Do this by:
 
 - naming each step as a single action;
 - putting the steps in the order a pupil carries them out;
-- keeping every step the original task asked for.
+- keeping every step the original task asked for;
+- returning the action text only, without numbers or labels such as "1." or "Step 1:".
 
 Each step should have one goal and one visible output, and that output should be the material the next step works from.
 

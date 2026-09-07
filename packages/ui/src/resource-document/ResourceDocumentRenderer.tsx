@@ -1,15 +1,16 @@
-import { Fragment, type ReactNode, useId, useState } from "react";
+import { Fragment, useId, useState } from "react";
 import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
 import { OakIcon, parseColor, parseDropShadow } from "@oaknational/oak-components";
 import { styled } from "styled-components";
 
 import { InlineContentRenderer } from "./InlineContentRenderer.js";
-import { ResourceNodeListRenderer } from "./ResourceNodeRenderer.js";
+import {
+  ResourceNodeListRenderer,
+  type ResourceDocumentDecorations,
+} from "./ResourceNodeRenderer.js";
 
 const Document = styled.article`
   background: ${parseColor("bg-primary")};
-  border: 1px solid ${parseColor("border-neutral-lighter")};
-  border-radius: 0.5rem;
   color: ${parseColor("text-primary")};
   display: flex;
   flex-direction: column;
@@ -152,14 +153,14 @@ function documentParts(nodes: readonly ResourceNode[]): readonly DocumentPart[] 
 
 function TaskAccordion({
   assets,
+  decorations,
   heading,
   nodes,
-  renderAfterNode,
 }: Readonly<{
   assets: ResourceDocument["assets"];
+  decorations?: ResourceDocumentDecorations | undefined;
   heading: HeadingNode;
   nodes: readonly ResourceNode[];
-  renderAfterNode?: (node: ResourceNode) => ReactNode;
 }>) {
   const [isOpen, setIsOpen] = useState(true);
   const id = useId();
@@ -193,12 +194,12 @@ function TaskAccordion({
         id={panelId}
         role="region"
       >
-        {renderAfterNode?.(heading)}
+        {decorations?.renderAfterNode?.(heading)}
         <ResourceNodeListRenderer
           assets={assets}
+          decorations={decorations}
           nodes={nodes}
           parentHeadingLevel={4}
-          {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
         />
       </TaskContent>
     </TaskGroup>
@@ -207,12 +208,12 @@ function TaskAccordion({
 
 function DocumentContent({
   assets,
+  decorations,
   nodes,
-  renderAfterNode,
 }: Readonly<{
   assets: ResourceDocument["assets"];
+  decorations?: ResourceDocumentDecorations | undefined;
   nodes: readonly ResourceNode[];
-  renderAfterNode?: (node: ResourceNode) => ReactNode;
 }>) {
   return documentParts(nodes).map((part) => {
     if (part.kind === "task") {
@@ -220,9 +221,9 @@ function DocumentContent({
         <TaskAccordion
           assets={assets}
           heading={part.heading}
+          decorations={decorations}
           key={part.heading.id}
           nodes={part.children}
-          {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
         />
       );
     }
@@ -231,9 +232,9 @@ function DocumentContent({
       <Fragment key={part.nodes[0]?.id}>
         <ResourceNodeListRenderer
           assets={assets}
+          decorations={decorations}
           nodes={part.nodes}
           parentHeadingLevel={2}
-          {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
         />
       </Fragment>
     );
@@ -241,11 +242,11 @@ function DocumentContent({
 }
 
 export function ResourceDocumentRenderer({
+  decorations,
   document,
-  renderAfterNode,
 }: Readonly<{
+  decorations?: ResourceDocumentDecorations | undefined;
   document: ResourceDocument;
-  renderAfterNode?: (node: ResourceNode) => ReactNode;
 }>) {
   const title = document.metadata.title ?? "Untitled resource";
   const { length: diagnosticCount } = document.diagnostics;
@@ -260,8 +261,8 @@ export function ResourceDocumentRenderer({
       )}
       <DocumentContent
         assets={document.assets}
+        decorations={decorations}
         nodes={document.content}
-        {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
       />
     </Document>
   );

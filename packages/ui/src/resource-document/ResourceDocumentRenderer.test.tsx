@@ -149,6 +149,28 @@ describe("ResourceDocumentRenderer", () => {
     ).toBeVisible();
   });
 
+  it("renders question controls before the response space", () => {
+    render(
+      <OakThemeProvider theme={oakDefaultTheme}>
+        <ResourceDocumentRenderer
+          decorations={{
+            renderAfterNode: (node) =>
+              node.id === "question" ? <div>Suggested question controls</div> : null,
+          }}
+          document={document}
+        />
+      </OakThemeProvider>,
+    );
+
+    const controls = screen.getByText("Suggested question controls");
+    const responseSpace = screen.getByLabelText("Answer space with 4 lines");
+
+    expect(screen.getAllByText("Suggested question controls")).toHaveLength(1);
+    expect(controls.compareDocumentPosition(responseSpace)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
   it("renders worksheet tasks as independently collapsible heading regions", async () => {
     const taskDocument: ResourceDocument = {
       ...document,
@@ -261,7 +283,7 @@ describe("ResourceDocumentRenderer", () => {
     expect(expression).toHaveAttribute("tabindex", "0");
   });
 
-  it("highlights an applied transformation as one contribution", () => {
+  it("labels a contribution once, at the node that starts it", () => {
     renderDocument({
       ...document,
       content: [
@@ -282,9 +304,38 @@ describe("ResourceDocumentRenderer", () => {
       diagnostics: [],
     });
 
-    expect(screen.getByText("Added support")).toBeVisible();
     expect(screen.getAllByText("Added support")).toHaveLength(1);
     expect(screen.getByText("Try one step at a time.")).toBeVisible();
+  });
+
+  it("places contribution controls inside the label they belong to", () => {
+    render(
+      <OakThemeProvider theme={oakDefaultTheme}>
+        <ResourceDocumentRenderer
+          decorations={{
+            renderContributionControls: (contributionId) => (
+              <button type="button">{`Remove ${contributionId}`}</button>
+            ),
+          }}
+          document={{
+            ...document,
+            content: [
+              {
+                content: [{ type: "text", text: "Try one step at a time." }],
+                extensions: { "oak:contribution": "contribution-1" },
+                id: "added-guidance",
+                type: "paragraph",
+              },
+            ],
+            diagnostics: [],
+          }}
+        />
+      </OakThemeProvider>,
+    );
+
+    const label = screen.getByText("Added support");
+    const control = screen.getByRole("button", { name: "Remove contribution-1" });
+    expect(label.parentElement).toContainElement(control);
   });
 
   it("shows a readable fallback when a figure asset is missing", () => {

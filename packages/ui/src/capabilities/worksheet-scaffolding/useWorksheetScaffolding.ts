@@ -13,11 +13,19 @@ import type {
   LessonContext,
   ResourceAdapterErrorHandler,
 } from "../../publicTypes.js";
+import { newRequestId } from "../../requestId.js";
 import {
+  acceptWorksheetScaffoldingReview,
   applyWorksheetScaffoldingSuggestion,
   getWorksheetScaffolding,
   openWorksheetScaffolding,
+  enqueueWorksheetScaffoldingRemoval,
+  retryWorksheetScaffoldingReview,
+  enqueueWorksheetScaffoldingDismissal,
+  undoWorksheetScaffoldingReview,
 } from "../../worksheetScaffolding.js";
+
+type ScaffoldingAction = "accept" | "dismiss" | "remove" | "retry" | "undo";
 
 export type WorkflowState =
   | Readonly<{ status: "idle" }>
@@ -44,7 +52,20 @@ type OpenRequest = Readonly<{
   promise: Promise<WorksheetScaffoldingEntry>;
 }>;
 
-const POLL_INTERVAL_MS = 750;
+type ReplacementRequest = Readonly<{ adaptationId: string; requestId: string }>;
+
+const FIRST_POLL_DELAY_MS = 100;
+const MAX_POLL_DELAY_MS = 750;
+
+/**
+ * Escalates from the first delay to the cap. A removal or dismissal finishes in
+ * well under a second, so a fixed cadence spends most of that job's life waiting
+ * to notice it; a model run takes many seconds and gains nothing from being asked
+ * about seven times a second.
+ */
+export function worksheetScaffoldingPollDelay(attempt: number): number {
+  return Math.min(FIRST_POLL_DELAY_MS * 2 ** attempt, MAX_POLL_DELAY_MS);
+}
 
 function stateFromEntry(entry: WorksheetScaffoldingEntry): WorkflowState {
   return entry.outcome === "resumable"
@@ -91,10 +112,15 @@ export function useWorksheetScaffolding({
   const [documentIsVisible, setDocumentIsVisible] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [pollCount, setPollCount] = useState(0);
+  const [actionInFlight, setActionInFlight] = useState<ScaffoldingAction | null>(null);
   const openRequestRef = useRef<OpenRequest | null>(null);
-  const replacingRef = useRef<string | null>(null);
+  const replacingRef = useRef<ReplacementRequest | null>(null);
   const workflowGenerationRef = useRef(0);
-  const statusRef = useRef<HTMLDivElement | null>(null);
+  const pollAttemptRef = useRef<{ attempt: number; jobId: string | null }>({
+    attempt: 0,
+    jobId: null,
+  });
+  const applicationStatusRef = useRef<HTMLDivElement | null>(null);
   const getTokenRef = useLatestRef(getToken);
   const lessonRef = useLatestRef(lesson);
   const onErrorRef = useLatestRef(onError);
@@ -102,6 +128,7 @@ export function useWorksheetScaffolding({
 
   const hideWorkflowDocument = useCallback(() => {
     setApplyingSuggestion(null);
+    setActionInFlight(null);
     setDocumentIsVisible(false);
   }, []);
 
@@ -127,7 +154,7 @@ export function useWorksheetScaffolding({
     hideWorkflowDocument();
     setState({ status: "loading" });
     const replacing = replacingRef.current;
-    const requestKey = `${apiBaseUrl}:${lessonKey}:${retryCount}:${replacing ?? ""}`;
+    const requestKey = `${apiBaseUrl}:${lessonKey}:${retryCount}:${replacing?.requestId ?? ""}`;
     const request =
       openRequestRef.current?.key === requestKey
         ? openRequestRef.current
@@ -175,11 +202,17 @@ export function useWorksheetScaffolding({
 
   const adaptationId = state.status === "ready" ? state.value.adaptationId : null;
   const busy = state.status === "ready" && jobIsBusy(state.value);
+  const busyJobId = state.status === "ready" ? (state.value.job?.id ?? null) : null;
 
   useEffect(() => {
     if (!isOpen || adaptationId === null || !busy) {
       return;
     }
+    // Each job escalates from scratch, or the next one would inherit the last
+    // one's cadence and take a second to notice a change that already happened.
+    const attempt =
+      pollAttemptRef.current.jobId === busyJobId ? pollAttemptRef.current.attempt : 0;
+    pollAttemptRef.current = { attempt: attempt + 1, jobId: busyJobId };
     let cancelled = false;
     const timer = window.setTimeout(() => {
       void getWorksheetScaffolding({
@@ -195,6 +228,9 @@ export function useWorksheetScaffolding({
             if (!suggestionApplicationIsBusy(value)) {
               setApplyingSuggestion(null);
             }
+            if (!jobIsBusy(value)) {
+              setActionInFlight(null);
+            }
             setState({ status: "ready", value });
             setPollCount((count) => count + 1);
           }
@@ -204,19 +240,27 @@ export function useWorksheetScaffolding({
             failWith(error);
           }
         });
-    }, POLL_INTERVAL_MS);
+    }, worksheetScaffoldingPollDelay(attempt));
 
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [adaptationId, apiBaseUrl, busy, failWith, getTokenRef, isOpen, pollCount]);
+  }, [
+    adaptationId,
+    apiBaseUrl,
+    busy,
+    busyJobId,
+    failWith,
+    getTokenRef,
+    isOpen,
+    pollCount,
+  ]);
 
-  // Applying removes the chosen suggestion from the document, so focus moves to
-  // the status banner rather than falling back to the top of the dialog.
+  // Applying removes the chosen button, so focus follows its local progress marker.
   useEffect(() => {
     if (applyingSuggestion !== null) {
-      statusRef.current?.focus();
+      applicationStatusRef.current?.focus();
     }
   }, [applyingSuggestion]);
 
@@ -291,9 +335,122 @@ export function useWorksheetScaffolding({
     [apiBaseUrl, failWith, getTokenRef],
   );
 
+  /**
+   * One in-flight action at a time. `select` both guards the action and gathers
+   * its request, so an action that no longer applies never reaches the API.
+   */
+  const runAction = useCallback(
+    <TRequest>(
+      action: ScaffoldingAction,
+      select: (ready: WorksheetScaffoldingState) => TRequest | null,
+      request: (
+        options: TRequest & { apiBaseUrl: string; getToken: GetToken },
+      ) => Promise<WorksheetScaffoldingState>,
+    ) => {
+      if (
+        state.status !== "ready" ||
+        jobIsBusy(state.value) ||
+        actionInFlight !== null
+      ) {
+        return;
+      }
+      const selected = select(state.value);
+      if (selected === null) {
+        return;
+      }
+      setActionInFlight(action);
+      const workflowGeneration = workflowGenerationRef.current;
+      void request({
+        ...selected,
+        apiBaseUrl,
+        getToken: () => getTokenRef.current(),
+      })
+        .then((value) => {
+          if (workflowGenerationRef.current !== workflowGeneration) {
+            return;
+          }
+          if (!jobIsBusy(value)) {
+            setActionInFlight(null);
+          }
+          setState({ status: "ready", value });
+        })
+        .catch((error: unknown) => {
+          if (workflowGenerationRef.current === workflowGeneration) {
+            setActionInFlight(null);
+            failWith(error);
+          }
+        });
+    },
+    [actionInFlight, apiBaseUrl, failWith, getTokenRef, state],
+  );
+
+  const runReviewAction = useCallback(
+    (action: "accept" | "undo", request: typeof acceptWorksheetScaffoldingReview) =>
+      runAction(
+        action,
+        ({ adaptationId, pendingReview }) =>
+          pendingReview === null
+            ? null
+            : { adaptationId, attemptId: pendingReview.attemptId },
+        request,
+      ),
+    [runAction],
+  );
+
+  const acceptReview = useCallback(
+    () => runReviewAction("accept", acceptWorksheetScaffoldingReview),
+    [runReviewAction],
+  );
+
+  const retryReview = useCallback(
+    () =>
+      runAction(
+        "retry",
+        ({ adaptationId, pendingReview }) =>
+          pendingReview === null
+            ? null
+            : {
+                adaptationId,
+                attemptId: pendingReview.attemptId,
+                requestId: newRequestId(),
+              },
+        retryWorksheetScaffoldingReview,
+      ),
+    [runAction],
+  );
+
+  const undoReview = useCallback(
+    () => runReviewAction("undo", undoWorksheetScaffoldingReview),
+    [runReviewAction],
+  );
+
+  const dismissTarget = useCallback(
+    (targetBlockId: string | null) =>
+      runAction(
+        "dismiss",
+        ({ adaptationId }) => ({ adaptationId, targetBlockId }),
+        enqueueWorksheetScaffoldingDismissal,
+      ),
+    [runAction],
+  );
+
+  const removeContribution = useCallback(
+    (contributionId: string) =>
+      runAction(
+        "remove",
+        ({ adaptationId, pendingReview }) =>
+          pendingReview === null ? { adaptationId, contributionId } : null,
+        enqueueWorksheetScaffoldingRemoval,
+      ),
+    [runAction],
+  );
+
   const startFresh = useCallback(
     (adaptationId_: string) => {
-      replacingRef.current = adaptationId_;
+      replacingRef.current = {
+        adaptationId: adaptationId_,
+        requestId: newRequestId(),
+      };
       hideWorkflowDocument();
       setRetryCount((count) => count + 1);
     },
@@ -302,20 +459,29 @@ export function useWorksheetScaffolding({
 
   const tryAgain = useCallback(() => {
     if (state.status === "ready" && state.value.job?.status === "failed") {
-      replacingRef.current = state.value.adaptationId;
+      replacingRef.current = {
+        adaptationId: state.value.adaptationId,
+        requestId: newRequestId(),
+      };
     }
     hideWorkflowDocument();
     setRetryCount((count) => count + 1);
   }, [hideWorkflowDocument, state]);
 
   return {
+    acceptReview,
+    actionInFlight,
+    applicationStatusRef,
     applySuggestion,
     applyingSuggestion,
+    dismissTarget,
     documentIsVisible,
+    removeContribution,
     resume,
+    retryReview,
     startFresh,
     state,
-    statusRef,
     tryAgain,
+    undoReview,
   } as const;
 }

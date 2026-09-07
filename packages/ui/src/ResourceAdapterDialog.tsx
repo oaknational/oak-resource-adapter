@@ -96,7 +96,7 @@ function ResourceAdapterDialogInner({
       <OakModalCenterBody
         // The body titles itself h1, which would be a second h1 on the host page.
         headingOverride={{ id: titleId, tag: "h2" }}
-        iconName="additional-material"
+        iconName="ai"
         title={capability.label}
       >
         <div style={workflowContainerStyle}>

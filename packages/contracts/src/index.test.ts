@@ -7,7 +7,7 @@ import {
   resourceAdapterApiContractVersion,
   resourceAdapterCapabilitiesResponseSchema,
 } from "./index.js";
-import { internalRouter } from "./internal-server.js";
+import { internalRouter, type WorksheetScaffoldingService } from "./internal-server.js";
 import { hostRouter } from "./server.js";
 
 const sourceDocument: ResourceDocument = {
@@ -27,10 +27,33 @@ const sourceDocument: ResourceDocument = {
 };
 
 const worksheetScaffolding = {
+  accept: () => Promise.resolve(null),
   applySuggestion: () => Promise.resolve(null),
   get: () => Promise.resolve(null),
   open: () => Promise.resolve(null),
+  remove: () => Promise.resolve(null),
+  retry: () => Promise.resolve(null),
+  dismiss: () => Promise.resolve(null),
+  undo: () => Promise.resolve(null),
 };
+
+const internalTeacher = {
+  organisationId: "org-123",
+  teacherId: "teacher-456",
+} as const;
+const adaptationId = "11111111-1111-4111-8111-111111111111";
+const attemptId = "22222222-2222-4222-8222-222222222222";
+const suggestionId = "33333333-3333-4333-8333-333333333333";
+const requestId = "44444444-4444-4444-8444-444444444444";
+const worksheetState = {
+  adaptationId,
+  document: sourceDocument,
+  job: null,
+  pendingReview: null,
+  suggestions: [],
+} as const;
+type InternalCaller = ReturnType<typeof internalRouter.createCaller>;
+
 describe("Resource Adapter API contracts", () => {
   it.each([
     ["1", 1],
@@ -246,6 +269,17 @@ describe("Resource Adapter API contracts", () => {
   });
 
   describe("Internal API (internalRouter)", () => {
+    function callerWithWorksheet(
+      overrides: Partial<WorksheetScaffoldingService> = {},
+    ): InternalCaller {
+      return internalRouter.createCaller({
+        authenticatedTeacher: internalTeacher,
+        featureFlags: { getEnabledFlags: () => [] },
+        sourceDocuments: { getSourceDocument: () => sourceDocument },
+        worksheetScaffolding: { ...worksheetScaffolding, ...overrides },
+      });
+    }
+
     it("calls the feature flags service through the typed router", async () => {
       const caller = internalRouter.createCaller({
         authenticatedTeacher: {
@@ -320,6 +354,81 @@ describe("Resource Adapter API contracts", () => {
             availableResources: ["worksheet"],
           },
         }),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it.each([
+      {
+        invoke: (caller: InternalCaller) =>
+          caller.worksheetScaffolding.accept({ adaptationId, attemptId }),
+        name: "accept",
+        request: { adaptationId, attemptId },
+        service: "accept" as const,
+      },
+      {
+        invoke: (caller: InternalCaller) =>
+          caller.worksheetScaffolding.applySuggestion({ adaptationId, suggestionId }),
+        name: "applySuggestion",
+        request: { adaptationId, suggestionId },
+        service: "applySuggestion" as const,
+      },
+      {
+        invoke: (caller: InternalCaller) =>
+          caller.worksheetScaffolding.get({ adaptationId }),
+        name: "get",
+        request: { adaptationId },
+        service: "get" as const,
+      },
+      {
+        invoke: (caller: InternalCaller) =>
+          caller.worksheetScaffolding.remove({
+            adaptationId,
+            contributionId: suggestionId,
+          }),
+        name: "remove",
+        request: { adaptationId, contributionId: suggestionId },
+        service: "remove" as const,
+      },
+      {
+        invoke: (caller: InternalCaller) =>
+          caller.worksheetScaffolding.retry({ adaptationId, attemptId, requestId }),
+        name: "retry",
+        request: { adaptationId, attemptId, requestId },
+        service: "retry" as const,
+      },
+      {
+        invoke: (caller: InternalCaller) =>
+          caller.worksheetScaffolding.dismiss({
+            adaptationId,
+            targetBlockId: "question-1",
+          }),
+        name: "dismiss",
+        request: { adaptationId, targetBlockId: "question-1" },
+        service: "dismiss" as const,
+      },
+      {
+        invoke: (caller: InternalCaller) =>
+          caller.worksheetScaffolding.undo({ adaptationId, attemptId }),
+        name: "undo",
+        request: { adaptationId, attemptId },
+        service: "undo" as const,
+      },
+    ])(
+      "routes worksheet scaffolding $name with its authenticated target",
+      async (entry) => {
+        const handler = vi.fn().mockResolvedValue(worksheetState);
+        const caller = callerWithWorksheet({ [entry.service]: handler });
+
+        await expect(entry.invoke(caller)).resolves.toEqual(worksheetState);
+        expect(handler).toHaveBeenCalledWith(entry.request, internalTeacher);
+      },
+    );
+
+    it("maps a missing worksheet adaptation to NOT_FOUND", async () => {
+      const caller = callerWithWorksheet({ accept: () => Promise.resolve(null) });
+
+      await expect(
+        caller.worksheetScaffolding.accept({ adaptationId, attemptId }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
