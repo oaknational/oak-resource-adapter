@@ -27,13 +27,13 @@
     "@sentry/nextjs": "^10.72.0",
     "@trpc/server": "11.18.0",
     "drizzle-orm": "^0.45.2",
-    "next": "^16.2.11",
+    "next": "^16.3.3",
     "openai": "6.49.0",
-    "posthog-node": "^5.46.1",
+    "posthog-node": "^5.51.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "workflow": "4.6.1",
-    "zod": "^4.4.3"
+    "workflow": "4.8.5",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
