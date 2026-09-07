@@ -235,12 +235,11 @@ function parseDirective(
       if (stack.length === 0) {
         break;
       }
-    } else if (
-      stack.at(-1) !== "oak-code-block" &&
-      line &&
-      directiveOpenPattern.test(line)
-    ) {
-      stack.push(line.match(directiveOpenPattern)?.[1] ?? "");
+    } else if (stack.at(-1) !== "oak-code-block" && line) {
+      const nested = directiveOpenPattern.exec(line);
+      if (nested?.[1]) {
+        stack.push(nested[1]);
+      }
     }
   }
 

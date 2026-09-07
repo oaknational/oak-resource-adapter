@@ -108,11 +108,10 @@ function nodeLines(node: ResourceNode, depth: number): string[] {
         ...(node.header === undefined ? [] : [node.header.map(cellText).join(" | ")]),
         ...node.rows.map((row) => row.map(cellText).join(" | ")),
       ];
-    case "codeBlock":
-      return [
-        `${header}${node.language === undefined ? "" : ` [${node.language}]`}`,
-        node.source,
-      ];
+    case "codeBlock": {
+      const language = node.language === undefined ? "" : ` [${node.language}]`;
+      return [`${header}${language}`, node.source];
+    }
     case "unsupported":
       return [`${header} ${node.accessibleText ?? node.description}`];
   }

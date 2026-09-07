@@ -504,6 +504,10 @@ function TableCellContent({
   }
 }
 
+/**
+ * Cells are keyed by position because position is their only identity: blank
+ * cells carry no content, and repeated headings and answers collide.
+ */
 function TablePreview({
   node,
 }: Readonly<{ node: Extract<ResourceNode, { type: "table" }> }>) {
