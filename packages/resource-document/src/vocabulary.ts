@@ -61,7 +61,7 @@ export const resourceVocabulary = {
   annotations: { answer: { directive: "oak-answer", takesChildren: true } },
 } as const satisfies {
   nodes: NodeVocabulary;
-  annotations: { answer: { directive: string; takesChildren: true } };
+  annotations: { answer: { directive: string; takesChildren: boolean } };
 };
 
 export type ResourceNodeType = keyof typeof resourceVocabulary.nodes;

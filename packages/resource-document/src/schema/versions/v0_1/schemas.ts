@@ -117,7 +117,7 @@ export const tableNodeSchema = z
         (row) => row.length === (table.header?.length ?? table.rows[0]?.length),
       ),
     {
-      message: "Table rows and header must have the same number of cells",
+      message: "Every row in a table must have the same number of cells",
     },
   );
 
