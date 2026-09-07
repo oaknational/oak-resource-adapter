@@ -22,28 +22,9 @@ updates:
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
     groups:
-      # A dependency joins the first group it matches, so react must come
-      # before dev-tooling or @types/react* would land there.
-      react:
-        patterns:
-          - react
-          - react-dom
-          - "@types/react"
-          - "@types/react-dom"
-        update-types: [minor, patch]
-      sentry:
-        patterns: ["@sentry/*"]
-        update-types: [minor, patch]
-      opentelemetry:
-        patterns: ["@opentelemetry/*"]
-        update-types: [minor, patch]
-      # drizzle-kit generates what drizzle-orm consumes, so they move together.
-      drizzle:
-        patterns: [drizzle-orm, drizzle-kit]
-        update-types: [minor, patch]
-      clerk:
-        patterns: ["@clerk/*"]
-        update-types: [minor, patch]
+      # A dependency joins the first group it matches, so dev-tooling comes
+      # first and `production` takes everything it leaves. @types/react* are
+      # excluded from dev-tooling so they travel with react.
       dev-tooling:
         patterns:
           - eslint
@@ -70,6 +51,11 @@ updates:
         exclude-patterns:
           - "@types/react"
           - "@types/react-dom"
+        update-types: [minor, patch]
+      # drizzle-kit generates what drizzle-orm consumes, so they must stay in
+      # one group: do not move drizzle-kit into dev-tooling.
+      production:
+        patterns: ["*"]
         update-types: [minor, patch]
 
   - package-ecosystem: github-actions
