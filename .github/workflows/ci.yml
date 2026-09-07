@@ -240,6 +240,8 @@ jobs:
       CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
       E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CURRICULUM_API_URL: ${{ secrets.CURRICULUM_API_URL }}
+      CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY: ${{ secrets.CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY }}
     services:
       postgres:
         image: postgres:17
@@ -269,6 +271,21 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+
+      - name: Check curriculum configuration
+        if: env.CLERK_SECRET_KEY != ''
+        run: |
+          node --input-type=module <<'NODE'
+          const required = [
+            "CURRICULUM_API_URL",
+            "CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY",
+          ];
+          const missing = required.filter((name) => !process.env[name]?.trim());
+          if (missing.length > 0) {
+            console.error(`::error::Browser tests require GitHub secrets: ${missing.join(", ")}. Configure the Actions and Dependabot secret stores.`);
+            process.exit(1);
+          }
+          NODE
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

@@ -39,7 +39,16 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   tip="$local_sha"
   case "$remote_sha" in
   # The remote has this branch already, so only the new commits need checking.
-  *[!0]*) base="$remote_sha" ;;
+  # Unless the remote moved somewhere this clone has never fetched, in which
+  # case that sha resolves to nothing and scanning from main is the wider,
+  # safer range. Git then reports the stale ref itself when it rejects the push.
+  *[!0]*)
+    if git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+      base="$remote_sha"
+    else
+      base="$(git rev-parse --verify --quiet origin/main || true)"
+    fi
+    ;;
   # First push of this branch, so main is the base.
   *) base="$(git rev-parse --verify --quiet origin/main || true)" ;;
   esac
