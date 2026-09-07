@@ -5,6 +5,14 @@ import { testEchoJob } from "@/jobs/test-echo/definition";
 import { executeTestEchoStep } from "@/jobs/test-echo/steps";
 import { applySuggestionJob } from "@/jobs/suggestions/apply-definition";
 import { generateSuggestionsJob } from "@/jobs/suggestions/generate-definition";
+import { removeTransformationJob } from "@/jobs/transformations/remove-definition";
+import { retryTransformationJob } from "@/jobs/transformations/retry-definition";
+import { dismissTransformationsJob } from "@/jobs/transformations/dismiss-definition";
+import {
+  executeRemoveTransformationStep,
+  executeRetryTransformationStep,
+  executeDismissTransformationsStep,
+} from "@/jobs/transformations/steps";
 import {
   executeApplySuggestionStep,
   executeGenerateSuggestionsStep,
@@ -14,6 +22,9 @@ import { claimJobStep, completeJobStep, failJobStep } from "./job-lifecycle-step
 const jobExecutors = {
   [applySuggestionJob.kind]: executeApplySuggestionStep,
   [generateSuggestionsJob.kind]: executeGenerateSuggestionsStep,
+  [removeTransformationJob.kind]: executeRemoveTransformationStep,
+  [retryTransformationJob.kind]: executeRetryTransformationStep,
+  [dismissTransformationsJob.kind]: executeDismissTransformationsStep,
   [testEchoJob.kind]: executeTestEchoStep,
 } satisfies Record<RegisteredJobKind, (jobId: string) => Promise<void>>;
 

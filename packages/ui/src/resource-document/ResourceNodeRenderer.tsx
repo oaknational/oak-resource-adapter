@@ -1,9 +1,10 @@
 import { Fragment, type ReactNode } from "react";
-import type {
-  Asset,
-  InlineContent,
-  ResourceNode,
-  UnsupportedNode,
+import {
+  contributionIdOf,
+  type Asset,
+  type InlineContent,
+  type ResourceNode,
+  type UnsupportedNode,
 } from "@oaknational/resource-document";
 import { parseColor } from "@oaknational/oak-components";
 import { styled } from "styled-components";
@@ -24,12 +25,23 @@ const AppliedTransformation = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 1rem;
+  margin-top: 0.75rem;
+  padding: 1.5rem 1rem 1rem;
+  position: relative;
 `;
 
 const AppliedTransformationLabel = styled.span`
-  font-size: 0.875rem;
+  background: ${parseColor("bg-decorative2-very-subdued")};
+  border: 1px solid ${parseColor("border-decorative2")};
+  border-radius: 999px;
+  font-size: 0.75rem;
   font-weight: 700;
+  left: 0.75rem;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  position: absolute;
+  top: 0;
+  transform: translateY(-50%);
 `;
 
 const Paragraph = styled.p`
@@ -143,11 +155,6 @@ function contentText(node: UnsupportedNode): string {
   return node.accessibleText ?? node.description;
 }
 
-function contributionId(node: ResourceNode): string | undefined {
-  const value = node.extensions?.["oak:contribution"];
-  return typeof value === "string" ? value : undefined;
-}
-
 function headingLevel(level: number): ContentHeadingLevel {
   switch (Math.min(level + 2, 6)) {
     case 3:
@@ -181,24 +188,42 @@ function Heading({
   }
 }
 
+/** Slots a capability fills in while the teacher works on the document. */
+export type ResourceDocumentDecorations = Readonly<{
+  /** Placed after a node, or inside a question above its response space. */
+  renderAfterNode?: ((node: ResourceNode) => ReactNode) | undefined;
+  /** Placed inside the frame marking content one contribution added. */
+  renderContributionControls?: ((contributionId: string) => ReactNode) | undefined;
+}>;
+
+/**
+ * A question places its own trailing slot above its response space, so the list
+ * must not place it a second time after the whole question.
+ */
+function placesOwnTrailingSlot(node: ResourceNode): boolean {
+  return node.type === "question";
+}
+
 export function ResourceNodeListRenderer({
   assets,
+  decorations,
   nodes,
   parentContributionId,
   parentHeadingLevel,
-  renderAfterNode,
+  renderBeforeNode,
 }: Readonly<{
   assets: readonly Asset[];
+  decorations?: ResourceDocumentDecorations | undefined;
   nodes: readonly ResourceNode[];
   parentContributionId?: string | undefined;
   parentHeadingLevel: ParentHeadingLevel;
-  renderAfterNode?: (node: ResourceNode) => ReactNode;
+  renderBeforeNode?: ((node: ResourceNode) => ReactNode) | undefined;
 }>) {
   let currentHeadingLevel = parentHeadingLevel;
 
   return nodes.map((node) => {
     const nodeParentHeadingLevel = currentHeadingLevel;
-    const nodeContributionId = contributionId(node);
+    const nodeContributionId = contributionIdOf(node.extensions);
 
     if (node.type === "heading") {
       currentHeadingLevel = headingLevel(node.level);
@@ -207,24 +232,27 @@ export function ResourceNodeListRenderer({
     const renderedNode = (
       <ResourceNodeRenderer
         assets={assets}
+        decorations={decorations}
         node={node}
         parentHeadingLevel={nodeParentHeadingLevel}
-        {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
       />
     );
+    const startsContribution =
+      nodeContributionId !== undefined && nodeContributionId !== parentContributionId;
 
     return (
       <Fragment key={node.id}>
-        {nodeContributionId !== undefined &&
-        nodeContributionId !== parentContributionId ? (
+        {renderBeforeNode?.(node)}
+        {startsContribution ? (
           <AppliedTransformation>
             <AppliedTransformationLabel>Added support</AppliedTransformationLabel>
             {renderedNode}
+            {decorations?.renderContributionControls?.(nodeContributionId)}
           </AppliedTransformation>
         ) : (
           renderedNode
         )}
-        {renderAfterNode?.(node)}
+        {placesOwnTrailingSlot(node) ? null : decorations?.renderAfterNode?.(node)}
       </Fragment>
     );
   });
@@ -269,14 +297,14 @@ function FigureNode({
 
 export function ResourceNodeRenderer({
   assets,
+  decorations,
   node,
   parentHeadingLevel,
-  renderAfterNode,
 }: Readonly<{
   assets: readonly Asset[];
+  decorations?: ResourceDocumentDecorations | undefined;
   node: ResourceNode;
   parentHeadingLevel: ParentHeadingLevel;
-  renderAfterNode?: (node: ResourceNode) => ReactNode;
 }>) {
   switch (node.type) {
     case "section":
@@ -284,10 +312,10 @@ export function ResourceNodeRenderer({
         <ContentSection>
           <ResourceNodeListRenderer
             assets={assets}
+            decorations={decorations}
             nodes={node.children}
-            parentContributionId={contributionId(node)}
+            parentContributionId={contributionIdOf(node.extensions)}
             parentHeadingLevel={parentHeadingLevel}
-            {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
           />
         </ContentSection>
       );
@@ -314,17 +342,25 @@ export function ResourceNodeRenderer({
       const label = node.label ? `Question ${node.label}` : "Question";
       const questionHeadingLevel = nestedHeadingLevel(parentHeadingLevel);
       const marks = node.marks === undefined ? "" : ` (${pluralisedMarks(node.marks)})`;
+      const responseSpace = node.children.find(
+        (child) => child.type === "responseSpace",
+      );
+      const trailingSlot = decorations?.renderAfterNode?.(node);
       return (
         <Question>
           <Heading level={questionHeadingLevel}>{`${label}${marks}`}</Heading>
           <QuestionContent>
             <ResourceNodeListRenderer
               assets={assets}
+              decorations={decorations}
               nodes={node.children}
-              parentContributionId={contributionId(node)}
+              parentContributionId={contributionIdOf(node.extensions)}
               parentHeadingLevel={questionHeadingLevel}
-              {...(renderAfterNode === undefined ? {} : { renderAfterNode })}
+              renderBeforeNode={(child) =>
+                child.id === responseSpace?.id ? trailingSlot : null
+              }
             />
+            {responseSpace === undefined ? trailingSlot : null}
           </QuestionContent>
         </Question>
       );

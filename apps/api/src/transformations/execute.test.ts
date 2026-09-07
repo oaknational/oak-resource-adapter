@@ -10,7 +10,7 @@ import type { QuestionNode, ResourceDocument } from "@oaknational/resource-docum
 
 import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
 import { always } from "./availability";
-import { glossaryContribution } from "./definitions/scaffold-add-glossary-question/contribution";
+import { wordBankContribution } from "./definitions/scaffold-add-word-bank/contribution";
 import { defineTransformation } from "./define-transformation";
 import { executeTransformation, type PreparePrompt } from "./execute";
 
@@ -106,6 +106,7 @@ const contextHungry = defineTransformation({
 const vocabularyScaffold = defineTransformation({
   kind: "test-vocabulary-scaffold",
   label: "Vocabulary scaffold",
+  supportLevels: [{ level: "mid", description: "Defines the words." }],
   status: "draft",
   suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   materialRequirements: [{ key: "lesson.keywords", required: false }],
@@ -125,7 +126,7 @@ const withContribution = {
   ...vocabularyScaffold,
   execution: {
     ...vocabularyScaffold.execution,
-    contribution: glossaryContribution,
+    contribution: wordBankContribution,
   },
 } as typeof vocabularyScaffold;
 
@@ -350,13 +351,14 @@ describe("executeTransformation with a contribution", () => {
       {
         contributionId: "contribution-1",
         document: worksheet,
+        params: { supportLevel: "mid" },
         targetBlockId: firstQuestion.id,
       },
       { invoker, prepare },
     );
 
     expect(invokeStructured).toHaveBeenCalledWith(
-      expect.objectContaining({ schemaName: "question_glossary" }),
+      expect.objectContaining({ schemaName: "word_bank_mid" }),
     );
     expect(run).toMatchObject({ meta, outcome: "APPLIED" });
 
@@ -370,7 +372,7 @@ describe("executeTransformation with a contribution", () => {
       lead: [
         {
           type: "text",
-          text: "This vocabulary will help you unpick what the task is asking you to do:",
+          text: "Vocabulary you could include:",
         },
       ],
       entries: [
@@ -396,6 +398,7 @@ describe("executeTransformation with a contribution", () => {
       {
         contributionId: "contribution-2",
         document: worksheet,
+        params: { supportLevel: "mid" },
         targetBlockId: firstQuestion.id,
       },
       { invoker, prepare },
@@ -439,6 +442,7 @@ describe("executeTransformation with a contribution", () => {
             ],
           },
         },
+        params: { supportLevel: "mid" },
         targetBlockId: firstQuestion.id,
       },
       { invoker, prepare },
@@ -475,6 +479,7 @@ describe("executeTransformation with a contribution", () => {
         {
           contributionId: "contribution-4",
           document: worksheet,
+          params: { supportLevel: "mid" },
           targetBlockId: firstQuestion.id,
         },
         { invoker, prepare },
@@ -494,7 +499,11 @@ describe("executeTransformation with a contribution", () => {
     await expect(
       executeTransformation(
         withContribution,
-        { document: worksheet, targetBlockId: firstQuestion.id },
+        {
+          document: worksheet,
+          params: { supportLevel: "mid" },
+          targetBlockId: firstQuestion.id,
+        },
         { invoker, prepare },
       ),
     ).rejects.toThrow(/contribution ID/);

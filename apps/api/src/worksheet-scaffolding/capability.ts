@@ -5,6 +5,8 @@ export const SUGGESTION_FLOW_ID = CAPABILITY.suggestionFlowId;
 
 /** Generating suggestions is an internal operation, not a change a teacher asked for. */
 export const SUGGESTION_OPERATION_KIND = `suggestions.${SUGGESTION_FLOW_ID}`;
+export const REMOVAL_OPERATION_KIND = "transformations.remove";
+export const DISMISSAL_OPERATION_KIND = "transformations.dismiss";
 
 /**
  * Identifies reviewing one worksheet for suggestions. The job and the operation

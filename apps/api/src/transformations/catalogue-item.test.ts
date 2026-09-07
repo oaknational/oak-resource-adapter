@@ -5,7 +5,7 @@ import { defineTransformation } from "./define-transformation";
 import { listRegisteredTransformations, toCatalogueItem } from "./service";
 import type { OakMaterialRequirement } from "../oak-material/material";
 import { transformationDefinitions } from "./registry";
-import { glossaryContribution } from "./definitions/scaffold-add-glossary-question/contribution";
+import { wordBankContribution } from "./definitions/scaffold-add-word-bank/contribution";
 import { addWordBankPrompt } from "./definitions/scaffold-add-word-bank/prompt";
 
 function deterministicWith(
@@ -48,7 +48,7 @@ const structuredModel = defineTransformation({
   execution: {
     strategy: "model",
     prompt: addWordBankPrompt,
-    contribution: glossaryContribution,
+    contribution: wordBankContribution,
   },
 });
 

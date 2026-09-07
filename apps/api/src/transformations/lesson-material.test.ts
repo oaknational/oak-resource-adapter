@@ -10,7 +10,7 @@ import type { QuestionNode, ResourceDocument } from "@oaknational/resource-docum
 
 import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
 import { resolveLessonMaterial } from "../oak-material/from-lesson";
-import { addGlossaryQuestionTransformation } from "./definitions/scaffold-add-glossary-question";
+import { addWordBankTransformation } from "./definitions/scaffold-add-word-bank";
 import { executeTransformation, type PreparePrompt } from "./execute";
 
 const identity = {
@@ -116,19 +116,19 @@ describe("a lesson's keywords reaching a transformation", () => {
     const { material } = await resolveLessonMaterial(
       identity,
       lessons,
-      addGlossaryQuestionTransformation.materialRequirements ?? [],
+      addWordBankTransformation.materialRequirements ?? [],
     );
     const invoker = invokerReturning({
       entries: [{ definition: "the model's own attempt", term: "perspective" }],
     });
 
     const run = await executeTransformation(
-      addGlossaryQuestionTransformation,
+      addWordBankTransformation,
       {
         contributionId: "contribution-1",
         document: worksheet,
         material,
-        params: { supportLevel: "low" },
+        params: { supportLevel: "mid" },
         targetBlockId: firstQuestion.id,
       },
       { invoker, prepare },

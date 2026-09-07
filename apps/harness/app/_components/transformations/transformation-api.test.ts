@@ -55,7 +55,7 @@ describe("transformation harness API", () => {
       capabilities: [
         {
           id: "worksheetScaffolding",
-          label: "Scaffold practice tasks",
+          label: "Add extra scaffolding",
           resourceType: "worksheet",
           suggestionFlowId: "worksheet-scaffolding",
           transformationKinds: ["scaffold-add-word-bank"],

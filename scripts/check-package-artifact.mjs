@@ -391,6 +391,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "worksheetScaffolding.js",
     "capabilities.js",
     "publicTypes.js",
+    "requestId.js",
     "resource-document/InlineContentRenderer.js",
     "resource-document/ResourceDocumentRenderer.js",
     "resource-document/ResourceNodeRenderer.js",

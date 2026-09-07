@@ -33,6 +33,14 @@ if (!Number.isFinite(LOCK_WAIT_SECONDS) || LOCK_WAIT_SECONDS < 0) {
 }
 
 /**
+ * Drizzle's own defaults, named here because the count below has to read the very
+ * table the migrator writes. Passing them explicitly keeps the two from drifting.
+ */
+const MIGRATIONS_SCHEMA = "drizzle";
+const MIGRATIONS_TABLE = "__drizzle_migrations";
+const MIGRATIONS_RELATION = `${MIGRATIONS_SCHEMA}.${MIGRATIONS_TABLE}`;
+
+/**
  * Caps how long a statement waits for a table lock. Without it, DDL queued behind
  * a long-running query blocks every later query on that table until it finishes.
  */
@@ -77,6 +85,29 @@ async function acquireMigrationLock() {
   }
 }
 
+/** Zero before the first migration, when the migrator's own table does not exist. */
+async function appliedMigrationCount() {
+  const { rows: journal } = await database.execute(
+    sql`SELECT to_regclass(${MIGRATIONS_RELATION}) IS NOT NULL AS present`,
+  );
+  if (journal[0]?.present !== true) {
+    return 0;
+  }
+
+  const { rows } = await database.execute(
+    sql`SELECT count(*)::int AS applied
+        FROM ${sql.identifier(MIGRATIONS_SCHEMA)}.${sql.identifier(MIGRATIONS_TABLE)}`,
+  );
+  return Number(rows[0]?.applied ?? 0);
+}
+
+function appliedReport(count) {
+  if (count === 0) {
+    return "No migrations to apply.";
+  }
+  return count === 1 ? "Applied 1 migration." : `Applied ${count} migrations.`;
+}
+
 try {
   await acquireMigrationLock();
 
@@ -84,8 +115,13 @@ try {
     await database.execute(
       sql`SELECT set_config('lock_timeout', ${LOCK_TIMEOUT}, false)`,
     );
-    await migrate(database, { migrationsFolder: resolve(packageRoot, "drizzle") });
-    console.log("Migrations are up to date.");
+    const before = await appliedMigrationCount();
+    await migrate(database, {
+      migrationsFolder: resolve(packageRoot, "drizzle"),
+      migrationsSchema: MIGRATIONS_SCHEMA,
+      migrationsTable: MIGRATIONS_TABLE,
+    });
+    console.log(appliedReport((await appliedMigrationCount()) - before));
   } finally {
     await database.execute(sql`SELECT pg_advisory_unlock(${MIGRATION_LOCK_ID})`);
   }

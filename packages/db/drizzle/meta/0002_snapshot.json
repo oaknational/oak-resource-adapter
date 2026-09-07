@@ -1,0 +1,1283 @@
+{
+  "id": "c5bd9823-4536-46a0-a135-70c92cfe3b1e",
+  "prevId": "c479aa30-5623-4643-9331-88d040f61021",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "resource_adapter.adaptations": {
+      "name": "adaptations",
+      "schema": "resource_adapter",
+      "columns": {
+        "abandoned_at": {
+          "name": "abandoned_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "capability_id": {
+          "name": "capability_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "clerk_user_id": {
+          "name": "clerk_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "head_resource_document_id": {
+          "name": "head_resource_document_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "lesson_slug": {
+          "name": "lesson_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "programme_slug": {
+          "name": "programme_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "replacement_request_id": {
+          "name": "replacement_request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "adaptations_clerk_user_id_created_at_idx": {
+          "name": "adaptations_clerk_user_id_created_at_idx",
+          "columns": [
+            {
+              "expression": "clerk_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "adaptations_resumable_idx": {
+          "name": "adaptations_resumable_idx",
+          "columns": [
+            {
+              "expression": "clerk_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "capability_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lesson_slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "programme_slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "adaptations_head_document_fk": {
+          "name": "adaptations_head_document_fk",
+          "tableFrom": "adaptations",
+          "tableTo": "resource_documents",
+          "schemaTo": "resource_adapter",
+          "columnsFrom": ["head_resource_document_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "adaptations_replacement_request_id_unique": {
+          "name": "adaptations_replacement_request_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["replacement_request_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "resource_adapter.jobs": {
+      "name": "jobs",
+      "schema": "resource_adapter",
+      "columns": {
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "concurrency_key": {
+          "name": "concurrency_key",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "failure_code": {
+          "name": "failure_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failure_message": {
+          "name": "failure_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "input": {
+          "name": "input",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "job_status",
+          "typeSchema": "resource_adapter",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'queued'"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "workflow_run_id": {
+          "name": "workflow_run_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "jobs_status_created_at_idx": {
+          "name": "jobs_status_created_at_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "jobs_concurrency_key_created_at_idx": {
+          "name": "jobs_concurrency_key_created_at_idx",
+          "columns": [
+            {
+              "expression": "concurrency_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"resource_adapter\".\"jobs\".\"concurrency_key\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "jobs_active_concurrency_key_unique": {
+          "name": "jobs_active_concurrency_key_unique",
+          "columns": [
+            {
+              "expression": "concurrency_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"resource_adapter\".\"jobs\".\"concurrency_key\" is not null and \"resource_adapter\".\"jobs\".\"status\" in ('queued', 'running')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "jobs_idempotency_key_unique": {
+          "name": "jobs_idempotency_key_unique",
+          "nullsNotDistinct": false,
+          "columns": ["idempotency_key"]
+        },
+        "jobs_workflow_run_id_unique": {
+          "name": "jobs_workflow_run_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["workflow_run_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "resource_adapter.model_invocations": {
+      "name": "model_invocations",
+      "schema": "resource_adapter",
+      "columns": {
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "correlation_key": {
+          "name": "correlation_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "duration_ms": {
+          "name": "duration_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_code": {
+          "name": "error_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_name": {
+          "name": "error_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_status": {
+          "name": "error_status",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "input_tokens": {
+          "name": "input_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "output_tokens": {
+          "name": "output_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "output_validation_status": {
+          "name": "output_validation_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prompt_template_id": {
+          "name": "prompt_template_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_response_id": {
+          "name": "provider_response_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "request": {
+          "name": "request",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "response": {
+          "name": "response",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transformation_attempt_id": {
+          "name": "transformation_attempt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transport": {
+          "name": "transport",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "model_invocations_attempt_idx": {
+          "name": "model_invocations_attempt_idx",
+          "columns": [
+            {
+              "expression": "transformation_attempt_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "model_invocations_prompt_template_idx": {
+          "name": "model_invocations_prompt_template_idx",
+          "columns": [
+            {
+              "expression": "prompt_template_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "model_invocations_attempt_fk": {
+          "name": "model_invocations_attempt_fk",
+          "tableFrom": "model_invocations",
+          "tableTo": "transformation_attempts",
+          "schemaTo": "resource_adapter",
+          "columnsFrom": ["transformation_attempt_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "model_invocations_prompt_template_fk": {
+          "name": "model_invocations_prompt_template_fk",
+          "tableFrom": "model_invocations",
+          "tableTo": "prompt_templates",
+          "schemaTo": "resource_adapter",
+          "columnsFrom": ["prompt_template_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "resource_adapter.prompt_templates": {
+      "name": "prompt_templates",
+      "schema": "resource_adapter",
+      "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "git_sha": {
+          "name": "git_sha",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "identifier": {
+          "name": "identifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "template": {
+          "name": "template",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "prompt_templates_hash_unique": {
+          "name": "prompt_templates_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": ["hash"]
+        },
+        "prompt_templates_identifier_version_key": {
+          "name": "prompt_templates_identifier_version_key",
+          "nullsNotDistinct": false,
+          "columns": ["identifier", "version"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "resource_adapter.resource_artifacts": {
+      "name": "resource_artifacts",
+      "schema": "resource_adapter",
+      "columns": {
+        "byte_size": {
+          "name": "byte_size",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checksum": {
+          "name": "checksum",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "format": {
+          "name": "format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "mime_type": {
+          "name": "mime_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resource_document_id": {
+          "name": "resource_document_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "storage_key": {
+          "name": "storage_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "resource_artifacts_document_idx": {
+          "name": "resource_artifacts_document_idx",
+          "columns": [
+            {
+              "expression": "resource_document_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "resource_artifacts_document_fk": {
+          "name": "resource_artifacts_document_fk",
+          "tableFrom": "resource_artifacts",
+          "tableTo": "resource_documents",
+          "schemaTo": "resource_adapter",
+          "columnsFrom": ["resource_document_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "resource_artifacts_storage_key_unique": {
+          "name": "resource_artifacts_storage_key_unique",
+          "nullsNotDistinct": false,
+          "columns": ["storage_key"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "resource_adapter.resource_documents": {
+      "name": "resource_documents",
+      "schema": "resource_adapter",
+      "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "document": {
+          "name": "document",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "origin": {
+          "name": "origin",
+          "type": "resource_document_origin",
+          "typeSchema": "resource_adapter",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retrieved_at": {
+          "name": "retrieved_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_reference": {
+          "name": "source_reference",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "transformation_attempt_id": {
+          "name": "transformation_attempt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "resource_documents_attempt_idx": {
+          "name": "resource_documents_attempt_idx",
+          "columns": [
+            {
+              "expression": "transformation_attempt_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "resource_documents_source_id_idx": {
+          "name": "resource_documents_source_id_idx",
+          "columns": [
+            {
+              "expression": "source_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"resource_adapter\".\"resource_documents\".\"origin\" <> 'generated'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "resource_documents_attempt_fk": {
+          "name": "resource_documents_attempt_fk",
+          "tableFrom": "resource_documents",
+          "tableTo": "transformation_attempts",
+          "schemaTo": "resource_adapter",
+          "columnsFrom": ["transformation_attempt_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "resource_documents_attempt_position_key": {
+          "name": "resource_documents_attempt_position_key",
+          "nullsNotDistinct": false,
+          "columns": ["transformation_attempt_id", "position"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "resource_documents_generated_has_attempt_and_position": {
+          "name": "resource_documents_generated_has_attempt_and_position",
+          "value": "(\"resource_adapter\".\"resource_documents\".\"origin\" = 'generated'\n            AND \"resource_adapter\".\"resource_documents\".\"transformation_attempt_id\" IS NOT NULL\n            AND \"resource_adapter\".\"resource_documents\".\"position\" IS NOT NULL\n            AND \"resource_adapter\".\"resource_documents\".\"position\" >= 0)\n       OR (\"resource_adapter\".\"resource_documents\".\"origin\" <> 'generated'\n            AND \"resource_adapter\".\"resource_documents\".\"transformation_attempt_id\" IS NULL\n            AND \"resource_adapter\".\"resource_documents\".\"position\" IS NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "resource_adapter.suggested_transformations": {
+      "name": "suggested_transformations",
+      "schema": "resource_adapter",
+      "columns": {
+        "accepted_transformation_id": {
+          "name": "accepted_transformation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "params": {
+          "name": "params",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "resource_document_id": {
+          "name": "resource_document_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_block_id": {
+          "name": "target_block_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "transformation_attempt_id": {
+          "name": "transformation_attempt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "undo_count": {
+          "name": "undo_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {
+        "suggested_transformations_document_idx": {
+          "name": "suggested_transformations_document_idx",
+          "columns": [
+            {
+              "expression": "resource_document_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "suggested_transformations_document_fk": {
+          "name": "suggested_transformations_document_fk",
+          "tableFrom": "suggested_transformations",
+          "tableTo": "resource_documents",
+          "schemaTo": "resource_adapter",
+          "columnsFrom": ["resource_document_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "suggested_transformations_attempt_fk": {
+          "name": "suggested_transformations_attempt_fk",
+          "tableFrom": "suggested_transformations",
+          "tableTo": "transformation_attempts",
+          "schemaTo": "resource_adapter",
+          "columnsFrom": ["transformation_attempt_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "suggested_transformations_accepted_fk": {
+          "name": "suggested_transformations_accepted_fk",
+          "tableFrom": "suggested_transformations",
+          "tableTo": "transformations",
+          "schemaTo": "resource_adapter",
+          "columnsFrom": ["accepted_transformation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "suggested_transformations_attempt_position_key": {
+          "name": "suggested_transformations_attempt_position_key",
+          "nullsNotDistinct": false,
+          "columns": ["transformation_attempt_id", "position"]
+        },
+        "suggested_transformations_accepted_key": {
+          "name": "suggested_transformations_accepted_key",
+          "nullsNotDistinct": false,
+          "columns": ["accepted_transformation_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "suggested_transformations_position_check": {
+          "name": "suggested_transformations_position_check",
+          "value": "\"resource_adapter\".\"suggested_transformations\".\"position\" >= 0"
+        },
+        "suggested_transformations_undo_count_check": {
+          "name": "suggested_transformations_undo_count_check",
+          "value": "\"resource_adapter\".\"suggested_transformations\".\"undo_count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "resource_adapter.transformation_attempts": {
+      "name": "transformation_attempts",
+      "schema": "resource_adapter",
+      "columns": {
+        "accepted_at": {
+          "name": "accepted_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attempt_number": {
+          "name": "attempt_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "job_id": {
+          "name": "job_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transformation_id": {
+          "name": "transformation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "transformation_attempts_transformation_fk": {
+          "name": "transformation_attempts_transformation_fk",
+          "tableFrom": "transformation_attempts",
+          "tableTo": "transformations",
+          "schemaTo": "resource_adapter",
+          "columnsFrom": ["transformation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "transformation_attempts_job_fk": {
+          "name": "transformation_attempts_job_fk",
+          "tableFrom": "transformation_attempts",
+          "tableTo": "jobs",
+          "schemaTo": "resource_adapter",
+          "columnsFrom": ["job_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "transformation_attempts_job_id_unique": {
+          "name": "transformation_attempts_job_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["job_id"]
+        },
+        "transformation_attempts_number_key": {
+          "name": "transformation_attempts_number_key",
+          "nullsNotDistinct": false,
+          "columns": ["transformation_id", "attempt_number"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "transformation_attempts_attempt_number_check": {
+          "name": "transformation_attempts_attempt_number_check",
+          "value": "\"resource_adapter\".\"transformation_attempts\".\"attempt_number\" >= 1"
+        },
+        "transformation_attempts_acceptance_check": {
+          "name": "transformation_attempts_acceptance_check",
+          "value": "\"resource_adapter\".\"transformation_attempts\".\"accepted_at\" IS NULL OR \"resource_adapter\".\"transformation_attempts\".\"completed_at\" IS NOT NULL"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "resource_adapter.transformation_inputs": {
+      "name": "transformation_inputs",
+      "schema": "resource_adapter",
+      "columns": {
+        "input_role": {
+          "name": "input_role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resource_document_id": {
+          "name": "resource_document_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transformation_id": {
+          "name": "transformation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "transformation_inputs_document_idx": {
+          "name": "transformation_inputs_document_idx",
+          "columns": [
+            {
+              "expression": "resource_document_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "transformation_inputs_transformation_fk": {
+          "name": "transformation_inputs_transformation_fk",
+          "tableFrom": "transformation_inputs",
+          "tableTo": "transformations",
+          "schemaTo": "resource_adapter",
+          "columnsFrom": ["transformation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "transformation_inputs_document_fk": {
+          "name": "transformation_inputs_document_fk",
+          "tableFrom": "transformation_inputs",
+          "tableTo": "resource_documents",
+          "schemaTo": "resource_adapter",
+          "columnsFrom": ["resource_document_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "transformation_inputs_pkey": {
+          "name": "transformation_inputs_pkey",
+          "columns": ["transformation_id", "resource_document_id"]
+        }
+      },
+      "uniqueConstraints": {
+        "transformation_inputs_position_key": {
+          "name": "transformation_inputs_position_key",
+          "nullsNotDistinct": false,
+          "columns": ["transformation_id", "position"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "transformation_inputs_position_check": {
+          "name": "transformation_inputs_position_check",
+          "value": "\"resource_adapter\".\"transformation_inputs\".\"position\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "resource_adapter.transformations": {
+      "name": "transformations",
+      "schema": "resource_adapter",
+      "columns": {
+        "adaptation_id": {
+          "name": "adaptation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "params": {
+          "name": "params",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "target_block_id": {
+          "name": "target_block_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "transformations_adaptation_id_created_at_idx": {
+          "name": "transformations_adaptation_id_created_at_idx",
+          "columns": [
+            {
+              "expression": "adaptation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "transformations_adaptation_id_adaptations_id_fk": {
+          "name": "transformations_adaptation_id_adaptations_id_fk",
+          "tableFrom": "transformations",
+          "tableTo": "adaptations",
+          "schemaTo": "resource_adapter",
+          "columnsFrom": ["adaptation_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "transformations_idempotency_key_unique": {
+          "name": "transformations_idempotency_key_unique",
+          "nullsNotDistinct": false,
+          "columns": ["idempotency_key"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "resource_adapter.job_status": {
+      "name": "job_status",
+      "schema": "resource_adapter",
+      "values": ["queued", "running", "succeeded", "failed"]
+    },
+    "resource_adapter.resource_document_origin": {
+      "name": "resource_document_origin",
+      "schema": "resource_adapter",
+      "values": ["oak_resource", "generated"]
+    }
+  },
+  "schemas": {
+    "resource_adapter": "resource_adapter"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

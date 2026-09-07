@@ -15,6 +15,13 @@
       "when": 1787686652155,
       "tag": "0001_worksheet_scaffolding",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788274293230,
+      "tag": "0002_scaffold_review",
+      "breakpoints": true
     }
   ]
 }

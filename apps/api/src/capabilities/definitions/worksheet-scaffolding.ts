@@ -2,13 +2,12 @@ import { isAdaptable, type CapabilityDefinition } from "../types";
 
 export const worksheetScaffoldingCapability = {
   id: "worksheetScaffolding",
-  label: "Scaffold practice tasks",
+  label: "Add extra scaffolding",
   resourceType: "worksheet",
   isEligible: (context) => isAdaptable(context, "worksheet"),
   suggestionFlowId: "worksheet-scaffolding",
   transformationKinds: [
     "scaffold-add-word-bank",
-    "scaffold-add-glossary-question",
     "scaffold-add-glossary-bilingual",
     "scaffold-add-knowledge-summary",
     "scaffold-add-modelled-example",

@@ -54,14 +54,14 @@ const testDefinitions: ReadonlyArray<CapabilityDefinition> = [
 ];
 
 describe("getCapabilities", () => {
-  it("returns the scaffold practice tasks capability for an adaptable worksheet", async () => {
+  it("returns the extra scaffolding capability for an adaptable worksheet", async () => {
     await expect(
       getCapabilities(worksheetLesson, resolverFor(["worksheet"], ["worksheet"])),
     ).resolves.toEqual({
       capabilities: [
         {
           id: "worksheetScaffolding",
-          label: "Scaffold practice tasks",
+          label: "Add extra scaffolding",
           resourceType: "worksheet",
         },
       ],
