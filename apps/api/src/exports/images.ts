@@ -66,7 +66,7 @@ function configuredOrigins(): Set<string> {
   const origins = new Set<string>();
   for (const value of (process.env.EXPORT_IMAGE_ALLOWED_ORIGINS ?? "").split(",")) {
     const url = remoteUrl(value.trim());
-    if (url && url.pathname === "/" && !url.search && !url.hash) {
+    if (url?.pathname === "/" && !url.search && !url.hash) {
       origins.add(url.origin);
     }
   }

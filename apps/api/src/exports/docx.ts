@@ -24,7 +24,7 @@ import {
   type IRunOptions,
 } from "docx";
 
-import { createRemoteImageLoader, type ImageLoader } from "./images";
+import { createRemoteImageLoader, type ExportImage, type ImageLoader } from "./images";
 import { assertExportLimits } from "./limits";
 import { readableMathText } from "./math-text";
 import {
@@ -88,19 +88,19 @@ function xmlText(value: string): string {
     .join("");
 }
 
+function textRun(part: string, options: IRunOptions): TextRun {
+  if (part === "\n") return new TextRun({ ...options, break: 1 });
+  if (part === "\t") return new TextRun({ ...options, children: [new Tab()] });
+  return new TextRun({ ...options, text: part });
+}
+
 function textRuns(text: string, options: IRunOptions = {}): TextRun[] {
   const parts = xmlText(text)
     .replaceAll("\r\n", "\n")
     .replaceAll("\r", "\n")
-    .split(/(\n|\t)/)
+    .split(/([\n\t])/)
     .filter((part) => part !== "");
-  return (parts.length ? parts : [""]).map((part) =>
-    part === "\n"
-      ? new TextRun({ ...options, break: 1 })
-      : part === "\t"
-        ? new TextRun({ ...options, children: [new Tab()] })
-        : new TextRun({ ...options, text: part }),
-  );
+  return (parts.length ? parts : [""]).map((part) => textRun(part, options));
 }
 
 interface InlineParagraphOptions extends IParagraphOptions {
@@ -228,7 +228,7 @@ function responseSpace(
   return [
     new Table({
       width: { size: tableWidth, type: WidthType.DXA },
-      columnWidths: Array<number>(columns).fill(tableWidth / columns),
+      columnWidths: Array.from({ length: columns }, () => tableWidth / columns),
       layout: TableLayoutType.FIXED,
       borders: {
         top: node.kind === "lines" ? noRule : rule,
@@ -323,6 +323,53 @@ function table(
   ];
 }
 
+function imageParagraph(
+  node: Extract<ResourceNode, { type: "figure" }>,
+  image: ExportImage,
+  alternativeText: string,
+  keepNext: boolean,
+): Paragraph {
+  const maxWidth =
+    (node.layout?.preferredWidth === "half" ? contentWidth / 2 : contentWidth) /
+    twipsPerPixel;
+  const scale = Math.min(1, maxWidth / image.width, maxImagePixelHeight / image.height);
+  return new Paragraph({
+    style: "Normal",
+    keepNext,
+    children: [
+      new ImageRun({
+        data: image.data,
+        type: image.type,
+        transformation: {
+          width: Math.max(1, Math.round(image.width * scale)),
+          height: Math.max(1, Math.round(image.height * scale)),
+        },
+        altText: { name: "Figure", title: "", description: xmlText(alternativeText) },
+      }),
+    ],
+  });
+}
+
+function placeholderParagraph(
+  node: Extract<ResourceNode, { type: "figure" }>,
+  alternativeText: string | undefined,
+  keepNext: boolean,
+): Paragraph {
+  return new Paragraph({
+    style: "MissingImage",
+    keepNext,
+    ...(node.layout?.preferredWidth === "half"
+      ? { indent: { right: Math.floor(contentWidth / 2) } }
+      : {}),
+    children: [
+      ...textRuns(missingImageText, { bold: true }),
+      ...(alternativeText === undefined
+        ? []
+        : [new TextRun({ break: 1 }), ...textRuns(alternativeText)]),
+    ],
+  });
+}
+
 async function figure(
   node: Extract<ResourceNode, { type: "figure" }>,
   context: RenderContext,
@@ -341,56 +388,15 @@ async function figure(
       ? await context.loader(asset).catch(() => undefined)
       : undefined;
   const credited = Boolean(asset?.credit);
+  const alternativeText =
+    asset?.alternative.kind === "text" ? asset.alternative.text : undefined;
   // The figure's own group holds together whatever the external hint asks for.
   const keepNext = Boolean(node.caption) || credited || keepWithFollowing;
-  const blocks: Block[] = [];
-  if (image && asset?.alternative.kind === "text") {
-    const maxWidth =
-      (node.layout?.preferredWidth === "half" ? contentWidth / 2 : contentWidth) /
-      twipsPerPixel;
-    const scale = Math.min(
-      1,
-      maxWidth / image.width,
-      maxImagePixelHeight / image.height,
-    );
-    blocks.push(
-      new Paragraph({
-        style: "Normal",
-        keepNext,
-        children: [
-          new ImageRun({
-            data: image.data,
-            type: image.type,
-            transformation: {
-              width: Math.max(1, Math.round(image.width * scale)),
-              height: Math.max(1, Math.round(image.height * scale)),
-            },
-            altText: {
-              name: "Figure",
-              title: "",
-              description: xmlText(asset.alternative.text),
-            },
-          }),
-        ],
-      }),
-    );
-  } else {
-    blocks.push(
-      new Paragraph({
-        style: "MissingImage",
-        keepNext,
-        ...(node.layout?.preferredWidth === "half"
-          ? { indent: { right: Math.floor(contentWidth / 2) } }
-          : {}),
-        children: [
-          ...textRuns(missingImageText, { bold: true }),
-          ...(asset?.alternative.kind === "text"
-            ? [new TextRun({ break: 1 }), ...textRuns(asset.alternative.text)]
-            : []),
-        ],
-      }),
-    );
-  }
+  const blocks: Block[] = [
+    image && alternativeText !== undefined
+      ? imageParagraph(node, image, alternativeText, keepNext)
+      : placeholderParagraph(node, alternativeText, keepNext),
+  ];
   if (node.caption)
     blocks.push(...captionParagraphs(node.caption, { credited, keepWithFollowing }));
   if (asset?.credit)

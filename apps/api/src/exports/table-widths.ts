@@ -8,7 +8,7 @@ export function tableColumnWidths(
 ): number[] {
   // Sizing from the widest row keeps a short or ragged row from producing NaN widths.
   const columns = rows.reduce((widest, row) => Math.max(widest, row.length), 0);
-  const preferred = Array<number>(columns).fill(720);
+  const preferred = Array.from({ length: columns }, () => 720);
   if (columns === 0) return [];
 
   for (const row of rows) {

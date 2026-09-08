@@ -3,6 +3,11 @@ import type { ResourceDocument, ResourceNode } from "@oaknational/resource-docum
 import { responseSpaceLayout, responseSpaceUnits } from "./model";
 
 const maxResponseSpaceUnits = 100;
+const maxNodes = 5000;
+const maxDepth = 50;
+const maxCells = 20_000;
+
+type Geometry = Readonly<{ width: number; cellSize: number }>;
 
 export class ExportLimitError extends Error {
   constructor() {
@@ -10,17 +15,37 @@ export class ExportLimitError extends Error {
   }
 }
 
+/** Table cells, writing cells and definition entries one node expands into. */
+function expansionCells(node: ResourceNode, geometry: Geometry): number {
+  if (node.type === "responseSpace") {
+    if (responseSpaceUnits(node) > maxResponseSpaceUnits) throw new ExportLimitError();
+    const { rows, columns } = responseSpaceLayout(node, geometry);
+    return rows * columns;
+  }
+  if (node.type === "table") {
+    // Summed rather than rows x first row: never assume the table is rectangular.
+    return node.rows.reduce(
+      (count, row) => count + row.length,
+      node.header?.length ?? 0,
+    );
+  }
+  if (node.type === "definitionList") {
+    return node.entries.length;
+  }
+  return 0;
+}
+
 // Small JSON inputs can expand into enormous tables or deeply recursive traversals.
 export function assertExportLimits(
   document: ResourceDocument,
-  geometry: Readonly<{ width: number; cellSize: number }>,
+  geometry: Geometry,
 ): void {
   const pending = document.content.map((node) => ({ node, depth: 1 }));
   let nodes = 0;
   let cells = 0;
   while (pending.length) {
     const { node, depth } = pending.pop()!;
-    if (++nodes > 5000 || depth > 50) throw new ExportLimitError();
+    if (++nodes > maxNodes || depth > maxDepth) throw new ExportLimitError();
     if ("children" in node) {
       pending.push(
         ...node.children.map((child: ResourceNode) => ({
@@ -29,16 +54,7 @@ export function assertExportLimits(
         })),
       );
     }
-    if (node.type === "responseSpace") {
-      if (responseSpaceUnits(node) > maxResponseSpaceUnits)
-        throw new ExportLimitError();
-      const { rows, columns } = responseSpaceLayout(node, geometry);
-      cells += rows * columns;
-    }
-    if (node.type === "table") {
-      cells += (node.rows.length + (node.header ? 1 : 0)) * (node.rows[0]?.length ?? 0);
-    }
-    if (node.type === "definitionList") cells += node.entries.length;
-    if (cells > 20_000) throw new ExportLimitError();
+    cells += expansionCells(node, geometry);
+    if (cells > maxCells) throw new ExportLimitError();
   }
 }
