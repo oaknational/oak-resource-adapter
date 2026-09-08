@@ -16,6 +16,9 @@
     },
     {
       "id": "outcome",
+      "layout": {
+        "keepWithNext": true
+      },
       "type": "callout",
       "role": "learning-objective",
       "content": [
@@ -135,6 +138,9 @@
     },
     {
       "id": "reading",
+      "layout": {
+        "keepWithNext": true
+      },
       "type": "callout",
       "role": "instruction",
       "content": [

@@ -431,6 +431,32 @@
   overflow-wrap: anywhere;
 }
 
+.controlNote {
+  color: #4a4a4a;
+  font-size: 0.875rem;
+  margin: 0.75rem 0 0;
+}
+
+.controlNote a {
+  color: #0d24c4;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+.successMessage {
+  align-items: center;
+  background: #ebfbeb;
+  border-left: 4px solid #31693d;
+  color: #183f20;
+  display: inline-flex;
+  font-weight: 600;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
 .flowSummary {
   border-top: 1px solid #c7c7c7;
   margin-top: 1rem;

@@ -15,7 +15,11 @@ const forwardedRequestHeaders = [
   "x-resource-adapter-contract-version",
 ];
 
-const forwardedResponseHeaders = ["cache-control", "content-type"];
+const forwardedResponseHeaders = [
+  "cache-control",
+  "content-disposition",
+  "content-type",
+];
 
 async function proxy(
   request: NextRequest,

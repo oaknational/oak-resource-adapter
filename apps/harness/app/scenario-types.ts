@@ -10,6 +10,7 @@ export type HarnessSection =
   | "edge-cases"
   | "smoke-tests"
   | "suggestions"
+  | "exports"
   | "transformations";
 
 export type ExtractionDiagnostic = Readonly<{
@@ -102,6 +103,12 @@ export type HarnessView =
       section: "suggestions" | "transformations";
       navigation: readonly LessonScenarioNavigationItem[];
       scenario: LessonScenario;
+    }>
+  | Readonly<{
+      section: "exports";
+      fixtureId: string;
+      resourceDocument: ResourceDocument;
+      fixtures: readonly Readonly<{ id: string; title: string }>[];
     }>
   | Readonly<{ section: "capabilities" }>
   | Readonly<{ section: "smoke-tests" }>;

@@ -176,12 +176,21 @@ export default {
       name: "no-production-imports-from-tests",
       severity: "error",
       comment:
-        "Production modules cannot depend on test modules; extract shared helpers into production code.",
+        "Production modules cannot depend on test or test-support modules; share test-only helpers through a .test-support.ts module, and anything production needs through production code.",
       from: {
         path: "^(?:apps/[^/]+/(?:app|src|workflows)|packages/[^/]+/src)/",
-        pathNot: ["[.](?:spec|test)[.](?:[cm]?[jt]s|[jt]sx)$", "[.]d[.]ts$"],
+        pathNot: [
+          "[.](?:spec|test)[.](?:[cm]?[jt]s|[jt]sx)$",
+          "[.]test-support[.](?:[cm]?[jt]s|[jt]sx)$",
+          "[.]d[.]ts$",
+        ],
       },
-      to: { path: "[.](?:spec|test)[.](?:[cm]?[jt]s|[jt]sx)$" },
+      to: {
+        path: [
+          "[.](?:spec|test)[.](?:[cm]?[jt]s|[jt]sx)$",
+          "[.]test-support[.](?:[cm]?[jt]s|[jt]sx)$",
+        ],
+      },
     },
     {
       name: "no-production-imports-from-dev-dependencies",
@@ -190,7 +199,11 @@ export default {
         "Runtime code must not rely on packages installed only as development dependencies.",
       from: {
         path: "^(?:apps/[^/]+/(?:app|src|workflows)|packages/[^/]+/src)/",
-        pathNot: ["[.](?:spec|test)[.](?:[cm]?[jt]s|[jt]sx)$", "[.]d[.]ts$"],
+        pathNot: [
+          "[.](?:spec|test)[.](?:[cm]?[jt]s|[jt]sx)$",
+          "[.]test-support[.](?:[cm]?[jt]s|[jt]sx)$",
+          "[.]d[.]ts$",
+        ],
       },
       to: {
         dependencyTypes: ["npm-dev"],
