@@ -139,6 +139,18 @@ describe("tables and code", () => {
       expect(doc.diagnostics).toEqual([]);
     },
   );
+  it.each([
+    ["no rows at all", "", /needs a row of cells beneath its header/],
+    ["only a header row", "A | B", /needs a row of cells beneath its header/],
+    ["header disabled and no rows", "", /needs at least one row of cells/],
+  ])("rejects a table with %s", (_case, body, message) => {
+    const header = _case === "header disabled and no rows" ? ' header="false"' : "";
+    expect(() =>
+      parseResourceMarkup(
+        `${genericFrontmatter}\n:::oak-table {id="table"${header}}\n${body}\n:::`,
+      ),
+    ).toThrow(message);
+  });
   it("supports a headerless table and rejects inconsistent widths", () => {
     const doc = parseResourceMarkup(
       `${genericFrontmatter}\n:::oak-table {id="table" header="false"}\na | ?\n:::`,

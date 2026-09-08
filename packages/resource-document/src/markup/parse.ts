@@ -621,6 +621,13 @@ function tableDirective(role?: string): DirectiveHandler<TableNode> {
       .filter((line) => line.trim().length > 0)
       .map((line) => splitRowCells(line).map(parseTableCell));
     const header = hasHeader ? rows.shift() : undefined;
+    if (rows.length === 0) {
+      throw invalidMarkup(
+        hasHeader
+          ? `${name} needs a row of cells beneath its header.`
+          : `${name} needs at least one row of cells.`,
+      );
+    }
     return {
       ...commonNodeFields(attributes, name),
       type: "table",

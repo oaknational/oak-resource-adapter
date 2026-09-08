@@ -57,7 +57,7 @@ export function resourceNodeLabel(node: ResourceNode): string {
       return `${node.kind}${lines}`;
     }
     case "table":
-      return `${node.role} table`;
+      return node.role === "table" ? "table" : `${node.role} table`;
     case "codeBlock":
       return `${node.language ?? "code"} block`;
     case "figure":
