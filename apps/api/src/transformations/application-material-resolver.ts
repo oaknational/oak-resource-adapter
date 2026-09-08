@@ -22,9 +22,16 @@ function createDerivationDependencies(
     key.startsWith("lesson.transcriptSummary"),
   );
 
-  return createInvoker === undefined || !needsTranscriptSummariser
-    ? {}
-    : { summariseTranscript: createTranscriptSummariser(createInvoker()) };
+  if (createInvoker === undefined || !needsTranscriptSummariser) {
+    return {};
+  }
+
+  const summarise = createTranscriptSummariser(createInvoker());
+  let pending: ReturnType<typeof summarise> | undefined;
+
+  return {
+    summariseTranscript: (transcript) => (pending ??= summarise(transcript)),
+  };
 }
 
 export const resolveApplicationMaterial: ResolveTransformationMaterial = async (
