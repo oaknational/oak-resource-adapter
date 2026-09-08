@@ -1,20 +1,26 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState, type ReactNode } from "react";
 import {
   OakFlex,
   OakHeading,
+  OakIcon,
   OakInlineBanner,
   OakP,
   OakPrimaryButton,
   OakSecondaryButton,
+  OakTertiaryButton,
   parseColor,
 } from "@oaknational/oak-components";
 import type {
+  WorksheetScaffoldingJobKind,
   WorksheetScaffoldingResumable,
   WorksheetScaffoldingState,
 } from "@oaknational/resource-adapter-contracts/internal";
-import type { ResourceNode } from "@oaknational/resource-document";
+import {
+  contributionIdsInDocument,
+  type ResourceNode,
+} from "@oaknational/resource-document";
 import { keyframes, styled } from "styled-components";
 
 import { ResourceAdapterUnavailableMessage } from "../../ResourceAdapterErrorBoundary.js";
@@ -27,6 +33,7 @@ import type {
 import {
   jobIsBusy,
   useWorksheetScaffolding,
+  type ApplyingSuggestion,
   type WorkflowState,
 } from "./useWorksheetScaffolding.js";
 
@@ -40,23 +47,23 @@ export type WorksheetScaffoldingWorkflowProps = Readonly<{
 
 type WorkflowStatus = Readonly<{
   message: string;
-  title: string;
-  tone: "neutral" | "success" | "working";
+  title?: string;
+  tone: "info" | "neutral" | "working";
 }>;
 
-const LOADING_STATUS: WorkflowStatus = {
+const LOADING_STATUS = {
   message: "Getting your worksheet ready.",
   title: "Loading worksheet",
   tone: "working",
-};
+} as const satisfies WorkflowStatus;
 
-const Suggestion = styled.div`
+const SuggestionGroup = styled.div`
   background: ${parseColor("bg-neutral")};
-  border: 1px solid ${parseColor("border-neutral")};
+  border: 1px solid ${parseColor("border-neutral-lighter")};
   border-radius: 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin: 0.5rem 0 1rem;
   padding: 0.75rem;
 
@@ -64,6 +71,69 @@ const Suggestion = styled.div`
   button {
     scroll-margin-top: 7rem;
   }
+`;
+
+const SuggestionList = styled.ul`
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  button {
+    min-height: 3.5rem;
+  }
+`;
+
+const ReviewDisclosure = styled.button`
+  align-items: center;
+  background: none;
+  border: 0;
+  color: ${parseColor("text-link-active")};
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 700;
+  gap: 0.5rem;
+  min-height: 1.5rem;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+
+  &:focus-visible {
+    outline: 0.1875rem solid ${parseColor("border-inverted")};
+    outline-offset: 0.125rem;
+  }
+`;
+
+const ReviewChevron = styled(OakIcon)<{ $isOpen: boolean }>`
+  flex: 0 0 auto;
+  transform: rotate(${({ $isOpen }) => ($isOpen ? "180deg" : "0deg")});
+  transition: transform 0.2s ease;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+`;
+
+const ReviewActions = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+`;
+
+const SuggestionItem = styled.li`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const LocalWorking = styled.div`
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  min-height: 3rem;
 `;
 
 const StickyWorkflowStatus = styled.div`
@@ -109,7 +179,10 @@ const VisibleLoadingSpinner = styled.span`
   }
 `;
 
-function LoadingStatusBanner({ message, title }: Omit<WorkflowStatus, "tone">) {
+function LoadingStatusBanner({
+  message,
+  title,
+}: Readonly<{ message: string; title: string }>) {
   return (
     <OakFlex
       $alignItems="flex-start"
@@ -144,49 +217,117 @@ function scaffoldSummary(count: number): string {
   return count === 1 ? "1 scaffold" : `${count} scaffolds`;
 }
 
+function pendingReviewSentence(count: number): string {
+  if (count === 0) {
+    return "";
+  }
+  return count === 1
+    ? "One scaffold is waiting for your review."
+    : `${count} scaffolds are waiting for your review.`;
+}
+
+function suggestedSentence(count: number): string {
+  if (count === 0) {
+    return "There are no suggested scaffolds for this worksheet.";
+  }
+  if (count === 1) {
+    return "There is one suggested scaffold for this worksheet.";
+  }
+  return `There are ${count} suggested scaffolds for this worksheet.`;
+}
+
+function addedSentence(count: number): string {
+  if (count === 0) {
+    return "";
+  }
+  return count === 1
+    ? "One scaffold has been added."
+    : `${count} scaffolds have been added.`;
+}
+
+function scaffoldStatusMessage(suggestedCount: number, addedCount: number): string {
+  return [suggestedSentence(suggestedCount), addedSentence(addedCount)]
+    .filter((sentence) => sentence !== "")
+    .join(" ");
+}
+
 function workflowStatus(
   state: WorkflowState,
-  isApplying: boolean,
+  suggestedCount: number,
+  addedCount: number,
+  hasLocalProgress: boolean,
 ): WorkflowStatus | null {
   if (state.status === "loading") {
     return LOADING_STATUS;
   }
-  if (state.status === "choosing") {
-    return null;
-  }
   if (state.status !== "ready") {
     return null;
   }
-  return readyStatus(state.value, isApplying);
+  return readyStatus(state.value, suggestedCount, addedCount, hasLocalProgress);
+}
+
+/** One entry per job kind, so a new kind cannot silently lose its progress status. */
+const BUSY_STATUSES = {
+  "suggestions.apply": {
+    message: "Updating the worksheet with your chosen scaffold.",
+    title: "Applying scaffold",
+    tone: "working",
+  },
+  "suggestions.generate": {
+    message: "Reviewing the worksheet for useful scaffolds.",
+    title: "Considering scaffold selections for practice tasks",
+    tone: "working",
+  },
+  "transformations.dismiss": {
+    message: "Updating the worksheet's scaffold choices.",
+    title: "Updating scaffold choices",
+    tone: "working",
+  },
+  "transformations.remove": {
+    message: "Updating the worksheet and finding new scaffold suggestions.",
+    title: "Removing scaffold",
+    tone: "working",
+  },
+  "transformations.retry": {
+    message: "Creating another version of this scaffold.",
+    title: "Trying scaffold again",
+    tone: "working",
+  },
+} as const satisfies Record<WorksheetScaffoldingJobKind, WorkflowStatus>;
+
+const FAILURE_TITLES = {
+  "suggestions.apply": "We couldn't apply that scaffold",
+  "suggestions.generate": "We couldn't find scaffolds",
+  "transformations.dismiss": "We couldn't update your scaffold choices",
+  "transformations.remove": "We couldn't remove that scaffold",
+  "transformations.retry": "We couldn't try that scaffold again",
+} as const satisfies Record<WorksheetScaffoldingJobKind, string>;
+
+function failureMessage(kind: WorksheetScaffoldingJobKind): string {
+  return kind === "transformations.retry"
+    ? "You can retry again, accept this version, undo it, or start again."
+    : "Start again to reopen the original worksheet.";
 }
 
 function readyStatus(
   state: WorksheetScaffoldingState,
-  isApplying: boolean,
+  suggestedCount: number,
+  addedCount: number,
+  hasLocalProgress: boolean,
 ): WorkflowStatus | null {
-  if (isApplying) {
-    return {
-      message: "Updating the worksheet with your chosen scaffold.",
-      title: "Applying scaffold",
-      tone: "working",
-    };
-  }
-  if (jobIsBusy(state)) {
-    return {
-      message: "Reviewing the worksheet for useful scaffolds.",
-      title: "Finding useful scaffolds",
-      tone: "working",
-    };
+  // A spinner beside the chosen suggestion reports that application itself, so the
+  // banner keeps the standing summary rather than repeating the same progress.
+  const reportedLocally = hasLocalProgress && state.job?.kind === "suggestions.apply";
+  if (state.job !== null && jobIsBusy(state) && !reportedLocally) {
+    return BUSY_STATUSES[state.job.kind];
   }
   if (state.job?.status === "failed") {
     return null;
   }
-  if (state.suggestions.length > 0) {
+  if (suggestedCount > 0 || addedCount > 0) {
     return {
-      message:
-        "You can now review suggestions throughout the worksheet. Choose any that suit your class.",
-      title: "Scaffolds ready",
-      tone: "success",
+      message: scaffoldStatusMessage(suggestedCount, addedCount),
+      tone: "info",
     };
   }
   if (state.job?.kind === "suggestions.generate" && state.job.status === "succeeded") {
@@ -198,6 +339,84 @@ function readyStatus(
     };
   }
   return null;
+}
+
+function WorkflowStatusBanner({
+  cta,
+  status,
+}: Readonly<{ cta: ReactNode; status: WorkflowStatus }>) {
+  if (status.tone === "working") {
+    return (
+      <LoadingStatusBanner message={status.message} title={status.title ?? "Working"} />
+    );
+  }
+
+  return (
+    <OakInlineBanner
+      isOpen
+      cta={cta}
+      icon="ai"
+      message={status.message}
+      {...(status.title === undefined ? {} : { title: status.title })}
+      titleTag="h3"
+      type={status.tone}
+      variant="regular"
+    />
+  );
+}
+
+function PendingReviewControls({
+  disabled,
+  onAccept,
+  onRetry,
+  onUndo,
+  reason,
+}: Readonly<{
+  disabled: boolean;
+  onAccept: () => void;
+  onRetry: () => void;
+  onUndo: () => void;
+  reason: string;
+}>) {
+  const [isOpen, setIsOpen] = useState(false);
+  const panelId = useId();
+
+  return (
+    <OakFlex $flexDirection="column" $gap="spacing-12">
+      <div>
+        <ReviewDisclosure
+          aria-controls={panelId}
+          aria-expanded={isOpen}
+          onClick={() => setIsOpen((open) => !open)}
+          type="button"
+        >
+          How this can support your pupils
+          <ReviewChevron
+            $height="spacing-24"
+            $isOpen={isOpen}
+            $width="spacing-24"
+            alt=""
+            aria-hidden="true"
+            iconName="chevron-down"
+          />
+        </ReviewDisclosure>
+      </div>
+      <OakP hidden={!isOpen} id={panelId}>
+        {reason}
+      </OakP>
+      <ReviewActions>
+        <OakSecondaryButton disabled={disabled} iconName="arrow-left" onClick={onUndo}>
+          Undo
+        </OakSecondaryButton>
+        <OakSecondaryButton disabled={disabled} iconName="retake" onClick={onRetry}>
+          Retry
+        </OakSecondaryButton>
+        <OakPrimaryButton disabled={disabled} onClick={onAccept}>
+          Accept
+        </OakPrimaryButton>
+      </ReviewActions>
+    </OakFlex>
+  );
 }
 
 function ResumeChoice({
@@ -228,8 +447,13 @@ function ResumeChoice({
         Carry on with this worksheet?
       </OakHeading>
       <OakP $font="body-2">
-        You added {scaffoldSummary(resumable.scaffoldCount)} to this worksheet on{" "}
-        {lastWorkedOn}. You can keep going, or start again from Oak&rsquo;s original.
+        {[
+          `This worksheet has ${scaffoldSummary(resumable.scaffoldCount)} from ${lastWorkedOn}.`,
+          pendingReviewSentence(resumable.pendingScaffoldCount),
+          "You can keep going, or start again from Oak’s original.",
+        ]
+          .filter((sentence) => sentence !== "")
+          .join(" ")}
       </OakP>
       <OakFlex $flexWrap="wrap" $gap="spacing-8">
         <OakPrimaryButton onClick={onResume}>Carry on</OakPrimaryButton>
@@ -243,34 +467,43 @@ function ResumeChoice({
 
 export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflowProps) {
   const {
+    acceptReview,
+    actionInFlight,
+    applicationStatusRef,
     applySuggestion,
-    applyingSuggestionId,
+    applyingSuggestion,
+    documentIsVisible,
+    removeContribution,
     resume,
+    retryReview,
     startFresh,
     state,
-    statusRef,
+    dismissTarget,
     tryAgain,
+    undoReview,
   } = useWorksheetScaffolding(props);
-  const reasonIdPrefix = useId();
+  const groupIdPrefix = useId();
 
   if (state.status === "idle") {
     return null;
   }
 
-  const status = workflowStatus(state, applyingSuggestionId !== null);
-
-  // One region for the whole workflow: a region mounted alongside its own text
-  // is announced unreliably, whereas changing the text of a mounted region is not.
-  const announcement = (
+  // A region mounted alongside its own text is announced unreliably, whereas changing
+  // the text of a mounted region is not, so every branch renders this same region.
+  const announcement = (status: WorkflowStatus | null) => (
     <StatusAnnouncement aria-atomic="true" aria-live="polite" role="status">
-      {status === null ? "" : `${status.title}. ${status.message}`}
+      {status === null
+        ? ""
+        : [status.title, status.message]
+            .filter((part) => part !== undefined)
+            .join(". ")}
     </StatusAnnouncement>
   );
 
   if (state.status === "loading") {
     return (
       <>
-        {announcement}
+        {announcement(LOADING_STATUS)}
         <StickyWorkflowStatus>
           <LoadingStatusBanner
             message={LOADING_STATUS.message}
@@ -283,7 +516,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   if (state.status === "choosing") {
     return (
       <>
-        {announcement}
+        {announcement(null)}
         <ResumeChoice
           onResume={() => resume(state.resumable.adaptationId)}
           onStartFresh={() => startFresh(state.resumable.adaptationId)}
@@ -295,7 +528,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   if (state.status === "error") {
     return (
       <>
-        {announcement}
+        {announcement(null)}
         <ResourceAdapterUnavailableMessage
           message="Worksheet scaffolding could not be loaded."
           onTryAgain={tryAgain}
@@ -305,54 +538,141 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     );
   }
 
-  const isWorking = applyingSuggestionId !== null || jobIsBusy(state.value);
+  const isWorking =
+    applyingSuggestion !== null || actionInFlight !== null || jobIsBusy(state.value);
   const failedJob = state.value.job?.status === "failed" ? state.value.job : undefined;
+  const listedSuggestions =
+    applyingSuggestion?.listedSuggestions ?? state.value.suggestions;
+  const addedCount = contributionIdsInDocument(state.value.document).length;
+  const suggestedCount = listedSuggestions.length;
+  const status = workflowStatus(
+    state,
+    suggestedCount,
+    addedCount,
+    applyingSuggestion !== null,
+  );
+  const suggestionsByTarget = new Map<
+    ApplyingSuggestion["targetBlockId"],
+    WorksheetScaffoldingState["suggestions"][number][]
+  >();
 
-  const renderSuggestion = (
+  for (const suggestion of listedSuggestions) {
+    const suggestions = suggestionsByTarget.get(suggestion.targetBlockId);
+    if (suggestions === undefined) {
+      suggestionsByTarget.set(suggestion.targetBlockId, [suggestion]);
+    } else {
+      suggestions.push(suggestion);
+    }
+  }
+
+  const renderSuggestionItem = (
     suggestion: WorksheetScaffoldingState["suggestions"][number],
   ) => {
-    const reasonId = `${reasonIdPrefix}-${suggestion.id}`;
     return (
-      <Suggestion key={suggestion.id}>
-        <OakP id={reasonId}>{suggestion.reason}</OakP>
+      <SuggestionItem key={suggestion.id}>
         <div>
           <OakSecondaryButton
-            aria-describedby={reasonId}
             disabled={isWorking}
             onClick={() => applySuggestion(suggestion.id)}
           >
             {suggestion.label}
           </OakSecondaryButton>
         </div>
-      </Suggestion>
+      </SuggestionItem>
     );
   };
-  const renderAfterNode = (node: ResourceNode) =>
-    state.value.suggestions
-      .filter(({ targetBlockId }) => targetBlockId === node.id)
-      .map(renderSuggestion);
-  const documentSuggestions = state.value.suggestions.filter(
-    ({ targetBlockId }) => targetBlockId === null,
+
+  const renderWorkingItem = (suggestionId: string) => (
+    <SuggestionItem key={suggestionId}>
+      <LocalWorking aria-live="polite" ref={applicationStatusRef} tabIndex={-1}>
+        <VisibleLoadingSpinner
+          aria-hidden="true"
+          data-testid="worksheet-scaffolding-local-spinner"
+        />
+        <OakP $font="body-2">Working on it&hellip;</OakP>
+      </LocalWorking>
+    </SuggestionItem>
   );
+
+  const renderSuggestionGroup = (
+    targetBlockId: ApplyingSuggestion["targetBlockId"],
+  ) => {
+    const suggestions = suggestionsByTarget.get(targetBlockId) ?? [];
+
+    if (suggestions.length === 0) {
+      return null;
+    }
+
+    const headingId = `${groupIdPrefix}-${targetBlockId ?? "document"}`;
+
+    return (
+      <SuggestionGroup aria-labelledby={headingId} role="group">
+        <OakP $font="heading-7" id={headingId}>
+          Suggested scaffolds
+        </OakP>
+        <SuggestionList>
+          {suggestions.map((suggestion) =>
+            suggestion.id === applyingSuggestion?.id
+              ? renderWorkingItem(suggestion.id)
+              : renderSuggestionItem(suggestion),
+          )}
+          <SuggestionItem>
+            <OakSecondaryButton
+              disabled={isWorking}
+              iconName="cross"
+              onClick={() => dismissTarget(targetBlockId)}
+            >
+              No scaffold required
+            </OakSecondaryButton>
+          </SuggestionItem>
+        </SuggestionList>
+      </SuggestionGroup>
+    );
+  };
+
+  const { pendingReview } = state.value;
+  const decorations = {
+    renderAfterNode: (node: ResourceNode) => renderSuggestionGroup(node.id),
+    renderContributionControls: (contributionId: string) =>
+      pendingReview?.contributionId === contributionId ? (
+        <PendingReviewControls
+          disabled={isWorking}
+          onAccept={acceptReview}
+          onRetry={retryReview}
+          onUndo={undoReview}
+          reason={pendingReview.reason}
+        />
+      ) : (
+        <OakSecondaryButton
+          // Removal waits for the pending scaffold to be accepted or undone.
+          disabled={isWorking || pendingReview !== null}
+          iconName="trash"
+          onClick={() => removeContribution(contributionId)}
+        >
+          Remove
+        </OakSecondaryButton>
+      ),
+  };
 
   return (
     <OakFlex $flexDirection="column" $gap="spacing-16">
-      {announcement}
-      <OakP>Review the worksheet and choose any scaffolds that suit your class.</OakP>
+      {announcement(status)}
       {status !== null && (
-        <StickyWorkflowStatus ref={statusRef} tabIndex={-1}>
-          {status.tone === "working" ? (
-            <LoadingStatusBanner message={status.message} title={status.title} />
-          ) : (
-            <OakInlineBanner
-              isOpen
-              message={status.message}
-              title={status.title}
-              titleTag="h3"
-              type={status.tone}
-              variant="regular"
-            />
-          )}
+        <StickyWorkflowStatus data-testid="worksheet-scaffolding-status">
+          <WorkflowStatusBanner
+            cta={
+              addedCount === 0 ? undefined : (
+                <OakTertiaryButton
+                  disabled={isWorking}
+                  iconName="trash"
+                  onClick={() => startFresh(state.value.adaptationId)}
+                >
+                  Remove all scaffolds
+                </OakTertiaryButton>
+              )
+            }
+            status={status}
+          />
         </StickyWorkflowStatus>
       )}
       {failedJob !== undefined && (
@@ -362,23 +682,23 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
             cta={
               <OakSecondaryButton onClick={tryAgain}>Start again</OakSecondaryButton>
             }
-            message="Start again to reopen the original worksheet."
-            title={
-              failedJob.kind === "suggestions.apply"
-                ? "We couldn't apply that scaffold"
-                : "We couldn't find scaffolds"
-            }
+            message={failureMessage(failedJob.kind)}
+            title={FAILURE_TITLES[failedJob.kind]}
             titleTag="h3"
             type="error"
             variant="regular"
           />
         </StickyWorkflowStatus>
       )}
-      {documentSuggestions.map(renderSuggestion)}
-      <ResourceDocumentRenderer
-        document={state.value.document}
-        renderAfterNode={renderAfterNode}
-      />
+      {documentIsVisible && (
+        <>
+          {renderSuggestionGroup(null)}
+          <ResourceDocumentRenderer
+            decorations={decorations}
+            document={state.value.document}
+          />
+        </>
+      )}
     </OakFlex>
   );
 }

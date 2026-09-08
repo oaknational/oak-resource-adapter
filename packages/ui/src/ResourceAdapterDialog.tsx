@@ -57,6 +57,9 @@ export function ResourceAdapterDialog(props: ResourceAdapterDialogProps) {
 type ResourceAdapterDialogInnerProps = ResourceAdapterDialogProps &
   Readonly<{ resetKeys: readonly unknown[] }>;
 
+/** `min-width: 0` lets wide worksheet content shrink inside the modal's flex row. */
+const workflowContainerStyle = { minWidth: 0, width: "100%" } as const;
+
 function ResourceAdapterDialogInner({
   apiBaseUrl,
   capability,
@@ -85,26 +88,31 @@ function ResourceAdapterDialogInner({
         role: "dialog",
         style: { maxHeight: "calc(100vh - 1.5rem)" },
       }}
+      // Reserved gutter: a scrollbar appearing mid-workflow would reflow the
+      // worksheet under the pointer.
+      modalInnerFlexProps={{ style: { scrollbarGutter: "stable" } }}
       onClose={onClose}
     >
       <OakModalCenterBody
         // The body titles itself h1, which would be a second h1 on the host page.
         headingOverride={{ id: titleId, tag: "h2" }}
-        iconName="additional-material"
+        iconName="ai"
         title={capability.label}
       >
-        <ResourceAdapterErrorBoundary
-          {...(onError ? { onError } : {})}
-          resetKeys={resetKeys}
-        >
-          <Workflow
-            apiBaseUrl={apiBaseUrl}
-            getToken={getToken}
-            isOpen={isOpen}
-            lesson={lesson}
+        <div style={workflowContainerStyle}>
+          <ResourceAdapterErrorBoundary
             {...(onError ? { onError } : {})}
-          />
-        </ResourceAdapterErrorBoundary>
+            resetKeys={resetKeys}
+          >
+            <Workflow
+              apiBaseUrl={apiBaseUrl}
+              getToken={getToken}
+              isOpen={isOpen}
+              lesson={lesson}
+              {...(onError ? { onError } : {})}
+            />
+          </ResourceAdapterErrorBoundary>
+        </div>
       </OakModalCenterBody>
     </OakModalCenter>
   );

@@ -13,12 +13,13 @@ import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
 import { resolveLessonMaterial } from "../oak-material/from-lesson";
 import { always } from "./availability";
 import { defineTransformation } from "./define-transformation";
-import { addGlossaryQuestionTransformation } from "./definitions/scaffold-add-glossary-question";
+
 import {
   executeTransformation,
   prepareTransformation,
   type PreparePrompt,
 } from "./execute";
+import { addWordBankTransformation } from "./definitions/scaffold-add-word-bank";
 
 const identity = {
   lessonSlug: "adopting-different-perspectives",
@@ -189,19 +190,19 @@ describe("a lesson's keywords reaching a transformation", () => {
     const { material } = await resolveLessonMaterial(
       identity,
       lessons,
-      addGlossaryQuestionTransformation.materialRequirements ?? [],
+      addWordBankTransformation.materialRequirements ?? [],
     );
     const invoker = invokerReturning({
       entries: [{ definition: "the model's own attempt", term: "perspective" }],
     });
 
     const run = await executeTransformation(
-      addGlossaryQuestionTransformation,
+      addWordBankTransformation,
       {
         contributionId: "contribution-1",
         document: worksheet,
         material,
-        params: { supportLevel: "low" },
+        params: { supportLevel: "mid" },
         targetBlockId: firstQuestion.id,
       },
       { invoker, prepare },

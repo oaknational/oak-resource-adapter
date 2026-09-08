@@ -11,6 +11,7 @@ type HarnessPageProps = Readonly<{
 
 function parseSection(view: SearchParamValue): HarnessSection {
   if (
+    view === "capabilities" ||
     view === "smoke-tests" ||
     view === "edge-cases" ||
     view === "suggestions" ||
@@ -41,15 +42,15 @@ function resolveId(
 async function resolveView(
   section: HarnessSection,
   lessonId: string,
-  requestedCase: SearchParamValue,
+  parameters: Record<string, SearchParamValue>,
 ): Promise<HarnessView> {
-  if (section === "smoke-tests") {
+  if (section === "capabilities" || section === "smoke-tests") {
     return { section };
   }
 
   if (section === "edge-cases") {
     const id = resolveId(
-      requestedCase,
+      parameters.case,
       edgeCaseNavigation,
       "The harness has no edge cases.",
     );
@@ -62,7 +63,10 @@ async function resolveView(
   }
 
   if (section === "transformations" || section === "suggestions") {
+    const selection = parameters.selection;
+
     return {
+      ...(typeof selection === "string" ? { initialSelection: selection } : {}),
       section,
       navigation: lessonScenarioNavigation,
       scenario: await loadLessonScenario(lessonId),
@@ -88,7 +92,7 @@ export default async function HarnessPage({ searchParams }: HarnessPageProps) {
   return (
     <HarnessPageClient
       lessonId={lessonId}
-      view={await resolveView(section, lessonId, parameters.case)}
+      view={await resolveView(section, lessonId, parameters)}
     />
   );
 }

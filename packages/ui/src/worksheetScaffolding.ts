@@ -1,8 +1,12 @@
 import { TRPCClientError } from "@trpc/client";
 import type {
   WorksheetScaffoldingApplyRequest,
+  WorksheetScaffoldingReviewRequest,
+  WorksheetScaffoldingRetryRequest,
   WorksheetScaffoldingEntry,
+  WorksheetScaffoldingRemoveRequest,
   WorksheetScaffoldingState,
+  WorksheetScaffoldingDismissRequest,
 } from "@oaknational/resource-adapter-contracts/internal";
 
 import type { GetToken, LessonContext } from "./publicTypes.js";
@@ -21,46 +25,108 @@ function apiError(message: string, error: unknown): ResourceAdapterApiError {
   );
 }
 
-export async function openWorksheetScaffolding(
-  options: ClientOptions &
-    Readonly<{ lesson: LessonContext; replacing?: string | undefined }>,
-): Promise<WorksheetScaffoldingEntry> {
+async function callApi<T>(message: string, request: () => Promise<T>): Promise<T> {
   try {
-    return await createResourceAdapterInternalClient(
-      options,
-    ).worksheetScaffolding.open.mutate({
+    return await request();
+  } catch (error) {
+    throw apiError(message, error);
+  }
+}
+
+export function openWorksheetScaffolding(
+  options: ClientOptions &
+    Readonly<{
+      lesson: LessonContext;
+      replacing?: { adaptationId: string; requestId: string } | undefined;
+    }>,
+): Promise<WorksheetScaffoldingEntry> {
+  return callApi("Resource Adapter could not open worksheet scaffolding.", () =>
+    createResourceAdapterInternalClient(options).worksheetScaffolding.open.mutate({
       lesson: options.lesson,
       ...(options.replacing === undefined ? {} : { replacing: options.replacing }),
-    });
-  } catch (error) {
-    throw apiError("Resource Adapter could not open worksheet scaffolding.", error);
-  }
+    }),
+  );
 }
 
-export async function getWorksheetScaffolding(
+export function getWorksheetScaffolding(
   options: ClientOptions & Readonly<{ adaptationId: string }>,
 ): Promise<WorksheetScaffoldingState> {
-  try {
-    return await createResourceAdapterInternalClient(
-      options,
-    ).worksheetScaffolding.get.query({ adaptationId: options.adaptationId });
-  } catch (error) {
-    throw apiError("Resource Adapter could not refresh worksheet scaffolding.", error);
-  }
+  return callApi("Resource Adapter could not refresh worksheet scaffolding.", () =>
+    createResourceAdapterInternalClient(options).worksheetScaffolding.get.query({
+      adaptationId: options.adaptationId,
+    }),
+  );
 }
 
-export async function applyWorksheetScaffoldingSuggestion(
+export function applyWorksheetScaffoldingSuggestion(
   options: ClientOptions & WorksheetScaffoldingApplyRequest,
 ): Promise<WorksheetScaffoldingState> {
-  try {
-    return await createResourceAdapterInternalClient(
+  return callApi("Resource Adapter could not apply that suggestion.", () =>
+    createResourceAdapterInternalClient(
       options,
     ).worksheetScaffolding.applySuggestion.mutate({
       adaptationId: options.adaptationId,
       ...(options.params === undefined ? {} : { params: options.params }),
       suggestionId: options.suggestionId,
+    }),
+  );
+}
+
+async function reviewAction(
+  action: "accept" | "undo",
+  options: ClientOptions & WorksheetScaffoldingReviewRequest,
+): Promise<WorksheetScaffoldingState> {
+  return callApi(`Resource Adapter could not ${action} that scaffold.`, async () => {
+    const client = createResourceAdapterInternalClient(options);
+    return client.worksheetScaffolding[action].mutate({
+      adaptationId: options.adaptationId,
+      attemptId: options.attemptId,
     });
-  } catch (error) {
-    throw apiError("Resource Adapter could not apply that suggestion.", error);
-  }
+  });
+}
+
+export function acceptWorksheetScaffoldingReview(
+  options: ClientOptions & WorksheetScaffoldingReviewRequest,
+): Promise<WorksheetScaffoldingState> {
+  return reviewAction("accept", options);
+}
+
+export function retryWorksheetScaffoldingReview(
+  options: ClientOptions & WorksheetScaffoldingRetryRequest,
+): Promise<WorksheetScaffoldingState> {
+  return callApi("Resource Adapter could not retry that scaffold.", () =>
+    createResourceAdapterInternalClient(options).worksheetScaffolding.retry.mutate({
+      adaptationId: options.adaptationId,
+      attemptId: options.attemptId,
+      requestId: options.requestId,
+    }),
+  );
+}
+
+export function undoWorksheetScaffoldingReview(
+  options: ClientOptions & WorksheetScaffoldingReviewRequest,
+): Promise<WorksheetScaffoldingState> {
+  return reviewAction("undo", options);
+}
+
+export function enqueueWorksheetScaffoldingRemoval(
+  options: ClientOptions & WorksheetScaffoldingRemoveRequest,
+): Promise<WorksheetScaffoldingState> {
+  return callApi("Resource Adapter could not remove that scaffold.", () =>
+    createResourceAdapterInternalClient(options).worksheetScaffolding.remove.mutate({
+      adaptationId: options.adaptationId,
+      contributionId: options.contributionId,
+    }),
+  );
+}
+
+export function enqueueWorksheetScaffoldingDismissal(
+  options: ClientOptions & WorksheetScaffoldingDismissRequest,
+): Promise<WorksheetScaffoldingState> {
+  return callApi("Resource Adapter could not dismiss scaffolds here.", () =>
+    createResourceAdapterInternalClient(options).worksheetScaffolding.dismiss.mutate({
+      adaptationId: options.adaptationId,
+      targetBlockId: options.targetBlockId,
+    }),
+  );
 }

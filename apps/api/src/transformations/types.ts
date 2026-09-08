@@ -141,6 +141,7 @@ export type TransformationCatalogueItem = Readonly<{
   materialRequirements: readonly TransformationMaterialSummary[];
   outputs: TransformationOutputs;
   status: TransformationStatus;
+  suggestion: TransformationSuggestionGuidance;
   supportLevels?: SupportLevelOptions | undefined;
   target: TransformationTarget;
 }>;

@@ -18,7 +18,13 @@ import type {
 
 type StepRange = Readonly<{ maximum: number; minimum: number }>;
 
-const stepSchema = z.string().trim().min(1).max(200);
+const stepSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(200)
+  .transform((step) => step.replace(/^(?:step\s+)?\d+[.):]\s*/i, ""))
+  .pipe(z.string().trim().min(1).max(200));
 
 function stepRange(document: ResourceDocument): StepRange | undefined {
   const { metadata } = document;

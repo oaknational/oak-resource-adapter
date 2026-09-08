@@ -591,6 +591,35 @@ describeWithDatabase("schema integration", () => {
     );
   });
 
+  it("rejects a negative suggestion undo count", async () => {
+    const adaptation = await insertAdaptation();
+    const suggesting = await insertTransformation(adaptation.id, "suggest");
+    const { attempt } = await insertAttempt(suggesting.id);
+    const document = await insertOakResourceDocument("Worksheet to analyse");
+
+    const [suggestion] = await database()
+      .insert(suggestedTransformations)
+      .values({
+        kind: "add-scaffolding",
+        position: 0,
+        resourceDocumentId: document.id,
+        transformationAttemptId: attempt.id,
+      })
+      .returning();
+
+    if (!suggestion) {
+      throw new Error("Failed to insert the suggestion fixture.");
+    }
+
+    await expectConstraintViolation(
+      database()
+        .update(suggestedTransformations)
+        .set({ undoCount: -1 })
+        .where(eq(suggestedTransformations.id, suggestion.id)),
+      "suggested_transformations_undo_count_check",
+    );
+  });
+
   it("discards a document's offers with the document, keeping earlier ones intact", async () => {
     const adaptation = await insertAdaptation();
     const suggesting = await insertTransformation(adaptation.id, "suggest");
@@ -729,6 +758,33 @@ describeWithDatabase("schema integration", () => {
       .orderBy(transformationAttempts.attemptNumber);
 
     expect(attempts.map((attempt) => attempt.attemptNumber)).toEqual([1, 2]);
+  });
+
+  it("rejects an attempt number below one", async () => {
+    const adaptation = await insertAdaptation();
+    const transformation = await insertTransformation(adaptation.id);
+    const job = await insertJob();
+
+    await expectConstraintViolation(
+      database().insert(transformationAttempts).values({
+        attemptNumber: 0,
+        jobId: job.id,
+        transformationId: transformation.id,
+      }),
+      "transformation_attempts_attempt_number_check",
+    );
+  });
+
+  it("does not accept an attempt before it has completed", async () => {
+    const { attempt } = await insertChain();
+
+    await expectConstraintViolation(
+      database()
+        .update(transformationAttempts)
+        .set({ acceptedAt: new Date() })
+        .where(eq(transformationAttempts.id, attempt.id)),
+      "transformation_attempts_acceptance_check",
+    );
   });
 
   it("rejects a duplicate attempt number, so a double-clicked retry cannot run twice", async () => {

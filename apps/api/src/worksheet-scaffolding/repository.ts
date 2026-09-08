@@ -13,9 +13,23 @@ import {
   type Job,
 } from "@oaknational/resource-adapter-db";
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
-import { and, desc, eq, gte, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  exists,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  sql,
+} from "drizzle-orm";
 
-import type { ResourceDocument } from "@oaknational/resource-document";
+import {
+  contributionIdsInDocument,
+  type ResourceDocument,
+} from "@oaknational/resource-document";
+import { parseResourceDocument } from "@oaknational/resource-document/parse";
 
 const PRIMARY_SOURCE = "primary_source";
 
@@ -23,12 +37,108 @@ type Transaction = Parameters<
   Parameters<ReturnType<typeof getDatabaseClient>["transaction"]>[0]
 >[0];
 
-function markAttemptComplete(transaction: Transaction, attemptId: string) {
+function markAttemptComplete(
+  transaction: Transaction,
+  attemptId: string,
+  review: "accepted" | "pending" = "pending",
+) {
+  const completedAt = new Date();
   return transaction
     .update(transformationAttempts)
-    .set({ completedAt: new Date() })
+    .set({ completedAt, ...(review === "pending" ? {} : { acceptedAt: completedAt }) })
     .where(eq(transformationAttempts.id, attemptId));
 }
+
+/**
+ * The head document, only while one completed but unaccepted attempt of this
+ * adaptation still owns it. Used as an `exists` guard so a stale request cannot
+ * accept, undo or overwrite a review that has already moved on.
+ */
+function pendingAttemptOwnsHead(
+  transaction: Transaction,
+  input: { adaptationId: string; attemptId: string; resourceDocumentId: string },
+) {
+  return transaction
+    .select({ id: resourceDocuments.id })
+    .from(resourceDocuments)
+    .innerJoin(
+      transformationAttempts,
+      eq(transformationAttempts.id, resourceDocuments.transformationAttemptId),
+    )
+    .innerJoin(
+      transformations,
+      eq(transformations.id, transformationAttempts.transformationId),
+    )
+    .where(
+      and(
+        eq(resourceDocuments.id, input.resourceDocumentId),
+        eq(transformationAttempts.id, input.attemptId),
+        eq(transformations.adaptationId, input.adaptationId),
+        isNull(transformationAttempts.acceptedAt),
+        isNotNull(transformationAttempts.completedAt),
+      ),
+    );
+}
+
+/** As above, but keyed on the transformation and the input it must return to. */
+function pendingTransformationOwnsHead(
+  transaction: Transaction,
+  input: {
+    adaptationId: string;
+    previousHeadId: string;
+    resourceDocumentId: string;
+    transformationId: string;
+  },
+) {
+  return transaction
+    .select({ id: resourceDocuments.id })
+    .from(resourceDocuments)
+    .innerJoin(
+      transformationAttempts,
+      eq(transformationAttempts.id, resourceDocuments.transformationAttemptId),
+    )
+    .innerJoin(
+      transformations,
+      eq(transformations.id, transformationAttempts.transformationId),
+    )
+    .innerJoin(
+      transformationInputs,
+      eq(transformationInputs.transformationId, transformations.id),
+    )
+    .where(
+      and(
+        eq(resourceDocuments.id, input.resourceDocumentId),
+        eq(transformations.id, input.transformationId),
+        eq(transformations.adaptationId, input.adaptationId),
+        eq(transformationInputs.inputRole, PRIMARY_SOURCE),
+        eq(transformationInputs.resourceDocumentId, input.previousHeadId),
+        isNull(transformationAttempts.acceptedAt),
+        isNotNull(transformationAttempts.completedAt),
+      ),
+    );
+}
+
+/** Guards against an attempt from a different adaptation advancing this head. */
+function attemptBelongsToAdaptation(
+  transaction: Transaction,
+  input: { adaptationId: string; attemptId: string },
+) {
+  return transaction
+    .select({ id: transformationAttempts.id })
+    .from(transformationAttempts)
+    .innerJoin(
+      transformations,
+      eq(transformations.id, transformationAttempts.transformationId),
+    )
+    .where(
+      and(
+        eq(transformationAttempts.id, input.attemptId),
+        eq(transformations.adaptationId, input.adaptationId),
+      ),
+    );
+}
+
+class PendingReviewConflictError extends Error {}
 
 /** Stored parameters are jsonb, so their shape is only known once read. */
 export function asParams(value: unknown): Readonly<Record<string, unknown>> {
@@ -46,6 +156,12 @@ export type StoredAdaptationHead = Readonly<{
 export type StoredSuggestion = typeof suggestedTransformations.$inferSelect;
 export type StoredAttempt = typeof transformationAttempts.$inferSelect;
 export type StoredTransformation = typeof transformations.$inferSelect;
+
+export type PendingReview = Readonly<{
+  attempt: StoredAttempt;
+  suggestion: StoredSuggestion;
+  transformation: StoredTransformation;
+}>;
 
 export type AcceptedSuggestion = Readonly<{
   adaptation: typeof adaptations.$inferSelect;
@@ -79,6 +195,232 @@ export async function getAdaptationHead(
     .limit(1);
 
   return row ?? null;
+}
+
+/** The unaccepted teacher-facing attempt that produced this document, if any. */
+export async function getPendingReview(
+  resourceDocumentId: string,
+): Promise<PendingReview | null> {
+  const [row] = await getDatabaseClient()
+    .select({
+      attempt: transformationAttempts,
+      suggestion: suggestedTransformations,
+      transformation: transformations,
+    })
+    .from(resourceDocuments)
+    .innerJoin(
+      transformationAttempts,
+      eq(transformationAttempts.id, resourceDocuments.transformationAttemptId),
+    )
+    .innerJoin(
+      transformations,
+      eq(transformations.id, transformationAttempts.transformationId),
+    )
+    .innerJoin(
+      suggestedTransformations,
+      eq(suggestedTransformations.acceptedTransformationId, transformations.id),
+    )
+    .where(
+      and(
+        eq(resourceDocuments.id, resourceDocumentId),
+        isNull(transformationAttempts.acceptedAt),
+        isNotNull(transformationAttempts.completedAt),
+      ),
+    )
+    .limit(1);
+
+  return row ?? null;
+}
+
+/** Accepts only the pending attempt that still owns the adaptation head. */
+export async function acceptPendingReview(input: {
+  adaptationId: string;
+  attemptId: string;
+  expectedHeadId: string;
+}): Promise<boolean> {
+  try {
+    return await getDatabaseClient().transaction(async (transaction) => {
+      const [head] = await transaction
+        .update(adaptations)
+        .set({
+          headResourceDocumentId: input.expectedHeadId,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(adaptations.id, input.adaptationId),
+            eq(adaptations.headResourceDocumentId, input.expectedHeadId),
+            exists(
+              pendingAttemptOwnsHead(transaction, {
+                adaptationId: input.adaptationId,
+                attemptId: input.attemptId,
+                resourceDocumentId: input.expectedHeadId,
+              }),
+            ),
+          ),
+        )
+        .returning({ id: adaptations.id });
+      if (head === undefined) {
+        return false;
+      }
+
+      const [accepted] = await transaction
+        .update(transformationAttempts)
+        .set({ acceptedAt: new Date() })
+        .where(
+          and(
+            eq(transformationAttempts.id, input.attemptId),
+            isNull(transformationAttempts.acceptedAt),
+            isNotNull(transformationAttempts.completedAt),
+          ),
+        )
+        .returning({ id: transformationAttempts.id });
+      if (accepted === undefined) {
+        throw new PendingReviewConflictError();
+      }
+      return true;
+    });
+  } catch (error) {
+    if (error instanceof PendingReviewConflictError) {
+      return false;
+    }
+    throw error;
+  }
+}
+
+/** Returns the immutable primary document shared by every retry of a request. */
+export async function getPrimaryTransformationInput(
+  transformationId: string,
+): Promise<typeof resourceDocuments.$inferSelect | null> {
+  const [row] = await getDatabaseClient()
+    .select({ storedDocument: resourceDocuments })
+    .from(transformationInputs)
+    .innerJoin(
+      resourceDocuments,
+      eq(resourceDocuments.id, transformationInputs.resourceDocumentId),
+    )
+    .where(
+      and(
+        eq(transformationInputs.transformationId, transformationId),
+        eq(transformationInputs.inputRole, PRIMARY_SOURCE),
+        eq(transformationInputs.position, 0),
+      ),
+    )
+    .limit(1);
+
+  return row?.storedDocument ?? null;
+}
+
+export async function isAcceptedContribution(
+  adaptationId: string,
+  contributionId: string,
+): Promise<boolean> {
+  const [row] = await getDatabaseClient()
+    .select({ id: transformations.id })
+    .from(transformations)
+    .innerJoin(
+      transformationAttempts,
+      eq(transformationAttempts.transformationId, transformations.id),
+    )
+    .where(
+      and(
+        eq(transformations.id, contributionId),
+        eq(transformations.adaptationId, adaptationId),
+        isNotNull(transformationAttempts.acceptedAt),
+      ),
+    )
+    .limit(1);
+
+  return row !== undefined;
+}
+
+/** Creates the next numbered attempt; a redelivered job resolves its existing row. */
+export async function createRetryAttempt(input: {
+  jobId: string;
+  transformationId: string;
+}): Promise<StoredAttempt> {
+  return getDatabaseClient().transaction(async (transaction) => {
+    const [existing] = await transaction
+      .select()
+      .from(transformationAttempts)
+      .where(eq(transformationAttempts.jobId, input.jobId))
+      .limit(1);
+    if (existing !== undefined) {
+      return existing;
+    }
+
+    const [latest] = await transaction
+      .select({ attemptNumber: transformationAttempts.attemptNumber })
+      .from(transformationAttempts)
+      .where(eq(transformationAttempts.transformationId, input.transformationId))
+      .orderBy(desc(transformationAttempts.attemptNumber))
+      .limit(1);
+    const [attempt] = await transaction
+      .insert(transformationAttempts)
+      .values({
+        attemptNumber: (latest?.attemptNumber ?? 0) + 1,
+        jobId: input.jobId,
+        transformationId: input.transformationId,
+      })
+      .returning();
+    if (attempt === undefined) {
+      throw new Error("The retry attempt was not created.");
+    }
+    return attempt;
+  });
+}
+
+/**
+ * Moves an unaccepted head back to its input and discards the transformation that
+ * produced it. Deleting the transformation cascades to its attempts and generated
+ * document, and sets the offer's `accepted_transformation_id` back to null, which
+ * is what reopens it.
+ */
+export async function undoPendingReview(input: {
+  adaptationId: string;
+  expectedHeadId: string;
+  previousHeadId: string;
+  transformationId: string;
+}): Promise<boolean> {
+  return getDatabaseClient().transaction(async (transaction) => {
+    const [updated] = await transaction
+      .update(adaptations)
+      .set({ headResourceDocumentId: input.previousHeadId, updatedAt: new Date() })
+      .where(
+        and(
+          eq(adaptations.id, input.adaptationId),
+          eq(adaptations.headResourceDocumentId, input.expectedHeadId),
+          exists(
+            pendingTransformationOwnsHead(transaction, {
+              adaptationId: input.adaptationId,
+              previousHeadId: input.previousHeadId,
+              resourceDocumentId: input.expectedHeadId,
+              transformationId: input.transformationId,
+            }),
+          ),
+        ),
+      )
+      .returning({ id: adaptations.id });
+    if (updated === undefined) {
+      return false;
+    }
+
+    const [reopened] = await transaction
+      .update(suggestedTransformations)
+      .set({ undoCount: sql`${suggestedTransformations.undoCount} + 1` })
+      .where(
+        eq(suggestedTransformations.acceptedTransformationId, input.transformationId),
+      )
+      .returning({ id: suggestedTransformations.id });
+    if (reopened === undefined) {
+      throw new Error("The pending review's suggestion could not be reopened.");
+    }
+    await transaction
+      .delete(transformations)
+      .where(eq(transformations.id, input.transformationId));
+
+    return true;
+  });
 }
 
 /** Prefers work still in flight, so a stale failure never masks a running job. */
@@ -149,6 +491,7 @@ export async function getOpenSuggestion(
 
 export type ResumableAdaptation = Readonly<{
   id: string;
+  pendingScaffoldCount: number;
   scaffoldCount: number;
   updatedAt: Date;
 }>;
@@ -162,31 +505,24 @@ export async function findResumableAdaptation(input: {
   capabilityId: string;
   lesson: LessonContext;
   notBefore: Date;
-  /** Internal operations share this table and are not scaffolds a teacher chose. */
-  operationKind: string;
   teacherId: string;
 }): Promise<ResumableAdaptation | null> {
   const [row] = await getDatabaseClient()
     .select({
+      acceptedAt: transformationAttempts.acceptedAt,
+      completedAt: transformationAttempts.completedAt,
+      document: resourceDocuments.document,
       id: adaptations.id,
-      // Shown to the teacher as work they did, so only settled work counts.
-      scaffoldCount: sql<number>`(
-        select count(distinct ${transformations.id})::int
-        from ${transformations}
-        inner join ${transformationAttempts}
-          on ${transformationAttempts.transformationId} = ${transformations.id}
-        inner join ${jobs}
-          on ${jobs.id} = ${transformationAttempts.jobId}
-          and ${jobs.status} = ${JobStatus.SUCCEEDED}
-        where ${transformations.adaptationId} = ${adaptations.id}
-          and ${transformations.kind} <> ${input.operationKind}
-      )`,
       updatedAt: adaptations.updatedAt,
     })
     .from(adaptations)
     .innerJoin(
       resourceDocuments,
       eq(resourceDocuments.id, adaptations.headResourceDocumentId),
+    )
+    .leftJoin(
+      transformationAttempts,
+      eq(transformationAttempts.id, resourceDocuments.transformationAttemptId),
     )
     .where(
       and(
@@ -202,7 +538,21 @@ export async function findResumableAdaptation(input: {
     .orderBy(desc(adaptations.updatedAt))
     .limit(1);
 
-  return row ?? null;
+  if (row === undefined) {
+    return null;
+  }
+  const scaffoldCount = contributionIdsInDocument(
+    parseResourceDocument(row.document),
+  ).length;
+  return scaffoldCount === 0
+    ? null
+    : {
+        id: row.id,
+        pendingScaffoldCount:
+          row.acceptedAt === null && row.completedAt !== null ? 1 : 0,
+        scaffoldCount,
+        updatedAt: row.updatedAt,
+      };
 }
 
 export async function createAdaptationWithSourceDocument(input: {
@@ -224,6 +574,7 @@ async function insertAdaptationWithSourceDocument(
     capabilityId: string;
     document: ResourceDocument;
     lesson: LessonContext;
+    replacementRequestId?: string;
     teacherId: string;
   },
 ): Promise<{ adaptationId: string; resourceDocumentId: string }> {
@@ -234,6 +585,7 @@ async function insertAdaptationWithSourceDocument(
       clerkUserId: input.teacherId,
       lessonSlug: input.lesson.lessonSlug,
       programmeSlug: input.lesson.programmeSlug,
+      replacementRequestId: input.replacementRequestId,
     })
     .returning({ id: adaptations.id });
   if (adaptation === undefined) {
@@ -273,9 +625,39 @@ export async function replaceAdaptationWithSourceDocument(input: {
   document: ResourceDocument;
   lesson: LessonContext;
   replacingAdaptationId: string;
+  replacementRequestId: string;
   teacherId: string;
 }): Promise<{ adaptationId: string; resourceDocumentId: string }> {
   return getDatabaseClient().transaction(async (transaction) => {
+    const findReplacement = async () => {
+      const [replacement] = await transaction
+        .select({
+          adaptationId: adaptations.id,
+          resourceDocumentId: adaptations.headResourceDocumentId,
+        })
+        .from(adaptations)
+        .where(
+          and(
+            eq(adaptations.replacementRequestId, input.replacementRequestId),
+            eq(adaptations.clerkUserId, input.teacherId),
+            eq(adaptations.capabilityId, input.capabilityId),
+            eq(adaptations.lessonSlug, input.lesson.lessonSlug),
+            eq(adaptations.programmeSlug, input.lesson.programmeSlug),
+          ),
+        )
+        .limit(1);
+      if (replacement === undefined) {
+        return null;
+      }
+      const { adaptationId, resourceDocumentId } = replacement;
+      return resourceDocumentId === null ? null : { adaptationId, resourceDocumentId };
+    };
+
+    const replay = await findReplacement();
+    if (replay !== null) {
+      return replay;
+    }
+
     const [abandoned] = await transaction
       .update(adaptations)
       .set({ abandonedAt: new Date() })
@@ -291,22 +673,32 @@ export async function replaceAdaptationWithSourceDocument(input: {
       )
       .returning({ id: adaptations.id });
     if (abandoned === undefined) {
+      const concurrentReplay = await findReplacement();
+      if (concurrentReplay !== null) {
+        return concurrentReplay;
+      }
       throw new Error("The worksheet scaffolding adaptation could not be replaced.");
     }
 
-    return insertAdaptationWithSourceDocument(transaction, input);
+    return insertAdaptationWithSourceDocument(transaction, {
+      ...input,
+      replacementRequestId: input.replacementRequestId,
+    });
   });
 }
 
 /**
- * What a teacher has already asked for on this worksheet, including work still
- * running. Excluding in-flight work would make the answer depend on when it was
- * asked, so the same scaffold could be offered twice. Only a failed attempt
- * frees its kind to be offered again.
+ * What a teacher has already asked for and still has on this worksheet. Undoing or
+ * removing a scaffold takes its contribution out of the document, which frees its
+ * kind to be offered again.
  */
 export async function listAppliedTransformations(
   adaptationId: string,
+  contributionIds: readonly string[],
 ): Promise<readonly Pick<StoredTransformation, "kind" | "params" | "targetBlockId">[]> {
+  if (contributionIds.length === 0) {
+    return [];
+  }
   return getDatabaseClient()
     .select({
       kind: transformations.kind,
@@ -317,13 +709,7 @@ export async function listAppliedTransformations(
     .where(
       and(
         eq(transformations.adaptationId, adaptationId),
-        sql`exists (
-          select 1
-          from ${transformationAttempts}
-          inner join ${jobs} on ${jobs.id} = ${transformationAttempts.jobId}
-          where ${transformationAttempts.transformationId} = ${transformations.id}
-            and ${jobs.status} <> ${JobStatus.FAILED}
-        )`,
+        inArray(transformations.id, [...contributionIds]),
       ),
     )
     .orderBy(transformations.createdAt);
@@ -338,12 +724,14 @@ export async function getAttemptForJob(jobId: string): Promise<StoredAttempt | n
   return row ?? null;
 }
 
+/** Records one internal operation and its single attempt against a document. */
 export async function createOperationAttempt(input: {
   adaptationId: string;
   idempotencyKey: string;
   jobId: string;
   kind: string;
   resourceDocumentId: string;
+  targetBlockId?: string | null;
 }): Promise<StoredAttempt> {
   return getDatabaseClient().transaction(async (transaction) => {
     const [operation] = await transaction
@@ -352,17 +740,18 @@ export async function createOperationAttempt(input: {
         adaptationId: input.adaptationId,
         idempotencyKey: input.idempotencyKey,
         kind: input.kind,
+        targetBlockId: input.targetBlockId ?? null,
       })
       .returning();
     if (operation === undefined) {
-      throw new Error("The suggestion operation was not created.");
+      throw new Error(`The ${input.kind} operation was not created.`);
     }
     const [attempt] = await transaction
       .insert(transformationAttempts)
       .values({ attemptNumber: 1, jobId: input.jobId, transformationId: operation.id })
       .returning();
     if (attempt === undefined) {
-      throw new Error("The suggestion attempt was not created.");
+      throw new Error(`The ${input.kind} attempt was not created.`);
     }
     await transaction.insert(transformationInputs).values({
       inputRole: PRIMARY_SOURCE,
@@ -543,7 +932,11 @@ export async function storeOutputsAndAdvanceHead(input: {
   adaptationId: string;
   attemptId: string;
   expectedHeadId: string;
+  /** Retry additionally requires this attempt to remain pending on the expected head. */
+  expectedPendingAttemptId?: string;
   outputs: readonly GeneratedOutput[];
+  /** An operation the teacher already asked for needs no separate approval. */
+  review?: "accepted" | "pending";
   revisedPosition: number;
 }): Promise<string> {
   return getDatabaseClient().transaction(async (transaction) => {
@@ -565,6 +958,14 @@ export async function storeOutputsAndAdvanceHead(input: {
     if (nextHead === undefined) {
       throw new Error("The transformation did not produce a revised resource.");
     }
+    const expectedPendingAttempt =
+      input.expectedPendingAttemptId === undefined
+        ? undefined
+        : pendingAttemptOwnsHead(transaction, {
+            adaptationId: input.adaptationId,
+            attemptId: input.expectedPendingAttemptId,
+            resourceDocumentId: input.expectedHeadId,
+          });
     const [advanced] = await transaction
       .update(adaptations)
       .set({ headResourceDocumentId: nextHead.id })
@@ -572,13 +973,22 @@ export async function storeOutputsAndAdvanceHead(input: {
         and(
           eq(adaptations.id, input.adaptationId),
           eq(adaptations.headResourceDocumentId, input.expectedHeadId),
+          exists(
+            attemptBelongsToAdaptation(transaction, {
+              adaptationId: input.adaptationId,
+              attemptId: input.attemptId,
+            }),
+          ),
+          ...(expectedPendingAttempt === undefined
+            ? []
+            : [exists(expectedPendingAttempt)]),
         ),
       )
       .returning({ id: adaptations.id });
     if (advanced === undefined) {
       throw new Error("The adaptation head changed before the scaffold was applied.");
     }
-    await markAttemptComplete(transaction, input.attemptId);
+    await markAttemptComplete(transaction, input.attemptId, input.review);
     return nextHead.id;
   });
 }

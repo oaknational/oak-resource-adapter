@@ -1,4 +1,4 @@
-import { ResourceDocumentInspector } from "./ResourceDocumentInspector";
+import { ResourceDocumentInspector } from "../shared/ResourceDocumentInspector";
 import type { TransformationWorkbench } from "./useTransformationWorkbench";
 import styles from "../../page.module.css";
 

@@ -14,6 +14,10 @@ export class IdempotencyConflictError extends Error {
   override readonly name = "IdempotencyConflictError";
 }
 
+export class ConcurrencyConflictError extends Error {
+  override readonly name = "ConcurrencyConflictError";
+}
+
 export type ClaimedJob = { outcome: "claimed"; kind: string } | { outcome: "ignored" };
 
 function matchesRequest(
@@ -84,7 +88,9 @@ export async function createOrGetJob(request: {
         )
         .limit(1);
       if (active !== undefined) {
-        return { created: false, job: active };
+        throw new ConcurrencyConflictError(
+          `Concurrency key ${request.concurrencyKey} is already attached to active job ${active.id}.`,
+        );
       }
     }
   }

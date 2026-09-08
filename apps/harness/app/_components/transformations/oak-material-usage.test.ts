@@ -32,6 +32,7 @@ function transformation(
     materialRequirements: requirements,
     outputs: ["revised-resource"],
     status: "active",
+    suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
     target: { scope: "document" },
   };
 }

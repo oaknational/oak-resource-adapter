@@ -222,7 +222,7 @@ const edgeCaseDefinitions = [
       availableResources: ["worksheet"],
     },
     brokenApiPath: false,
-    uiCapabilities: [{ id: "worksheetScaffolding", label: "Scaffold practice tasks" }],
+    uiCapabilities: [{ id: "worksheetScaffolding", label: "Add extra scaffolding" }],
     facts: () =>
       Promise.resolve(
         factsOnly([
@@ -235,7 +235,7 @@ const edgeCaseDefinitions = [
     id: "multiple-capabilities-ui",
     title: "Multiple capabilities are enabled",
     summary: "The launcher offers a menu of teacher actions.",
-    expectation: "Expected: a Create more with AI capability menu",
+    expectation: "Expected: an Adapt with AI capability menu",
     reason:
       "This deterministic UI fixture shows the future multi-capability shape without adding a fictional capability to the live service registry.",
     lesson: {
@@ -248,7 +248,7 @@ const edgeCaseDefinitions = [
     },
     brokenApiPath: false,
     uiCapabilities: [
-      { id: "worksheetScaffolding", label: "Scaffold practice tasks" },
+      { id: "worksheetScaffolding", label: "Add extra scaffolding" },
       // The launcher needs a second choice to render a menu, and the service
       // has no second capability to offer.
       {

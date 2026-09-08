@@ -66,6 +66,11 @@ fi
 echo "Checking formatting..."
 pnpm format
 
+# Reads the journal and snapshots only, so it needs no connection. The drift
+# check CI runs alongside this one stays there: it writes generated files.
+echo "Checking migration history..."
+pnpm db:check
+
 # Checks the changed packages and anything that depends on them. Turbo caches
 # all three tasks, so a second push is close to free.
 if [ -n "$base" ]; then
@@ -75,3 +80,9 @@ else
   echo "Linting, type-checking and testing every package..."
   pnpm exec turbo run lint type-check test
 fi
+
+# Unconditional: the published surface can break from a new source module, a
+# changed export, or an edit to the check itself, and the module lists it
+# enforces are maintained by hand.
+echo "Verifying the published package artifact..."
+pnpm test:artifact

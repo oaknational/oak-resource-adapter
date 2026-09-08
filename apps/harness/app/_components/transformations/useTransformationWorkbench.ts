@@ -15,8 +15,11 @@ import type { ResourceDocument } from "@oaknational/resource-document";
 
 export type TransformationRequestState = "idle" | "preview" | "run";
 
-export function useTransformationWorkbench(scenario: LessonScenario) {
-  const catalogue = useTransformationCatalogue();
+export function useTransformationWorkbench(
+  scenario: LessonScenario,
+  initialKind?: string | undefined,
+) {
+  const catalogue = useTransformationCatalogue(initialKind);
   const [supportLevel, setSupportLevel] = useState("");
   const [targetBlockId, setTargetBlockId] = useState("");
   const [currentDocument, setCurrentDocument] = useState(scenario.document);

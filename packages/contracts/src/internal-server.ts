@@ -8,14 +8,22 @@ import {
   resourceAdapterFeatureFlagsResponseSchema,
   resourceAdapterSourceDocumentRequestSchema,
   worksheetScaffoldingApplyRequestSchema,
+  worksheetScaffoldingReviewRequestSchema,
+  worksheetScaffoldingRetryRequestSchema,
   worksheetScaffoldingGetRequestSchema,
   worksheetScaffoldingJobKinds,
   worksheetScaffoldingOpenRequestSchema,
+  worksheetScaffoldingRemoveRequestSchema,
+  worksheetScaffoldingDismissRequestSchema,
   type WorksheetScaffoldingApplyRequest,
+  type WorksheetScaffoldingReviewRequest,
+  type WorksheetScaffoldingRetryRequest,
   type WorksheetScaffoldingEntry,
   type WorksheetScaffoldingGetRequest,
   type WorksheetScaffoldingOpenRequest,
+  type WorksheetScaffoldingRemoveRequest,
   type WorksheetScaffoldingState,
+  type WorksheetScaffoldingDismissRequest,
   type ResourceAdapterSourceDocumentRequest,
   type ResourceAdapterFeatureFlagsResponse,
 } from "./internal-contract.js";
@@ -36,6 +44,10 @@ export type ResourceAdapterSourceDocumentService = Readonly<{
 }>;
 
 export type WorksheetScaffoldingService = Readonly<{
+  accept: (
+    request: WorksheetScaffoldingReviewRequest,
+    target: ResourceAdapterAuthenticatedTeacher,
+  ) => Promise<WorksheetScaffoldingState | null>;
   applySuggestion: (
     request: WorksheetScaffoldingApplyRequest,
     target: ResourceAdapterAuthenticatedTeacher,
@@ -48,6 +60,22 @@ export type WorksheetScaffoldingService = Readonly<{
     request: WorksheetScaffoldingOpenRequest,
     target: ResourceAdapterAuthenticatedTeacher,
   ) => Promise<WorksheetScaffoldingEntry | null>;
+  remove: (
+    request: WorksheetScaffoldingRemoveRequest,
+    target: ResourceAdapterAuthenticatedTeacher,
+  ) => Promise<WorksheetScaffoldingState | null>;
+  retry: (
+    request: WorksheetScaffoldingRetryRequest,
+    target: ResourceAdapterAuthenticatedTeacher,
+  ) => Promise<WorksheetScaffoldingState | null>;
+  dismiss: (
+    request: WorksheetScaffoldingDismissRequest,
+    target: ResourceAdapterAuthenticatedTeacher,
+  ) => Promise<WorksheetScaffoldingState | null>;
+  undo: (
+    request: WorksheetScaffoldingReviewRequest,
+    target: ResourceAdapterAuthenticatedTeacher,
+  ) => Promise<WorksheetScaffoldingState | null>;
 }>;
 /** Internal API context served from `/trpc/internal`. */
 export type ResourceAdapterApiContextInternal = Readonly<{
@@ -70,6 +98,15 @@ const worksheetScaffoldingStateSchema = z.object({
       status: z.enum(["failed", "queued", "running", "succeeded"]),
     }),
   ),
+  pendingReview: z.nullable(
+    z.object({
+      attemptId: z.string(),
+      contributionId: z.string(),
+      label: z.string(),
+      reason: z.string(),
+      targetBlockId: z.nullable(z.string()),
+    }),
+  ),
   suggestions: z.readonly(
     z.array(
       z.object({
@@ -90,6 +127,7 @@ const worksheetScaffoldingEntrySchema = z.discriminatedUnion("outcome", [
     outcome: z.literal("resumable"),
     resumable: z.object({
       adaptationId: z.string(),
+      pendingScaffoldCount: z.number().check(z.int(), z.nonnegative()),
       scaffoldCount: z.number().check(z.int(), z.nonnegative()),
       updatedAt: z.string(),
     }),
@@ -153,6 +191,14 @@ export const internalRouter = t_internal.router({
       }),
   }),
   worksheetScaffolding: t_internal.router({
+    accept: internalAuthenticatedProcedure
+      .input(worksheetScaffoldingReviewRequestSchema)
+      .output(worksheetScaffoldingStateSchema)
+      .mutation(async ({ ctx, input }) =>
+        requireWorksheetScaffolding(
+          await ctx.worksheetScaffolding.accept(input, ctx.authenticatedTeacher),
+        ),
+      ),
     applySuggestion: internalAuthenticatedProcedure
       .input(worksheetScaffoldingApplyRequestSchema)
       .output(worksheetScaffoldingStateSchema)
@@ -178,6 +224,38 @@ export const internalRouter = t_internal.router({
       .mutation(async ({ ctx, input }) =>
         requireWorksheetScaffolding(
           await ctx.worksheetScaffolding.open(input, ctx.authenticatedTeacher),
+        ),
+      ),
+    remove: internalAuthenticatedProcedure
+      .input(worksheetScaffoldingRemoveRequestSchema)
+      .output(worksheetScaffoldingStateSchema)
+      .mutation(async ({ ctx, input }) =>
+        requireWorksheetScaffolding(
+          await ctx.worksheetScaffolding.remove(input, ctx.authenticatedTeacher),
+        ),
+      ),
+    retry: internalAuthenticatedProcedure
+      .input(worksheetScaffoldingRetryRequestSchema)
+      .output(worksheetScaffoldingStateSchema)
+      .mutation(async ({ ctx, input }) =>
+        requireWorksheetScaffolding(
+          await ctx.worksheetScaffolding.retry(input, ctx.authenticatedTeacher),
+        ),
+      ),
+    dismiss: internalAuthenticatedProcedure
+      .input(worksheetScaffoldingDismissRequestSchema)
+      .output(worksheetScaffoldingStateSchema)
+      .mutation(async ({ ctx, input }) =>
+        requireWorksheetScaffolding(
+          await ctx.worksheetScaffolding.dismiss(input, ctx.authenticatedTeacher),
+        ),
+      ),
+    undo: internalAuthenticatedProcedure
+      .input(worksheetScaffoldingReviewRequestSchema)
+      .output(worksheetScaffoldingStateSchema)
+      .mutation(async ({ ctx, input }) =>
+        requireWorksheetScaffolding(
+          await ctx.worksheetScaffolding.undo(input, ctx.authenticatedTeacher),
         ),
       ),
   }),

@@ -17,6 +17,10 @@ import type {
   AvailableTransformation,
   TransformationDefinition,
 } from "../transformations/types";
+import {
+  dismissedTargetIds,
+  documentDismissesTransformations,
+} from "../transformations/dismissal";
 import { suggestionPedagogyPart } from "./prompt-parts/pedagogy.part";
 import type { SuggestionFlowDefinition, TransformationSuggestion } from "./types";
 
@@ -76,10 +80,6 @@ function rawSuggestionSchemaFor(
 function renderCandidates(candidates: readonly SuggestionCandidate[]): string {
   return candidates
     .map((candidate) => {
-      if (!isRegisteredTransformationKind(candidate.kind)) {
-        throw new Error(`Unknown transformation ${candidate.kind}.`);
-      }
-      const definition = transformationDefinitions[candidate.kind];
       const target =
         candidate.eligibleTargets.scope === "document"
           ? "whole document"
@@ -91,9 +91,9 @@ function renderCandidates(candidates: readonly SuggestionCandidate[]): string {
       return [
         `Kind: ${candidate.kind}`,
         `Label: ${candidate.label}`,
-        `Description: ${definition.suggestion.description}`,
-        `Use when: ${definition.suggestion.useWhen}`,
-        `Avoid when: ${definition.suggestion.avoidWhen}`,
+        `Description: ${candidate.suggestion.description}`,
+        `Use when: ${candidate.suggestion.useWhen}`,
+        `Avoid when: ${candidate.suggestion.avoidWhen}`,
         `Target: ${target}`,
         ...(levels === undefined ? [] : [`Support levels: ${levels}`]),
       ].join("\n");
@@ -106,6 +106,7 @@ function candidateForDefinition(
   document: ResourceDocument,
   appliedTransformations: readonly AppliedTransformationSummary[],
   flow: SuggestionFlowDefinition,
+  dismissedTargets: ReadonlySet<string>,
 ): SuggestionCandidate | null {
   const context = {
     appliedTransformations,
@@ -113,6 +114,9 @@ function candidateForDefinition(
     document,
   };
   if (definition.target.scope === "document") {
+    if (documentDismissesTransformations(document)) {
+      return null;
+    }
     const [candidate] = evaluateTransformations([definition], context);
     return candidate === undefined
       ? null
@@ -124,6 +128,7 @@ function candidateForDefinition(
       getResourceNodesByType(document, nodeType)
         .filter(
           ({ id }) =>
+            !dismissedTargets.has(id) &&
             evaluateTransformations([definition], {
               ...context,
               targetBlockId: id,
@@ -160,9 +165,16 @@ export async function prepareSuggestionFlow(
   const definitions = flow.transformationKinds.map(
     (kind) => transformationDefinitions[kind],
   );
+  const dismissedTargets = dismissedTargetIds(document);
   const candidates = definitions
     .map((definition) =>
-      candidateForDefinition(definition, document, appliedTransformations, flow),
+      candidateForDefinition(
+        definition,
+        document,
+        appliedTransformations,
+        flow,
+        dismissedTargets,
+      ),
     )
     .filter((candidate): candidate is SuggestionCandidate => candidate !== null);
   const preparedPrompt = await prepare({
