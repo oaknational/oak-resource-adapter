@@ -26,6 +26,7 @@ export function getDevTransformationCatalogue() {
 
 export function previewDevTransformation(command: RegisteredTransformationCommand) {
   return previewRegisteredTransformation(command, {
+    createInvoker: createDevModelInvoker,
     prepare: prepareWithoutPersistence,
     resolveMaterial: resolveApplicationMaterial,
   });
