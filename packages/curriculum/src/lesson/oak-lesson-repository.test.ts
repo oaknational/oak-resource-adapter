@@ -19,7 +19,10 @@ import {
   quizRow,
   restrictionLevelsRow,
 } from "./lesson-fixtures.js";
-import { createOakLessonRepository } from "./oak-lesson-repository.js";
+import {
+  createOakLessonRestrictionReader,
+  createOakLessonRepository,
+} from "./oak-lesson-repository.js";
 
 const config = {
   apiKey: "test-api-key",
@@ -772,5 +775,57 @@ describe("what reaches the log", () => {
 
     expect(logged()).not.toContain(apiKey);
     expect(logged()).toContain("ECONNREFUSED");
+  });
+});
+
+describe("restriction-only reader", () => {
+  it("queries only published restriction columns", async () => {
+    oakResponds({
+      restrictionLevels: [
+        restrictionLevelsRow({ tpc_media_max_restriction: "OGL compatible" }),
+      ],
+    });
+    await expect(
+      createOakLessonRestrictionReader(config)(addingFractions),
+    ).resolves.toEqual([{ category: "media", maxLevel: "ogl-compatible" }]);
+    const request = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    expect(request.query).toContain('_state: { _eq: "published" }');
+    expect(request.query).not.toContain("browseData");
+    expect(request.query).not.toContain("assets:");
+    expect(request.query).not.toContain("content:");
+    expect(request.variables).toEqual({ lessonSlug: addingFractions.lessonSlug });
+  });
+  it("accepts absent rows and equivalent duplicates", async () => {
+    oakResponds({ restrictionLevels: [] });
+    await expect(
+      createOakLessonRestrictionReader(config)(addingFractions),
+    ).resolves.toEqual([]);
+    oakResponds({
+      restrictionLevels: [restrictionLevelsRow(), restrictionLevelsRow()],
+    });
+    await expect(
+      createOakLessonRestrictionReader(config)(addingFractions),
+    ).resolves.toEqual([]);
+  });
+  it("rejects conflicting rows", async () => {
+    oakResponds({
+      restrictionLevels: [
+        restrictionLevelsRow(),
+        restrictionLevelsRow({ tpc_works_max_restriction: "Restricted" }),
+      ],
+    });
+    await expect(
+      createOakLessonRestrictionReader(config)(addingFractions),
+    ).rejects.toMatchObject({ code: "ambiguous-identity" });
+  });
+  it("rejects malformed data and upstream failures", async () => {
+    oakResponds({ restrictionLevels: [{}] });
+    await expect(
+      createOakLessonRestrictionReader(config)(addingFractions),
+    ).rejects.toMatchObject({ code: "malformed-response" });
+    oakReturnsStatus(503);
+    await expect(
+      createOakLessonRestrictionReader(config)(addingFractions),
+    ).rejects.toMatchObject({ code: "upstream-unavailable" });
   });
 });

@@ -56,6 +56,10 @@ export function resourceNodeLabel(node: ResourceNode): string {
       const lines = node.lines === undefined ? "" : `, ${node.lines} lines`;
       return `${node.kind}${lines}`;
     }
+    case "table":
+      return node.role === "table" ? "table" : `${node.role} table`;
+    case "codeBlock":
+      return `${node.language ?? "code"} block`;
     case "figure":
       return inlineText(node.caption) || `Asset ${node.assetId}`;
     case "unsupported":

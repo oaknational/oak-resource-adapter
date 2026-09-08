@@ -39,13 +39,15 @@
     "lint:fix": "turbo run lint:fix",
     "prepare": "husky",
     "secrets:scan": "gitleaks detect --redact=100 --source . --log-opts=\"--branches --tags\"",
-    "test": "turbo run test",
+    "test": "turbo run test && node --test scripts/verify-original-resource-document-fixture-rights.test.mjs",
     "test:coverage": "turbo run test:coverage",
     "test:integration": "node --env-file-if-exists=.env node_modules/turbo/bin/turbo run test:integration",
     "test:artifact": "node scripts/check-package-artifact.mjs",
     "test:e2e": "pnpm build && node --env-file-if-exists=.env node_modules/@playwright/test/cli.js test",
     "test:e2e:deployment": "node --env-file-if-exists=.env scripts/run-deployment-tests.mjs",
-    "type-check": "turbo run type-check && tsc --noEmit"
+    "type-check": "turbo run type-check && tsc --noEmit",
+    "vocabulary:generate": "pnpm --filter @oaknational/resource-document build && node scripts/generate-resource-vocabulary.mjs",
+    "fixtures:generate": "pnpm --filter @oaknational/resource-adapter-original-resource-documents fixtures:generate"
   },
   "devDependencies": {
     "@changesets/cli": "2.31.0",

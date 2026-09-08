@@ -49,6 +49,17 @@ vi.mock("./ai/dev-invoker", () => ({
   invokeDevSmokeText: vi.fn(),
 }));
 
+vi.mock("@oaknational/resource-adapter-curriculum", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("@oaknational/resource-adapter-curriculum")
+  >()),
+  oakCurriculumConfigFromEnv: () => ({
+    endpoint: "https://curriculum.test",
+    apiKey: "test",
+  }),
+  createOakLessonRestrictionReader: () => async () => [],
+}));
+
 // Must stay a lesson the fixture corpus holds a worksheet extraction for.
 const lesson = {
   lessonSlug: "adopting-different-perspectives",

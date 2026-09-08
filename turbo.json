@@ -16,6 +16,8 @@
     "dev": {
       "cache": false,
       "env": [
+        "CURRICULUM_API_URL",
+        "CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY",
         "DATABASE_URL",
         "ENABLE_DEV_ROUTES",
         "OPENAI_API_KEY",

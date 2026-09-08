@@ -1,3 +1,4 @@
+import type { CategoryMaxRestriction } from "@oaknational/resource-adapter-curriculum";
 import type {
   LessonContext,
   ResourceAdapterCapability,
@@ -9,6 +10,7 @@ import type { RegisteredSuggestionFlowId } from "../suggestions/flow-ids";
 /** Two lists rather than one: they come from different systems and can disagree. */
 export type EligibilityContext = Readonly<{
   lesson: LessonContext;
+  maxRestrictions: readonly CategoryMaxRestriction[];
   originalFileResourceTypes: readonly string[];
   extractedResourceTypes: readonly string[];
 }>;

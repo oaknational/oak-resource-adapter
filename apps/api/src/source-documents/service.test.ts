@@ -37,6 +37,7 @@ describe("getSourceDocument", () => {
         teacher,
         async (lesson) => ({
           lesson,
+          maxRestrictions: [],
           originalFileResourceTypes: ["worksheet"],
           extractedResourceTypes: ["worksheet"],
         }),
@@ -61,6 +62,7 @@ describe("getSourceDocument", () => {
         teacher,
         async (lesson) => ({
           lesson,
+          maxRestrictions: [],
           originalFileResourceTypes: ["worksheet"],
           extractedResourceTypes: [],
         }),
@@ -86,3 +88,24 @@ describe("getSourceDocument", () => {
     expect(get).not.toHaveBeenCalled();
   });
 });
+
+it.each(["restricted", "highly-restricted"] as const)(
+  "does not read %s source material",
+  async (maxLevel) => {
+    const get = vi.fn();
+    await expect(
+      getSourceDocument(
+        request,
+        teacher,
+        async (lesson) => ({
+          lesson,
+          originalFileResourceTypes: ["worksheet"],
+          extractedResourceTypes: ["worksheet"],
+          maxRestrictions: [{ category: "media", maxLevel }],
+        }),
+        { get },
+      ),
+    ).resolves.toBeNull();
+    expect(get).not.toHaveBeenCalled();
+  },
+);

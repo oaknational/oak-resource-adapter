@@ -1,0 +1,228 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:air-resistance-do-and-review:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Air resistance: do and review"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task A: Investigating air resistance"
+        }
+      ]
+    },
+    {
+      "id": "investigation",
+      "type": "callout",
+      "role": "instruction",
+      "content": [
+        {
+          "type": "text",
+          "text": "Does the area of a parachute canopy affect the time taken for the parachute to fall? Drop each parachute from the same height, repeat three times and record your results."
+        }
+      ]
+    },
+    {
+      "id": "parachute",
+      "type": "figure",
+      "assetId": "parachute-image",
+      "caption": [
+        {
+          "type": "text",
+          "text": "The parts of a parachute."
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "type": "table",
+      "role": "experimental-results",
+      "header": [
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "Parachute canopy size"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "Drop 1 (seconds)"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "Drop 2 (seconds)"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "Drop 3 (seconds)"
+            }
+          ]
+        }
+      ],
+      "rows": [
+        [
+          {
+            "kind": "content",
+            "content": [
+              {
+                "type": "text",
+                "text": "10 cm × 10 cm"
+              }
+            ]
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          }
+        ],
+        [
+          {
+            "kind": "content",
+            "content": [
+              {
+                "type": "text",
+                "text": "30 cm × 30 cm"
+              }
+            ]
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          }
+        ],
+        [
+          {
+            "kind": "content",
+            "content": [
+              {
+                "type": "text",
+                "text": "60 cm × 60 cm"
+              }
+            ]
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task B: Scientists form conclusions about air resistance"
+        }
+      ]
+    },
+    {
+      "id": "question-1",
+      "type": "question",
+      "label": "1",
+      "children": [
+        {
+          "id": "unstable:paragraph-make-a-conclusion-about-your-investigation-what-patter",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Make a conclusion about your investigation. What pattern do your results show? Can you explain it? Do you trust all your data points?"
+            }
+          ]
+        },
+        {
+          "id": "conclusion",
+          "type": "responseSpace",
+          "kind": "lines",
+          "lines": 6
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [
+    {
+      "id": "parachute-image",
+      "mediaType": "image/svg+xml",
+      "contentRef": "/fixtures/parachute.svg",
+      "alternative": {
+        "kind": "text",
+        "text": "A square parachute canopy with strings attached to its four corners and a weight suspended below.",
+        "origin": "authored"
+      },
+      "rights": "Authored fixture diagram under the repository licence."
+    }
+  ],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "air-resistance-do-and-review:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/air-resistance-do-and-review"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Air resistance: do and review",
+    "subject": {
+      "id": "science",
+      "label": "Science"
+    },
+    "keyStage": {
+      "id": "ks2",
+      "label": "KS2"
+    }
+  }
+}

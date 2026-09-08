@@ -130,15 +130,15 @@
     {
       "id": "balance-model-image",
       "mediaType": "image/svg+xml",
-      "contentRef": "https://example.test/assets/balance-model.svg",
+      "contentRef": "/fixtures/balance-model.svg",
       "dimensions": {
-        "width": 1200,
-        "height": 800
+        "width": 480,
+        "height": 200
       },
       "alternative": {
         "kind": "text",
-        "text": "A balance model showing equal quantities on both sides.",
-        "origin": "source"
+        "text": "A balanced scale with 3x + 4 on the left and 24 on the right.",
+        "origin": "authored"
       },
       "rights": "Synthetic test content; no third-party rights.",
       "credit": "Oak National Academy"

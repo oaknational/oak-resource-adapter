@@ -22,9 +22,9 @@ gathered. Changes should be agreed here if possible.
 ## Authoritative handoff material
 
 - This document defines the currently accepted fields and grammar.
-- [`fixtures/linear-equations-smoke/extracted.mmd`](fixtures/linear-equations-smoke/extracted.mmd)
+- [`fixtures/linear-equations-smoke/extracted.mmd`](../original-resource-documents/fixtures/linear-equations-smoke/extracted.mmd)
   is the executable markup example.
-- [`fixtures/linear-equations-smoke/expected/document.json`](fixtures/linear-equations-smoke/expected/document.json)
+- [`fixtures/linear-equations-smoke/expected/document.json`](../original-resource-documents/fixtures/linear-equations-smoke/expected/document.json)
   shows the canonical JSON generated from that example.
 
 The acceptance criterion is:
@@ -118,19 +118,61 @@ directive opening or a matching closing marker. Malformed openings and stray
 closings fail parsing instead of becoming ordinary paragraph text. This grammar
 is provisional and will be revised against real extraction samples.
 
-| Directive                | Additional attributes and content                                                                                                              |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `oak-section`            | Contains child blocks.                                                                                                                         |
-| `oak-heading`            | Requires `level="1"` through `level="6"`; contains inline content.                                                                             |
-| `oak-paragraph`          | Contains inline content.                                                                                                                       |
-| `oak-learning-objective` | Contains inline content.                                                                                                                       |
-| `oak-instruction`        | Contains inline content.                                                                                                                       |
-| `oak-callout`            | Requires `role`: `learning-objective`, `instruction`, `note` or `warning`; contains inline content.                                            |
-| `oak-question`           | Optional `number` and non-negative integer `marks`; contains child blocks. Questions cannot be nested.                                         |
-| `oak-answer-space`       | Requires `kind`: `lines`, `box` or `grid`. `lines` also requires a positive integer `lines`; other kinds omit it. Cannot contain content.      |
-| `oak-answer`             | Requires `target` and `placement` (`append` or `replace-response`); contains one or more answer blocks and is collected outside pupil content. |
-| `oak-figure`             | Carries its asset metadata in place as described below; optional body content becomes the caption.                                             |
-| `oak-unsupported`        | Requires `description` and `format`; optional `accessible-text`; its body preserves the original value.                                        |
+<!-- vocabulary:start -->
+
+| Directive                | Canonical output  | Child blocks |
+| ------------------------ | ----------------- | ------------ |
+| `oak-section`            | `section`         | Yes          |
+| `oak-heading`            | `heading`         | No           |
+| `oak-paragraph`          | `paragraph`       | No           |
+| `oak-learning-objective` | `callout`         | No           |
+| `oak-instruction`        | `callout`         | No           |
+| `oak-callout`            | `callout`         | No           |
+| `oak-question`           | `question`        | Yes          |
+| `oak-answer-space`       | `responseSpace`   | No           |
+| `oak-figure`             | `figure`          | No           |
+| `oak-table`              | `table`           | No           |
+| `oak-ion-table`          | `table`           | No           |
+| `oak-rhythm-grid`        | `table`           | No           |
+| `oak-code-block`         | `codeBlock`       | No           |
+| `oak-unsupported`        | `unsupported`     | No           |
+| `oak-answer`             | Answer annotation | Yes          |
+
+<!-- vocabulary:end -->
+
+`oak-heading` requires `level` from 1 to 6. `oak-question` accepts `number`
+and non-negative `marks`. Questions cannot be nested. Callout aliases select
+`learning-objective` or `instruction`; `oak-callout` requires a `role` of
+`learning-objective`, `instruction`, `note` or `warning`.
+`oak-answer-space` requires `kind` (`lines`, `box`, `grid`); `lines` requires
+a positive `lines` count. It has no body. `oak-answer` requires `target` and
+`placement` (`append`, `replace-response`) and contains answer blocks outside
+pupil content. `oak-unsupported` requires `description` and `format`, accepts
+`accessible-text`, and preserves its body.
+
+### Tables and code
+
+`oak-table` accepts `role` (default `table`) and `header` (default `true`).
+`oak-ion-table` and `oak-rhythm-grid` use the same grammar, with default roles
+`ions` and `rhythm`. Roles describe content; they do not create new node types.
+Rows are lines of pipe-separated cells, without Markdown separator rows. A pair
+of outer pipes is optional; blank lines are ignored. With `header="true"`, the
+first row supplies column headings. Every row must have the same number of cells.
+Headers and body rows share one cell grammar: inline text and maths, `?` for a
+pupil answer blank, or `~` for an ordinary empty cell. Every cell must contain
+text or an explicit marker. Literal pipes and reserved single-cell markers are
+not supported as cell text in 0.1.
+
+`oak-code-block` accepts optional `language`. Its body becomes `source`, with
+spaces, tabs and blank lines preserved and line endings normalised to `\n`. The
+framing newline before the closing `:::` is excluded. Code is not parsed as inline or child markup.
+A standalone `:::` is reserved as the closing delimiter.
+
+The exported `resourceVocabulary` in `@oaknational/resource-document` is the
+node/directive agreement with extraction; its `annotations` entry describes the
+answer directive. Nodes such as `definitionList` can exist without a markup
+directive. The table above is generated with `pnpm vocabulary:generate`; a test
+rejects stale output.
 
 Every content-node directive also accepts these common attributes:
 

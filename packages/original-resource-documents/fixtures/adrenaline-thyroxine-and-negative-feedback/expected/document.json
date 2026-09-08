@@ -1,0 +1,189 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:adrenaline-thyroxine-and-negative-feedback:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Adrenaline, thyroxine and negative feedback"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task A: Adrenaline and its effects on the body"
+        }
+      ]
+    },
+    {
+      "id": "question-1",
+      "type": "question",
+      "label": "3",
+      "children": [
+        {
+          "id": "unstable:paragraph-complete-the-table-to-show-the-effects-adrenaline-has-",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Complete the table to show the effects adrenaline has on the body."
+            }
+          ]
+        },
+        {
+          "id": "adrenaline-effects",
+          "type": "table",
+          "role": "explanation",
+          "header": [
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Part of the body affected"
+                }
+              ]
+            },
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Description of the response it causes"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Breathing and heart rate"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Pupils"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Liver and muscle cells"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Digestive system and muscles"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task B: Negative feedback"
+        }
+      ]
+    },
+    {
+      "id": "question-2",
+      "type": "question",
+      "label": "1",
+      "children": [
+        {
+          "id": "unstable:paragraph-andeep-says-negative-feedback-is-only-used-in-the-body",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Andeep says: “Negative feedback is only used in the body when certain conditions increase. The body detects this increase and then decreases levels, reversing the change.” What is correct and what has he misunderstood?"
+            }
+          ]
+        },
+        {
+          "id": "feedback-response",
+          "type": "responseSpace",
+          "kind": "lines",
+          "lines": 5
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "adrenaline-thyroxine-and-negative-feedback:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/adrenaline-thyroxine-and-negative-feedback"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Adrenaline, thyroxine and negative feedback",
+    "subject": {
+      "id": "biology",
+      "label": "Biology"
+    },
+    "keyStage": {
+      "id": "ks4",
+      "label": "KS4"
+    }
+  }
+}
