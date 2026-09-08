@@ -11,7 +11,7 @@ export const transcriptSummarySchema = z
       .array(
         z.object({
           sequence: z.number().int().positive().max(maximumLearningCycles),
-          title: z.string().trim().min(1).max(80),
+          title: z.string().trim().min(1).max(50),
           cycleOutcome: z.string().trim().min(1).max(200),
           explanation: statementsSchema,
           checksForUnderstanding: z
