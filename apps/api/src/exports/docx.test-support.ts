@@ -6,7 +6,8 @@ import type {
   ResourceNode,
 } from "@oaknational/resource-document";
 import { parseResourceDocument } from "@oaknational/resource-document/parse";
-import { XMLParser, XMLValidator } from "fast-xml-parser";
+import { XMLParser } from "fast-xml-parser";
+import { SyntaxValidator } from "fast-xml-validator";
 import { strFromU8, unzipSync } from "fflate";
 import { afterEach, beforeAll, beforeEach, expect, vi } from "vitest";
 
@@ -82,7 +83,7 @@ export function unpack(bytes: Uint8Array) {
   for (const [name, data] of Object.entries(files)) {
     if (!name.endsWith(".xml") && !name.endsWith(".rels")) continue;
     const xml = strFromU8(data);
-    expect(XMLValidator.validate(xml), name).toBe(true);
+    expect(() => SyntaxValidator.validate(xml), name).not.toThrow();
     parts.set(name, parser.parse(xml) as XmlNode[]);
   }
   function part(name: string): XmlNode[] {

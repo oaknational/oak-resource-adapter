@@ -23,11 +23,12 @@ export function calloutLabel(role: keyof typeof calloutLabels): string {
 export function questionHeading(
   node: Extract<ResourceNode, { type: "question" }>,
 ): string {
-  const marks =
-    node.marks === undefined
-      ? ""
-      : ` (${node.marks} ${node.marks === 1 ? "mark" : "marks"})`;
-  return `Question${node.label ? ` ${node.label}` : ""}${marks}`;
+  const parts = ["Question"];
+  if (node.label) parts.push(node.label);
+  if (node.marks !== undefined) {
+    parts.push(`(${node.marks} ${node.marks === 1 ? "mark" : "marks"})`);
+  }
+  return parts.join(" ");
 }
 
 export function unsupportedText(

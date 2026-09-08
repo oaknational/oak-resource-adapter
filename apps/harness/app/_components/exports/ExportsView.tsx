@@ -88,7 +88,7 @@ export function ExportsView({
               target="_blank"
               rel="noreferrer"
             >
-              Install Lexend
+              <span>Install Lexend</span>
               <span className={styles.visuallyHidden}> (opens in a new tab)</span>
             </a>{" "}
             to see the intended layout.
