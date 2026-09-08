@@ -117,7 +117,9 @@ describe("readOakMaterial", async () => {
     );
 
     expect(resolution.material).toEqual({});
-    expect(resolution.warnings[0]).toContain("absent from this lesson");
+    expect(resolution.warnings[0]).toContain(
+      "could not be built because the summariser returned nothing usable",
+    );
   });
 
   it("reports a failed derivation without losing the parts that resolved", async () => {
@@ -140,7 +142,9 @@ describe("readOakMaterial", async () => {
     expect(resolution.material).toEqual({
       "lesson.keywords": { kind: "keywords", keywords },
     });
-    expect(resolution.warnings[0]).toContain("absent from this lesson");
+    expect(resolution.warnings[0]).toContain(
+      "could not be built because it raised an error",
+    );
     expect(reportedErrors).toEqual([new Error("the model is unavailable")]);
   });
 });
@@ -234,7 +238,7 @@ describe("the parts a transformation can be given", () => {
       {
         summariseTranscript: async () => ({
           learningCycles: [],
-          unassignedTranscriptContent: [],
+          unassignedTranscriptContent: ["content"],
         }),
       },
     );
