@@ -12,6 +12,10 @@ physical model ID from the closed catalogue in `model-catalogue.ts`, and its
 another gateway. Changing the model behind a role is a binding change; changing
 the gateway is a transport change.
 
+The service binds its roles in `apps/api/src/ai/model-roles.ts`, grouped into
+typed subsets — transformations, material derivation, suggestion flows — so a
+caller cannot name a role meant for other work.
+
 Requests are initially OpenAI-compatible. Provider requests and responses,
 output states, and operational errors are normalised at the transport seam, so
 call sites do not depend on a particular SDK. A provider with a different input
