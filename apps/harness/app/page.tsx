@@ -1,3 +1,8 @@
+import {
+  loadOriginalResourceDocumentFixture,
+  originalResourceDocumentFixtureManifest,
+} from "@oaknational/resource-adapter-original-resource-documents/fixtures";
+
 import { HarnessPageClient } from "./_components/HarnessPageClient";
 import { edgeCaseNavigation, loadEdgeCase } from "./edge-cases";
 import { lessonScenarioNavigation, loadLessonScenario } from "./lesson-scenarios";
@@ -15,6 +20,7 @@ function parseSection(view: SearchParamValue): HarnessSection {
     view === "smoke-tests" ||
     view === "edge-cases" ||
     view === "suggestions" ||
+    view === "exports" ||
     view === "transformations"
   ) {
     return view;
@@ -59,6 +65,25 @@ async function resolveView(
       section,
       navigation: edgeCaseNavigation,
       edgeCase: await loadEdgeCase(id),
+    };
+  }
+
+  if (section === "exports") {
+    const fixtureId = resolveId(
+      parameters.fixture,
+      originalResourceDocumentFixtureManifest,
+      "The harness has no export fixtures.",
+    );
+    const fixture = await loadOriginalResourceDocumentFixture(fixtureId);
+
+    return {
+      section,
+      fixtureId,
+      resourceDocument: fixture.expectedDocument,
+      fixtures: originalResourceDocumentFixtureManifest.map(({ id, title }) => ({
+        id,
+        title,
+      })),
     };
   }
 

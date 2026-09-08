@@ -16,6 +16,9 @@
     },
     {
       "id": "learning-objective",
+      "layout": {
+        "keepWithNext": true
+      },
       "type": "callout",
       "role": "learning-objective",
       "content": [
@@ -36,6 +39,9 @@
     },
     {
       "id": "instructions",
+      "layout": {
+        "keepWithNext": true
+      },
       "type": "callout",
       "role": "instruction",
       "content": [

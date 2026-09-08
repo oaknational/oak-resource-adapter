@@ -27,6 +27,9 @@
     },
     {
       "id": "task-a-instruction",
+      "layout": {
+        "keepWithNext": true
+      },
       "type": "callout",
       "role": "instruction",
       "content": [
@@ -72,6 +75,9 @@
     },
     {
       "id": "task-b-instruction",
+      "layout": {
+        "keepWithNext": true
+      },
       "type": "callout",
       "role": "instruction",
       "content": [

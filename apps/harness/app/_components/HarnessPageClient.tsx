@@ -2,6 +2,7 @@
 
 import { CapabilitiesView } from "./capabilities";
 import { EdgeCaseView } from "./edge-cases";
+import { ExportsView } from "./exports/ExportsView";
 import { LessonScenarioView } from "./lessons";
 import { PrimaryNavigation, SiteHeader } from "./shared";
 import { SmokeTestsView } from "./smoke-tests";
@@ -41,6 +42,9 @@ export function HarnessPageClient({
           />
         )}
         {view.section === "smoke-tests" && <SmokeTestsView />}
+        {view.section === "exports" && (
+          <ExportsView key={view.fixtureId} {...view} lessonId={lessonId} />
+        )}
         {view.section === "transformations" && (
           <TransformationsView
             initialKind={view.initialSelection}
