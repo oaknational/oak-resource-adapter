@@ -1,3 +1,4 @@
+import { definePromptTemplate } from "@oaknational/resource-adapter-ai";
 import {
   buildLesson,
   createInMemoryLessonRepository,
@@ -10,8 +11,14 @@ import type { QuestionNode, ResourceDocument } from "@oaknational/resource-docum
 
 import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
 import { resolveLessonMaterial } from "../oak-material/from-lesson";
+import { always } from "./availability";
+import { defineTransformation } from "./define-transformation";
 import { addGlossaryQuestionTransformation } from "./definitions/scaffold-add-glossary-question";
-import { executeTransformation, type PreparePrompt } from "./execute";
+import {
+  executeTransformation,
+  prepareTransformation,
+  type PreparePrompt,
+} from "./execute";
 
 const identity = {
   lessonSlug: "adopting-different-perspectives",
@@ -28,6 +35,26 @@ const lessons = createInMemoryLessonRepository([
 ]);
 
 const meta = { invocationId: "11111111-1111-1111-1111-111111111111" };
+
+const cycleTitlesScaffold = defineTransformation({
+  kind: "test-learning-cycle-titles",
+  label: "Learning cycle titles",
+  status: "draft",
+  suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
+  materialRequirements: [
+    { key: "lesson.transcriptSummary.learningCycleTitles", required: false },
+  ],
+  target: { scope: "document" },
+  outputs: ["revised-resource"],
+  isAvailable: always,
+  execution: {
+    strategy: "model",
+    prompt: definePromptTemplate({
+      identifier: "test-learning-cycle-titles",
+      template: "Revise {{document}}, given {{lessonMaterial}}.",
+    }),
+  },
+});
 
 let worksheet: ResourceDocument;
 let firstQuestion: QuestionNode;
@@ -108,6 +135,52 @@ describe("resolveLessonMaterial", () => {
 
     expect(resolution.material).toEqual({});
     expect(resolution.warnings[0]).toContain("Lesson slides is not available");
+  });
+});
+
+describe("a lesson's transcript summary reaching a transformation", () => {
+  it("offers the prompt the cycle titles rather than the teaching behind them", async () => {
+    const lessonsWithTranscript = createInMemoryLessonRepository([
+      buildLesson({
+        identity,
+        transcript: "The teacher explains how perspective changes a story.",
+      }),
+    ]);
+
+    const { material } = await resolveLessonMaterial(
+      identity,
+      lessonsWithTranscript,
+      cycleTitlesScaffold.materialRequirements ?? [],
+      {
+        summariseTranscript: () =>
+          Promise.resolve({
+            learningCycles: [
+              {
+                sequence: 1,
+                title: "Changing perspective",
+                cycleOutcome: "Explain how perspective changes a story",
+                explanation: ["Perspective changes whose experience a story presents."],
+                checksForUnderstanding: [],
+                practiceTask: null,
+                feedback: null,
+              },
+            ],
+            unassignedTranscriptContent: [],
+          }),
+      },
+    );
+
+    const { preparedPrompt } = await prepareTransformation(
+      cycleTitlesScaffold,
+      { document: worksheet, material },
+      { prepare },
+    );
+
+    expect(preparedPrompt?.text).toContain("LEARNING CYCLE TITLES");
+    expect(preparedPrompt?.text).toContain("- Cycle 1: Changing perspective");
+    expect(preparedPrompt?.text).not.toContain(
+      "Perspective changes whose experience a story presents.",
+    );
   });
 });
 

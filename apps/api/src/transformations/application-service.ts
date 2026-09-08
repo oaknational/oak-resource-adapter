@@ -14,6 +14,8 @@ import type { OakMaterial, OakMaterialRequirement } from "../oak-material/materi
 import { isRegisteredTransformationKind, transformationDefinitions } from "./registry";
 import { executionType } from "./service";
 
+import type { ResourceAdapterModelInvoker } from "@/ai/model-roles";
+
 export type TransformationMaterialResolution = Readonly<{
   material: OakMaterial;
   warnings: readonly string[];
@@ -22,6 +24,7 @@ export type TransformationMaterialResolution = Readonly<{
 export type ResolveTransformationMaterial = (
   requirements: readonly OakMaterialRequirement[],
   lesson: LessonIdentity | undefined,
+  createInvoker?: (() => ResourceAdapterModelInvoker) | undefined,
 ) => Promise<TransformationMaterialResolution>;
 
 export type RegisteredTransformationCommand = Omit<TransformationRequest, "material"> &
@@ -32,6 +35,8 @@ export type RegisteredTransformationCommand = Omit<TransformationRequest, "mater
   }>;
 
 export type PrepareRegisteredTransformationConfig = Readonly<{
+  createInvoker?: (() => ResourceAdapterModelInvoker) | undefined;
+  invoker?: ResourceAdapterModelInvoker | undefined;
   prepare?: PreparePrompt | undefined;
   resolveMaterial?: ResolveTransformationMaterial | undefined;
 }>;
@@ -53,9 +58,11 @@ export async function prepareRegisteredTransformation(
 
   const definition = transformationDefinitions[command.kind];
   const requirements = definition.materialRequirements ?? [];
+  const { invoker, resolveMaterial } = config;
+  const createInvoker = invoker === undefined ? config.createInvoker : () => invoker;
   const resolution =
-    command.material === undefined && config.resolveMaterial !== undefined
-      ? await config.resolveMaterial(requirements, command.lesson)
+    command.material === undefined && resolveMaterial !== undefined
+      ? await resolveMaterial(requirements, command.lesson, createInvoker)
       : { material: command.material ?? {}, warnings: [] };
   const prepared = await prepareTransformation(
     definition,

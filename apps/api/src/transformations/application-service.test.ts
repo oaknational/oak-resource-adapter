@@ -88,6 +88,7 @@ describe("prepareRegisteredTransformation", () => {
         { key: "lesson.keywords", required: false },
       ],
       lesson,
+      undefined,
     );
   });
 
