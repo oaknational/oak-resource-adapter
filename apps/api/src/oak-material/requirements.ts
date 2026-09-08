@@ -42,7 +42,7 @@ async function resolveOakMaterial(
     return await part.derive(lesson, derivationDependencies);
   } catch (error) {
     log.error(error, { report: true });
-    return { failedBecause: "building it raised an error" };
+    return { failedBecause: "it raised an error" };
   }
 }
 
@@ -59,7 +59,7 @@ function warnAboutOakMaterial(
 
   return failedBecause === undefined
     ? `${part.label} is absent from this lesson, so the run will omit it.`
-    : `${part.label} is absent from this lesson (${failedBecause}), so the run will omit it.`;
+    : `${part.label} could not be built because ${failedBecause}, so the run will omit it.`;
 }
 
 /** Reads every requested part from one fetched lesson. */
