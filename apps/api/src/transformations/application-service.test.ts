@@ -153,9 +153,10 @@ describe("executeRegisteredTransformation", () => {
     const { run, warnings } = await executeRegisteredTransformation(
       command({ contributionId: "contribution-1" }),
       {
-        invoker: invokerReturning({
-          entries: [{ definition: "whose eyes we see through", term: "perspective" }],
-        }),
+        createInvoker: () =>
+          invokerReturning({
+            entries: [{ definition: "whose eyes we see through", term: "perspective" }],
+          }),
         prepare,
       },
     );

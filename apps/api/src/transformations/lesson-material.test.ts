@@ -205,7 +205,7 @@ describe("a lesson's keywords reaching a transformation", () => {
         params: { supportLevel: "mid" },
         targetBlockId: firstQuestion.id,
       },
-      { invoker, prepare },
+      { createInvoker: () => invoker, prepare },
     );
 
     const [call] = prepare.mock.calls.slice(-1);
