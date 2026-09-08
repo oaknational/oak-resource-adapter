@@ -64,9 +64,7 @@ export function renderLearningCycleTitles(summary: TranscriptSummary): string {
       );
 }
 
-export function renderPracticeTasksWithFeedback(
-  summary: TranscriptSummary,
-): string {
+export function renderPracticeTasksWithFeedback(summary: TranscriptSummary): string {
   const cycles = summary.learningCycles
     .map((cycle) => {
       const parts = [

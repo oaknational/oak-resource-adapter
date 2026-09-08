@@ -18,8 +18,8 @@ function createDerivationDependencies(
   requirements: readonly OakMaterialRequirement[],
   createInvoker: (() => ResourceAdapterModelInvoker) | undefined,
 ): OakMaterialDerivationDependencies {
-  const needsTranscriptSummariser = requirements.some(
-    ({ key }) => key.startsWith("lesson.transcriptSummary"),
+  const needsTranscriptSummariser = requirements.some(({ key }) =>
+    key.startsWith("lesson.transcriptSummary"),
   );
 
   return createInvoker === undefined || !needsTranscriptSummariser
