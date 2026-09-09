@@ -83,9 +83,9 @@ export type PrepareTransformationConfig = Readonly<{
   prepare?: PreparePrompt;
 }>;
 
-type ModelInvokerConfig =
-  | Readonly<{ createInvoker: () => ResourceAdapterModelInvoker }>
-  | Readonly<{ invoker: ResourceAdapterModelInvoker }>;
+export type ModelInvokerConfig = Readonly<{
+  createInvoker: () => ResourceAdapterModelInvoker;
+}>;
 
 export type ExecutePreparedTransformationConfig = Readonly<{
   correlationKey?: string | undefined;
@@ -246,7 +246,7 @@ export async function executePreparedTransformation(
     throw new Error(`${definition.kind} has no prepared prompt.`);
   }
 
-  const invoker = "createInvoker" in config ? config.createInvoker() : config.invoker;
+  const invoker = config.createInvoker();
   const invocation = {
     ...(config.correlationKey === undefined
       ? {}

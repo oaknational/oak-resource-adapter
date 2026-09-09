@@ -10,6 +10,12 @@ const zodFreeTemporaryDirectory = await mkdtemp(
   join(tmpdir(), "resource-document-zod-free-"),
 );
 
+// The consumers below sit outside the workspace, so pnpm would otherwise run
+// them with whatever version is on PATH rather than the one CI uses.
+const { packageManager } = JSON.parse(
+  await readFile(join(repositoryRoot, "package.json"), "utf8"),
+);
+
 function run(command, arguments_, cwd) {
   execFileSync(command, arguments_, {
     cwd,
@@ -165,6 +171,7 @@ try {
         name: "resource-adapter-artifact-consumer",
         private: true,
         type: "module",
+        packageManager,
         dependencies: {
           "@oaknational/oak-components": await installedVersion(
             "@oaknational/oak-components",
@@ -179,16 +186,20 @@ try {
           "styled-components": await installedVersion("styled-components"),
           zod: await installedVersion("zod", "contracts"),
         },
-        pnpm: {
-          overrides: {
-            "@oaknational/resource-adapter-contracts": `file:${contractsTarball}`,
-            "@oaknational/resource-document": `file:${resourceDocumentTarball}`,
-          },
-        },
       },
       null,
       2,
     ),
+  );
+
+  // The tarballs depend on workspace packages that are not published, so these
+  // overrides have to apply. pnpm 11 ignores the manifest's `pnpm` field.
+  await writeFile(
+    join(temporaryDirectory, "pnpm-workspace.yaml"),
+    `overrides:
+  "@oaknational/resource-adapter-contracts": "file:${contractsTarball}"
+  "@oaknational/resource-document": "file:${resourceDocumentTarball}"
+`,
   );
 
   run("pnpm", ["install", "--config.auto-install-peers=false"], temporaryDirectory);
@@ -300,6 +311,7 @@ assert.deepEqual(parseResourceDocument(document), document);
         name: "resource-document-zod-free-consumer",
         private: true,
         type: "module",
+        packageManager,
         dependencies: {
           "@oaknational/resource-document": `file:${resourceDocumentTarball}`,
         },

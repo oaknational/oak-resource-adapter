@@ -6,6 +6,10 @@ import { worksheetScaffoldingCapability } from "../capabilities/definitions/work
 import type { QuestionNode, ResourceDocument } from "@oaknational/resource-document";
 
 const curriculum = vi.hoisted(() => ({ fetch: vi.fn() }));
+const model = vi.hoisted(() => ({
+  createInvoker: vi.fn(),
+  invokeStructured: vi.fn(),
+}));
 
 vi.mock("@oaknational/resource-adapter-curriculum", async () => ({
   buildLesson: (
@@ -18,6 +22,10 @@ vi.mock("@oaknational/resource-adapter-curriculum", async () => ({
     apiKey: "test-key",
     endpoint: "https://curriculum.example/v1/graphql",
   }),
+}));
+
+vi.mock("../ai/dev-invoker", () => ({
+  createDevModelInvoker: model.createInvoker,
 }));
 
 const { getDevTransformationCatalogue, previewDevTransformation } =
@@ -59,6 +67,11 @@ beforeAll(async () => {
 
 beforeEach(() => {
   curriculum.fetch.mockReset();
+  model.createInvoker.mockReset();
+  model.invokeStructured.mockReset();
+  model.createInvoker.mockReturnValue({
+    invokeStructured: model.invokeStructured,
+  });
 });
 
 describe("getDevTransformationCatalogue", () => {
@@ -93,6 +106,7 @@ describe("previewDevTransformation", () => {
 
     const preview = await previewDevTransformation(command());
 
+    expect(model.createInvoker).not.toHaveBeenCalled();
     expect(preview.prompt?.text).toContain("whose eyes we see through");
   });
 

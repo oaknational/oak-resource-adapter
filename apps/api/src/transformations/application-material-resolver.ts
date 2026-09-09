@@ -3,14 +3,41 @@ import {
   oakCurriculumConfigFromEnv,
 } from "@oaknational/resource-adapter-curriculum";
 
+import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
 import { OAK_MATERIAL, oakMaterialIsAvailable } from "../oak-material/catalogue";
 import { resolveLessonMaterial } from "../oak-material/from-lesson";
+import type {
+  OakMaterialDerivationDependencies,
+  OakMaterialRequirement,
+} from "../oak-material/material";
+import { createTranscriptSummariser } from "../oak-material/transcript-summary";
 import type { ResolveTransformationMaterial } from "./application-service";
 import { TransformationDependencyError } from "./errors";
+
+function createDerivationDependencies(
+  requirements: readonly OakMaterialRequirement[],
+  createInvoker: (() => ResourceAdapterModelInvoker) | undefined,
+): OakMaterialDerivationDependencies {
+  const needsTranscriptSummariser = requirements.some(({ key }) =>
+    key.startsWith("lesson.transcriptSummary"),
+  );
+
+  if (createInvoker === undefined || !needsTranscriptSummariser) {
+    return {};
+  }
+
+  const summarise = createTranscriptSummariser(createInvoker());
+  let pending: ReturnType<typeof summarise> | undefined;
+
+  return {
+    summariseTranscript: (transcript) => (pending ??= summarise(transcript)),
+  };
+}
 
 export const resolveApplicationMaterial: ResolveTransformationMaterial = async (
   requirements,
   lesson,
+  createInvoker,
 ) => {
   if (requirements.length === 0) {
     return { material: {}, warnings: [] };
@@ -41,7 +68,16 @@ export const resolveApplicationMaterial: ResolveTransformationMaterial = async (
     const repository = createOakLessonRepository(
       oakCurriculumConfigFromEnv(process.env),
     );
-    const resolution = await resolveLessonMaterial(lesson, repository, resolvable);
+    const derivationDependencies = createDerivationDependencies(
+      resolvable,
+      createInvoker,
+    );
+    const resolution = await resolveLessonMaterial(
+      lesson,
+      repository,
+      resolvable,
+      derivationDependencies,
+    );
     return {
       material: resolution.material,
       warnings: [...unavailable, ...resolution.warnings],

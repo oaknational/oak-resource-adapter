@@ -166,7 +166,11 @@ describe("executeTransformation", () => {
     const { invoker, invokeText } = fakeInvoker({});
 
     await expect(
-      executeTransformation(identity, { document: worksheet }, { invoker }),
+      executeTransformation(
+        identity,
+        { document: worksheet },
+        { createInvoker: () => invoker },
+      ),
     ).resolves.toEqual({
       outcome: "APPLIED",
       outputs: [{ document: worksheet, purpose: "revised-resource" }],
@@ -193,7 +197,7 @@ describe("executeTransformation", () => {
           params: { supportLevel: "mid" },
           targetBlockId: firstQuestion.id,
         },
-        { invoker, prepare },
+        { createInvoker: () => invoker, prepare },
       ),
     ).resolves.toEqual({ meta, outcome: "TEXT", text: "some words" });
 
@@ -215,7 +219,7 @@ describe("executeTransformation", () => {
         params: { supportLevel: "low" },
         targetBlockId: firstQuestion.id,
       },
-      { invoker, prepare },
+      { createInvoker: () => invoker, prepare },
     );
 
     const [call] = prepare.mock.calls.slice(-1);
@@ -241,7 +245,7 @@ describe("executeTransformation", () => {
           params: { supportLevel: "low" },
           targetBlockId: firstQuestion.id,
         },
-        { invoker, prepare },
+        { createInvoker: () => invoker, prepare },
       ),
     ).resolves.toEqual({ meta, outcome: "UNUSABLE", reason: "REFUSAL" });
   });
@@ -257,7 +261,7 @@ describe("executeTransformation", () => {
           params: { supportLevel: "high" },
           targetBlockId: firstQuestion.id,
         },
-        { invoker, prepare },
+        { createInvoker: () => invoker, prepare },
       ),
     ).rejects.toThrow();
   });
@@ -269,7 +273,7 @@ describe("executeTransformation", () => {
       executeTransformation(
         blockScaffold,
         { document: worksheet, params: { supportLevel: "low" } },
-        { invoker, prepare },
+        { createInvoker: () => invoker, prepare },
       ),
     ).rejects.toThrow(/needs the node/);
   });
@@ -285,7 +289,7 @@ describe("executeTransformation", () => {
           params: { supportLevel: "low" },
           targetBlockId: "not-a-block",
         },
-        { invoker, prepare },
+        { createInvoker: () => invoker, prepare },
       ),
     ).rejects.toThrow(/does not contain/);
   });
@@ -307,7 +311,7 @@ describe("executeTransformation", () => {
           params: { supportLevel: "low" },
           targetBlockId: paragraph.id,
         },
-        { invoker, prepare },
+        { createInvoker: () => invoker, prepare },
       ),
     ).rejects.toThrow(/cannot target a paragraph/);
   });
@@ -319,7 +323,7 @@ describe("executeTransformation", () => {
       executeTransformation(
         identity,
         { document: worksheet, targetBlockId: firstQuestion.id },
-        { invoker },
+        { createInvoker: () => invoker },
       ),
     ).rejects.toThrow(/whole document/);
   });
@@ -331,7 +335,7 @@ describe("executeTransformation", () => {
       executeTransformation(
         contextHungry,
         { document: worksheet },
-        { invoker, prepare },
+        { createInvoker: () => invoker, prepare },
       ),
     ).rejects.toThrow(/\{\{lessonContext\}\}/);
     expect(invokeText).not.toHaveBeenCalled();
@@ -354,7 +358,7 @@ describe("executeTransformation with a contribution", () => {
         params: { supportLevel: "mid" },
         targetBlockId: firstQuestion.id,
       },
-      { invoker, prepare },
+      { createInvoker: () => invoker, prepare },
     );
 
     expect(invokeStructured).toHaveBeenCalledWith(
@@ -401,7 +405,7 @@ describe("executeTransformation with a contribution", () => {
         params: { supportLevel: "mid" },
         targetBlockId: firstQuestion.id,
       },
-      { invoker, prepare },
+      { createInvoker: () => invoker, prepare },
     );
 
     const children =
@@ -445,7 +449,7 @@ describe("executeTransformation with a contribution", () => {
         params: { supportLevel: "mid" },
         targetBlockId: firstQuestion.id,
       },
-      { invoker, prepare },
+      { createInvoker: () => invoker, prepare },
     );
 
     const entry = appliedDocument(run)
@@ -482,7 +486,7 @@ describe("executeTransformation with a contribution", () => {
           params: { supportLevel: "mid" },
           targetBlockId: firstQuestion.id,
         },
-        { invoker, prepare },
+        { createInvoker: () => invoker, prepare },
       ),
     ).resolves.toEqual({
       meta,
@@ -504,7 +508,7 @@ describe("executeTransformation with a contribution", () => {
           params: { supportLevel: "mid" },
           targetBlockId: firstQuestion.id,
         },
-        { invoker, prepare },
+        { createInvoker: () => invoker, prepare },
       ),
     ).rejects.toThrow(/contribution ID/);
   });
@@ -519,7 +523,11 @@ describe("declared outputs", () => {
     } as typeof identity;
 
     await expect(
-      executeTransformation(twoOutputs, { document: worksheet }, { invoker }),
+      executeTransformation(
+        twoOutputs,
+        { document: worksheet },
+        { createInvoker: () => invoker },
+      ),
     ).rejects.toThrow(/declares 2 output\(s\) but produced 1/);
   });
 
@@ -533,7 +541,7 @@ describe("declared outputs", () => {
     const run = await executeTransformation(
       companion,
       { document: worksheet },
-      { invoker },
+      { createInvoker: () => invoker },
     );
 
     expect(run.outcome === "APPLIED" ? run.outputs[0].purpose : undefined).toBe(

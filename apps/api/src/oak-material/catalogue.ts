@@ -5,6 +5,12 @@ import { lessonOutcomePart } from "./lesson-outcome";
 import { lessonSlidesPart } from "./lesson-slides";
 import { lessonTranscriptPart } from "./lesson-transcript";
 import {
+  lessonTranscriptSummaryChecksForUnderstandingPart,
+  lessonTranscriptSummaryLearningCycleTitlesPart,
+  lessonTranscriptSummaryPart,
+  lessonTranscriptSummaryPracticeTasksWithFeedbackPart,
+} from "./transcript-summary";
+import {
   OAK_MATERIAL_KEYS,
   type OakMaterialKey,
   type OakMaterialPart,
@@ -18,10 +24,18 @@ export const OAK_MATERIAL: Readonly<Record<OakMaterialKey, OakMaterialPart>> = {
   "lesson.outcome": lessonOutcomePart,
   "lesson.slides": lessonSlidesPart,
   "lesson.transcript": lessonTranscriptPart,
+  "lesson.transcriptSummary": lessonTranscriptSummaryPart,
+  "lesson.transcriptSummary.checksForUnderstanding":
+    lessonTranscriptSummaryChecksForUnderstandingPart,
+  "lesson.transcriptSummary.learningCycleTitles":
+    lessonTranscriptSummaryLearningCycleTitlesPart,
+  "lesson.transcriptSummary.practiceTasksWithFeedback":
+    lessonTranscriptSummaryPracticeTasksWithFeedbackPart,
 };
 
 export function oakMaterialIsAvailable(key: OakMaterialKey): boolean {
-  return OAK_MATERIAL[key].read !== null;
+  const part = OAK_MATERIAL[key];
+  return part.read !== null || part.derive !== undefined;
 }
 
 /** The heading this part appears under inside `{{lessonMaterial}}`. */

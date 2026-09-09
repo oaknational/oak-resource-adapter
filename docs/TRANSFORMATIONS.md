@@ -104,6 +104,12 @@ A transformation lists these requirements in `materialRequirements`. The
 requested parts are resolved and passed to the prompt as `{{lessonMaterial}}`.
 For example, `lesson.keywords` provides Oak's keywords and definitions.
 
+A part is read from the lesson or, where Oak holds no such field, derived for the
+run. `lesson.transcriptSummary` is derived by summarising the transcript with a
+model, and its `.learningCycleTitles`, `.practiceTasksWithFeedback` and
+`.checksForUnderstanding` siblings are projections of that one summary. A
+derivation that cannot run warns and omits the part.
+
 Required material is checked in `transformations/required-material.ts`. A
 transformation cannot run if its request is missing a required part.
 
