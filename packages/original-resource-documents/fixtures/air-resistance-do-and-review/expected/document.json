@@ -27,6 +27,9 @@
     },
     {
       "id": "investigation",
+      "layout": {
+        "keepWithNext": true
+      },
       "type": "callout",
       "role": "instruction",
       "content": [
