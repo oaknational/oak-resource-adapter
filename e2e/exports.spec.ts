@@ -1,14 +1,27 @@
 import { buffer } from "node:stream/consumers";
 
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const exportsUrl = "/?view=exports&fixture=linear-equations-smoke";
 const docxRoute = "**/adapter-proxy/dev/exports/docx";
 
+/**
+ * A click on the server-rendered markup is silently lost until React attaches
+ * its handlers, and the export controls offer no signal of their own. The
+ * header's health check is the first thing on any view that resolves only after
+ * hydration, so waiting for it to leave "Checking" makes the controls usable.
+ */
+async function openExports(page: Page, url = exportsUrl) {
+  await page.goto(url);
+  await expect(
+    page.getByRole("banner").getByRole("button", { name: /^API:/ }),
+  ).not.toHaveText(/Checking/);
+}
+
 test("downloads a DOCX from the local API without embedding figures", async ({
   page,
 }) => {
-  await page.goto(exportsUrl);
+  await openExports(page);
   await page.getByRole("checkbox", { name: "Embed figures" }).uncheck();
 
   const [download] = await Promise.all([
@@ -48,7 +61,7 @@ test("exports the selected fixture and disables controls until generation finish
   });
 
   try {
-    await page.goto(exportsUrl);
+    await openExports(page);
     const fixtures = page.getByRole("navigation", { name: "Export fixtures" });
     await fixtures
       .getByRole("link", { name: "Forming ions for ionic bonding" })
@@ -108,7 +121,7 @@ for (const { status, message } of [
     await page.route(docxRoute, (route) =>
       route.fulfill({ status, json: { error: message } }),
     );
-    await page.goto(exportsUrl);
+    await openExports(page);
     const download = page.getByRole("button", {
       name: "Download DOCX",
       exact: true,
