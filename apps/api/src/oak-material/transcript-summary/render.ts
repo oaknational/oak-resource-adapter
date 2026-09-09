@@ -49,7 +49,7 @@ function renderCycle(cycle: LearningCycle, index: number): string {
       "Checks for understanding:",
       cycle.checksForUnderstanding.length === 0
         ? undefined
-        : cycle.checksForUnderstanding.map(renderCheck).join("\n"),
+        : cycle.checksForUnderstanding.map((check) => renderCheck(check)).join("\n"),
     ),
     listSection("Practice task:", cycle.practiceTask),
     listSection("Feedback on the practice task:", cycle.feedback),
@@ -61,7 +61,9 @@ function renderCycle(cycle: LearningCycle, index: number): string {
 export function renderLearningCycleTitles(summary: TranscriptSummary): string {
   return summary.learningCycles.length === 0
     ? "No learning cycles were reconstructed from the lesson transcript."
-    : bulletList(summary.learningCycles.map(cycleHeading));
+    : bulletList(
+        summary.learningCycles.map((cycle, index) => cycleHeading(cycle, index)),
+      );
 }
 
 export function renderPracticeTasksWithFeedback(summary: TranscriptSummary): string {
@@ -91,7 +93,9 @@ export function renderChecksForUnderstanding(summary: TranscriptSummary): string
             cycleHeading(cycle, index),
             section(
               "Checks for understanding:",
-              cycle.checksForUnderstanding.map(renderCheck).join("\n"),
+              cycle.checksForUnderstanding
+                .map((check) => renderCheck(check))
+                .join("\n"),
             ),
           ].join("\n\n"),
     )
