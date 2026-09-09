@@ -1,4 +1,8 @@
 export { createConsoleInvocationRecorder } from "./console-invocation-recorder.js";
+export {
+  createDeterministicModelTransport,
+  type DeterministicModelResponseResolver,
+} from "./deterministic-model-transport.js";
 export type {
   InvocationRecorder,
   ModelInvocationFailed,

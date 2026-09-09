@@ -15,10 +15,56 @@ const emailAddress = process.env.E2E_CLERK_USER_EMAIL as string;
 async function expectRenderedWorksheet(drawer: Locator, title: string) {
   const worksheet = drawer.getByRole("article", { name: title });
   const failure = drawer.getByTestId("resource-adapter-worksheet-scaffolding-error");
+  const startFresh = drawer.getByRole("button", { name: "Start from the original" });
 
+  await expect(worksheet.or(failure).or(startFresh).first()).toBeVisible({
+    timeout: 20_000,
+  });
+  if (await startFresh.isVisible()) {
+    await startFresh.click();
+  }
   await expect(worksheet.or(failure).first()).toBeVisible({ timeout: 20_000 });
   await expect(failure).toHaveCount(0);
   await expect(worksheet).toBeVisible();
+}
+
+async function expectSuggestionsReady(drawer: Locator) {
+  const failure = drawer.getByRole("heading", { name: "We couldn't find scaffolds" });
+  const ready = drawer.getByRole("status").filter({
+    hasText: /There (are|is) .+ suggested scaffolds? for this worksheet\./,
+  });
+  await expect(ready.or(failure).first()).toBeVisible({ timeout: 30_000 });
+  await expect(failure).toHaveCount(0);
+  await expect(ready).toBeVisible();
+  await expect(
+    drawer.getByRole("button", { name: "Add a word bank", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    drawer.getByRole("button", { name: "Add recall questions", exact: true }),
+  ).toBeEnabled();
+}
+
+async function openFreshScaffolding(page: Page) {
+  await setupClerkTestingToken({ page });
+  await page.goto("/");
+  await clerk.signIn({ page, emailAddress });
+  await page.goto("/");
+  const title = await page.getByRole("heading", { level: 1 }).innerText();
+  await page
+    .getByRole("button", { name: "Add extra scaffolding", exact: true })
+    .click();
+  const drawer = page.getByRole("dialog", { name: "Add extra scaffolding" });
+  await expectRenderedWorksheet(drawer, title);
+  return { drawer, worksheet: drawer.getByRole("article", { name: title }) };
+}
+
+// Signed out, the sign-in prompt appears only once availability comes back true.
+function waitForCapabilityAvailability(page: Page) {
+  return page.waitForResponse(
+    (response) =>
+      response.url().includes("/adapter-proxy/trpc/v1/capabilities.available") &&
+      response.request().method() === "POST",
+  );
 }
 
 function waitForCapabilities(page: Page) {
@@ -44,7 +90,7 @@ test(
     await page.goto("/");
     expect((await capabilitiesResponse).status()).toBe(200);
 
-    await expect(page.getByRole("status")).toHaveText("API /health: Healthy");
+    await expect(page.getByRole("banner").getByRole("status")).toHaveText("API: Ready");
     const createMoreButton = page.getByRole("button", {
       name: "Add extra scaffolding",
     });
@@ -76,8 +122,75 @@ test(
     await expect(
       sidebar.getByRole("heading", { level: 5, name: "Question 1" }),
     ).toBeVisible();
+    await expectSuggestionsReady(sidebar);
   },
 );
+
+test("generates and lists named scaffolding suggestions when the drawer opens", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  const { drawer, worksheet } = await openFreshScaffolding(page);
+  await expectSuggestionsReady(drawer);
+  await expect(
+    drawer.getByRole("button", {
+      name: "Break the task into ordered steps",
+      exact: true,
+    }),
+  ).toBeEnabled();
+  await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(0);
+});
+
+test("applying a suggestion adds an attributed contribution that survives reopening", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  const { drawer, worksheet } = await openFreshScaffolding(page);
+  await expectSuggestionsReady(drawer);
+  await expect(
+    worksheet.getByText("Vocabulary you could include:", { exact: true }),
+  ).toHaveCount(0);
+  await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(0);
+
+  await drawer.getByRole("button", { name: "Add a word bank", exact: true }).click();
+  const applied = worksheet.getByText("Added support", { exact: true });
+  const failure = drawer.getByRole("heading", {
+    name: "We couldn't apply that scaffold",
+  });
+  await expect(applied.or(failure).first()).toBeVisible({ timeout: 30_000 });
+  await expect(failure).toHaveCount(0);
+  await expect(applied).toHaveCount(1);
+  await expect(
+    worksheet.getByText("Vocabulary you could include:", { exact: true }),
+  ).toBeVisible();
+  await expect(worksheet.getByText("compare", { exact: true })).toBeVisible();
+  await expect(
+    worksheet.getByRole("button", { name: "Undo", exact: true }),
+  ).toBeEnabled();
+  await worksheet.getByRole("button", { name: "Accept", exact: true }).click();
+  await expect(
+    worksheet.getByRole("button", { name: "Remove", exact: true }),
+  ).toBeEnabled();
+  await expectSuggestionsReady(drawer);
+
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Add extra scaffolding", exact: true })
+    .click();
+  await drawer.getByRole("button", { name: "Carry on", exact: true }).click();
+  await expect(applied).toHaveCount(1);
+  await expect(
+    worksheet.getByText("Vocabulary you could include:", { exact: true }),
+  ).toBeVisible();
+  await expect(worksheet.getByText("compare", { exact: true })).toBeVisible();
+  await expect(
+    worksheet.getByRole("button", { name: "Accept", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    worksheet.getByRole("button", { name: "Remove", exact: true }),
+  ).toBeEnabled();
+  await expectSuggestionsReady(drawer);
+});
 
 test(
   "switches between representative lesson scenarios",
@@ -190,6 +303,7 @@ test("shows the future multi-capability launcher shape", {}, async ({ page }) =>
   const drawer = page.getByRole("dialog", { name: "Add extra scaffolding" });
   await expect(drawer).toBeVisible();
   await expectRenderedWorksheet(drawer, "Adopting different perspectives");
+  await expectSuggestionsReady(drawer);
 });
 
 test(
@@ -315,7 +429,7 @@ test(
 );
 
 test(
-  "offers signed-out visitors sign-in rather than the Aila trigger",
+  "offers signed-out visitors sign-in instead of the capability launcher",
   {
     tag: "@deployment-safe",
   },
@@ -323,7 +437,9 @@ test(
     // Clerk's bot protection blocks an automated browser on a real domain, and
     // without it `isLoaded` never settles, so the panel renders nothing.
     await setupClerkTestingToken({ page });
+    const availability = waitForCapabilityAvailability(page);
     await page.goto("/");
+    expect((await availability).status()).toBe(200);
 
     const signInPrompt = page.getByRole("region", {
       name: "Sign in to create more with Aila",
@@ -439,6 +555,7 @@ test(
         .click();
       const drawer = page.getByRole("dialog", { name: "Add extra scaffolding" });
       await expectRenderedWorksheet(drawer, title);
+      await expectSuggestionsReady(drawer);
       const article = drawer.getByRole("article", { name: title });
       for (const toggle of await article.locator('button[aria-expanded="false"]').all())
         await toggle.click();

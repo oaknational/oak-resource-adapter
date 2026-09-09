@@ -81,7 +81,7 @@ export async function runDevSuggestionFlow(command: DevSuggestionCommand) {
     command.appliedTransformations,
     {
       correlationKey: `dev-suggestions-${flow.id}`,
-      invoker: createDevModelInvoker(),
+      createInvoker: createDevModelInvoker,
       prepare: prepareWithoutPersistence,
     },
   );

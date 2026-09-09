@@ -172,6 +172,12 @@ jobs:
             exit 1
           fi
 
+      - name: Confirm the paired API is ready
+        env:
+          BYPASS_SECRET: ${{ secrets.VERCEL_HARNESS_BYPASS_SECRET }}
+          HARNESS_URL: ${{ steps.harness.outputs.url }}
+        run: node scripts/check-deployment-readiness.mjs "$HARNESS_URL/adapter-proxy/health/ready"
+
       - name: Cache the Playwright browser
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:

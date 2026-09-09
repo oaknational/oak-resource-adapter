@@ -146,16 +146,17 @@ describe("worksheet scaffolding suggestions", () => {
   it("returns validated parameters with a target and teacher-facing reason", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
-        invoker: invokerWith({
-          suggestions: [
-            {
-              kind: "scaffold-add-word-bank",
-              params: { supportLevel: "low" },
-              reason: "This question depends on recalling several topic words.",
-              targetBlockId: questionId,
-            },
-          ],
-        }),
+        createInvoker: () =>
+          invokerWith({
+            suggestions: [
+              {
+                kind: "scaffold-add-word-bank",
+                params: { supportLevel: "low" },
+                reason: "This question depends on recalling several topic words.",
+                targetBlockId: questionId,
+              },
+            ],
+          }),
         prepare,
       }),
     ).resolves.toEqual([
@@ -172,16 +173,17 @@ describe("worksheet scaffolding suggestions", () => {
   it("drops a suggestion for a target the transformation cannot change", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
-        invoker: invokerWith({
-          suggestions: [
-            {
-              kind: "scaffold-add-word-bank",
-              params: { supportLevel: "low" },
-              reason: "Add vocabulary support.",
-              targetBlockId: paragraphId,
-            },
-          ],
-        }),
+        createInvoker: () =>
+          invokerWith({
+            suggestions: [
+              {
+                kind: "scaffold-add-word-bank",
+                params: { supportLevel: "low" },
+                reason: "Add vocabulary support.",
+                targetBlockId: paragraphId,
+              },
+            ],
+          }),
         prepare,
       }),
     ).resolves.toEqual([]);
@@ -190,22 +192,23 @@ describe("worksheet scaffolding suggestions", () => {
   it("keeps the usable suggestions when one of them is unavailable", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
-        invoker: invokerWith({
-          suggestions: [
-            {
-              kind: "scaffold-add-word-bank",
-              params: { supportLevel: "low" },
-              reason: "Add vocabulary support.",
-              targetBlockId: paragraphId,
-            },
-            {
-              kind: "scaffold-add-word-bank",
-              params: { supportLevel: "low" },
-              reason: "This question depends on recalling several topic words.",
-              targetBlockId: questionId,
-            },
-          ],
-        }),
+        createInvoker: () =>
+          invokerWith({
+            suggestions: [
+              {
+                kind: "scaffold-add-word-bank",
+                params: { supportLevel: "low" },
+                reason: "Add vocabulary support.",
+                targetBlockId: paragraphId,
+              },
+              {
+                kind: "scaffold-add-word-bank",
+                params: { supportLevel: "low" },
+                reason: "This question depends on recalling several topic words.",
+                targetBlockId: questionId,
+              },
+            ],
+          }),
         prepare,
       }),
     ).resolves.toMatchObject([{ targetBlockId: questionId }]);
@@ -220,12 +223,13 @@ describe("worksheet scaffolding suggestions", () => {
 
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
-        invoker: invokerWith({
-          suggestions: [
-            { ...suggestion, reason: "The first reason." },
-            { ...suggestion, reason: "The second reason." },
-          ],
-        }),
+        createInvoker: () =>
+          invokerWith({
+            suggestions: [
+              { ...suggestion, reason: "The first reason." },
+              { ...suggestion, reason: "The second reason." },
+            ],
+          }),
         prepare,
       }),
     ).resolves.toMatchObject([{ reason: "The first reason." }]);
@@ -244,16 +248,17 @@ describe("worksheet scaffolding suggestions", () => {
           },
         ],
         {
-          invoker: invokerWith({
-            suggestions: [
-              {
-                kind: "scaffold-add-word-bank",
-                params: { supportLevel: "low" },
-                reason: "Supply the words needed for this question.",
-                targetBlockId: questionId,
-              },
-            ],
-          }),
+          createInvoker: () =>
+            invokerWith({
+              suggestions: [
+                {
+                  kind: "scaffold-add-word-bank",
+                  params: { supportLevel: "low" },
+                  reason: "Supply the words needed for this question.",
+                  targetBlockId: questionId,
+                },
+              ],
+            }),
           prepare,
         },
       ),
@@ -261,7 +266,7 @@ describe("worksheet scaffolding suggestions", () => {
   });
 
   it("returns no suggestions without invoking the model when every target is used", async () => {
-    const invoker = invokerWith({ suggestions: [] });
+    const createInvoker = vi.fn(() => invokerWith({ suggestions: [] }));
     const appliedTransformations = [
       {
         kind: "scaffold-add-prompt-questions",
@@ -281,16 +286,16 @@ describe("worksheet scaffolding suggestions", () => {
         worksheetScaffoldingSuggestionFlow,
         worksheet,
         appliedTransformations,
-        { invoker, prepare },
+        { createInvoker, prepare },
       ),
     ).resolves.toEqual([]);
-    expect(invoker.invokeStructured).not.toHaveBeenCalled();
+    expect(createInvoker).not.toHaveBeenCalled();
   });
 
   it("allows the agent to recommend no changes", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
-        invoker: invokerWith({ suggestions: [] }),
+        createInvoker: () => invokerWith({ suggestions: [] }),
         prepare,
       }),
     ).resolves.toEqual([]);
@@ -299,7 +304,7 @@ describe("worksheet scaffolding suggestions", () => {
   it("does not mistake an unsuccessful model response for no suggestions", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
-        invoker: invokerWithOutcome("OUTPUT_MISSING"),
+        createInvoker: () => invokerWithOutcome("OUTPUT_MISSING"),
         prepare,
       }),
     ).rejects.toThrow("Suggestion generation ended with OUTPUT_MISSING");

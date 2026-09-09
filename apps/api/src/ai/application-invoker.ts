@@ -1,20 +1,32 @@
 import OpenAI from "openai";
 import {
   createDatabaseInvocationRecorder,
+  createDeterministicModelTransport,
   createModelInvoker,
   createOpenAIResponsesTransport,
-  ModelInvocationError,
 } from "@oaknational/resource-adapter-ai";
 
-import { modelRoleBindings, type ResourceAdapterModelInvoker } from "./model-roles";
+import { resolveDeterministicResponse } from "./deterministic-responses";
+import { resolveModelTransport } from "./model-configuration";
+import {
+  modelRoleBindings,
+  rebindModelRoles,
+  type ResourceAdapterModelInvoker,
+} from "./model-roles";
 
 export function createApplicationModelInvoker(
   transformationAttemptId: string,
 ): ResourceAdapterModelInvoker {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new ModelInvocationError({
-      code: "INVALID_CONFIGURATION",
-      message: "OPENAI_API_KEY is not configured.",
+  const transport = resolveModelTransport();
+  if (transport === "deterministic") {
+    return createModelInvoker({
+      recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
+      roleBindings: rebindModelRoles("deterministic"),
+      transports: {
+        deterministic: createDeterministicModelTransport({
+          resolve: resolveDeterministicResponse,
+        }),
+      },
     });
   }
 

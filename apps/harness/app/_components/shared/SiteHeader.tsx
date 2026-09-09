@@ -2,18 +2,10 @@
 
 import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 
+import { ApiHealthIndicator } from "./ApiHealthIndicator";
 import styles from "../../page.module.css";
-import type { ApiHealthState } from "../../_hooks/useApiHealth";
 
-const apiHealthLabels: Record<ApiHealthState, string> = {
-  checking: "Checking",
-  healthy: "Healthy",
-  unavailable: "Unavailable",
-};
-
-export function SiteHeader({
-  apiHealthState,
-}: Readonly<{ apiHealthState: ApiHealthState }>) {
+export function SiteHeader() {
   const { isLoaded, isSignedIn } = useAuth();
 
   return (
@@ -22,10 +14,7 @@ export function SiteHeader({
         <p className={styles.brand}>Oak National Academy</p>
         <p className={styles.harnessLabel}>Resource Adapter harness</p>
       </div>
-      <output className={`${styles.apiHealth} ${styles[apiHealthState]}`}>
-        <span aria-hidden="true" className={styles.healthDot} />
-        API /health: {apiHealthLabels[apiHealthState]}
-      </output>
+      <ApiHealthIndicator />
       {isLoaded && (isSignedIn ? <UserButton /> : <SignInButton mode="modal" />)}
     </header>
   );

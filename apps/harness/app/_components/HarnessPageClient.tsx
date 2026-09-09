@@ -9,7 +9,6 @@ import { SuggestionsView } from "./suggestions";
 import { TransformationsView } from "./transformations";
 import { resolveApiBaseUrl } from "../harness-api";
 import styles from "../page.module.css";
-import { useApiHealth } from "../_hooks/useApiHealth";
 import type { HarnessView } from "../scenario-types";
 
 export function HarnessPageClient({
@@ -17,14 +16,13 @@ export function HarnessPageClient({
   view,
 }: Readonly<{ lessonId: string; view: HarnessView }>) {
   const apiBaseUrl = resolveApiBaseUrl();
-  const apiHealthState = useApiHealth();
 
   return (
     <>
       <a className={styles.skipLink} href="#main-content">
         Skip to main content
       </a>
-      <SiteHeader apiHealthState={apiHealthState} />
+      <SiteHeader />
       <PrimaryNavigation lessonId={lessonId} section={view.section} />
       <main className={styles.main} id="main-content">
         {view.section === "capabilities" && <CapabilitiesView lessonId={lessonId} />}
