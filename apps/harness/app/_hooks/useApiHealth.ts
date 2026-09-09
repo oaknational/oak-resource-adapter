@@ -40,7 +40,7 @@ export function useApiHealth() {
         }
       });
 
-    void Promise.all([live, ready]).then(() => clearTimeout(timeout));
+    void Promise.allSettled([live, ready]).then(() => clearTimeout(timeout));
 
     return () => {
       isMounted = false;
