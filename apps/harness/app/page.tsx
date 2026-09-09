@@ -9,12 +9,18 @@ import { lessonScenarioNavigation, loadLessonScenario } from "./lesson-scenarios
 import type { HarnessSection, HarnessView } from "./scenario-types";
 
 type SearchParamValue = string | string[] | undefined;
+type SearchParam = string | undefined;
 
 type HarnessPageProps = Readonly<{
   searchParams: Promise<Record<string, SearchParamValue>>;
 }>;
 
-function parseSection(view: SearchParamValue): HarnessSection {
+// A repeated query parameter arrives as an array; first wins, as URLSearchParams does.
+function firstValue(value: SearchParamValue): SearchParam {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseSection(view: SearchParam): HarnessSection {
   if (
     view === "capabilities" ||
     view === "smoke-tests" ||
@@ -30,7 +36,7 @@ function parseSection(view: SearchParamValue): HarnessSection {
 }
 
 function resolveId(
-  requested: SearchParamValue,
+  requested: SearchParam,
   available: readonly { id: string }[],
   emptyMessage: string,
 ): string {
@@ -48,7 +54,7 @@ function resolveId(
 async function resolveView(
   section: HarnessSection,
   lessonId: string,
-  parameters: Record<string, SearchParamValue>,
+  parameters: Record<string, SearchParam>,
 ): Promise<HarnessView> {
   if (section === "capabilities" || section === "smoke-tests") {
     return { section };
@@ -106,7 +112,12 @@ async function resolveView(
 }
 
 export default async function HarnessPage({ searchParams }: HarnessPageProps) {
-  const parameters = await searchParams;
+  const parameters = Object.fromEntries(
+    Object.entries(await searchParams).map(([name, value]) => [
+      name,
+      firstValue(value),
+    ]),
+  );
   const section = parseSection(parameters.view);
   const lessonId = resolveId(
     parameters.lesson,
