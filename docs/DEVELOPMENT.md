@@ -29,14 +29,18 @@ write-only, and the API returns it as null — so a workflow needing a value hol
 it as a GitHub secret rather than fetching it at run time. Vercel environment
 variables are not here at all: Terraform writes them straight to the projects.
 
-| Scope                    | Holds                                                          | Used by                                                                 |
-| ------------------------ | -------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Repository secrets       | the Clerk test credentials, and Vercel's own                   | pull request CI and preview deployments                                 |
-| `staging` Environment    | staging's `MIGRATION_DATABASE_URL` and its Cloud SQL variables | [`db-migrate.yml`](../.github/workflows/db-migrate.yml) against staging |
-| `production` Environment | the production equivalents                                     | the same workflow against production                                    |
+| Scope                    | Holds                                                                     | Used by                                                                 |
+| ------------------------ | ------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Repository secrets       | the Clerk test credentials, curriculum read credentials, and Vercel's own | pull request CI and preview deployments                                 |
+| `staging` Environment    | staging's `MIGRATION_DATABASE_URL` and its Cloud SQL variables            | [`db-migrate.yml`](../.github/workflows/db-migrate.yml) against staging |
+| `production` Environment | the production equivalents                                                | the same workflow against production                                    |
 
 The Vercel credentials are listed in
 [deployment](DEPLOYMENT.md#secrets-the-workflows-use).
+
+Browser tests require `CURRICULUM_API_URL` and
+`CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY` in both the Actions and
+Dependabot secret stores. Capability discovery reads live curriculum restrictions.
 
 ## Applying migrations
 

@@ -9,7 +9,7 @@ import {
 import { CurriculumError, toCurriculumError } from "../errors.js";
 import { executeHasuraQuery } from "../hasura.js";
 import { lessonNotFound, validateLessonIdentity } from "./lesson-identity.js";
-import { LESSON_BY_SLUG_QUERY } from "./lesson-query.js";
+import { LESSON_RESTRICTIONS_QUERY, LESSON_BY_SLUG_QUERY } from "./lesson-query.js";
 import {
   assetsRowSchema,
   browseRowSchema,
@@ -27,6 +27,10 @@ const responseSchema = z.object({
     content: z.array(z.unknown()),
     restrictionLevels: z.array(z.unknown()),
   }),
+});
+
+const restrictionResponseSchema = z.object({
+  data: z.object({ restrictionLevels: z.array(z.unknown()) }),
 });
 
 export function createOakLessonRepository(
@@ -129,4 +133,27 @@ function atMostOne<Schema extends z.ZodType>(
   }
 
   return byValue.values().next().value;
+}
+
+export function createOakLessonRestrictionReader(config: OakCurriculumConfig) {
+  const resolvedConfig = resolveOakCurriculumConfig(config);
+  return async (identity: LessonIdentity) => {
+    validateLessonIdentity(identity);
+    try {
+      const response = restrictionResponseSchema.parse(
+        await executeHasuraQuery(resolvedConfig, {
+          query: LESSON_RESTRICTIONS_QUERY,
+          variables: { lessonSlug: identity.lessonSlug },
+        }),
+      );
+      return (
+        atMostOne(response.data.restrictionLevels, restrictionRowSchema, {
+          identity,
+          what: "set of restriction levels",
+        }) ?? []
+      );
+    } catch (error) {
+      throw toCurriculumError(error);
+    }
+  };
 }

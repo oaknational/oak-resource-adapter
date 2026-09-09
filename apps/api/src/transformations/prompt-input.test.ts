@@ -156,3 +156,36 @@ describe("transformationPromptVariables", () => {
     ).toEqual({ keyStage: "Key stage 2" });
   });
 });
+
+it("preserves answer blanks and code in model prompt input", () => {
+  expect(
+    serialiseResourceNodeForPrompt({
+      id: "table",
+      type: "table",
+      role: "translation",
+      header: [
+        { kind: "content", content: [{ type: "text", text: "French" }] },
+        { kind: "answer" },
+        { kind: "empty" },
+      ],
+      rows: [
+        [
+          { kind: "content", content: [{ type: "text", text: "élève" }] },
+          { kind: "answer" },
+          { kind: "empty" },
+        ],
+      ],
+    }),
+  ).toBe(
+    '<table id="table"> [translation]\nFrench | [answer blank] | [empty]\nélève | [answer blank] | [empty]',
+  );
+  const source = 'if ready:\n    print("élève")  ';
+  expect(
+    serialiseResourceNodeForPrompt({
+      id: "code",
+      type: "codeBlock",
+      language: "python",
+      source,
+    }),
+  ).toBe(`<codeBlock id="code"> [python]\n${source}`);
+});

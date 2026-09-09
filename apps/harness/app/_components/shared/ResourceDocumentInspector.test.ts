@@ -33,6 +33,20 @@ describe("resourceNodeLabel", () => {
     ).toBe("Question 1: Explain the character's choice.");
   });
 
+  it.each([
+    ["table", "table"],
+    ["experimental-results", "experimental-results table"],
+  ])("names a %s role without repeating the word", (role, expected) => {
+    expect(
+      resourceNodeLabel({
+        id: "results",
+        type: "table",
+        role,
+        rows: [[{ kind: "answer" }]],
+      }),
+    ).toBe(expected);
+  });
+
   it("shows a words-only entry", () => {
     expect(
       resourceNodeLabel(

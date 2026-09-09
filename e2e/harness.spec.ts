@@ -96,16 +96,21 @@ test(
 
     await page
       .getByRole("navigation", { name: "Lesson scenarios" })
-      .getByRole("link", { name: /Composing in a samba style/ })
+      .getByRole("link", { name: /Adding rhythmic variation to ground bass/ })
       .click();
 
     await expect(
-      page.getByRole("heading", { level: 1, name: "Composing in a samba style" }),
+      page.getByRole("heading", {
+        level: 1,
+        name: "Adding rhythmic variation to ground bass",
+      }),
     ).toBeVisible();
-    await expect(page.getByText("Samba music", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Harmonic progressions and bass lines", { exact: true }),
+    ).toBeVisible();
     await page.getByText("Browse extracted markup").click();
     await expect(
-      page.getByLabel("Extracted markup for Composing in a samba style"),
+      page.getByLabel("Extracted markup for Adding rhythmic variation to ground bass"),
     ).toContainText("oak-rhythm-grid");
   },
 );
@@ -195,27 +200,19 @@ test(
   async ({ page }) => {
     await page.goto("/?view=edge-cases&case=unsupported-markup");
 
-    // The lesson tab shows this too, but from provisional fixture markup that is
-    // regenerated from real extractions; this case owns its own sample so the
-    // assertion survives that. The testid is oak-components' own, which keeps the
-    // assertion off our banner copy.
     const notes = page.getByTestId("inline-banner-message");
 
-    // Both strings are produced by resource-document rather than written in the
-    // banner, so rewording the banner cannot quietly void the assertion.
     await expect(notes).toContainText("unsupported-markup");
     await expect(notes).toContainText(
       "oak-future-widget was preserved without interpretation",
     );
 
-    // The banner's icon comes from Cloudinary, so this also covers the asset host
-    // defaults the harness supplies in place of OWA's runtime config.
+    // The icon exercises the harness's Cloudinary asset-host defaults.
     const icon = page.getByTestId("inline-banner-icon").locator("img");
     await expect
       .poll(async () => icon.evaluate((image) => image.naturalWidth))
       .toBeGreaterThan(0);
 
-    // The rest of the document still parses around the directive it cannot model.
     await expect(
       page.getByRole("heading", { name: "Details" }).locator(".."),
     ).toContainText("Questions we could still read");
@@ -416,5 +413,55 @@ test(
     await expect(material.getByRole("row", { name: /Lesson slides/ })).toContainText(
       "Not yet",
     );
+  },
+);
+
+test(
+  "renders every Oak fixture without unsupported content or broken images",
+  {},
+  async ({ page }) => {
+    test.setTimeout(120_000);
+    await setupClerkTestingToken({ page });
+    await page.goto("/");
+    await clerk.signIn({ page, emailAddress });
+    const links = await page
+      .getByRole("navigation", { name: "Lesson scenarios" })
+      .getByRole("link")
+      .evaluateAll((elements) =>
+        elements.map((element) => element.getAttribute("href")!),
+      );
+    expect(links.length).toBeGreaterThan(0);
+    for (const href of links) {
+      await page.goto(href);
+      const title = await page.getByRole("heading", { level: 1 }).innerText();
+      await page
+        .getByRole("button", { name: "Add extra scaffolding", exact: true })
+        .click();
+      const drawer = page.getByRole("dialog", { name: "Add extra scaffolding" });
+      await expectRenderedWorksheet(drawer, title);
+      const article = drawer.getByRole("article", { name: title });
+      for (const toggle of await article.locator('button[aria-expanded="false"]').all())
+        await toggle.click();
+      await expect(
+        article.getByText("Some worksheet content cannot be previewed yet."),
+      ).toHaveCount(0);
+      await expect(
+        article.getByText("Figure unavailable in this preview."),
+      ).toHaveCount(0);
+      for (const img of await article.locator("img").all()) {
+        await expect
+          .poll(() => img.evaluate((image) => image.complete && image.naturalWidth > 0))
+          .toBe(true);
+      }
+    }
+  },
+);
+
+test(
+  "serves the synthetic fixture figure offline",
+  { tag: "@deployment-safe" },
+  async ({ page }) => {
+    await page.goto("/fixtures/balance-model.svg");
+    await expect(page.locator("svg")).toBeVisible();
   },
 );

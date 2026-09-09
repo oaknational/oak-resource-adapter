@@ -1,0 +1,164 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:actions-to-tackle-climate-change:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Actions to tackle climate change"
+        }
+      ]
+    },
+    {
+      "id": "task-c",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task C: How can we adapt to climate change?"
+        }
+      ]
+    },
+    {
+      "id": "question-1",
+      "type": "question",
+      "label": "1",
+      "children": [
+        {
+          "id": "unstable:paragraph-complete-the-table-explaining-why-each-method-for-adap",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Complete the table, explaining why each method for adaptation is important."
+            }
+          ]
+        },
+        {
+          "id": "adaptation-strategies",
+          "type": "table",
+          "role": "explanation",
+          "header": [
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Adaptation strategy"
+                }
+              ]
+            },
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Explanation"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Growing drought resistant crops"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Building flood defences"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Managing water sources"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "question-2",
+      "type": "question",
+      "label": "2",
+      "children": [
+        {
+          "id": "unstable:paragraph-explain-why-we-should-consider-adaptation-and-mitigati",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Explain why we should consider adaptation and mitigation strategies when trying to tackle climate change."
+            }
+          ]
+        },
+        {
+          "id": "question-2-response",
+          "type": "responseSpace",
+          "kind": "lines",
+          "lines": 5
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "actions-to-tackle-climate-change:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/actions-to-tackle-climate-change"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Actions to tackle climate change",
+    "subject": {
+      "id": "geography",
+      "label": "Geography"
+    },
+    "keyStage": {
+      "id": "ks3",
+      "label": "KS3"
+    }
+  }
+}

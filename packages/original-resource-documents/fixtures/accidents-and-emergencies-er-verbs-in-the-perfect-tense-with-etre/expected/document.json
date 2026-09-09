@@ -1,0 +1,339 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:accidents-and-emergencies-er-verbs-in-the-perfect-tense-with-etre:pupil",
+  "language": "fr",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Accidents and emergencies: -er verbs in the perfect tense with 'être'"
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task B: Learning accidents and emergencies vocabulary"
+        }
+      ]
+    },
+    {
+      "id": "question-1",
+      "type": "question",
+      "label": "B1",
+      "children": [
+        {
+          "id": "unstable:paragraph-parle-comment-dit-on-en-anglais",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Parle. Comment dit-on en anglais ?"
+            }
+          ]
+        },
+        {
+          "id": "vocabulary",
+          "type": "table",
+          "role": "translation",
+          "header": [
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Français"
+                }
+              ]
+            },
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Anglais"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "l’urgence"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "l’après-midi"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "le doigt"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "le corps"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "retourner"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "tomber"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-c",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task C: Practising plural forms of the perfect tense"
+        }
+      ]
+    },
+    {
+      "id": "question-2",
+      "type": "question",
+      "label": "C3",
+      "children": [
+        {
+          "id": "unstable:paragraph-cris-les-phrases-avec-les-adverbes",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Écris les phrases avec les adverbes."
+            }
+          ]
+        },
+        {
+          "id": "adverbs",
+          "type": "table",
+          "role": "sentence-completion",
+          "header": [
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Phrase"
+                }
+              ]
+            },
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Adverbe"
+                }
+              ]
+            },
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Réponse"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Elles sont tombées."
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "dehors"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Ils sont montés sur la table."
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "facilement"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Ils sont restés à la maison."
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "tristement"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Elles sont arrivées."
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "déjà"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "accidents-and-emergencies-er-verbs-in-the-perfect-tense-with-etre:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/accidents-and-emergencies-er-verbs-in-the-perfect-tense-with-etre"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Accidents and emergencies: -er verbs in the perfect tense with 'être'",
+    "subject": {
+      "id": "french",
+      "label": "French"
+    },
+    "keyStage": {
+      "id": "ks3",
+      "label": "KS3"
+    }
+  }
+}

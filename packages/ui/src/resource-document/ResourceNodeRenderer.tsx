@@ -1,9 +1,11 @@
 import { Fragment, type ReactNode } from "react";
 import {
+  resourceVocabulary,
   contributionIdOf,
   type Asset,
   type InlineContent,
   type ResourceNode,
+  type TableCell,
   type UnsupportedNode,
 } from "@oaknational/resource-document";
 import { parseColor } from "@oaknational/oak-components";
@@ -129,6 +131,55 @@ const Figure = styled.figure`
   }
 `;
 
+const Table = styled.table`
+  border-collapse: collapse;
+  width: 100%;
+
+  th,
+  td {
+    border: 1px solid ${parseColor("border-neutral")};
+    min-width: 2rem;
+    padding: 0.5rem;
+  }
+
+  th {
+    text-align: left;
+  }
+
+  th:focus-visible,
+  td:focus-visible {
+    outline: 3px solid ${parseColor("border-primary")};
+    outline-offset: -3px;
+  }
+`;
+
+const ScrollableRegion = styled.div`
+  max-width: 100%;
+  overflow-x: auto;
+
+  &:focus-visible {
+    outline: 3px solid ${parseColor("border-primary")};
+    outline-offset: 2px;
+  }
+`;
+
+const CodeBlock = styled(ScrollableRegion).attrs({ as: "pre" })`
+  margin: 0;
+`;
+
+const HiddenLabel = styled.span`
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+`;
+
+const AnswerCell = styled.div`
+  min-height: 1.5rem;
+`;
+
 const CalloutLabels = {
   "learning-objective": "Learning objective",
   instruction: "Instructions",
@@ -145,6 +196,15 @@ function assertNever(value: never): never {
 
 function inlineText(content: InlineContent): string {
   return content.map((run) => (run.type === "text" ? run.text : run.value)).join("");
+}
+
+function tableLabel(role: string): string {
+  const words = role.replaceAll("-", " ");
+  return words === "table" ? "Table" : `${words} table`;
+}
+
+function codeBlockLabel(language: string | undefined): string {
+  return language === undefined ? "Code" : `${language} code`;
 }
 
 function pluralisedMarks(marks: number): string {
@@ -307,7 +367,7 @@ export function ResourceNodeRenderer({
   parentHeadingLevel: ParentHeadingLevel;
 }>) {
   switch (node.type) {
-    case "section":
+    case resourceVocabulary.nodes.section.nodeType:
       return (
         <ContentSection>
           <ResourceNodeListRenderer
@@ -319,26 +379,26 @@ export function ResourceNodeRenderer({
           />
         </ContentSection>
       );
-    case "heading":
+    case resourceVocabulary.nodes.heading.nodeType:
       return (
         <Heading level={headingLevel(node.level)}>
           <InlineContentRenderer content={node.content} />
         </Heading>
       );
-    case "paragraph":
+    case resourceVocabulary.nodes.paragraph.nodeType:
       return (
         <Paragraph>
           <InlineContentRenderer content={node.content} />
         </Paragraph>
       );
-    case "callout":
+    case resourceVocabulary.nodes.callout.nodeType:
       return (
         <Callout>
           <strong>{CalloutLabels[node.role]}: </strong>
           <InlineContentRenderer content={node.content} />
         </Callout>
       );
-    case "question": {
+    case resourceVocabulary.nodes.question.nodeType: {
       const label = node.label ? `Question ${node.label}` : "Question";
       const questionHeadingLevel = nestedHeadingLevel(parentHeadingLevel);
       const marks = node.marks === undefined ? "" : ` (${pluralisedMarks(node.marks)})`;
@@ -365,7 +425,7 @@ export function ResourceNodeRenderer({
         </Question>
       );
     }
-    case "definitionList":
+    case resourceVocabulary.nodes.definitionList.nodeType:
       return (
         <div>
           {node.lead && (
@@ -394,7 +454,7 @@ export function ResourceNodeRenderer({
           </DefinitionList>
         </div>
       );
-    case "responseSpace": {
+    case resourceVocabulary.nodes.responseSpace.nodeType: {
       const lines = node.lines ?? (node.kind === "lines" ? 4 : 6);
       const label =
         node.kind === "lines"
@@ -404,9 +464,17 @@ export function ResourceNodeRenderer({
         <ResponseSpace aria-label={label} $kind={node.kind} $lines={lines} role="img" />
       );
     }
-    case "figure":
+    case resourceVocabulary.nodes.table.nodeType:
+      return <TablePreview node={node} />;
+    case resourceVocabulary.nodes.codeBlock.nodeType:
+      return (
+        <CodeBlock aria-label={codeBlockLabel(node.language)} role="group" tabIndex={0}>
+          <code data-language={node.language}>{node.source}</code>
+        </CodeBlock>
+      );
+    case resourceVocabulary.nodes.figure.nodeType:
       return <FigureNode assets={assets} node={node} />;
-    case "unsupported":
+    case resourceVocabulary.nodes.unsupported.nodeType:
       return (
         <Unsupported role="note">
           <strong>Some worksheet content cannot be previewed yet.</strong>{" "}
@@ -416,4 +484,69 @@ export function ResourceNodeRenderer({
     default:
       return assertNever(node);
   }
+}
+
+function TableCellContent({
+  cell,
+  position,
+}: Readonly<{ cell: TableCell; position: string }>) {
+  switch (cell.kind) {
+    case "content":
+      return <InlineContentRenderer content={cell.content} />;
+    case "answer":
+      return (
+        <AnswerCell>
+          <HiddenLabel>Answer space, {position}</HiddenLabel>
+        </AnswerCell>
+      );
+    case "empty":
+      return null;
+  }
+}
+
+/**
+ * Cells are keyed by position because position is their only identity: blank
+ * cells carry no content, and repeated headings and answers collide.
+ */
+function TablePreview({
+  node,
+}: Readonly<{ node: Extract<ResourceNode, { type: "table" }> }>) {
+  return (
+    <ScrollableRegion tabIndex={0}>
+      <Table aria-label={tableLabel(node.role)}>
+        {node.header && (
+          <thead>
+            <tr>
+              {node.header.map((cell, columnIndex) => (
+                <th
+                  scope="col"
+                  key={columnIndex}
+                  tabIndex={cell.kind === "answer" ? 0 : undefined}
+                >
+                  <TableCellContent
+                    cell={cell}
+                    position={`header, column ${columnIndex + 1}`}
+                  />
+                </th>
+              ))}
+            </tr>
+          </thead>
+        )}
+        <tbody>
+          {node.rows.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              {row.map((cell, columnIndex) => (
+                <td key={columnIndex} tabIndex={cell.kind === "answer" ? 0 : undefined}>
+                  <TableCellContent
+                    cell={cell}
+                    position={`row ${rowIndex + 1}, column ${columnIndex + 1}`}
+                  />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </ScrollableRegion>
+  );
 }

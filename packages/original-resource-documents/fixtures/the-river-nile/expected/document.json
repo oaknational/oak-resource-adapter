@@ -1,0 +1,222 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:the-river-nile:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "The River Nile"
+        }
+      ]
+    },
+    {
+      "id": "outcome",
+      "type": "callout",
+      "role": "learning-objective",
+      "content": [
+        {
+          "type": "text",
+          "text": "I can describe where and when the Ancient Egyptians lived and explain why the River Nile was important for them."
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task A: Words historians use"
+        }
+      ]
+    },
+    {
+      "id": "question-1",
+      "type": "question",
+      "label": "1",
+      "children": [
+        {
+          "id": "unstable:paragraph-write-the-meaning-of-each-word-in-your-own-words",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Write the meaning of each word in your own words."
+            }
+          ]
+        },
+        {
+          "id": "vocabulary",
+          "type": "table",
+          "role": "vocabulary",
+          "header": [
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Word"
+                }
+              ]
+            },
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What it means"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "civilisation"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "BCE"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "fertile"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task B: Why the Nile mattered"
+        }
+      ]
+    },
+    {
+      "id": "reading",
+      "type": "callout",
+      "role": "instruction",
+      "content": [
+        {
+          "type": "text",
+          "text": "The Ancient Egyptians lived beside a long, deep river they called the Nile, in North Africa. Dry land on either side protected them from their enemies."
+        }
+      ]
+    },
+    {
+      "id": "question-2",
+      "type": "question",
+      "label": "2",
+      "marks": 2,
+      "children": [
+        {
+          "id": "unstable:paragraph-the-nile-carried-a-dark-black-mud-explain-what-happene",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "The Nile carried a dark black mud. Explain what happened to the land when the river flooded."
+            }
+          ]
+        },
+        {
+          "id": "question-2-response",
+          "type": "responseSpace",
+          "kind": "lines",
+          "lines": 4
+        }
+      ]
+    },
+    {
+      "id": "question-3",
+      "type": "question",
+      "label": "3",
+      "marks": 3,
+      "children": [
+        {
+          "id": "unstable:paragraph-around-3-000-bce-the-two-kingdoms-of-upper-egypt-and-l",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Around 3,000 BCE the two kingdoms of Upper Egypt and Lower Egypt were united. Why might a river have helped to join the two kingdoms together?"
+            }
+          ]
+        },
+        {
+          "id": "question-3-response",
+          "type": "responseSpace",
+          "kind": "lines",
+          "lines": 6
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "the-river-nile:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/the-river-nile"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "The River Nile",
+    "subject": {
+      "id": "history",
+      "label": "History"
+    },
+    "keyStage": {
+      "id": "ks2",
+      "label": "KS2"
+    }
+  }
+}

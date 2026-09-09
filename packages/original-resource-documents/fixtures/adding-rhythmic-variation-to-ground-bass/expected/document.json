@@ -1,0 +1,280 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:adding-rhythmic-variation-to-ground-bass:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Adding rhythmic variation to ground bass"
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task B: The tresillo and habanera rhythms"
+        }
+      ]
+    },
+    {
+      "id": "question-1",
+      "type": "question",
+      "label": "1",
+      "children": [
+        {
+          "id": "unstable:paragraph-how-are-the-tresillo-and-habanera-similar",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "How are the tresillo and habanera similar?"
+            }
+          ]
+        },
+        {
+          "id": "comparison",
+          "type": "responseSpace",
+          "kind": "lines",
+          "lines": 4
+        }
+      ]
+    },
+    {
+      "id": "task-c",
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Task C: Adding new rhythms to our ground bass"
+        }
+      ]
+    },
+    {
+      "id": "ground-bass-instruction",
+      "type": "callout",
+      "role": "instruction",
+      "content": [
+        {
+          "type": "text",
+          "text": "Use the correct notes from your ground bass. Play them in a tresillo rhythm, then a habanera rhythm. Maintain fluency and the correct rhythm when changing notes."
+        }
+      ]
+    },
+    {
+      "id": "example-notes",
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Example ground bass pattern: C G F G F G A B."
+        }
+      ]
+    },
+    {
+      "id": "grid-instruction",
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Use this planning grid to record your rhythmic variations."
+        }
+      ]
+    },
+    {
+      "id": "ground-bass-rhythm-grid",
+      "type": "table",
+      "role": "rhythm",
+      "header": [
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "Variation"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "1"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "and"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "2"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "and"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "3"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "and"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "4"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "and"
+            }
+          ]
+        }
+      ],
+      "rows": [
+        [
+          {
+            "kind": "content",
+            "content": [
+              {
+                "type": "text",
+                "text": "Tresillo"
+              }
+            ]
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          }
+        ],
+        [
+          {
+            "kind": "content",
+            "content": [
+              {
+                "type": "text",
+                "text": "Habanera"
+              }
+            ]
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "answer"
+          }
+        ]
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "adding-rhythmic-variation-to-ground-bass:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/adding-rhythmic-variation-to-ground-bass"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Adding rhythmic variation to ground bass",
+    "subject": {
+      "id": "music",
+      "label": "Music"
+    },
+    "keyStage": {
+      "id": "ks3",
+      "label": "KS3"
+    }
+  }
+}
