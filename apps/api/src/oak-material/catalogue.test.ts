@@ -35,7 +35,7 @@ describe("the Oak material catalogue", () => {
   });
 });
 
-describe("readOakMaterial", async () => {
+describe("readOakMaterial", () => {
   afterEach(() => {
     resetErrorReporter();
   });

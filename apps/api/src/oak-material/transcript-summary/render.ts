@@ -108,7 +108,7 @@ export function renderTranscriptSummary(summary: TranscriptSummary): string {
       ? undefined
       : [
           "Learning cycles reconstructed from the lesson transcript, in the order they were taught:",
-          ...summary.learningCycles.map(renderCycle),
+          ...summary.learningCycles.map((cycle, index) => renderCycle(cycle, index)),
         ].join("\n\n");
 
   const sections = [
