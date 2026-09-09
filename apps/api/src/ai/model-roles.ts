@@ -28,7 +28,30 @@ export const modelRoleBindings = defineRoleBindings({
 
 export type ModelRoleName = ModelRole<typeof modelRoleBindings>;
 
+type RebindTransport<TTransport extends string> = {
+  [Role in ModelRoleName]: Readonly<{
+    model: (typeof modelRoleBindings)[Role]["model"];
+    transport: TTransport;
+  }>;
+};
+
+/** Every role on its usual model, routed through a different transport. */
+export function rebindModelRoles<const TTransport extends string>(
+  transport: TTransport,
+): RebindTransport<TTransport> {
+  return Object.fromEntries(
+    Object.entries(modelRoleBindings).map(([role, { model }]) => [
+      role,
+      { model, transport },
+    ]),
+  ) as RebindTransport<TTransport>;
+}
+
 export type ResourceAdapterModelInvoker = ModelInvoker<typeof modelRoleBindings>;
+
+export type ModelInvokerConfig = Readonly<{
+  createInvoker: () => ResourceAdapterModelInvoker;
+}>;
 
 export const TRANSFORMATION_ROLES = [
   "worksheet-scaffold",

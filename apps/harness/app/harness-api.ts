@@ -19,7 +19,30 @@ export function resolveApiBaseUrl(): string {
   return `${origin}${adapterProxyPath}`;
 }
 
-const healthResponseSchema = z.object({ status: z.string() });
+const healthResponseSchema = z.object({ status: z.literal("ok") });
+
+const readinessResponseSchema = z
+  .object({
+    status: z.enum(["ready", "not-ready"]),
+    checks: z.record(
+      z.string(),
+      z.object({
+        label: z.string().trim().min(1),
+        status: z.enum(["ready", "not-ready"]),
+        message: z.string().trim().min(1),
+        code: z.string().optional(),
+      }),
+    ),
+  })
+  .refine(({ status, checks }) => {
+    const values = Object.values(checks);
+    return (
+      values.length > 0 &&
+      (status === "ready") === values.every((check) => check.status === "ready")
+    );
+  });
+
+export type ApiReadiness = z.infer<typeof readinessResponseSchema>;
 
 const testJobResponseSchema = z.object({
   // The dev routes are not a contract, so a field the harness only displays is
@@ -53,8 +76,11 @@ async function readJson<TSchema extends z.ZodType>(
   return parsed.data;
 }
 
-export async function fetchApiHealth(): Promise<boolean> {
-  const response = await fetch(`${adapterProxyPath}/health`);
+export async function fetchApiHealth(signal: AbortSignal): Promise<boolean> {
+  const response = await fetch(`${adapterProxyPath}/health`, {
+    cache: "no-store",
+    signal,
+  });
 
   if (!response.ok) {
     return false;
@@ -62,7 +88,25 @@ export async function fetchApiHealth(): Promise<boolean> {
 
   const parsed = healthResponseSchema.safeParse(await response.json());
 
-  return parsed.success && parsed.data.status === "ok";
+  return parsed.success;
+}
+
+export async function fetchApiReadiness(signal: AbortSignal): Promise<ApiReadiness> {
+  const response = await fetch(`${adapterProxyPath}/health/ready`, {
+    cache: "no-store",
+    signal,
+  });
+
+  if (response.status !== 200 && response.status !== 503) {
+    throw new Error("The readiness endpoint is unavailable.");
+  }
+
+  const readiness = await readJson(response, readinessResponseSchema, "readiness");
+  if ((response.status === 200) !== (readiness.status === "ready")) {
+    throw new Error("The readiness response is inconsistent.");
+  }
+
+  return readiness;
 }
 
 export async function createTestJob(): Promise<TestJobResponse> {

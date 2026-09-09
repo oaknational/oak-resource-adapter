@@ -89,31 +89,11 @@ jobs:
       # apps/api/src/cors.ts returns nothing when VERCEL_ENV is production. So
       # the browser suite cannot run here; these server-side probes send no
       # Origin header and are not subject to CORS.
-      - name: Check the unpromoted deployment
+      - name: Check the unpromoted deployment is ready
         env:
           BYPASS_SECRET: ${{ secrets.VERCEL_API_BYPASS_SECRET }}
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
-        run: |
-          health=""
-          for attempt in 1 2 3 4 5; do
-            if health="$(curl -fsS --max-time 30 \
-              -H "x-vercel-protection-bypass: $BYPASS_SECRET" \
-              "$DEPLOYMENT_URL/health")"; then
-              break
-            fi
-
-            health=""
-            echo "Attempt $attempt failed."
-            if [ "$attempt" -lt 5 ]; then
-              sleep 10
-            fi
-          done
-
-          echo "$health"
-          if [ "$(printf '%s' "$health" | jq -r '.status // empty')" != "ok" ]; then
-            echo "::error::$DEPLOYMENT_URL/health did not report ok. Not promoting."
-            exit 1
-          fi
+        run: node scripts/check-deployment-readiness.mjs "$DEPLOYMENT_URL/health/ready"
 
       # Sends no contract version header, so versionedProcedure rejects it with
       # 412. Reaching that rejection proves the route is mounted, the procedure

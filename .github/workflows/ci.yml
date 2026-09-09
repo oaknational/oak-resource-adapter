@@ -235,6 +235,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/resource_adapter
       # The harness posts to the /dev routes, which fail closed without this.
       ENABLE_DEV_ROUTES: "1"
+      MODEL_TRANSPORT: deterministic
       # The three values e2e/global.setup.ts asserts. `secrets` cannot be read
       # from an `if:` condition; `env` can.
       CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
@@ -328,7 +329,16 @@ jobs:
       # just as a failed one does.
       - name: Run browser tests
         if: env.CLERK_SECRET_KEY != ''
-        run: pnpm test:e2e
+        run: |
+          set -o pipefail
+          pnpm test:e2e 2>&1 | tee browser-tests.log
+          # Only sees server-side failures while both webServers in
+          # playwright.config.ts pipe their output. Matches the error codes as
+          # well as the class names, so renaming a class does not disarm it.
+          if grep -E 'ModelInvocationError|FatalError|INVALID_CONFIGURATION' browser-tests.log; then
+            echo "::error::Browser tests logged a model invocation or workflow fatal error."
+            exit 1
+          fi
 
       # Traces and screenshots live only on the runner, so a failure is
       # undiagnosable unless they leave with it.
@@ -340,6 +350,7 @@ jobs:
           path: |
             test-results/
             playwright-report/
+            browser-tests.log
           if-no-files-found: warn
           retention-days: 14
 

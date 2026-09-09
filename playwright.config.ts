@@ -20,11 +20,15 @@ const localWebServers = [
     command: "pnpm --filter @oaknational/resource-adapter-api dev",
     url: "http://localhost:3001/health",
     reuseExistingServer: !process.env.CI,
+    stdout: "pipe" as const,
+    stderr: "pipe" as const,
   },
   {
     command: "pnpm --filter @oaknational/resource-adapter-harness dev",
     port: 3000,
     reuseExistingServer: !process.env.CI,
+    stdout: "pipe" as const,
+    stderr: "pipe" as const,
   },
 ];
 

@@ -12,7 +12,7 @@ import type {
 import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
 
 import { DEFAULT_TRANSFORMATION_ROLE } from "../ai/model-roles";
-import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
+import type { ModelInvokerConfig } from "../ai/model-roles";
 import { TransformationRequestError } from "./errors";
 import type { OakMaterial } from "../oak-material/material";
 import { transformationPromptVariables } from "./prompt-input";
@@ -81,10 +81,6 @@ export type PreparedTransformation = Readonly<{
 export type PrepareTransformationConfig = Readonly<{
   /** Injectable for previews and synchronous dev runs without prompt persistence. */
   prepare?: PreparePrompt;
-}>;
-
-export type ModelInvokerConfig = Readonly<{
-  createInvoker: () => ResourceAdapterModelInvoker;
 }>;
 
 export type ExecutePreparedTransformationConfig = Readonly<{

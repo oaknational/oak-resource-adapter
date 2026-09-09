@@ -172,7 +172,7 @@ export async function executeGenerateSuggestions(
     await appliedTransformationHistory(input.adaptationId, document, repository),
     {
       correlationKey: jobId,
-      invoker: dependencies.createInvoker(attempt.id),
+      createInvoker: () => dependencies.createInvoker(attempt.id),
     },
   );
 

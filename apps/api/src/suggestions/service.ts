@@ -5,7 +5,7 @@ import {
 } from "@oaknational/resource-document";
 import { z } from "zod";
 
-import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
+import type { ModelInvokerConfig } from "../ai/model-roles";
 import { serialiseResourceDocumentForPrompt } from "../transformations/prompt-input";
 import {
   isRegisteredTransformationKind,
@@ -242,11 +242,11 @@ export async function generateSuggestions(
   document: ResourceDocument,
   appliedTransformations: readonly AppliedTransformationSummary[],
   config: Readonly<{
-    invoker: ResourceAdapterModelInvoker;
     prepare?: PrepareSuggestionPrompt | undefined;
     correlationKey?: string | undefined;
     signal?: AbortSignal | undefined;
-  }>,
+  }> &
+    ModelInvokerConfig,
 ): Promise<readonly TransformationSuggestion[]> {
   const { candidates, preparedPrompt } = await prepareSuggestionFlow(
     flow,
@@ -261,7 +261,7 @@ export async function generateSuggestions(
   const schema = z.strictObject({
     suggestions: z.array(rawSuggestionSchemaFor(candidates)).max(flow.maxSuggestions),
   });
-  const result = await config.invoker.invokeStructured({
+  const result = await config.createInvoker().invokeStructured({
     ...(config.correlationKey === undefined
       ? {}
       : { correlationKey: config.correlationKey }),

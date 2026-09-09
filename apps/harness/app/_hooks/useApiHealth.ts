@@ -2,36 +2,52 @@
 
 import { useEffect, useState } from "react";
 
-import { fetchApiHealth } from "../harness-api";
+import { fetchApiHealth, fetchApiReadiness } from "../harness-api";
+import type { ApiReadiness } from "../harness-api";
 
-export type ApiHealthState = "checking" | "healthy" | "unavailable";
+type LivenessState = "checking" | "healthy" | "unavailable";
+type ReadinessState = { status: "checking" | "unavailable" } | ApiReadiness;
 
-export function useApiHealth(): ApiHealthState {
-  const [apiHealthState, setApiHealthState] = useState<ApiHealthState>("checking");
+export function useApiHealth() {
+  const [liveness, setLiveness] = useState<LivenessState>("checking");
+  const [readiness, setReadiness] = useState<ReadinessState>({ status: "checking" });
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8_000);
 
-    async function loadHealth() {
-      try {
-        const isHealthy = await fetchApiHealth();
-
+    const live = fetchApiHealth(controller.signal)
+      .then((isHealthy) => {
         if (isMounted) {
-          setApiHealthState(isHealthy ? "healthy" : "unavailable");
+          setLiveness(isHealthy ? "healthy" : "unavailable");
         }
-      } catch {
+      })
+      .catch(() => {
         if (isMounted) {
-          setApiHealthState("unavailable");
+          setLiveness("unavailable");
         }
-      }
-    }
+      });
+    const ready = fetchApiReadiness(controller.signal)
+      .then((result) => {
+        if (isMounted) {
+          setReadiness(result);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setReadiness({ status: "unavailable" });
+        }
+      });
 
-    void loadHealth();
+    void Promise.allSettled([live, ready]).then(() => clearTimeout(timeout));
 
     return () => {
       isMounted = false;
+      clearTimeout(timeout);
+      controller.abort();
     };
   }, []);
 
-  return apiHealthState;
+  return { liveness, readiness };
 }

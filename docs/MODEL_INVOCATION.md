@@ -186,7 +186,11 @@ compatible gateway client. It defaults `store` to `false`; callers using
 
 The application constructs the `OpenAI` client and passes it to the transport.
 `new OpenAI()` reads `OPENAI_API_KEY` from the environment, which Terraform sets
-in every deployed target. A live smoke test exists as
+in every deployed target. The application invoker and the
+[readiness endpoint](DEVELOPMENT.md#api-readiness) share configuration validation;
+an absent or blank key fails with `INVALID_CONFIGURATION` unless deterministic
+transport is explicitly selected. Readiness does not authenticate with the provider.
+A live smoke test exists as
 `pnpm --filter @oaknational/resource-adapter-ai smoke:openai` to be run by hand
 only. For a manual end-to-end check, the
 dev-gated `POST /dev/ai/invoke` route runs one invocation, demonstrated by the
@@ -194,3 +198,17 @@ harness page's "Model invocation test" section.
 
 Threat detection and response moderation belong in orchestration around this
 boundary, not inside the transport.
+
+## Deterministic model responses
+
+`createDeterministicModelTransport` replaces only the model network call; jobs,
+invocation recording, schema validation and contribution application stay on the
+real path. Records use the `deterministic` transport. The application-owned
+[response catalogue](../apps/api/src/ai/deterministic-responses.ts) selects small
+payloads by role and output contract, taking eligible suggestion targets from the
+request's schema. Unsupported contracts fail rather than falling back to OpenAI.
+
+**A new browser test normally needs no new fake data. Covering a new output
+contract adds one entry to that catalogue, with a contract test.** Keep responses
+out of feature code and browser specs, and do not add per-lesson copies.
+See [browser-test configuration](DEVELOPMENT.md#browser-test-model-configuration).

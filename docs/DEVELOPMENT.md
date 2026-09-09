@@ -42,6 +42,31 @@ Browser tests require `CURRICULUM_API_URL` and
 `CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY` in both the Actions and
 Dependabot secret stores. Capability discovery reads live curriculum restrictions.
 
+## Browser-test model configuration
+
+CI browser tests set `MODEL_TRANSPORT=deterministic`. Unset or `openai` selects
+OpenAI and requires `OPENAI_API_KEY`; other values fail configuration validation.
+`deterministic` needs no key and overrides one if present, but Clerk, curriculum
+access and a local test database are still needed. Deployments are unaffected: the
+browser job does not set it, and `VERCEL_ENV=production` rejects it outright.
+
+Playwright reuses an already-running API server, so restart yours after changing
+the value or it will keep the transport it started with.
+
+See [deterministic model responses](MODEL_INVOCATION.md#deterministic-model-responses)
+for the coverage boundary and response maintenance rule.
+
+## API readiness
+
+`GET /health` reports liveness; `GET /health/ready` evaluates named readiness
+checks, answering 200 with `status: "ready"` only when every check passes. Both
+production promotion and the preview workflow gate on it, and the harness status
+pill renders whatever checks come back, by label.
+
+Add a new required check to the same response rather than a new endpoint, and give
+it a message from a fixed set: the response is public, so a check must never
+interpolate a credential, an environment value or an upstream error into it.
+
 ## Applying migrations
 
 [`db-migrate.yml`](../.github/workflows/db-migrate.yml) is the only way migrations
