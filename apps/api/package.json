@@ -16,7 +16,7 @@
     "type-check": "next typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.8.3",
+    "@clerk/nextjs": "^7.8.4",
     "@oaknational/resource-adapter-ai": "workspace:*",
     "@oaknational/resource-adapter-contracts": "workspace:*",
     "@oaknational/resource-adapter-curriculum": "workspace:*",
@@ -24,16 +24,16 @@
     "@oaknational/resource-adapter-logger": "workspace:*",
     "@oaknational/resource-adapter-original-resource-documents": "workspace:*",
     "@oaknational/resource-document": "workspace:*",
-    "@sentry/nextjs": "^10.72.0",
+    "@sentry/nextjs": "^10.73.0",
     "@trpc/server": "11.18.0",
     "drizzle-orm": "^0.45.2",
-    "next": "^16.2.11",
+    "next": "^16.3.4",
     "openai": "6.49.0",
-    "posthog-node": "^5.46.1",
+    "posthog-node": "^5.51.6",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "workflow": "4.6.1",
-    "zod": "^4.4.3"
+    "workflow": "4.8.5",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
