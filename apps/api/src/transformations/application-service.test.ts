@@ -149,6 +149,29 @@ describe("previewRegisteredTransformation", () => {
 });
 
 describe("executeRegisteredTransformation", () => {
+  it("reuses the invoker created while resolving material", async () => {
+    const invoker = invokerReturning({
+      entries: [{ definition: "whose eyes we see through", term: "perspective" }],
+    });
+    const createInvoker = vi.fn(() => invoker);
+    let materialInvoker: ResourceAdapterModelInvoker | undefined;
+    const resolveMaterial = vi.fn<ResolveTransformationMaterial>(
+      (_requirements, _lesson, resolveInvoker) => {
+        materialInvoker = resolveInvoker?.();
+        return Promise.resolve({ material: {}, warnings: [] });
+      },
+    );
+
+    await executeRegisteredTransformation(command({ contributionId: "contribution-1" }), {
+      createInvoker,
+      prepare,
+      resolveMaterial,
+    });
+
+    expect(createInvoker).toHaveBeenCalledOnce();
+    expect(materialInvoker).toBe(invoker);
+  });
+
   it("runs the transformation the command named and returns its documents", async () => {
     const { run, warnings } = await executeRegisteredTransformation(
       command({ contributionId: "contribution-1" }),

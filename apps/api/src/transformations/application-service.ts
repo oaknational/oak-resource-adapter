@@ -114,7 +114,15 @@ export async function executeRegisteredTransformation(
   command: RegisteredTransformationCommand,
   config: PrepareRegisteredTransformationConfig & ExecutePreparedTransformationConfig,
 ): Promise<Readonly<{ run: TransformationRun; warnings: readonly string[] }>> {
-  const { prepared, warnings } = await prepareRegisteredTransformation(command, config);
-  const run = await executePreparedTransformation(prepared, command, config);
+  let invoker: ResourceAdapterModelInvoker | undefined;
+  const memoizedConfig = {
+    ...config,
+    createInvoker: () => (invoker ??= config.createInvoker()),
+  };
+  const { prepared, warnings } = await prepareRegisteredTransformation(
+    command,
+    memoizedConfig,
+  );
+  const run = await executePreparedTransformation(prepared, command, memoizedConfig);
   return { run, warnings };
 }
