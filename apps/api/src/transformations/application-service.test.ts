@@ -162,11 +162,14 @@ describe("executeRegisteredTransformation", () => {
       },
     );
 
-    await executeRegisteredTransformation(command({ contributionId: "contribution-1" }), {
-      createInvoker,
-      prepare,
-      resolveMaterial,
-    });
+    await executeRegisteredTransformation(
+      command({ contributionId: "contribution-1" }),
+      {
+        createInvoker,
+        prepare,
+        resolveMaterial,
+      },
+    );
 
     expect(createInvoker).toHaveBeenCalledOnce();
     expect(materialInvoker).toBe(invoker);
