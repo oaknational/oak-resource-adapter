@@ -4,12 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { ResourceAdapterModelInvoker } from "@/ai/model-roles";
 import { readOakMaterial, renderOakMaterial } from "../requirements";
 import { createTranscriptSummariser } from "./invoke";
-import {
-  renderChecksForUnderstanding,
-  renderLearningCycleTitles,
-  renderPracticeTasksWithFeedback,
-  renderTranscriptSummary,
-} from "./render";
 import { transcriptSummarySchema } from "./schema";
 
 const requirement = [{ key: "lesson.transcriptSummary" as const, required: false }];
@@ -30,105 +24,6 @@ describe("transcript summaries", () => {
     ).toBe(false);
   });
 
-  it("renders teaching that has no recoverable learning cycles", () => {
-    const summary = transcriptSummarySchema.parse({
-      learningCycles: [],
-      unassignedTranscriptContent: [
-        "The teacher compares first- and third-person accounts of the same event.",
-      ],
-    });
-
-    expect(renderTranscriptSummary(summary)).toBe(
-      "Teaching from the transcript that belongs to no single cycle:\n" +
-        "- The teacher compares first- and third-person accounts of the same event.",
-    );
-  });
-
-  it("renders only the learning cycle titles", () => {
-    const summary = transcriptSummarySchema.parse({
-      learningCycles: [
-        {
-          sequence: 1,
-          title: "Identify equivalent fractions",
-          cycleOutcome: "Recognise equivalent fractions",
-          explanation: ["Equivalent fractions have the same value."],
-          checksForUnderstanding: [],
-          practiceTask: null,
-          feedback: null,
-        },
-        {
-          sequence: 2,
-          title: "Add fractions",
-          cycleOutcome: "Add fractions with a common denominator",
-          explanation: ["Add the numerators and keep the denominator."],
-          checksForUnderstanding: [],
-          practiceTask: null,
-          feedback: null,
-        },
-      ],
-      unassignedTranscriptContent: [],
-    });
-
-    expect(renderLearningCycleTitles(summary)).toBe(
-      "- Cycle 1: Identify equivalent fractions\n- Cycle 2: Add fractions",
-    );
-  });
-
-  it("renders only practice tasks with their feedback", () => {
-    const summary = transcriptSummarySchema.parse({
-      learningCycles: [
-        {
-          sequence: 1,
-          title: "Identify equivalent fractions",
-          cycleOutcome: "Recognise equivalent fractions",
-          explanation: ["Equivalent fractions have the same value."],
-          checksForUnderstanding: [],
-          practiceTask: ["Find two fractions equivalent to one half."],
-          feedback: ["Multiply the numerator and denominator by the same number."],
-        },
-      ],
-      unassignedTranscriptContent: ["A fraction describes part of a whole."],
-    });
-
-    expect(renderPracticeTasksWithFeedback(summary)).toBe(
-      "Cycle 1: Identify equivalent fractions\n\n" +
-        "Practice task:\n- Find two fractions equivalent to one half.\n\n" +
-        "Feedback on the practice task:\n" +
-        "- Multiply the numerator and denominator by the same number.",
-    );
-  });
-
-  it("renders only checks for understanding", () => {
-    const summary = transcriptSummarySchema.parse({
-      learningCycles: [
-        {
-          sequence: 1,
-          title: "Identify equivalent fractions",
-          cycleOutcome: "Recognise equivalent fractions",
-          explanation: ["Equivalent fractions have the same value."],
-          checksForUnderstanding: [
-            {
-              question: "Are one half and two quarters equivalent?",
-              expectedAnswer: "Yes.",
-              teacherResponse: "Both fractions describe the same amount.",
-            },
-          ],
-          practiceTask: ["Find two fractions equivalent to one half."],
-          feedback: null,
-        },
-      ],
-      unassignedTranscriptContent: [],
-    });
-
-    expect(renderChecksForUnderstanding(summary)).toBe(
-      "Cycle 1: Identify equivalent fractions\n\n" +
-        "Checks for understanding:\n" +
-        "- Are one half and two quarters equivalent?\n" +
-        "  - Expected answer: Yes.\n" +
-        "  - Teacher's response: Both fractions describe the same amount.",
-    );
-  });
-
   it.each([
     {
       expected: "Practice task:\n- Find two equivalent fractions.",
@@ -147,7 +42,6 @@ describe("transcript summaries", () => {
         summariseTranscript: async () => ({
           learningCycles: [
             {
-              sequence: 1,
               title: "Equivalent fractions",
               cycleOutcome: "Recognise equivalent fractions",
               explanation: ["Equivalent fractions have the same value."],

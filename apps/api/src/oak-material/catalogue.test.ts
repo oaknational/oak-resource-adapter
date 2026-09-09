@@ -81,7 +81,6 @@ describe("readOakMaterial", async () => {
     const summary = {
       learningCycles: [
         {
-          sequence: 1,
           title: "Adding fractions",
           cycleOutcome: "Add fractions with the same denominator",
           explanation: ["Fractions need the same denominator before adding."],

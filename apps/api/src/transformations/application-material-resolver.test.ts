@@ -40,7 +40,6 @@ describe("resolveApplicationMaterial", () => {
     const summary = {
       learningCycles: [
         {
-          sequence: 1,
           title: "Changing perspective",
           cycleOutcome: "Explain how perspective changes a story",
           explanation: ["Perspective changes whose experience a story presents."],

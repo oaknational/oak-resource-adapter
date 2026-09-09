@@ -3,6 +3,7 @@ import { z } from "zod";
 const statementSchema = z.string().trim().min(1).max(400);
 const statementsSchema = z.array(statementSchema).max(20);
 
+// This is a current Oak standard for the maximum number of learning cycles.
 const maximumLearningCycles = 3;
 
 export const transcriptSummarySchema = z
@@ -10,7 +11,6 @@ export const transcriptSummarySchema = z
     learningCycles: z
       .array(
         z.object({
-          sequence: z.number().int().positive().max(maximumLearningCycles),
           title: z.string().trim().min(1).max(50),
           cycleOutcome: z.string().trim().min(1).max(200),
           explanation: statementsSchema,

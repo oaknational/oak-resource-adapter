@@ -21,10 +21,6 @@ Write each list item as one or two sentences of 400 characters or fewer, and rec
 
 ## Fields
 
-### sequence
-
-Number the cycles consecutively from 1.
-
 ### title
 
 Write a short, sentence-case title that identifies the focus of the cycle. Keep it to 50 characters or fewer. This may be inferred from the teaching content.

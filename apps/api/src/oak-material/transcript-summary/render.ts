@@ -36,9 +36,13 @@ function renderCheck(check: CheckForUnderstanding): string {
   );
 }
 
-function renderCycle(cycle: LearningCycle): string {
+function cycleHeading(cycle: LearningCycle, index: number): string {
+  return `Cycle ${index + 1}: ${cycle.title}`;
+}
+
+function renderCycle(cycle: LearningCycle, index: number): string {
   const parts = [
-    `Cycle ${cycle.sequence}: ${cycle.title}`,
+    cycleHeading(cycle, index),
     `Outcome: ${cycle.cycleOutcome}`,
     listSection("Explanation:", cycle.explanation),
     section(
@@ -57,18 +61,14 @@ function renderCycle(cycle: LearningCycle): string {
 export function renderLearningCycleTitles(summary: TranscriptSummary): string {
   return summary.learningCycles.length === 0
     ? "No learning cycles were reconstructed from the lesson transcript."
-    : bulletList(
-        summary.learningCycles.map(
-          ({ sequence, title }) => `Cycle ${sequence}: ${title}`,
-        ),
-      );
+    : bulletList(summary.learningCycles.map(cycleHeading));
 }
 
 export function renderPracticeTasksWithFeedback(summary: TranscriptSummary): string {
   const cycles = summary.learningCycles
-    .map((cycle) => {
+    .map((cycle, index) => {
       const parts = [
-        `Cycle ${cycle.sequence}: ${cycle.title}`,
+        cycleHeading(cycle, index),
         listSection("Practice task:", cycle.practiceTask),
         listSection("Feedback on the practice task:", cycle.feedback),
       ].filter((part) => part !== undefined);
@@ -84,16 +84,18 @@ export function renderPracticeTasksWithFeedback(summary: TranscriptSummary): str
 
 export function renderChecksForUnderstanding(summary: TranscriptSummary): string {
   const cycles = summary.learningCycles
-    .filter(({ checksForUnderstanding }) => checksForUnderstanding.length > 0)
-    .map((cycle) =>
-      [
-        `Cycle ${cycle.sequence}: ${cycle.title}`,
-        section(
-          "Checks for understanding:",
-          cycle.checksForUnderstanding.map(renderCheck).join("\n"),
-        ),
-      ].join("\n\n"),
-    );
+    .map((cycle, index) =>
+      cycle.checksForUnderstanding.length === 0
+        ? undefined
+        : [
+            cycleHeading(cycle, index),
+            section(
+              "Checks for understanding:",
+              cycle.checksForUnderstanding.map(renderCheck).join("\n"),
+            ),
+          ].join("\n\n"),
+    )
+    .filter((cycle) => cycle !== undefined);
 
   return cycles.length === 0
     ? "No checks for understanding were reconstructed from the lesson transcript."

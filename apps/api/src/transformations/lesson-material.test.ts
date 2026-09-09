@@ -157,7 +157,6 @@ describe("a lesson's transcript summary reaching a transformation", () => {
           Promise.resolve({
             learningCycles: [
               {
-                sequence: 1,
                 title: "Changing perspective",
                 cycleOutcome: "Explain how perspective changes a story",
                 explanation: ["Perspective changes whose experience a story presents."],
