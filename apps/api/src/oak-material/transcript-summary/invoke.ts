@@ -22,9 +22,12 @@ export function createTranscriptSummariser(
     });
 
     if (result.outcome !== "SUCCESS") {
-      log.error(`Transcript summary unavailable: Reason ${result.outcome}`, {
-        report: true,
-      });
+      log.error(
+        `Transcript summary unavailable: Reason ${result.outcome}, Details: ${JSON.stringify(result.meta)}`,
+        {
+          report: true,
+        },
+      );
       return undefined;
     }
 
