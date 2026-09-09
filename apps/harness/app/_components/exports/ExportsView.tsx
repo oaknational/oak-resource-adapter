@@ -26,6 +26,11 @@ export function ExportsView({
   useEffect(() => () => request.current?.abort(), []);
 
   async function download() {
+    // The disabled button already stops a second click, but re-entry from any
+    // other caller would clobber the in-flight controller and re-enable the
+    // controls under it.
+    if (request.current !== null) return;
+
     const controller = new AbortController();
     request.current = controller;
     setLoading(true);
