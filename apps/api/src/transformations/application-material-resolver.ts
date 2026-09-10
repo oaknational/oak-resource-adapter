@@ -10,7 +10,10 @@ import type {
   OakMaterialDerivationDependencies,
   OakMaterialRequirement,
 } from "../oak-material/material";
-import { createTranscriptSummariser } from "../oak-material/transcript-summary";
+import {
+  createTranscriptSummariser,
+  summariseTranscriptOnce,
+} from "../oak-material/transcript-summary";
 import type { ResolveTransformationMaterial } from "./application-service";
 import { TransformationDependencyError } from "./errors";
 
@@ -26,11 +29,10 @@ function createDerivationDependencies(
     return {};
   }
 
-  const summarise = createTranscriptSummariser(createInvoker());
-  let pending: ReturnType<typeof summarise> | undefined;
-
   return {
-    summariseTranscript: (transcript) => (pending ??= summarise(transcript)),
+    summariseTranscript: summariseTranscriptOnce(
+      createTranscriptSummariser(createInvoker()),
+    ),
   };
 }
 
@@ -80,7 +82,7 @@ export const resolveApplicationMaterial: ResolveTransformationMaterial = async (
     );
     return {
       material: resolution.material,
-      warnings: [...unavailable, ...resolution.warnings],
+      warnings: [...unavailable, ...Object.values(resolution.omissions)],
     };
   } catch (cause) {
     if (resolvable.some(({ required }) => required)) {

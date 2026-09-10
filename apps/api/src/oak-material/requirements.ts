@@ -13,6 +13,7 @@ import type {
   OakMaterialKey,
   OakMaterialRequirement,
   OakMaterialDerivation,
+  OakMaterialOmissions,
 } from "./material";
 
 const log = raLogger("capabilities");
@@ -47,7 +48,7 @@ async function resolveOakMaterial(
 }
 
 /** What a listing tells the caller about a part that did not resolve. */
-function warnAboutOakMaterial(
+function explainOakMaterialOmission(
   key: OakMaterialKey,
   failedBecause: string | undefined,
 ): string {
@@ -67,9 +68,9 @@ export async function readOakMaterial(
   requirements: readonly OakMaterialRequirement[],
   lesson: Lesson,
   derivationDependencies: OakMaterialDerivationDependencies = {},
-): Promise<Readonly<{ material: OakMaterial; warnings: readonly string[] }>> {
+): Promise<Readonly<{ material: OakMaterial; omissions: OakMaterialOmissions }>> {
   const material: Partial<Record<OakMaterialKey, OakMaterialValue>> = {};
-  const warnings: string[] = [];
+  const omissions: Partial<Record<OakMaterialKey, string>> = {};
 
   for (const { key, required } of requirements) {
     const resolution = await resolveOakMaterial(key, lesson, derivationDependencies);
@@ -80,11 +81,11 @@ export async function readOakMaterial(
     }
 
     if (!required) {
-      warnings.push(warnAboutOakMaterial(key, resolution?.failedBecause));
+      omissions[key] = explainOakMaterialOmission(key, resolution?.failedBecause);
     }
   }
 
-  return { material, warnings };
+  return { material, omissions };
 }
 
 /**
