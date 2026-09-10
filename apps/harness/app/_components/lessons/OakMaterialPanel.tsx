@@ -17,7 +17,7 @@ function PartBody({
   part,
 }: Readonly<{ lessonTitle: string; part: OakMaterialPart }>) {
   if (part.warning !== null) {
-    return <p role="alert">{part.warning}</p>;
+    return <p>{part.warning}</p>;
   }
 
   if (part.key === "lesson.transcript") {
