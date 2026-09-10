@@ -21,6 +21,7 @@
         "DATABASE_CA_CERT",
         "DATABASE_URL",
         "ENABLE_DEV_ROUTES",
+        "FEATURE_FLAG_TRANSPORT",
         "MODEL_TRANSPORT",
         "OPENAI_API_KEY",
         "POSTHOG_API_KEY",

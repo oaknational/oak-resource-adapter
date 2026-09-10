@@ -1,3 +1,5 @@
+import { ResourceDocumentRenderer } from "@oaknational/resource-adapter";
+
 import { ExtractionNotes } from "../shared/ExtractionNotes";
 import styles from "../../page.module.css";
 import type { LessonScenario } from "../../scenario-types";
@@ -57,6 +59,12 @@ export function WorksheetPanel({ scenario }: Readonly<{ scenario: LessonScenario
       <ExtractionNotes
         diagnostics={scenario.diagnostics}
         unsupportedNodeIds={scenario.unsupportedNodeIds}
+      />
+      {/* Remount per lesson: the renderer's collapsed-task state is its own. */}
+      <ResourceDocumentRenderer
+        key={scenario.id}
+        document={scenario.document}
+        label={`Original worksheet: ${summary.title}`}
       />
       <details className={styles.markupDetails}>
         <summary>Browse extracted markup</summary>

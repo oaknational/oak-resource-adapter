@@ -116,6 +116,23 @@ const document: ResourceDocument = {
 };
 
 describe("ResourceDocumentRenderer", () => {
+  it("accepts a distinct accessible name for the original worksheet", () => {
+    render(
+      <OakThemeProvider theme={oakDefaultTheme}>
+        <ResourceDocumentRenderer
+          document={document}
+          label="Original worksheet: Renderer test worksheet"
+        />
+      </OakThemeProvider>,
+    );
+
+    expect(
+      screen.getByRole("article", {
+        name: "Original worksheet: Renderer test worksheet",
+      }),
+    ).toBeVisible();
+  });
+
   it("renders the canonical worksheet as semantic teacher-facing HTML", () => {
     renderDocument(document);
 

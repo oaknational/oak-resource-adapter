@@ -21,26 +21,23 @@ async function loadFresh() {
 }
 
 describe("initSentry wiring", () => {
-  const originalNodeEnv = process.env.NODE_ENV;
-
   beforeEach(() => {
-    // Factory mocks (Sentry.init/captureException) keep call history across
-    // tests by default; clear it so each test starts from zero calls.
     vi.clearAllMocks();
     vi.spyOn(console, "error").mockImplementation(() => {});
-    delete process.env.SENTRY_DSN;
-    delete process.env.SENTRY_ENVIRONMENT;
+    vi.stubEnv("SENTRY_DSN", undefined);
+    vi.stubEnv("SENTRY_ENVIRONMENT", undefined);
+    vi.stubEnv("VERCEL_ENV", undefined);
+    vi.stubEnv("VERCEL_TARGET_ENV", undefined);
+    vi.stubEnv("NODE_ENV", "test");
   });
 
   afterEach(() => {
-    // vi.restoreAllMocks();
-    vi.stubEnv("NODE_ENV", originalNodeEnv ?? "test");
-    delete process.env.SENTRY_DSN;
-    delete process.env.SENTRY_ENVIRONMENT;
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it("initialises Sentry and reports errors when a DSN is set", async () => {
-    process.env.SENTRY_DSN = DSN;
+    vi.stubEnv("SENTRY_DSN", DSN);
     const { Sentry, initSentry, raLogger } = await loadFresh();
 
     initSentry();
@@ -54,8 +51,8 @@ describe("initSentry wiring", () => {
   });
 
   it("tags events with SENTRY_ENVIRONMENT when set", async () => {
-    process.env.SENTRY_DSN = DSN;
-    process.env.SENTRY_ENVIRONMENT = "staging";
+    vi.stubEnv("SENTRY_DSN", DSN);
+    vi.stubEnv("SENTRY_ENVIRONMENT", "staging");
     const { Sentry, initSentry } = await loadFresh();
 
     initSentry();
@@ -67,8 +64,6 @@ describe("initSentry wiring", () => {
 
   it("does nothing and registers no reporter when no DSN is set", async () => {
     const { Sentry, initSentry, raLogger } = await loadFresh();
-    delete process.env.SENTRY_DSN;
-    delete process.env.SENTRY_ENVIRONMENT;
     initSentry();
 
     expect(Sentry.init).not.toHaveBeenCalled();
@@ -78,10 +73,34 @@ describe("initSentry wiring", () => {
     expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 
-  it("throws in production when no DSN is set", async () => {
+  it.each([
+    { environment: "preview", target: "preview" },
+    { environment: "preview", target: "staging" },
+    { environment: "production", target: "production" },
+  ])("throws on $target when no DSN is set", async ({ environment, target }) => {
+    vi.stubEnv("VERCEL_ENV", environment);
+    vi.stubEnv("VERCEL_TARGET_ENV", target);
     vi.stubEnv("NODE_ENV", "production");
     const { Sentry, initSentry } = await loadFresh();
+
     expect(() => initSentry()).toThrow(/SENTRY_DSN is not set/);
+    expect(Sentry.init).not.toHaveBeenCalled();
+  });
+
+  it("stays quiet in local Vercel development without a DSN", async () => {
+    vi.stubEnv("VERCEL_ENV", "development");
+    vi.stubEnv("NODE_ENV", "development");
+    const { Sentry, initSentry } = await loadFresh();
+
+    expect(() => initSentry()).not.toThrow();
+    expect(Sentry.init).not.toHaveBeenCalled();
+  });
+
+  it("stays quiet when a served build has no DSN", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const { Sentry, initSentry } = await loadFresh();
+
+    expect(() => initSentry()).not.toThrow();
     expect(Sentry.init).not.toHaveBeenCalled();
   });
 });

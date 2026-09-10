@@ -97,6 +97,11 @@ The in-memory implementation is used unless `NODE_ENV=production` or
 credentials. `POSTHOG_API_KEY` and `POSTHOG_HOST` (defaulting to the EU host)
 configure the adapter when it is used.
 
+`FEATURE_FLAG_TRANSPORT=in-memory` keeps the in-memory implementation even when
+`NODE_ENV=production`, which is what serving a `next build` does. The browser
+tests set it so they can skip `next dev` compilation. A deployment with
+`VERCEL_ENV=production` refuses it.
+
 ## Contract boundary
 
 Flag names are service-owned and intentionally not part of the published

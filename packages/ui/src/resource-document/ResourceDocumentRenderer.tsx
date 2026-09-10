@@ -1,3 +1,5 @@
+"use client";
+
 import { Fragment, useId, useState } from "react";
 import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
 import { OakIcon, parseColor, parseDropShadow } from "@oaknational/oak-components";
@@ -244,15 +246,20 @@ function DocumentContent({
 export function ResourceDocumentRenderer({
   decorations,
   document,
+  label,
 }: Readonly<{
   decorations?: ResourceDocumentDecorations | undefined;
   document: ResourceDocument;
+  // Two documents from one lesson can be on the page at once — an original
+  // alongside an adapted copy — and both would otherwise take their name from
+  // the same title.
+  label?: string | undefined;
 }>) {
-  const title = document.metadata.title ?? "Untitled resource";
+  const accessibleName = label ?? document.metadata.title ?? "Untitled resource";
   const { length: diagnosticCount } = document.diagnostics;
 
   return (
-    <Document aria-label={title} lang={document.language}>
+    <Document aria-label={accessibleName} lang={document.language}>
       {diagnosticCount > 0 && (
         <DiagnosticSummary role="note">
           Check this preview against the original worksheet: {diagnosticCount}{" "}

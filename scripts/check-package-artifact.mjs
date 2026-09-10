@@ -372,6 +372,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "ResourceAdapterButton",
     "ResourceAdapterDialog",
     "ResourceAdapterErrorBoundary",
+    "ResourceDocumentRenderer",
   ]) {
     if (!rootDeclaration.includes(exportName)) {
       throw new Error(`Published package is missing ${exportName}.`);
@@ -389,6 +390,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "ResourceAdapterButton.js",
     "ResourceAdapterDialog.js",
     "ResourceAdapterErrorBoundary.js",
+    "resource-document/ResourceDocumentRenderer.js",
     "capabilities/workflowRegistry.js",
     "capabilities/worksheet-scaffolding/WorksheetScaffoldingWorkflow.js",
     "capabilities/worksheet-scaffolding/useWorksheetScaffolding.js",
@@ -405,7 +407,6 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "publicTypes.js",
     "requestId.js",
     "resource-document/InlineContentRenderer.js",
-    "resource-document/ResourceDocumentRenderer.js",
     "resource-document/ResourceNodeRenderer.js",
   ];
 

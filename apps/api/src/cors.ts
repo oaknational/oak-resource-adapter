@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server";
 
+import { isProductionDeployment } from "./environment";
+
 const defaultAllowedOrigins = ["http://localhost:3000"];
 
 /**
@@ -30,7 +32,7 @@ export function getAllowedOrigins(): string[] {
  */
 function getAllowedOriginPatterns(): RegExp[] {
   // Production has one caller, OWA, on a known origin. Exact matches only.
-  if (process.env.VERCEL_ENV === "production") {
+  if (isProductionDeployment()) {
     return [];
   }
 

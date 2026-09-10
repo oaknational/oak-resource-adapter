@@ -1,5 +1,7 @@
 import { ModelInvocationError } from "@oaknational/resource-adapter-ai";
 
+import { isProductionDeployment } from "../environment";
+
 export const modelConfigurationErrors = {
   MISSING_OPENAI_API_KEY: "OPENAI_API_KEY is not configured.",
   UNKNOWN_MODEL_TRANSPORT: "MODEL_TRANSPORT must be openai or deterministic.",
@@ -21,7 +23,7 @@ export class ModelConfigurationError extends ModelInvocationError {
 export function resolveModelTransport(): "openai" | "deterministic" {
   const transport = process.env.MODEL_TRANSPORT ?? "openai";
   if (transport === "deterministic") {
-    if (process.env.VERCEL_ENV === "production") {
+    if (isProductionDeployment()) {
       throw new ModelConfigurationError("DETERMINISTIC_TRANSPORT_FORBIDDEN");
     }
     return transport;
