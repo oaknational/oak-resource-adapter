@@ -18,6 +18,7 @@
       "env": [
         "CURRICULUM_API_URL",
         "CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY",
+        "DATABASE_CA_CERT",
         "DATABASE_URL",
         "ENABLE_DEV_ROUTES",
         "FEATURE_FLAG_TRANSPORT",
@@ -52,7 +53,7 @@
     },
     "test:coverage": {
       "dependsOn": ["^build"],
-      "env": ["DATABASE_URL", "RUN_DATABASE_INTEGRATION_TESTS"],
+      "env": ["DATABASE_CA_CERT", "DATABASE_URL", "RUN_DATABASE_INTEGRATION_TESTS"],
       "outputs": ["coverage/**"]
     },
     "test:integration": {
@@ -62,6 +63,7 @@
         "CURRICULUM_API_URL",
         "CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY",
         "CURRICULUM_DOWNLOADS_API_URL",
+        "DATABASE_CA_CERT",
         "DATABASE_URL",
         "RUN_DATABASE_INTEGRATION_TESTS"
       ],

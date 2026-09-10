@@ -6,6 +6,10 @@ const reportableFailures = new Set([
   "modelConfiguration=MISSING_OPENAI_API_KEY",
   "modelConfiguration=UNKNOWN_MODEL_TRANSPORT",
   "modelConfiguration=DETERMINISTIC_TRANSPORT_FORBIDDEN",
+  "database=DATABASE_NOT_CONFIGURED",
+  "database=DATABASE_CERTIFICATE_REJECTED",
+  "database=DATABASE_REFUSED_CONNECTION",
+  "database=DATABASE_UNAVAILABLE",
 ]);
 
 /**

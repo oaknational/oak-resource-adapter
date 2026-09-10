@@ -4,8 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET as getHealth } from "../../app/health/route";
 import { dynamic, GET, OPTIONS } from "../../app/health/ready/route";
 
-const { openai, recorder } = vi.hoisted(() => ({
+const { openai, probeDatabase, recorder } = vi.hoisted(() => ({
   openai: vi.fn(),
+  probeDatabase: vi.fn(),
   recorder: vi.fn(),
 }));
 
@@ -17,14 +18,25 @@ vi.mock("@oaknational/resource-adapter-ai", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@oaknational/resource-adapter-ai")>()),
   createDatabaseInvocationRecorder: recorder,
 }));
+vi.mock("@oaknational/resource-adapter-db", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@oaknational/resource-adapter-db")>()),
+  probeDatabase,
+}));
 
 const request = () =>
   new NextRequest("http://localhost:3001/health/ready", {
     headers: { Origin: "http://localhost:3000" },
   });
 
+const connectedDatabase = {
+  label: "Database",
+  status: "ready",
+  message: "Database connected.",
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
+  probeDatabase.mockResolvedValue(null);
   vi.stubEnv("MODEL_TRANSPORT", undefined);
   vi.stubEnv("OPENAI_API_KEY", undefined);
   vi.stubEnv("VERCEL_ENV", undefined);
@@ -51,11 +63,12 @@ describe("configuration readiness", () => {
     async (selector) => {
       vi.stubEnv("MODEL_TRANSPORT", selector);
       vi.stubEnv("OPENAI_API_KEY", "test-value-not-validated-with-provider");
-      const response = GET(request());
+      const response = await GET(request());
       expect(response.status).toBe(200);
       await expect(response.json()).resolves.toEqual({
         status: "ready",
         checks: {
+          database: connectedDatabase,
           modelConfiguration: {
             label: "Model configuration",
             status: "ready",
@@ -69,7 +82,7 @@ describe("configuration readiness", () => {
   it("accepts explicit deterministic mode without a key in a production build", async () => {
     vi.stubEnv("MODEL_TRANSPORT", "deterministic");
     vi.stubEnv("NODE_ENV", "production");
-    const response = GET(request());
+    const response = await GET(request());
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       status: "ready",
@@ -117,7 +130,7 @@ describe("configuration readiness", () => {
       vi.stubEnv("MODEL_TRANSPORT", selector);
       vi.stubEnv("OPENAI_API_KEY", key);
       vi.stubEnv("VERCEL_ENV", vercel);
-      const response = GET(request());
+      const response = await GET(request());
       expect(response.status).toBe(503);
       const body = await response.json();
       expect(body).toMatchObject({
@@ -141,11 +154,11 @@ describe("configuration readiness", () => {
     },
   );
 
-  it("reevaluates configuration on every uncached request", () => {
+  it("reevaluates configuration on every uncached request", async () => {
     expect(dynamic).toBe("force-dynamic");
-    expect(GET(request()).status).toBe(503);
+    expect((await GET(request())).status).toBe(503);
     vi.stubEnv("MODEL_TRANSPORT", "deterministic");
-    const response = GET(request());
+    const response = await GET(request());
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
@@ -160,5 +173,77 @@ describe("configuration readiness", () => {
     const preflight = OPTIONS(request());
     expect(preflight.status).toBe(204);
     expect(preflight.headers.get("Access-Control-Allow-Methods")).toBe("GET, OPTIONS");
+  });
+});
+
+describe("database readiness", () => {
+  const configured = () => {
+    vi.stubEnv("MODEL_TRANSPORT", "openai");
+    vi.stubEnv("OPENAI_API_KEY", "test-value-not-validated-with-provider");
+  };
+
+  it.each([
+    {
+      failure: "not-configured",
+      code: "DATABASE_NOT_CONFIGURED",
+      message: "The database connection is not configured.",
+      retryable: false,
+    },
+    {
+      failure: "certificate-rejected",
+      code: "DATABASE_CERTIFICATE_REJECTED",
+      message: "The database's certificate was not trusted.",
+      retryable: false,
+    },
+    {
+      failure: "refused",
+      code: "DATABASE_REFUSED_CONNECTION",
+      message: "The database refused the connection.",
+      retryable: false,
+    },
+    {
+      failure: "unavailable",
+      code: "DATABASE_UNAVAILABLE",
+      message: "The database could not be reached.",
+      retryable: true,
+    },
+  ])("reports $code as retryable=$retryable", async (expected) => {
+    configured();
+    probeDatabase.mockResolvedValue(expected.failure);
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toMatchObject({
+      status: "not-ready",
+      checks: {
+        database: {
+          label: "Database",
+          status: "not-ready",
+          code: expected.code,
+          message: expected.message,
+          retryable: expected.retryable,
+        },
+      },
+    });
+  });
+
+  it("serves no detail from the failure beyond its code", async () => {
+    configured();
+    probeDatabase.mockResolvedValue("refused");
+
+    const body = await (await GET(request())).json();
+
+    expect(JSON.stringify(body)).not.toContain("ora_app_user");
+    expect(JSON.stringify(body)).not.toContain("34.");
+  });
+
+  it("is probed once per request", async () => {
+    configured();
+
+    await GET(request());
+
+    expect(probeDatabase).toHaveBeenCalledOnce();
   });
 });

@@ -35,8 +35,9 @@ exactly `true`. Until then both workflows skip.
 3. Deploys the harness, pointed at that URL.
 4. Requests `/adapter-proxy/health` on the harness until it answers, which
    passes only if the pair is wired correctly.
-5. Runs `pnpm test:e2e:deployment` against the harness.
-6. Comments both URLs on the pull request.
+5. Gates on `/adapter-proxy/health/ready`.
+6. Runs `pnpm test:e2e:deployment` against the harness.
+7. Comments both URLs on the pull request.
 
 Fork pull requests skip all of it: they hold no repository secrets. Dependabot
 pull requests are skipped explicitly; they read the separate [Dependabot secret
@@ -53,7 +54,7 @@ instead of a Preview, so the deployments land on the staging domains.
 
 1. Applies migrations to the production database.
 2. Deploys with `--skip-domain`, so the deployment exists but holds no traffic.
-3. Checks it: `/health`, and a tRPC probe that must answer 412.
+3. Checks `/health`, `/health/ready`, and a tRPC probe that must answer 412.
 4. Promotes it onto the production domain.
 
 A failure at any point leaves the live deployment untouched. The project also
@@ -104,33 +105,59 @@ opens nothing on the API.
 
 ## How the database is reached
 
-Two different routes, neither holding a long-lived credential.
+Two routes are in use, one per caller.
 
 **CI, to run migrations.** [`db-migrate.yml`](../.github/workflows/db-migrate.yml)
 is the only way migrations reach a deployed database. It runs Cloud SQL Proxy as
-a separate process and connects over `127.0.0.1`, authenticating with Workload
-Identity Federation, so there is no CI egress IP to allowlist. Each GitHub
-Environment supplies the instance connection name, the identity provider and the
-service account as variables, and a `MIGRATION_DATABASE_URL` already pointing at
-the proxy as its one secret.
+a separate process and connects over `127.0.0.1`. The proxy authenticates to
+Google Cloud with Workload Identity Federation, so there is no CI egress IP to
+allowlist or service-account key to rotate. PostgreSQL authentication still uses
+the migration user's password. Each GitHub Environment supplies the instance
+connection name, identity provider and service account as variables, and a
+`MIGRATION_DATABASE_URL` pointing at the proxy and holding that password as its
+one secret.
 
-**The deployed API, to serve requests.**
-[`cloud-sql.ts`](../packages/db/src/cloud-sql.ts) uses the Cloud SQL Node
-connector in-process. Vercel mints a short-lived OIDC token per request, GCP's
-Security Token Service exchanges it for an access token, and the connector opens
-an mTLS tunnel to the instance. Authentication is IAM, so there is no database
-password anywhere.
+**The deployed API, to serve requests.** A direct TLS connection to the
+instance's public address, from the static egress IPs allowlisted on it.
+`DATABASE_URL` carries the application user and its password;
+`DATABASE_CA_CERT` carries the instance's certificate authority, which is what
+identifies the server under the instances' `GOOGLE_MANAGED_INTERNAL_CA` mode.
+Shared CA modes require hostname verification as well.
+[`client.ts`](../packages/db/src/client.ts) refuses any host but loopback
+without it, so a misconfiguration cannot become an unverified connection across
+the public internet. Terraform sets the two together or not at all.
 
-Both are dormant until `CLOUD_SQL_INSTANCE_CONNECTION_NAME` is set. Without it,
-everything connects from `DATABASE_URL` — which is what local development, CI
-and the integration tests do.
+With `DATABASE_CA_CERT` set, `DATABASE_URL` accepts no query parameters: supply
+the address, database and percent-encoded credentials, without `sslmode` or other
+options. TLS is configured by the client.
 
-The connector needs an async handshake before its first query, while
-`getDatabaseClient()` is called synchronously from a dozen query sites. So
-`initialiseDatabaseClient()` does that work once from
-[`instrumentation.ts`](../apps/api/instrumentation.ts), and `getDatabaseClient()`
-throws rather than silently falling back if a Cloud SQL deployment queries before
-it has run.
+`DATABASE_CA_CERT` accepts concatenated PEM certificates. Before a CA rotation,
+set it to trust both the outgoing and incoming authorities and redeploy every
+deployment that must remain usable, including Previews. Existing deployments
+retain their old environment values. After rotation, remove the outgoing CA
+and redeploy again.
+
+Static IPs are a project setting covering every environment, so Preview and
+production deployments leave from the same addresses: it is the credentials, not
+the allowlist, that keep a Preview off the production database. Build traffic
+routes through them only when the project opts in, so nothing may query the
+database at build time.
+
+Local development, CI and the integration tests set only `DATABASE_URL`, and it
+addresses localhost.
+
+Both deploy workflows gate on `/health/ready`. Its database `select 1` checks
+connectivity and authentication, not migrations or application-table grants.
+Configuration, certificate and authorization failures stop the gate; network
+and unknown failures are retried. Check the allowlist for an unreachable host.
+Responses and logs use fixed messages without driver error text.
+
+Setting `CLOUD_SQL_INSTANCE_CONNECTION_NAME` selects the Vercel OIDC/Cloud SQL
+connector in [`cloud-sql.ts`](../packages/db/src/cloud-sql.ts). Leave it unset
+for direct connections. The connector requires the complete federation and IAM
+database configuration and is initialised asynchronously by
+[`instrumentation.ts`](../apps/api/instrumentation.ts); it never falls back to
+`DATABASE_URL` on failure.
 
 ## Secrets the workflows use
 

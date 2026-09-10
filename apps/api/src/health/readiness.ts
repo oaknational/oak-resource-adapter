@@ -1,33 +1,39 @@
 import {
+  probeDatabase,
+  type DatabaseProbeFailure,
+} from "@oaknational/resource-adapter-db";
+
+import {
   ModelConfigurationError,
   modelConfigurationErrors,
   resolveModelTransport,
 } from "../ai/model-configuration";
 
-/**
- * The readiness response is public and unauthenticated, and every message it
- * serves comes from here. A check reports a code and no text of its own, so an
- * environment value or an upstream error has no route into what is served.
- */
+/** Public responses must use fixed messages, never upstream errors or env values. */
 const readinessMessages = {
   ...modelConfigurationErrors,
   OPENAI_TRANSPORT_CONFIGURED: "OpenAI transport configured.",
   DETERMINISTIC_TRANSPORT_CONFIGURED: "Deterministic transport configured.",
+  DATABASE_CONNECTED: "Database connected.",
+  DATABASE_NOT_CONFIGURED: "The database connection is not configured.",
+  DATABASE_CERTIFICATE_REJECTED: "The database's certificate was not trusted.",
+  DATABASE_REFUSED_CONNECTION: "The database refused the connection.",
+  DATABASE_UNAVAILABLE: "The database could not be reached.",
 } as const;
 
 type ReadinessCode = keyof typeof readinessMessages;
 
 /**
- * Configuration is read from the environment on each request, so a probe that
- * retries one of these codes is waiting for something only a redeploy changes.
- * A check whose readiness can arrive on its own must not be listed here.
- *
- * A new check or code also belongs in `reportableFailures` in
- * scripts/check-deployment-readiness.mjs, or deployment logs will not name it.
+ * These failures need operator intervention rather than a deployment retry.
+ * Keep failure codes in sync with scripts/check-deployment-readiness.mjs so
+ * its log allowlist recognises them.
  */
-const terminalCodes: ReadonlySet<string> = new Set(
-  Object.keys(modelConfigurationErrors),
-);
+const terminalCodes: ReadonlySet<string> = new Set([
+  ...Object.keys(modelConfigurationErrors),
+  "DATABASE_NOT_CONFIGURED",
+  "DATABASE_CERTIFICATE_REJECTED",
+  "DATABASE_REFUSED_CONNECTION",
+]);
 
 type CheckOutcome = Readonly<{
   label: string;
@@ -62,6 +68,22 @@ function modelConfiguration(): CheckOutcome {
   }
 }
 
+const databaseCodes: Record<DatabaseProbeFailure, ReadinessCode> = {
+  "certificate-rejected": "DATABASE_CERTIFICATE_REJECTED",
+  "not-configured": "DATABASE_NOT_CONFIGURED",
+  refused: "DATABASE_REFUSED_CONNECTION",
+  unavailable: "DATABASE_UNAVAILABLE",
+};
+
+async function database(): Promise<CheckOutcome> {
+  const label = "Database";
+  const failure = await probeDatabase();
+
+  return failure
+    ? { label, status: "not-ready", code: databaseCodes[failure] }
+    : { label, status: "ready", code: "DATABASE_CONNECTED" };
+}
+
 function describeCheck({ label, status, code }: CheckOutcome): ReadinessCheck {
   return {
     label,
@@ -71,8 +93,11 @@ function describeCheck({ label, status, code }: CheckOutcome): ReadinessCheck {
   };
 }
 
-export function checkReadiness() {
-  const checks = { modelConfiguration: describeCheck(modelConfiguration()) };
+export async function checkReadiness() {
+  const checks = {
+    database: describeCheck(await database()),
+    modelConfiguration: describeCheck(modelConfiguration()),
+  };
   const status = Object.values(checks).every((check) => check.status === "ready")
     ? "ready"
     : "not-ready";

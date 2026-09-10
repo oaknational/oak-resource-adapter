@@ -3,12 +3,14 @@ import { Pool, type PoolConfig } from "pg";
 
 import * as schema from "./schema/index.js";
 
-type DatabaseClient = ReturnType<typeof createDatabaseClient>;
+type DatabaseClient = ReturnType<typeof createClientFromPoolConfig>;
 
 const globalDatabase = globalThis as typeof globalThis & {
   resourceAdapterDatabaseClient?: DatabaseClient;
   resourceAdapterDatabaseKey?: string;
 };
+
+const loopbackHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
 function requireDatabaseUrl(): string {
   const databaseUrl = process.env.DATABASE_URL;
@@ -20,16 +22,98 @@ function requireDatabaseUrl(): string {
   return databaseUrl;
 }
 
-function createClientFromPoolConfig(config: PoolConfig): DatabaseClient {
-  return drizzle({ client: new Pool(config), schema });
+type DatabaseAddress = {
+  database: string;
+  host: string;
+  password: string;
+  port: number;
+  user: string;
+};
+
+function readDatabaseUrl(databaseUrl: string): DatabaseAddress & { search: string } {
+  try {
+    const url = new URL(databaseUrl);
+
+    if (
+      !["postgres:", "postgresql:"].includes(url.protocol) ||
+      !url.hostname ||
+      url.hash
+    ) {
+      throw new Error("Invalid PostgreSQL URL");
+    }
+
+    return {
+      database: decodeURIComponent(url.pathname.replace(/^\//, "")),
+      host: url.hostname.replace(/^\[|\]$/g, ""),
+      password: decodeURIComponent(url.password),
+      port: Number(url.port || 5432),
+      search: url.search,
+      user: decodeURIComponent(url.username),
+    };
+  } catch {
+    // URL parsing errors can include the connection string and its password.
+    throw new Error(
+      "DATABASE_URL must be a valid postgres:// or postgresql:// URL without " +
+        "a fragment. Special characters in credentials must be percent-encoded.",
+    );
+  }
+}
+
+/** URL TLS parameters override `pg`'s sibling `ssl` option; do not combine them. */
+export function createUrlPoolConfig(databaseUrl: string): PoolConfig {
+  const certificateAuthority = process.env.DATABASE_CA_CERT?.trim();
+  const { search, ...address } = readDatabaseUrl(databaseUrl);
+
+  if (!certificateAuthority) {
+    if (!loopbackHosts.has(address.host)) {
+      throw new Error(
+        "DATABASE_CA_CERT is required to reach a database off the loopback " +
+          "interface, so that a connection crossing the public internet " +
+          "verifies the server it reaches.",
+      );
+    }
+
+    return { connectionString: databaseUrl };
+  }
+
+  if (search) {
+    throw new Error(
+      "DATABASE_URL query parameters are not supported when DATABASE_CA_CERT is set. " +
+        "Supply only the PostgreSQL address and credentials; TLS is configured separately.",
+    );
+  }
+
+  return {
+    ...address,
+    ssl: {
+      ca: certificateAuthority,
+      rejectUnauthorized: true,
+      // GOOGLE_MANAGED_INTERNAL_CA identifies the instance by its unique CA,
+      // not its public IP. Shared CA modes require hostname verification.
+      // https://cloud.google.com/sql/docs/postgres/authorize-ssl
+      checkServerIdentity: () => undefined,
+    },
+  };
+}
+
+function createClientFromPoolConfig(config: PoolConfig) {
+  return drizzle({
+    client: new Pool({
+      ...config,
+      // Bounds both connection establishment and waiting for a free pool slot.
+      // Shared-core instances can be slow to connect under CPU pressure.
+      connectionTimeoutMillis: 10_000,
+      // Each function instance has its own pool; all share the database's
+      // connection budget with migrations and administration.
+      max: 4,
+    }),
+    schema,
+  });
 }
 
 /** Creates an independent client, primarily for integration tests and scripts. */
 export function createDatabaseClient(connectionString = requireDatabaseUrl()) {
-  return drizzle({
-    client: new Pool({ connectionString }),
-    schema,
-  });
+  return createClientFromPoolConfig(createUrlPoolConfig(connectionString));
 }
 
 /**
@@ -37,8 +121,7 @@ export function createDatabaseClient(connectionString = requireDatabaseUrl()) {
  * `getDatabaseClient` call in any deployment configured for Cloud SQL, which
  * `apps/api/instrumentation.ts` does.
  *
- * A no-op when `DATABASE_URL` is the transport, covering local development, CI
- * and the migration job.
+ * A no-op when `DATABASE_URL` is the transport.
  */
 export async function initialiseDatabaseClient(): Promise<void> {
   const { readCloudSqlConfig } = await import("./cloud-sql.js");
@@ -62,12 +145,7 @@ export async function initialiseDatabaseClient(): Promise<void> {
   globalDatabase.resourceAdapterDatabaseKey = cloudSqlConfig.instanceConnectionName;
 }
 
-/**
- * Returns the process-local application client.
- *
- * Reusing it avoids opening a new PostgreSQL pool for every Next.js request or
- * Workflow step while still allowing explicit clients in integration tests.
- */
+/** Reuses one pool across Next.js requests and Workflow steps in this process. */
 export function getDatabaseClient(): DatabaseClient {
   if (process.env.CLOUD_SQL_INSTANCE_CONNECTION_NAME?.trim()) {
     if (!globalDatabase.resourceAdapterDatabaseClient) {

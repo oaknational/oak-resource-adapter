@@ -9,11 +9,24 @@ resource "terraform_data" "workspace_validation" {
       condition     = startswith(terraform.workspace, local.workspace_prefix)
       error_message = "Workspace name \"${terraform.workspace}\" must begin with ${local.workspace_prefix}"
     }
+
+    precondition {
+      condition = (
+        (var.database_url_staging == "") == (var.database_ca_cert_staging == "")
+      )
+      error_message = "Set database_url_staging and database_ca_cert_staging together, or neither."
+    }
+
+    precondition {
+      condition = (
+        (var.database_url_production == "") == (var.database_ca_cert_production == "")
+      )
+      error_message = "Set database_url_production and database_ca_cert_production together, or neither."
+    }
   }
 }
 
-# Serves OWA and the harness. The only project with database and Clerk
-# secret-key access.
+# Serves OWA and the harness. Only this project has database access.
 #
 # The module derives the project name as `<repo>-<build_type>`, giving
 # oak-resource-adapter-api and oak-resource-adapter-harness. The ref is the
@@ -53,8 +66,7 @@ module "api" {
   custom_env_vars       = local.api_staging_env_vars
 }
 
-# Development and QA only. Never deployed to production, and holds no database
-# or Clerk secret-key access.
+# Development and QA only. Never deployed to production; no database access.
 module "harness" {
   source                 = "github.com/oaknational/oak-terraform-modules//modules/vercel_project?ref=02f4fee1bf392d3c720e55e1444da76ec8f0edc2"
   build_type             = "harness"
