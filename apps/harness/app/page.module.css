@@ -1010,6 +1010,57 @@
   white-space: pre-wrap;
 }
 
+.oakMaterial {
+  border: 2px solid #222222;
+  border-radius: 0.75rem;
+  margin-top: 2.5rem;
+  padding: clamp(1rem, 4vw, 1.5rem);
+}
+
+.oakMaterial h2 {
+  margin: 0.25rem 0 0;
+}
+
+.materialParts {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+}
+
+.materialParts > li + li {
+  border-top: 1px solid #767676;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+}
+
+.materialParts h3 {
+  margin: 0 0 0.5rem;
+}
+
+.materialParts pre {
+  background: #222222;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 1rem;
+  white-space: pre-wrap;
+}
+
+.materialTranscript summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 2.75rem;
+  padding: 0.625rem 0;
+}
+
+.materialTranscript pre {
+  margin-top: 0.75rem;
+}
+
 .workerTest {
   border: 1px solid #222222;
   border-radius: 0.75rem;
