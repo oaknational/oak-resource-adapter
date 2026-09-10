@@ -15,18 +15,29 @@ const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
  */
 const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
+/**
+ * `test:e2e` builds before Playwright starts, so `next dev` would compile every
+ * route a second time. CI serves the build instead; E2E_BUILT_SERVERS does the
+ * same locally, where `next dev` otherwise keeps its edit-and-reload loop.
+ */
+const builtServers = Boolean(process.env.CI || process.env.E2E_BUILT_SERVERS);
+const serverScript = builtServers ? "start" : "dev";
+
 const localWebServers = [
   {
-    command: "pnpm --filter @oaknational/resource-adapter-api dev",
+    command: `pnpm --filter @oaknational/resource-adapter-api ${serverScript}`,
     url: "http://localhost:3001/health",
-    reuseExistingServer: !process.env.CI,
+    // A served build runs with NODE_ENV=production, which selects PostHog for
+    // feature flags and needs a project key the suite has no business holding.
+    ...(builtServers ? { env: { FEATURE_FLAG_TRANSPORT: "in-memory" } } : {}),
+    reuseExistingServer: !builtServers,
     stdout: "pipe" as const,
     stderr: "pipe" as const,
   },
   {
-    command: "pnpm --filter @oaknational/resource-adapter-harness dev",
+    command: `pnpm --filter @oaknational/resource-adapter-harness ${serverScript}`,
     port: 3000,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !builtServers,
     stdout: "pipe" as const,
     stderr: "pipe" as const,
   },
@@ -34,6 +45,12 @@ const localWebServers = [
 
 export default defineConfig({
   testDir: "./e2e",
+  // Job-producing tests hold a lesson each (see e2e/helpers.ts), so tests in one
+  // spec can run together.
+  fullyParallel: true,
+  // Pinned rather than left to Playwright, which derives it from the CPU count
+  // of whichever runner picked the job.
+  ...(process.env.CI ? { workers: 4 } : {}),
   // The github reporter annotates the failing lines on the pull request itself,
   // so a failure is readable without downloading anything.
   reporter: process.env.CI

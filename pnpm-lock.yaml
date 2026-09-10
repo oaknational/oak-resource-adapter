@@ -23,6 +23,9 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.9.1(jiti@2.7.0))
+      '@oaknational/resource-adapter-db':
+        specifier: workspace:*
+        version: link:packages/db
       '@playwright/test':
         specifier: ^1.62.1
         version: 1.62.1
@@ -35,6 +38,9 @@ importers:
       dependency-cruiser:
         specifier: 18.2.0
         version: 18.2.0
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.22.0)
       eslint:
         specifier: ^10.9.1
         version: 10.9.1(jiti@2.7.0)
