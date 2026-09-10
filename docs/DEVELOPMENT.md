@@ -56,6 +56,21 @@ the value or it will keep the transport it started with.
 See [deterministic model responses](MODEL_INVOCATION.md#deterministic-model-responses)
 for the coverage boundary and response maintenance rule.
 
+## How the browser tests serve the apps
+
+CI serves the build with `next start`, since `pnpm test:e2e` builds first either
+way. Locally the apps run under `next dev` so an edit shows up without a rebuild.
+`E2E_BUILT_SERVERS=1 pnpm test:e2e` takes the CI path, which is worth doing before
+pushing a change to how the apps are served; a source edit then needs a rebuild to
+reach the browser. Built-server mode refuses occupied ports rather than reusing
+an existing server. Stop local servers first, or use `E2E_BASE_URL` to test a
+server you manage yourself.
+
+Serving a build means `NODE_ENV=production`, so
+[`playwright.config.ts`](../playwright.config.ts) also sets
+`FEATURE_FLAG_TRANSPORT=in-memory` to keep the suite off PostHog. See
+[feature flags](FEATURE_FLAGS.md#local-development).
+
 ## API readiness
 
 `GET /health` reports liveness; `GET /health/ready` evaluates named readiness
