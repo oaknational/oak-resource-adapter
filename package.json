@@ -50,7 +50,7 @@
     "fixtures:generate": "pnpm --filter @oaknational/resource-adapter-original-resource-documents fixtures:generate"
   },
   "devDependencies": {
-    "@changesets/cli": "2.31.0",
+    "@changesets/cli": "3.0.1",
     "@clerk/testing": "^2.2.31",
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
