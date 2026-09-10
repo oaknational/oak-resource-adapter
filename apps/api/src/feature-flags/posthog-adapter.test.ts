@@ -102,7 +102,7 @@ describe("PostHogFeatureFlagAdapter", () => {
       vi.stubEnv("POSTHOG_API_KEY", undefined);
 
       await expect(loadFreshAdapter()).rejects.toThrow(
-        "POSTHOG_API_KEY is required when PostHog feature flags are enabled, which USE_POSTHOG=true and any production build both do. Set FEATURE_FLAG_TRANSPORT=in-memory to keep the in-memory flags outside a production deployment.",
+        "POSTHOG_API_KEY is required whenever the PostHog adapter is selected, which happens when USE_POSTHOG=true or NODE_ENV=production. Set FEATURE_FLAG_TRANSPORT=in-memory to keep the in-memory flags outside a production deployment.",
       );
     });
 

@@ -20,7 +20,13 @@ const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
  * route a second time. CI serves the build instead; E2E_BUILT_SERVERS does the
  * same locally, where `next dev` otherwise keeps its edit-and-reload loop.
  */
-const builtServers = Boolean(process.env.CI || process.env.E2E_BUILT_SERVERS);
+// Matched against an affirmative rather than coerced, so E2E_BUILT_SERVERS=0
+// leaves `next dev` in place instead of reading as "on".
+const builtServers =
+  Boolean(process.env.CI) ||
+  ["1", "true", "yes", "on"].includes(
+    process.env.E2E_BUILT_SERVERS?.trim().toLowerCase() ?? "",
+  );
 const serverScript = builtServers ? "start" : "dev";
 
 const localWebServers = [
