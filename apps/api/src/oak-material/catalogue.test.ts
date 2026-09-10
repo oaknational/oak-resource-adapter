@@ -48,33 +48,33 @@ describe("readOakMaterial", () => {
       ),
     ).toEqual({
       material: { "lesson.keywords": { kind: "keywords", keywords } },
-      warnings: [],
+      omissions: {},
     });
   });
 
   it("warns about an optional part the lesson does not carry", async () => {
-    const { material, warnings } = await readOakMaterial(
+    const { material, omissions } = await readOakMaterial(
       [{ key: "lesson.keywords", required: false }],
       buildLesson({ keywords: [] }),
     );
 
     expect(material).toEqual({});
-    expect(warnings[0]).toContain("absent from this lesson");
+    expect(omissions["lesson.keywords"]).toContain("absent from this lesson");
   });
 
   it("warns that a part Oak cannot supply at all is missing from a run", async () => {
-    const { warnings } = await readOakMaterial(
+    const { omissions } = await readOakMaterial(
       [{ key: "lesson.slides", required: false }],
       withKeywords,
     );
 
-    expect(warnings[0]).toContain("not available");
+    expect(omissions["lesson.slides"]).toContain("not available");
   });
 
   it("leaves a required part to the caller to reject", async () => {
     expect(
       await readOakMaterial([{ key: "lesson.slides", required: true }], withKeywords),
-    ).toEqual({ material: {}, warnings: [] });
+    ).toEqual({ material: {}, omissions: {} });
   });
 
   it("derives a transcript summary through the supplied summariser", async () => {
@@ -104,7 +104,7 @@ describe("readOakMaterial", () => {
           summary,
         },
       },
-      warnings: [],
+      omissions: {},
     });
   });
 
@@ -116,7 +116,7 @@ describe("readOakMaterial", () => {
     );
 
     expect(resolution.material).toEqual({});
-    expect(resolution.warnings[0]).toContain(
+    expect(resolution.omissions["lesson.transcriptSummary"]).toContain(
       "could not be built because the summariser returned nothing usable",
     );
   });
@@ -141,7 +141,7 @@ describe("readOakMaterial", () => {
     expect(resolution.material).toEqual({
       "lesson.keywords": { kind: "keywords", keywords },
     });
-    expect(resolution.warnings[0]).toContain(
+    expect(resolution.omissions["lesson.transcriptSummary"]).toContain(
       "could not be built because it raised an error",
     );
     expect(reportedErrors).toEqual([new Error("the model is unavailable")]);
@@ -231,7 +231,7 @@ describe("the parts a transformation can be given", () => {
       transcript: "Today we are adding fractions.",
     });
 
-    const { material, warnings } = await readOakMaterial(
+    const { material, omissions } = await readOakMaterial(
       readable.map((key) => ({ key, required: false })),
       lesson,
       {
@@ -243,7 +243,7 @@ describe("the parts a transformation can be given", () => {
     );
 
     expect(Object.keys(material).sort()).toEqual([...readable].sort());
-    expect(warnings).toEqual([]);
+    expect(omissions).toEqual({});
   });
 
   it("renders each available part under its own heading", async () => {

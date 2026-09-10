@@ -48,6 +48,41 @@ test(
 );
 
 test(
+  "reads Oak material only when asked for it",
+  {
+    tag: "@deployment-safe",
+  },
+  async ({ page }) => {
+    // Summarising the transcript costs a model call, so the count matters as
+    // much as the panel: a fetch on render would invoke a model per page view.
+    let requests = 0;
+    await page.route("**/adapter-proxy/dev/oak-material", (route) => {
+      requests += 1;
+      return route.fulfill({
+        body: JSON.stringify({ error: "Oak is unreachable." }),
+        contentType: "application/json",
+        status: 502,
+      });
+    });
+
+    await page.goto("/");
+
+    await expect(
+      page.getByRole("heading", { name: "What Oak publishes for this lesson" }),
+    ).toBeVisible();
+    const load = page.getByRole("button", { name: "Load Oak material" });
+    await expect(load).toBeEnabled();
+    expect(requests).toBe(0);
+
+    await load.click();
+
+    await expect(page.getByText("Oak is unreachable.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Try again" })).toBeEnabled();
+    expect(requests).toBe(1);
+  },
+);
+
+test(
   "preserves an unknown directive rather than dropping it",
   {
     tag: "@deployment-safe",

@@ -78,7 +78,9 @@ describe("transcript summaries", () => {
 
     expect(summariseTranscript).not.toHaveBeenCalled();
     expect(resolution.material).toEqual({});
-    expect(resolution.warnings.join(" ")).toContain("the lesson has no transcript");
+    expect(resolution.omissions["lesson.transcriptSummary"]).toContain(
+      "the lesson has no transcript",
+    );
   });
 
   it.each([
@@ -109,7 +111,7 @@ describe("transcript summaries", () => {
     );
 
     expect(resolution.material).toEqual({});
-    expect(resolution.warnings.join(" ")).toContain(
+    expect(resolution.omissions["lesson.transcriptSummary"]).toContain(
       "the summariser returned nothing usable",
     );
   });

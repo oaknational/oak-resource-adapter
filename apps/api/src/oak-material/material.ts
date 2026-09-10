@@ -49,6 +49,9 @@ export type OakMaterialRequirement = Readonly<{
   required: boolean;
 }>;
 
+/** Why each requested part is missing, addressed by the part it concerns. */
+export type OakMaterialOmissions = Readonly<Partial<Record<OakMaterialKey, string>>>;
+
 export type OakMaterialPart = Readonly<{
   label: string;
   read: ((lesson: Lesson) => OakMaterialValue | undefined) | null;

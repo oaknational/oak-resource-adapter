@@ -8,6 +8,18 @@ import { transcriptSummarySchema } from "./schema";
 
 const log = raLogger("ai");
 
+export function summariseTranscriptOnce(
+  summarise: SummariseTranscript,
+): SummariseTranscript {
+  const pending = new Map<string, ReturnType<SummariseTranscript>>();
+
+  return (transcript) => {
+    const started = pending.get(transcript) ?? summarise(transcript);
+    pending.set(transcript, started);
+    return started;
+  };
+}
+
 export function createTranscriptSummariser(
   invoker: ResourceAdapterModelInvoker,
 ): SummariseTranscript {
