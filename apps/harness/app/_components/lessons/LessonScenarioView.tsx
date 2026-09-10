@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 
 import { CreateMorePanel } from "../shared/CreateMorePanel";
 import { LessonMetadata } from "./LessonMetadata";
+import { OakMaterialPanel } from "./OakMaterialPanel";
 import { ScenarioNavigation } from "../shared/ScenarioNavigation";
 import { WorksheetPanel } from "./WorksheetPanel";
 import styles from "../../page.module.css";
@@ -83,6 +84,7 @@ export function LessonScenarioView({
           />
         </div>
         <LessonMetadata scenario={scenario} />
+        <OakMaterialPanel scenario={scenario} />
         <WorksheetPanel scenario={scenario} />
       </article>
       {selectedCapability && (

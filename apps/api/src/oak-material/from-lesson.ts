@@ -7,6 +7,7 @@ import type {
   OakMaterial,
   OakMaterialDerivationDependencies,
   OakMaterialRequirement,
+  OakMaterialOmissions,
 } from "./material";
 import { readOakMaterial } from "./requirements";
 
@@ -16,9 +17,9 @@ export async function resolveLessonMaterial(
   lessons: LessonRepository,
   requirements: readonly OakMaterialRequirement[],
   derivationDependencies: OakMaterialDerivationDependencies = {},
-): Promise<Readonly<{ material: OakMaterial; warnings: readonly string[] }>> {
+): Promise<Readonly<{ material: OakMaterial; omissions: OakMaterialOmissions }>> {
   if (requirements.length === 0) {
-    return { material: {}, warnings: [] };
+    return { material: {}, omissions: {} };
   }
 
   return readOakMaterial(

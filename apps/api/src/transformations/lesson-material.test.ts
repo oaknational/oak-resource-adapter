@@ -118,14 +118,14 @@ describe("resolveLessonMaterial", () => {
           ],
         },
       },
-      warnings: [],
+      omissions: {},
     });
   });
 
   it("fetches nothing for a transformation that declares no material", async () => {
     await expect(resolveLessonMaterial(identity, lessons, [])).resolves.toEqual({
       material: {},
-      warnings: [],
+      omissions: {},
     });
   });
 
@@ -135,7 +135,9 @@ describe("resolveLessonMaterial", () => {
     ]);
 
     expect(resolution.material).toEqual({});
-    expect(resolution.warnings[0]).toContain("Lesson slides is not available");
+    expect(resolution.omissions["lesson.slides"]).toContain(
+      "Lesson slides is not available",
+    );
   });
 });
 
