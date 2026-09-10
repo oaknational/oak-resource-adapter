@@ -105,8 +105,8 @@ importers:
         specifier: ^16.2.11
         version: 16.2.11(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       openai:
-        specifier: 6.49.0
-        version: 6.49.0(@smithy/signature-v4@5.6.8)(ws@8.21.3)(zod@4.4.3)
+        specifier: 7.9.0
+        version: 7.9.0(@smithy/signature-v4@5.6.8)(undici@8.9.0)(ws@8.21.3)(zod@4.4.3)
       posthog-node:
         specifier: ^5.46.1
         version: 5.48.1
@@ -209,8 +209,8 @@ importers:
         specifier: ^0.45.2
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.22.0)
       openai:
-        specifier: 6.49.0
-        version: 6.49.0(@smithy/signature-v4@5.6.8)(ws@8.21.3)(zod@4.4.3)
+        specifier: 7.9.0
+        version: 7.9.0(@smithy/signature-v4@5.6.8)(undici@8.9.0)(ws@8.21.3)(zod@4.4.3)
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -5628,13 +5628,15 @@ packages:
     resolution: {integrity: sha512-XgFPPM+B28FtCCgSb9I+s9szOC1vZRSwgWsRUA5ylIxRTgKozqjOCrVOqGsYABPYK5qnfqClxZTFBa8PKt2v6Q==}
     engines: {node: '>=12'}
 
-  openai@6.49.0:
-    resolution: {integrity: sha512-aYCc0C6L864eR6WSYIwQGyXriw/nIyZx0ObvhzOEVuk0zoBDpynjSbrionWI7q65B5H8jJX0DXR9snEzM6bfPg==}
+  openai@7.9.0:
+    resolution: {integrity: sha512-Qfx4qKmPllnilbuP6NgEj5KPUxLShYxrlRPWh3ZRQgNgs5B1V52PrfAdEQbW9MTGq7MquDYFMm+K/KXxiY736w==}
+    engines: {node: '>=22.0.0'}
     peerDependencies:
       '@aws-sdk/credential-provider-node': '>=3.972.0 <4'
       '@smithy/hash-node': '>=4.3.0 <5'
       '@smithy/signature-v4': '>=5.4.0 <6'
-      ws: ^8.18.0
+      undici: '>=5 <9'
+      ws: ^8.21.0
       zod: ^3.25 || ^4.0
     peerDependenciesMeta:
       '@aws-sdk/credential-provider-node':
@@ -5642,6 +5644,8 @@ packages:
       '@smithy/hash-node':
         optional: true
       '@smithy/signature-v4':
+        optional: true
+      undici:
         optional: true
       ws:
         optional: true
@@ -11896,9 +11900,10 @@ snapshots:
       is-docker: 2.2.1
       is-wsl: 2.2.0
 
-  openai@6.49.0(@smithy/signature-v4@5.6.8)(ws@8.21.3)(zod@4.4.3):
+  openai@7.9.0(@smithy/signature-v4@5.6.8)(undici@8.9.0)(ws@8.21.3)(zod@4.4.3):
     optionalDependencies:
       '@smithy/signature-v4': 5.6.8
+      undici: 8.9.0
       ws: 8.21.3
       zod: 4.4.3
 
