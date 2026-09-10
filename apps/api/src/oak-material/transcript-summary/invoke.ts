@@ -11,8 +11,13 @@ const log = raLogger("ai");
 export function summariseTranscriptOnce(
   summarise: SummariseTranscript,
 ): SummariseTranscript {
-  let pending: ReturnType<SummariseTranscript> | undefined;
-  return (transcript) => (pending ??= summarise(transcript));
+  const pending = new Map<string, ReturnType<SummariseTranscript>>();
+
+  return (transcript) => {
+    const started = pending.get(transcript) ?? summarise(transcript);
+    pending.set(transcript, started);
+    return started;
+  };
 }
 
 export function createTranscriptSummariser(
