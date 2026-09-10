@@ -63,7 +63,11 @@ export function OakMaterialPanel({ scenario }: Readonly<{ scenario: LessonScenar
         {state === "loading" && (
           <p>Reading the lesson and summarising its transcript…</p>
         )}
-        {state === "error" && <p className={styles.errorMessage}>{error}</p>}
+        {state === "error" && (
+          <p className={styles.errorMessage}>
+            {error ?? "The material could not load."}
+          </p>
+        )}
         {state === "ready" && (
           <p>
             {present.length === 0
