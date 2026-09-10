@@ -1021,6 +1021,19 @@
   margin: 0.25rem 0 0;
 }
 
+.materialAction {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.materialActionNote {
+  font-size: 0.875rem;
+  margin: 0;
+  max-width: 24ch;
+}
+
 .materialParts {
   list-style: none;
   margin: 1.5rem 0 0;

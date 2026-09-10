@@ -49,14 +49,20 @@ export function OakMaterialPanel({ scenario }: Readonly<{ scenario: LessonScenar
           <p className={styles.eyebrow}>Oak lesson material</p>
           <h2 id="oak-material-heading">What Oak publishes for this lesson</h2>
         </div>
-        <button
-          className={styles.workerTestButton}
-          disabled={state === "loading"}
-          onClick={load}
-          type="button"
-        >
-          {actionLabels[state]}
-        </button>
+        <div className={styles.materialAction}>
+          <button
+            aria-describedby="oak-material-cost"
+            className={styles.workerTestButton}
+            disabled={state === "loading"}
+            onClick={load}
+            type="button"
+          >
+            {actionLabels[state]}
+          </button>
+          <p className={styles.materialActionNote} id="oak-material-cost">
+            Each load runs a model to summarise the transcript.
+          </p>
+        </div>
       </div>
 
       <div aria-live="polite">
