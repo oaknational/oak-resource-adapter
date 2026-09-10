@@ -15,19 +15,16 @@ vi.mock("./posthog-adapter", () => ({
 const { FeatureFlagConfigurationError, getFeatureFlagService } =
   await import("./service");
 
-const environment = { ...process.env };
-
 beforeEach(() => {
   postHogConstructorMock.mockClear();
-  delete process.env.FEATURE_FLAG_TRANSPORT;
-  delete process.env.USE_POSTHOG;
-  delete process.env.VERCEL_ENV;
+  vi.stubEnv("FEATURE_FLAG_TRANSPORT", undefined);
+  vi.stubEnv("USE_POSTHOG", undefined);
+  vi.stubEnv("VERCEL_ENV", undefined);
   vi.stubEnv("NODE_ENV", "test");
 });
 
 afterEach(() => {
   vi.unstubAllEnvs();
-  process.env = { ...environment };
 });
 
 describe("getFeatureFlagService", () => {
@@ -46,7 +43,7 @@ describe("getFeatureFlagService", () => {
   });
 
   it("uses PostHog when asked for explicitly", () => {
-    process.env.USE_POSTHOG = "true";
+    vi.stubEnv("USE_POSTHOG", "true");
 
     getFeatureFlagService();
 
@@ -55,7 +52,7 @@ describe("getFeatureFlagService", () => {
 
   it("serves in-memory flags to a built app that asks for them", () => {
     vi.stubEnv("NODE_ENV", "production");
-    process.env.FEATURE_FLAG_TRANSPORT = "in-memory";
+    vi.stubEnv("FEATURE_FLAG_TRANSPORT", "in-memory");
 
     getFeatureFlagService();
 
@@ -64,8 +61,8 @@ describe("getFeatureFlagService", () => {
 
   it("refuses in-memory flags on a production deployment", () => {
     vi.stubEnv("NODE_ENV", "production");
-    process.env.FEATURE_FLAG_TRANSPORT = "in-memory";
-    process.env.VERCEL_ENV = "production";
+    vi.stubEnv("FEATURE_FLAG_TRANSPORT", "in-memory");
+    vi.stubEnv("VERCEL_ENV", "production");
 
     expect(() => getFeatureFlagService()).toThrow(FeatureFlagConfigurationError);
     expect(postHogConstructorMock).not.toHaveBeenCalled();

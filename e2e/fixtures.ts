@@ -1,6 +1,4 @@
 import { test as base, expect } from "@playwright/test";
-import { adaptations, createDatabaseClient } from "@oaknational/resource-adapter-db";
-import { inArray } from "drizzle-orm";
 
 export const test = base.extend<{
   trackAdaptation: (adaptationId: string) => void;
@@ -25,6 +23,11 @@ export const test = base.extend<{
       await use((id) => ids.add(id));
     } finally {
       if (ids.size > 0) {
+        // Deployment-test discovery loads this module without built DB packages.
+        const { adaptations, createDatabaseClient } =
+          await import("@oaknational/resource-adapter-db");
+        const { inArray } = await import("drizzle-orm");
+
         const database = createDatabaseClient(databaseUrl);
         try {
           // Abandon rather than delete: in-flight jobs still reference this state.

@@ -1,16 +1,18 @@
 import { setErrorReporter } from "@oaknational/resource-adapter-logger";
 import * as Sentry from "@sentry/nextjs";
 
+import { isDeployment } from "../environment";
+
 // Shared Sentry bootstrap for both server runtimes, invoked from the
 // sentry.server.config / sentry.edge.config entry files that instrumentation.ts
 // dynamically imports. Server-side only — the DSN is never exposed to the client.
 export function initSentry(): void {
   const dsn = process.env.SENTRY_DSN;
   if (!dsn) {
-    if (process.env.NODE_ENV === "production") {
+    // Hosted environments require a DSN; local production-mode servers do not.
+    if (isDeployment()) {
       throw new Error("SENTRY_DSN is not set; Sentry cannot be initialized");
     }
-    // Dev, tests, CI: expected to run without Sentry — quietly skip.
     return;
   }
 

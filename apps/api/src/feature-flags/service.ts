@@ -1,3 +1,4 @@
+import { isProductionMode, isProductionDeployment } from "../environment";
 import { createInMemoryFeatureFlags } from "./in-memory";
 import { PostHogFeatureFlagAdapter } from "./posthog-adapter";
 import type { FeatureFlagServiceType } from "./types";
@@ -15,7 +16,7 @@ function useInMemoryFlagsByRequest(): boolean {
   if (process.env.FEATURE_FLAG_TRANSPORT !== "in-memory") {
     return false;
   }
-  if (process.env.VERCEL_ENV === "production") {
+  if (isProductionDeployment()) {
     throw new FeatureFlagConfigurationError(
       "FEATURE_FLAG_TRANSPORT=in-memory is not allowed in production.",
     );
@@ -28,8 +29,8 @@ export function getFeatureFlagService(): FeatureFlagServiceType {
     return createInMemoryFeatureFlags();
   }
 
-  const usePostHog =
-    process.env.USE_POSTHOG === "true" || process.env.NODE_ENV === "production";
+  // Preview and staging also run in production mode and require PostHog keys.
+  const usePostHog = process.env.USE_POSTHOG === "true" || isProductionMode();
 
   return usePostHog ? new PostHogFeatureFlagAdapter() : createInMemoryFeatureFlags();
 }
