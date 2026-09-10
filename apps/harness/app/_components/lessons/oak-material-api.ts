@@ -7,7 +7,7 @@ const partSchema = z.strictObject({
   key: z.string(),
   label: z.string(),
   text: z.string().nullable(),
-  warnings: z.array(z.string()),
+  warning: z.string().nullable(),
 });
 
 export type OakMaterialPart = z.infer<typeof partSchema>;

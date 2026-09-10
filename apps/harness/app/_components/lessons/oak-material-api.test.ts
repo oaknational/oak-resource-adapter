@@ -16,7 +16,7 @@ const part = {
   key: "lesson.keywords",
   label: "Lesson keywords",
   text: "- perspective: A point of view.",
-  warnings: [],
+  warning: null,
 };
 
 function respond(body: unknown, status = 200) {
@@ -57,7 +57,7 @@ describe("the Oak material harness API", () => {
       key: "lesson.slides",
       label: "Lesson slides",
       text: null,
-      warnings: ["Lesson slides is not available: no source exists yet."],
+      warning: "Lesson slides is not available: no source exists yet.",
     };
     respond({ parts: [absent] });
 

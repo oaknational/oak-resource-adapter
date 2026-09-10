@@ -82,7 +82,7 @@ describe("development lesson material", () => {
 
     expect(partFor(parts, "lesson.keywords")).toMatchObject({
       label: "Lesson keywords",
-      warnings: [],
+      warning: null,
     });
     expect(partFor(parts, "lesson.keywords").text).toContain(
       "- perspective: A point of view.",
@@ -107,11 +107,11 @@ describe("development lesson material", () => {
 
     expect(partFor(parts, "lesson.slides")).toMatchObject({
       text: null,
-      warnings: [expect.stringContaining("Lesson slides is not available")],
+      warning: expect.stringContaining("Lesson slides is not available"),
     });
     expect(partFor(parts, "lesson.transcriptSummary")).toMatchObject({
       text: null,
-      warnings: [expect.stringContaining("the lesson has no transcript")],
+      warning: expect.stringContaining("the lesson has no transcript"),
     });
     expect(model.invokeStructured).not.toHaveBeenCalled();
   });

@@ -45,7 +45,7 @@ describe("the development lesson material route", () => {
           key: "lesson.keywords",
           label: "Keywords",
           text: "- perspective: A point of view.",
-          warnings: [],
+          warning: null,
         },
       ],
     });
@@ -62,7 +62,7 @@ describe("the development lesson material route", () => {
           key: "lesson.keywords",
           label: "Keywords",
           text: "- perspective: A point of view.",
-          warnings: [],
+          warning: null,
         },
       ],
     });

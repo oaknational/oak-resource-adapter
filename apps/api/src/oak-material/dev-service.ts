@@ -21,7 +21,7 @@ export type DevOakMaterialPart = Readonly<{
   key: OakMaterialKey;
   label: string;
   text: string | null;
-  warnings: readonly string[];
+  warning: string | null;
 }>;
 
 const DEV_REQUIREMENTS: readonly OakMaterialRequirement[] = OAK_MATERIAL_KEYS.map(
@@ -47,7 +47,7 @@ export async function getDevLessonMaterial(
       key,
       label: OAK_MATERIAL[key].label,
       text: value === undefined ? null : OAK_MATERIAL[key].render(value),
-      warnings: omission === undefined ? [] : [omission],
+      warning: omission ?? null,
     };
   });
 
