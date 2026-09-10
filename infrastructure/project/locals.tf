@@ -1,10 +1,5 @@
-# Every Vercel environment variable for both projects.
-#
-# Secrets arrive as the sensitive variables in variables.tf and are tagged here
-# so the flag survives the merges below. Everything else arrives in var.env_vars.
-# An empty value is dropped rather than written, so a value that does not exist
-# yet needs no placeholder — which matters most for the Cloud SQL set, where
-# readCloudSqlConfig() throws on a half-filled one.
+# Empty values are omitted from Vercel. Sensitivity is carried through merges
+# alongside each value so a secret cannot become a plain environment variable.
 
 locals {
   secret_values = {
@@ -18,6 +13,7 @@ locals {
     api_production = {
       CLERK_SECRET_KEY                                   = var.clerk_secret_key_production
       CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY = var.curriculum_api_key_production
+      DATABASE_URL                                       = var.database_url_production
       OPENAI_API_KEY                                     = var.openai_api_key_production
       POSTHOG_API_KEY                                    = var.posthog_api_key_production
     }
@@ -25,6 +21,7 @@ locals {
     api_preview = {
       CLERK_SECRET_KEY                                   = var.clerk_secret_key_test
       CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY = var.curriculum_api_key_staging
+      DATABASE_URL                                       = var.database_url_staging
       OPENAI_API_KEY                                     = var.openai_api_key_staging
       POSTHOG_API_KEY                                    = var.posthog_api_key_staging
     }
@@ -44,9 +41,18 @@ locals {
     }
   }
 
+  plain_values = {
+    api_preview    = { DATABASE_CA_CERT = var.database_ca_cert_staging }
+    api_production = { DATABASE_CA_CERT = var.database_ca_cert_production }
+  }
+
   groups = {
     for group, values in var.env_vars : group => merge(
       { for key, value in values : key => { value = value, sensitive = false } },
+      {
+        for key, value in lookup(local.plain_values, group, {}) :
+        key => { value = value, sensitive = false }
+      },
       {
         for key, value in lookup(local.secret_values, group, {}) :
         key => { value = value, sensitive = true }

@@ -47,6 +47,33 @@ variable "env_vars" {
 }
 
 # The empty defaults are deliberate: locals.tf drops them rather than writing.
+
+variable "database_url_staging" {
+  description = "Application connection string for the staging database, used by Preview and staging"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "database_url_production" {
+  description = "Application connection string for the production database"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "database_ca_cert_staging" {
+  description = "PEM certificate authority the staging database's server certificate chains to"
+  type        = string
+  default     = ""
+}
+
+variable "database_ca_cert_production" {
+  description = "PEM certificate authority the production database's server certificate chains to"
+  type        = string
+  default     = ""
+}
+
 variable "clerk_secret_key_production" {
   description = "Clerk secret key for the production Clerk instance"
   type        = string

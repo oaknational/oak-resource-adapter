@@ -5,8 +5,8 @@ import { checkReadiness } from "@/health/readiness";
 
 export const dynamic = "force-dynamic";
 
-export function GET(request: NextRequest) {
-  const readiness = checkReadiness();
+export async function GET(request: NextRequest) {
+  const readiness = await checkReadiness();
   return NextResponse.json(readiness, {
     status: readiness.status === "ready" ? 200 : 503,
     headers: {
