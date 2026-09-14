@@ -358,3 +358,27 @@ jobs:
         if: env.CLERK_SECRET_KEY == ''
         run: |
           echo "::warning::Browser tests skipped: this event carries no repository secrets, so there are no Clerk credentials to sign in with. Expected for fork pull requests."
+
+  release:
+    name: Release packages
+    # The PR-only changeset check is intentionally excluded from production needs.
+    # Default success() gating blocks release if any required check fails or skips.
+    needs:
+      - secret-scan
+      - static-checks
+      - unit-tests
+      - database-integration
+      - package-artifact
+      - browser-tests
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/production' &&
+      github.repository == 'oaknational/oak-resource-adapter' &&
+      vars.ENABLE_NPM_RELEASES == 'true'
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    uses: ./.github/workflows/release.yml
+    secrets:
+      RELEASE_GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}

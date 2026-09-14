@@ -183,8 +183,8 @@ ordinary work into `main`:
 
 1. Changes with their Changesets accumulate on `main`.
 2. A tested `release/YYYY-MM-DD` branch is merged into `production`.
-3. After CI succeeds on that exact `production` commit, `release.yml` opens or
-   updates `chore: version packages` against `production`.
+3. After all production CI checks succeed, CI calls `release.yml` to open or
+   update `chore: version packages` against `production`.
 4. Once the corresponding production API is healthy, QA reviews and merges the
    version PR.
 5. CI passes on the version commit and `release.yml` runs `pnpm ci:publish`,
@@ -197,6 +197,12 @@ the [release process](RELEASE_PROCESS.md).
 The Changesets `baseBranch` remains `main` because contributors branch from and
 open feature pull requests into `main`. The Release workflow separately sets its
 version PR target to `production`.
+
+`release.yml` is a reusable workflow called by CI on production pushes. It
+inherits the push's SHA, so checkout, Changesets version commits and release tags
+all use the commit CI tested. The PR-only changeset check is excluded from its
+dependencies; every production check must succeed. Release execution stays
+disabled unless `ENABLE_NPM_RELEASES` is exactly `true`.
 
 The Version Packages PR consumes the Changeset files, updates the package
 versions and changelogs, and updates the lockfile. Further commits to
@@ -213,8 +219,13 @@ the released version in the published artifacts. Each package also has a
 
 Publishing needs no npm token. The Release workflow authenticates through OIDC
 trusted publishing, configured once per package on npmjs.com for the
-`oaknational/oak-resource-adapter` repository and `release.yml`. Renaming that
-workflow file would break the trust configuration.
+`oaknational/oak-resource-adapter` repository and **`ci.yml`**. npm validates the
+calling workflow, even though `release.yml` contains the publish step. Both the
+CI calling job and the release job grant `id-token: write`. See npm's
+[trusted publishing documentation](https://docs.npmjs.com/trusted-publishers/).
+Under Settings -> Trusted publishing, Allowed actions must permit `npm publish`:
+publishers created from 3 September 2026 allow only `npm stage publish`, and
+`changeset publish` publishes directly.
 
 The first publish of each package must be manual because npm only allows a
 trusted publisher to be configured for an existing package:
@@ -234,7 +245,8 @@ if the build step above is skipped.
 
 `RELEASE_GITHUB_TOKEN` is a fine-grained PAT with Contents and Pull requests
 read/write access. It lets the version PR trigger CI; it is not an npm
-credential. The workflow commits through the GitHub API (`commitMode:
-github-api`).
+credential. CI forwards it explicitly to `release.yml`, which passes it through
+the Changesets action's `github-token` input. The action pushes through the
+GitHub API by default, without persisting git credentials.
 
 The package configuration is in [`.changeset`](../.changeset/).

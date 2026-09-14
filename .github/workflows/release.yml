@@ -1,14 +1,11 @@
 name: Release
 
 on:
-  # Incomplete scaffold; see docs/DEVELOPMENT.md before enabling releases.
-  # GitHub reads this trigger from the default branch.
-  workflow_run:
-    workflows: [CI]
-    # Not main: main runs ahead of production, and OWA pins whatever is
-    # published, so a package must only carry code production has.
-    branches: [production]
-    types: [completed]
+  # Called after CI checks pass; inherits the production push's SHA.
+  workflow_call:
+    secrets:
+      RELEASE_GITHUB_TOKEN:
+        required: true
 
 permissions:
   contents: read
@@ -21,11 +18,11 @@ jobs:
   release:
     name: Release
     # Opt in explicitly: Changesets can publish with no pending changesets.
-    # Require a push to this repository; the branch filter alone allows fork PRs.
+    # Keep the guard here as well as in the caller.
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/production' &&
+      github.repository == 'oaknational/oak-resource-adapter' &&
       vars.ENABLE_NPM_RELEASES == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -40,7 +37,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          SHA: ${{ github.event.workflow_run.head_sha }}
+          SHA: ${{ github.sha }}
         run: |
           compare_status="$(gh api "repos/$REPO/compare/production...$SHA" --jq .status)"
           case "$compare_status" in
@@ -54,8 +51,8 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Use the verified CI commit; workflow_run defaults to the default branch.
-          ref: ${{ github.event.workflow_run.head_sha }}
+          # Checkout and Changesets use the same CI-tested production commit.
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -83,16 +80,14 @@ jobs:
         run: npm audit signatures
 
       - name: Create release pull request or publish
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          # Override workflow_run's default-branch ref for the version PR.
-          branch: production
-          version: pnpm ci:version
-          publish: pnpm ci:publish
-          commit: "chore: version packages"
-          title: "chore: version packages"
-          # Use the GitHub API for version commits without persisting git credentials.
-          commitMode: github-api
+          # Pass the custom token explicitly; API pushing is the default.
+          github-token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          pr-base-branch: production
+          version-script: pnpm ci:version
+          publish-script: pnpm ci:publish
+          commit-message: "chore: version packages"
+          pr-title: "chore: version packages"
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
           HUSKY: "0"
