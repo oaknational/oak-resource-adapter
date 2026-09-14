@@ -31,7 +31,7 @@ function StorageFacts({
   bucket,
   credentials,
   storageKey,
-}: Pick<Outcome, "bucket" | "credentials" | "storageKey">) {
+}: Readonly<Pick<Outcome, "bucket" | "credentials" | "storageKey">>) {
   const facts: readonly (readonly [string, string | null])[] = [
     ["Credentials", credentials],
     ["Key", storageKey],

@@ -11,8 +11,8 @@ function isNotFound(error: unknown): boolean {
 }
 
 /**
- * Removes one object. There is deliberately no prefix or wildcard form: a key
- * at a time is the whole API, so a bug cannot empty the bucket.
+ * No prefix or wildcard form: one key at a time, so a bug cannot empty the
+ * bucket.
  *
  * @returns whether there was an object to remove.
  */

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { deleteArtifact } from "./delete.js";
@@ -21,7 +22,7 @@ const written: string[] = [];
 function uniqueKey(filename: string): string {
   const key = artifactKey("local", [
     "_integration-test",
-    `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+    `${Date.now()}-${randomUUID()}`,
     filename,
   ]);
   written.push(key);

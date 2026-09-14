@@ -18,8 +18,7 @@ export const OPTIONS = createDevOptionsHandler(allowedMethods);
 
 /**
  * Proves the whole credential chain from a deployment: the pool's condition, the
- * token exchange, the impersonation and the bucket grant. Readiness cannot,
- * because it only reads configuration.
+ * token exchange, the impersonation and the bucket grant.
  */
 export async function POST(request: NextRequest): Promise<Response> {
   if (!devRoutesEnabled()) {

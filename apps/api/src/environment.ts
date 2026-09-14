@@ -16,10 +16,9 @@ export function isProductionMode(): boolean {
 }
 
 /**
- * Names the key prefix this deployment writes artifacts under. Preview and the
- * staging custom environment share a bucket but must not share a prefix, and
- * `VERCEL_ENV` reports both as `preview`, so only `VERCEL_TARGET_ENV` separates
- * them.
+ * Preview and the staging custom environment share a bucket, so they must not
+ * share a prefix. `VERCEL_ENV` reports both as `preview`; only
+ * `VERCEL_TARGET_ENV` separates them.
  */
 export function storageEnvironment(): ArtifactEnvironment {
   if (isProductionDeployment()) {

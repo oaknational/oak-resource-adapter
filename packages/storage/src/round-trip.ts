@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { getStorage, isFederated } from "./client.js";
 import { readBucketName } from "./configuration.js";
 import { deleteArtifact } from "./delete.js";
@@ -16,10 +18,6 @@ export type ArtifactStorageRoundTrip = {
 
 const payload = "resource-adapter storage round trip";
 
-/**
- * Carries the context a failure needs as fields, leaving the message to read as
- * the reason alone.
- */
 export class ArtifactStorageRoundTripError extends Error {
   readonly bucket: string;
   readonly cleanupError: unknown;
@@ -68,7 +66,7 @@ export async function roundTripArtifactStorage(
 ): Promise<ArtifactStorageRoundTrip> {
   const key = artifactKey(environment, [
     "_round-trip",
-    `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+    `${Date.now()}-${randomUUID()}`,
     "probe.txt",
   ]);
 

@@ -14,8 +14,6 @@ function hasControlCharacter(value: string): boolean {
 }
 
 /**
- * Builds the key an artifact is stored under.
- *
  * The result is the object's whole path, so it is also what belongs in
  * `resource_artifacts.storageKey` and what a later read addresses. Nothing
  * prepends to it again.
@@ -34,7 +32,7 @@ export function artifactKey(
   for (const segment of segments) {
     const description = JSON.stringify(segment);
 
-    if (!segment || segment.trim() !== segment) {
+    if (segment.length === 0 || segment.trim() !== segment) {
       throw new Error(
         `An artifact key segment cannot be empty or padded: ${description}`,
       );

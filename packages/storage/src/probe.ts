@@ -6,9 +6,8 @@ export type StorageProbeFailure =
 /**
  * Checks storage configuration without verifying credentials or bucket access.
  *
- * `requireFederatedIdentity` is the caller's judgement rather than this
- * package's: a deployment has no application default credentials to fall back
- * on, but a local process does, and only the caller knows which it is.
+ * `requireFederatedIdentity` is the caller's: a deployment has no application
+ * default credentials to fall back on, but a local process does.
  */
 export function probeArtifactStorage({
   requireFederatedIdentity,

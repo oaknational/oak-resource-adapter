@@ -157,7 +157,6 @@ const storageFailureSchema = z.object({
 
 export type StorageRoundTripFailure = z.infer<typeof storageFailureSchema>;
 
-/** Thrown with the round trip's own report, so the panel can lay it out. */
 export class StorageRoundTripFailed extends Error {
   readonly failure: StorageRoundTripFailure;
 
@@ -187,8 +186,6 @@ export async function roundTripStorage(): Promise<StorageRoundTripResponse> {
   }
 
   if (!response.ok) {
-    // The route reports why the credential chain failed, which is the whole
-    // point of running it.
     const failure = await readFailure(response);
 
     if (failure) {
