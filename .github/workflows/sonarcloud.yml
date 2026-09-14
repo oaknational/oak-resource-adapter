@@ -2,7 +2,7 @@ name: SonarCloud
 
 on:
   push:
-    # `production` is not created yet; matches ci.yml.
+    # Keep in step with ci.yml.
     branches: [main, production]
   pull_request:
     types: [opened, synchronize, reopened]
