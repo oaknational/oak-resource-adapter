@@ -236,6 +236,9 @@ jobs:
       # The harness posts to the /dev routes, which fail closed without this.
       ENABLE_DEV_ROUTES: "1"
       MODEL_TRANSPORT: deterministic
+      # Not a real bucket. Readiness only reads the name, and the
+      # runner holds no Google credentials, so a write would fail either way.
+      RESOURCE_ARTIFACTS_BUCKET: resource-adapter-ci-no-such-bucket
       # The three values e2e/global.setup.ts asserts. `secrets` cannot be read
       # from an `if:` condition; `env` can.
       CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}

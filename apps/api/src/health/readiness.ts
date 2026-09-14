@@ -25,7 +25,6 @@ const readinessMessages = {
   DATABASE_REFUSED_CONNECTION: "The database refused the connection.",
   DATABASE_UNAVAILABLE: "The database could not be reached.",
   ARTIFACT_STORAGE_CONFIGURED: "Artifact storage configured.",
-  ARTIFACT_STORAGE_NOT_REQUIRED: "Artifact storage is not required off a deployment.",
   ARTIFACT_STORAGE_NOT_CONFIGURED: "The artifact storage bucket is not configured.",
   ARTIFACT_STORAGE_IDENTITY_INCOMPLETE: "The artifact storage identity is incomplete.",
   ARTIFACT_STORAGE_IDENTITY_NOT_FEDERATED:
@@ -105,17 +104,14 @@ const storageCodes: Record<StorageProbeFailure, ReadinessCode> = {
 };
 
 /**
- * Only a deployment is held to this. Elsewhere the bucket is reached with a
- * developer's own credentials, or not at all, so an unset one is not a fault.
+ * A deployment must impersonate a service account; elsewhere the same bucket is
+ * reached with the developer's own credentials, which no configuration names.
  */
 function artifactStorage(): CheckOutcome {
   const label = "Artifact storage";
-
-  if (!isDeployment()) {
-    return { label, status: "ready", code: "ARTIFACT_STORAGE_NOT_REQUIRED" };
-  }
-
-  const failure = probeArtifactStorage({ requireFederatedIdentity: true });
+  const failure = probeArtifactStorage({
+    requireFederatedIdentity: isDeployment(),
+  });
 
   return failure
     ? { label, status: "not-ready", code: storageCodes[failure] }
@@ -132,10 +128,11 @@ function describeCheck({ label, status, code }: CheckOutcome): ReadinessCheck {
 }
 
 export async function checkReadiness() {
+  // The harness renders these in order, under liveness.
   const checks = {
-    artifactStorage: describeCheck(artifactStorage()),
     database: describeCheck(await database()),
     modelConfiguration: describeCheck(modelConfiguration()),
+    artifactStorage: describeCheck(artifactStorage()),
   };
   const status = Object.values(checks).every((check) => check.status === "ready")
     ? "ready"
