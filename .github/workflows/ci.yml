@@ -3,8 +3,8 @@ name: CI
 on:
   pull_request:
   push:
-    # `production` is not created yet. release.yml publishes only after CI passes
-    # there, so it has to be listed here.
+    # release.yml publishes only after CI passes on `production`, so it has to
+    # be listed here.
     branches: [main, production]
   workflow_dispatch:
 

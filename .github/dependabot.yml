@@ -22,9 +22,15 @@ updates:
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
     groups:
-      # A dependency joins the first group it matches, so dev-tooling comes
-      # first and `production` takes everything it leaves. @types/react* are
-      # excluded from dev-tooling so they travel with react.
+      # The connector pins its own google-auth-library major and the two
+      # exchange auth client types, so a split bump fails to compile. Majors are
+      # grouped here for that reason.
+      google-cloud-sql:
+        patterns:
+          - "@google-cloud/cloud-sql-connector"
+          - google-auth-library
+        update-types: [major, minor, patch]
+      # First matching group wins. Keep React types with React in production.
       dev-tooling:
         patterns:
           - eslint
@@ -52,8 +58,8 @@ updates:
           - "@types/react"
           - "@types/react-dom"
         update-types: [minor, patch]
-      # drizzle-kit generates what drizzle-orm consumes, so they must stay in
-      # one group: do not move drizzle-kit into dev-tooling.
+      # drizzle-kit generates what drizzle-orm consumes: do not move
+      # drizzle-kit into dev-tooling.
       production:
         patterns: ["*"]
         update-types: [minor, patch]

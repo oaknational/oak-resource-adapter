@@ -82,6 +82,16 @@ Add a new required check to the same response rather than a new endpoint, and gi
 it a message from a fixed set: the response is public, so a check must never
 interpolate a credential, an environment value or an upstream error into it.
 
+## How TypeScript resolves
+
+The root aliases `@typescript/native` to `typescript@7` for the `tsc` CLI and
+`typescript` to `@typescript/typescript6` for tools that need the compiler API.
+TypeScript 7.0 has no stable programmatic API.
+
+Both Next apps declare the TypeScript 6 alias locally for Next's compiler API
+lookup. It provides `tsc6`, so their `type-check` scripts still use the root's
+TypeScript 7 `tsc`.
+
 ## Applying migrations
 
 [`db-migrate.yml`](../.github/workflows/db-migrate.yml) is the only way migrations
@@ -144,7 +154,8 @@ to exactly `true`:
   on npm", so without this gate every qualifying run on `production` would
   attempt a publish.
 
-Both are currently unset, and `production` doesn't exist, so nothing publishes.
+`ENFORCE_CHANGESETS` is unset and `ENABLE_NPM_RELEASES` is `false`, so nothing
+publishes.
 
 ## Describing a package change
 
