@@ -21,6 +21,7 @@
     "lint:fix": "eslint src --fix",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
+    "test:integration": "RUN_STORAGE_INTEGRATION_TESTS=1 vitest run src/upload.integration.test.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

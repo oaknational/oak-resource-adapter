@@ -1,11 +1,6 @@
-import { Storage } from "@google-cloud/storage";
-
-import {
-  readBucketName,
-  readFederatedIdentity,
-  type FederatedIdentity,
-} from "./configuration.js";
-import { createFederatedAuthClient } from "./credentials.js";
+import { getStorage } from "./client.js";
+import { readBucketName } from "./configuration.js";
+import { describeCause } from "./errors.js";
 
 export type UploadArtifactInput = {
   body: Buffer | Uint8Array;
@@ -21,28 +16,6 @@ export type UploadedArtifact = {
   key: string;
   md5Hash: string | undefined;
 };
-
-let cachedStorage: { client: Storage; key: string } | undefined;
-
-function createStorage(identity: FederatedIdentity | null): Storage {
-  return identity
-    ? new Storage({ authClient: createFederatedAuthClient(identity) })
-    : new Storage();
-}
-
-function getStorage(identity: FederatedIdentity | null): Storage {
-  const key = identity
-    ? `${identity.workloadIdentityProvider}|${identity.serviceAccount}`
-    : "application-default";
-
-  // The impersonated access token is cached inside the auth client, so building
-  // a Storage per upload would repeat the STS exchange every time.
-  if (cachedStorage?.key !== key) {
-    cachedStorage = { client: createStorage(identity), key };
-  }
-
-  return cachedStorage.client;
-}
 
 function requireBucketName(): string {
   const bucket = readBucketName();
@@ -70,7 +43,7 @@ export async function uploadArtifact({
   key,
 }: UploadArtifactInput): Promise<UploadedArtifact> {
   const bucket = requireBucketName();
-  const file = getStorage(readFederatedIdentity()).bucket(bucket).file(key);
+  const file = getStorage().bucket(bucket).file(key);
 
   try {
     await file.save(body, {
@@ -80,7 +53,9 @@ export async function uploadArtifact({
       resumable: false,
     });
   } catch (cause) {
-    throw new Error(`Could not upload "${key}" to ${bucket}.`, { cause });
+    throw new Error(`Could not upload "${key}" to ${bucket}: ${describeCause(cause)}`, {
+      cause,
+    });
   }
 
   const { crc32c, md5Hash, size } = file.metadata;

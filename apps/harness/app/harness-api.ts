@@ -136,6 +136,71 @@ export async function readTestJob(
   return readJson(response, testJobResponseSchema, "a test job");
 }
 
+const storageRoundTripResponseSchema = z.object({
+  bucket: z.string(),
+  byteSize: z.number(),
+  environment: z.string(),
+  federated: z.boolean(),
+  key: z.string(),
+  status: z.literal("ok"),
+});
+
+export type StorageRoundTripResponse = z.infer<typeof storageRoundTripResponseSchema>;
+
+const storageFailureSchema = z.object({
+  bucket: z.string().nullable().catch(null),
+  cleanupMessage: z.string().nullable().catch(null),
+  federated: z.boolean().nullable().catch(null),
+  key: z.string().nullable().catch(null),
+  message: z.string().trim().min(1),
+});
+
+export type StorageRoundTripFailure = z.infer<typeof storageFailureSchema>;
+
+/** Thrown with the round trip's own report, so the panel can lay it out. */
+export class StorageRoundTripFailed extends Error {
+  readonly failure: StorageRoundTripFailure;
+
+  constructor(failure: StorageRoundTripFailure) {
+    super(failure.message);
+    this.name = "StorageRoundTripFailed";
+    this.failure = failure;
+  }
+}
+
+async function readFailure(
+  response: Response,
+): Promise<StorageRoundTripFailure | null> {
+  const body: unknown = await response.json().catch(() => null);
+  const failure = storageFailureSchema.safeParse(body);
+
+  return failure.success ? failure.data : null;
+}
+
+export async function roundTripStorage(): Promise<StorageRoundTripResponse> {
+  const response = await fetch(`${adapterProxyPath}/dev/storage/roundtrip`, {
+    method: "POST",
+  });
+
+  if (response.status === 404) {
+    throw new Error("Dev routes are not enabled on the API.");
+  }
+
+  if (!response.ok) {
+    // The route reports why the credential chain failed, which is the whole
+    // point of running it.
+    const failure = await readFailure(response);
+
+    if (failure) {
+      throw new StorageRoundTripFailed(failure);
+    }
+
+    throw new Error(`The API returned HTTP ${response.status}.`);
+  }
+
+  return readJson(response, storageRoundTripResponseSchema, "a storage round trip");
+}
+
 export async function invokeModel(): Promise<ModelInvocationResponse> {
   const response = await fetch(`${adapterProxyPath}/dev/ai/invoke`, {
     body: JSON.stringify({ input: "Reply with the single word: pong" }),
