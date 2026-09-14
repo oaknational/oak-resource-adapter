@@ -34,6 +34,12 @@ const connectedDatabase = {
   message: "Database connected.",
 };
 
+const storageNotRequired = {
+  label: "Artifact storage",
+  status: "ready",
+  message: "Artifact storage is not required off a deployment.",
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   probeDatabase.mockResolvedValue(null);
@@ -68,6 +74,7 @@ describe("configuration readiness", () => {
       await expect(response.json()).resolves.toEqual({
         status: "ready",
         checks: {
+          artifactStorage: storageNotRequired,
           database: connectedDatabase,
           modelConfiguration: {
             label: "Model configuration",
@@ -245,5 +252,118 @@ describe("database readiness", () => {
     await GET(request());
 
     expect(probeDatabase).toHaveBeenCalledOnce();
+  });
+});
+
+describe("artifact storage readiness", () => {
+  const provider =
+    "projects/1/locations/global/workloadIdentityPools/vercel/providers/vercel";
+  const serviceAccount = "wif-vercel-ora@oak.iam.gserviceaccount.com";
+
+  const configured = () => {
+    vi.stubEnv("MODEL_TRANSPORT", "openai");
+    vi.stubEnv("OPENAI_API_KEY", "test-value-not-validated-with-provider");
+  };
+
+  const deployed = () => {
+    configured();
+    vi.stubEnv("VERCEL_ENV", "preview");
+  };
+
+  const withBucket = () => {
+    vi.stubEnv("RESOURCE_ARTIFACTS_BUCKET", "oak-ow-staging-ldn-ora-artifacts");
+  };
+
+  const withIdentity = () => {
+    vi.stubEnv("GCP_SERVICE_ACCOUNT", serviceAccount);
+    vi.stubEnv("GCP_WORKLOAD_IDENTITY_PROVIDER", provider);
+  };
+
+  it("holds a local server to nothing, since it writes with its own credentials", async () => {
+    configured();
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      status: "ready",
+      checks: {
+        artifactStorage: {
+          label: "Artifact storage",
+          status: "ready",
+          message: "Artifact storage is not required off a deployment.",
+        },
+      },
+    });
+  });
+
+  it("accepts a deployment with a bucket and a federated identity", async () => {
+    deployed();
+    withBucket();
+    withIdentity();
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      status: "ready",
+      checks: {
+        artifactStorage: { status: "ready", message: "Artifact storage configured." },
+      },
+    });
+  });
+
+  it.each([
+    {
+      code: "ARTIFACT_STORAGE_NOT_CONFIGURED",
+      message: "The artifact storage bucket is not configured.",
+      stub: () => withIdentity(),
+    },
+    {
+      code: "ARTIFACT_STORAGE_IDENTITY_NOT_FEDERATED",
+      message: "The artifact storage identity is not federated.",
+      stub: () => withBucket(),
+    },
+    {
+      code: "ARTIFACT_STORAGE_IDENTITY_INCOMPLETE",
+      message: "The artifact storage identity is incomplete.",
+      stub: () => {
+        withBucket();
+        vi.stubEnv("GCP_WORKLOAD_IDENTITY_PROVIDER", provider);
+      },
+    },
+  ])("reports $code as needing intervention", async (expected) => {
+    deployed();
+    expected.stub();
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toMatchObject({
+      status: "not-ready",
+      checks: {
+        artifactStorage: {
+          label: "Artifact storage",
+          status: "not-ready",
+          code: expected.code,
+          message: expected.message,
+          retryable: false,
+        },
+      },
+    });
+  });
+
+  it("names neither the bucket nor the account it could not use", async () => {
+    deployed();
+    withBucket();
+    vi.stubEnv("GCP_WORKLOAD_IDENTITY_PROVIDER", provider);
+
+    const body = await (await GET(request())).json();
+
+    expect(JSON.stringify(body)).not.toContain("oak-ow-staging-ldn-ora-artifacts");
+    expect(JSON.stringify(body)).not.toContain("gserviceaccount.com");
   });
 });
