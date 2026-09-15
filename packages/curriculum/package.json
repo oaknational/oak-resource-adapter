@@ -28,7 +28,7 @@
     "@oaknational/oak-curriculum-schema": "2.15.0",
     "@oaknational/resource-adapter-logger": "workspace:*",
     "fflate": "^0.8.3",
-    "zod": "^4.4.3"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
