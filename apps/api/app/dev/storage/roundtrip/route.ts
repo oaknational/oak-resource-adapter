@@ -1,3 +1,4 @@
+import { raLogger } from "@oaknational/resource-adapter-logger";
 import {
   ArtifactStorageRoundTripError,
   roundTripArtifactStorage,
@@ -13,12 +14,16 @@ import {
 import { storageEnvironment } from "@/environment";
 
 const allowedMethods = "POST, OPTIONS";
+const log = raLogger("internal-api");
 
 export const OPTIONS = createDevOptionsHandler(allowedMethods);
 
 /**
  * Proves the whole credential chain from a deployment: the pool's condition, the
  * token exchange, the impersonation and the bucket grant.
+ *
+ * A failed round trip answers 200 with `status: "failed"`: Cloudflare replaces
+ * the body of any 5xx on a thenational.academy domain.
  */
 export async function POST(request: NextRequest): Promise<Response> {
   if (!devRoutesEnabled()) {
@@ -35,6 +40,8 @@ export async function POST(request: NextRequest): Promise<Response> {
       { headers },
     );
   } catch (error) {
+    log.error(error, { report: true });
+
     return Response.json(
       {
         status: "failed",
@@ -49,7 +56,7 @@ export async function POST(request: NextRequest): Promise<Response> {
             }
           : {}),
       },
-      { headers, status: 502 },
+      { headers },
     );
   }
 }
