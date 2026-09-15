@@ -23,6 +23,7 @@
     "@oaknational/resource-adapter-db": "workspace:*",
     "@oaknational/resource-adapter-logger": "workspace:*",
     "@oaknational/resource-adapter-original-resource-documents": "workspace:*",
+    "@oaknational/resource-adapter-storage": "workspace:*",
     "@oaknational/resource-document": "workspace:*",
     "@sentry/nextjs": "^10.72.0",
     "@trpc/server": "11.18.0",

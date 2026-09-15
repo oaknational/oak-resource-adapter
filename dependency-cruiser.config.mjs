@@ -9,6 +9,7 @@ const workspaceUnits = {
     "packages/logger",
     "packages/original-resource-documents",
     "packages/resource-document",
+    "packages/storage",
   ],
   "apps/harness": [
     "packages/logger",
@@ -23,6 +24,7 @@ const workspaceUnits = {
   "packages/logger": [],
   "packages/original-resource-documents": ["packages/resource-document"],
   "packages/resource-document": [],
+  "packages/storage": [],
   "packages/ui": ["packages/contracts", "packages/resource-document"],
 };
 

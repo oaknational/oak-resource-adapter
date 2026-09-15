@@ -194,10 +194,10 @@ jobs:
         run: pnpm --filter @oaknational/resource-adapter-db db:migrate:deploy
 
       - name: Run database integration tests
-        # The curriculum package's integration tests reach Oak's real curriculum
-        # endpoint and downloads API. This job holds only an ephemeral Postgres, so
-        # they are excluded until CI has somewhere to read those credentials from.
-        run: pnpm test:integration --filter='!@oaknational/resource-adapter-curriculum'
+        # An allowlist: this job holds an ephemeral Postgres and nothing else, so
+        # curriculum's tests (Oak's endpoints) and storage's (Google credentials)
+        # have nowhere to authenticate from.
+        run: pnpm test:integration --filter=@oaknational/resource-adapter-db
 
   package-artifact:
     name: Verify published package
@@ -236,6 +236,9 @@ jobs:
       # The harness posts to the /dev routes, which fail closed without this.
       ENABLE_DEV_ROUTES: "1"
       MODEL_TRANSPORT: deterministic
+      # Not a real bucket. Readiness only reads the name, and the
+      # runner holds no Google credentials, so a write would fail either way.
+      RESOURCE_ARTIFACTS_BUCKET: resource-adapter-ci-no-such-bucket
       # The three values e2e/global.setup.ts asserts. `secrets` cannot be read
       # from an `if:` condition; `env` can.
       CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}

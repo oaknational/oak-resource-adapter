@@ -132,7 +132,15 @@ E2E_BASE_URL=https://oak-resource-adapter-harness-abc123.vercel.thenational.acad
 The harness must point to the API candidate under test. The command reads the
 Clerk test credentials from `.env` and refuses to run without `E2E_BASE_URL`, so
 it can't accidentally test local services. Tests tagged `@deployment-safe` must
-not depend on local-only state or write shared data.
+not depend on local-only state or alter shared application data. Bounded diagnostic
+writes are allowed when each run uses unique keys and attempts cleanup on both
+success and failure. A cleanup failure must fail the check and identify the object
+that may remain.
+
+Storage has one live deployment round trip; its harness UI tests mock the responses
+and run without Google credentials. Locally, after `gcloud auth application-default
+login`, run `pnpm test:integration --filter=@oaknational/resource-adapter-storage`
+from the repository root to load the bucket setting from `.env`.
 
 ## Package release enforcement
 

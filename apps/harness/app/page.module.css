@@ -1144,6 +1144,37 @@
   margin: 0;
 }
 
+/* Keys and upstream messages are long and unbreakable; without this they push
+   the panel wider than the page. */
+.smokeTestDetail {
+  margin: 0.5rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.smokeTestFacts {
+  display: grid;
+  gap: 0.25rem 1rem;
+  grid-template-columns: auto 1fr;
+  margin: 0.75rem 0 0;
+}
+
+.smokeTestFacts > div {
+  display: grid;
+  gap: inherit;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.smokeTestFacts dt {
+  color: #4a4a4a;
+  font-weight: 600;
+}
+
+.smokeTestFacts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .lessonAdapterAction {
   align-items: center;
   background: #ebfbeb;

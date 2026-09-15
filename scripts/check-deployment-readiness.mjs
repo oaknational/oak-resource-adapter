@@ -10,6 +10,9 @@ const reportableFailures = new Set([
   "database=DATABASE_CERTIFICATE_REJECTED",
   "database=DATABASE_REFUSED_CONNECTION",
   "database=DATABASE_UNAVAILABLE",
+  "artifactStorage=ARTIFACT_STORAGE_NOT_CONFIGURED",
+  "artifactStorage=ARTIFACT_STORAGE_IDENTITY_INCOMPLETE",
+  "artifactStorage=ARTIFACT_STORAGE_IDENTITY_NOT_FEDERATED",
 ]);
 
 /**

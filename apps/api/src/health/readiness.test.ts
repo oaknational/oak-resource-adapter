@@ -34,12 +34,19 @@ const connectedDatabase = {
   message: "Database connected.",
 };
 
+const configuredStorage = {
+  label: "Artifact storage",
+  status: "ready",
+  message: "Artifact storage configured.",
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   probeDatabase.mockResolvedValue(null);
   vi.stubEnv("MODEL_TRANSPORT", undefined);
   vi.stubEnv("OPENAI_API_KEY", undefined);
   vi.stubEnv("VERCEL_ENV", undefined);
+  vi.stubEnv("RESOURCE_ARTIFACTS_BUCKET", "oak-ow-staging-ldn-ora-artifacts");
   vi.stubEnv("RESOURCE_ADAPTER_ALLOWED_ORIGINS", "http://localhost:3000");
   vi.stubGlobal(
     "fetch",
@@ -74,6 +81,7 @@ describe("configuration readiness", () => {
             status: "ready",
             message: "OpenAI transport configured.",
           },
+          artifactStorage: configuredStorage,
         },
       });
     },
@@ -245,5 +253,127 @@ describe("database readiness", () => {
     await GET(request());
 
     expect(probeDatabase).toHaveBeenCalledOnce();
+  });
+});
+
+describe("artifact storage readiness", () => {
+  const provider =
+    "projects/1/locations/global/workloadIdentityPools/vercel/providers/vercel";
+  const serviceAccount = "wif-vercel-ora@oak.iam.gserviceaccount.com";
+
+  const configured = () => {
+    vi.stubEnv("MODEL_TRANSPORT", "openai");
+    vi.stubEnv("OPENAI_API_KEY", "test-value-not-validated-with-provider");
+  };
+
+  const deployed = () => {
+    configured();
+    vi.stubEnv("VERCEL_ENV", "preview");
+  };
+
+  const withIdentity = () => {
+    vi.stubEnv("GCP_SERVICE_ACCOUNT", serviceAccount);
+    vi.stubEnv("GCP_WORKLOAD_IDENTITY_PROVIDER", provider);
+  };
+
+  it("accepts a local server with a bucket and no federated identity", async () => {
+    configured();
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      status: "ready",
+      checks: { artifactStorage: configuredStorage },
+    });
+  });
+
+  it("reports a local server with no bucket, which is where uploads would go", async () => {
+    configured();
+    vi.stubEnv("RESOURCE_ARTIFACTS_BUCKET", "");
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toMatchObject({
+      status: "not-ready",
+      checks: {
+        artifactStorage: {
+          status: "not-ready",
+          code: "ARTIFACT_STORAGE_NOT_CONFIGURED",
+          message: "The artifact storage bucket is not configured.",
+          retryable: false,
+        },
+      },
+    });
+  });
+
+  it("accepts a deployment with a bucket and a federated identity", async () => {
+    deployed();
+    withIdentity();
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      status: "ready",
+      checks: {
+        artifactStorage: { status: "ready", message: "Artifact storage configured." },
+      },
+    });
+  });
+
+  it.each([
+    {
+      code: "ARTIFACT_STORAGE_NOT_CONFIGURED",
+      message: "The artifact storage bucket is not configured.",
+      stub: () => {
+        vi.stubEnv("RESOURCE_ARTIFACTS_BUCKET", "");
+        withIdentity();
+      },
+    },
+    {
+      code: "ARTIFACT_STORAGE_IDENTITY_NOT_FEDERATED",
+      message: "The artifact storage identity is not federated.",
+      stub: () => {},
+    },
+    {
+      code: "ARTIFACT_STORAGE_IDENTITY_INCOMPLETE",
+      message: "The artifact storage identity is incomplete.",
+      stub: () => vi.stubEnv("GCP_WORKLOAD_IDENTITY_PROVIDER", provider),
+    },
+  ])("reports $code as needing intervention", async (expected) => {
+    deployed();
+    expected.stub();
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toMatchObject({
+      status: "not-ready",
+      checks: {
+        artifactStorage: {
+          label: "Artifact storage",
+          status: "not-ready",
+          code: expected.code,
+          message: expected.message,
+          retryable: false,
+        },
+      },
+    });
+  });
+
+  it("names neither the bucket nor the account it could not use", async () => {
+    deployed();
+    vi.stubEnv("GCP_WORKLOAD_IDENTITY_PROVIDER", provider);
+
+    const body = await (await GET(request())).json();
+
+    expect(JSON.stringify(body)).not.toContain("oak-ow-staging-ldn-ora-artifacts");
+    expect(JSON.stringify(body)).not.toContain("gserviceaccount.com");
   });
 });
