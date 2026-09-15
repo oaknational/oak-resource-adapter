@@ -148,6 +148,7 @@ const storageRoundTripResponseSchema = z.object({
 export type StorageRoundTripResponse = z.infer<typeof storageRoundTripResponseSchema>;
 
 const storageFailureSchema = z.object({
+  status: z.literal("failed"),
   bucket: z.string().nullable().catch(null),
   cleanupMessage: z.string().nullable().catch(null),
   federated: z.boolean().nullable().catch(null),
@@ -167,15 +168,6 @@ export class StorageRoundTripFailed extends Error {
   }
 }
 
-async function readFailure(
-  response: Response,
-): Promise<StorageRoundTripFailure | null> {
-  const body: unknown = await response.json().catch(() => null);
-  const failure = storageFailureSchema.safeParse(body);
-
-  return failure.success ? failure.data : null;
-}
-
 export async function roundTripStorage(): Promise<StorageRoundTripResponse> {
   const response = await fetch(`${adapterProxyPath}/dev/storage/roundtrip`, {
     method: "POST",
@@ -186,16 +178,23 @@ export async function roundTripStorage(): Promise<StorageRoundTripResponse> {
   }
 
   if (!response.ok) {
-    const failure = await readFailure(response);
-
-    if (failure) {
-      throw new StorageRoundTripFailed(failure);
-    }
-
     throw new Error(`The API returned HTTP ${response.status}.`);
   }
 
-  return readJson(response, storageRoundTripResponseSchema, "a storage round trip");
+  const body: unknown = await response.json().catch(() => null);
+  const failure = storageFailureSchema.safeParse(body);
+
+  if (failure.success) {
+    throw new StorageRoundTripFailed(failure.data);
+  }
+
+  const success = storageRoundTripResponseSchema.safeParse(body);
+
+  if (!success.success) {
+    throw new Error("The API returned a storage round trip in an unrecognised shape.");
+  }
+
+  return success.data;
 }
 
 export async function invokeModel(): Promise<ModelInvocationResponse> {
