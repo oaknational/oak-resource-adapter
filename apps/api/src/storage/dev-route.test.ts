@@ -7,6 +7,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OPTIONS, POST } from "../../app/dev/storage/roundtrip/route";
 
+const { logError } = vi.hoisted(() => ({ logError: vi.fn() }));
+
+vi.mock("@oaknational/resource-adapter-logger", () => ({
+  raLogger: () => ({ error: logError }),
+}));
+
 vi.mock("@oaknational/resource-adapter-storage", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@oaknational/resource-adapter-storage")>()),
   roundTripArtifactStorage: vi.fn(),
@@ -37,6 +43,7 @@ function expectDiagnosticHeaders(response: Response) {
 }
 
 beforeEach(() => {
+  logError.mockReset();
   roundTrip.mockReset();
   roundTrip.mockResolvedValue(result);
   vi.stubEnv("ENABLE_DEV_ROUTES", "1");
@@ -58,6 +65,7 @@ describe("storage development route", () => {
       expect((await POST(request())).status).toBe(404);
       expect(OPTIONS(request("OPTIONS")).status).toBe(404);
       expect(roundTrip).not.toHaveBeenCalled();
+      expect(logError).not.toHaveBeenCalled();
     },
   );
 
@@ -70,6 +78,7 @@ describe("storage development route", () => {
     );
     expect(response.headers.get("Access-Control-Allow-Methods")).toBe("POST, OPTIONS");
     expect(roundTrip).not.toHaveBeenCalled();
+    expect(logError).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -87,6 +96,7 @@ describe("storage development route", () => {
       expect(response.status).toBe(200);
       expectDiagnosticHeaders(response);
       expect(roundTrip).toHaveBeenCalledExactlyOnceWith(environment);
+      expect(logError).not.toHaveBeenCalled();
       await expect(response.json()).resolves.toEqual({
         status: "ok",
         environment,
@@ -100,19 +110,19 @@ describe("storage development route", () => {
     async (step) => {
       const cause = new Error(step === "cleanup" ? "Delete denied" : "Read denied");
       const cleanupError = step === "read" ? undefined : new Error("Delete denied");
-      roundTrip.mockRejectedValue(
-        new ArtifactStorageRoundTripError(
-          result.key,
-          result.bucket,
-          result.federated,
-          cause,
-          { cleanupError, stage: step === "cleanup" ? "cleanup" : "write-read" },
-        ),
+      const error = new ArtifactStorageRoundTripError(
+        result.key,
+        result.bucket,
+        result.federated,
+        cause,
+        { cleanupError, stage: step === "cleanup" ? "cleanup" : "write-read" },
       );
+      roundTrip.mockRejectedValue(error);
 
       const response = await POST(request());
 
-      expect(response.status).toBe(502);
+      expect(logError).toHaveBeenCalledExactlyOnceWith(error, { report: true });
+      expect(response.status).toBe(200);
       expectDiagnosticHeaders(response);
       await expect(response.json()).resolves.toEqual({
         status: "failed",
@@ -140,7 +150,8 @@ describe("storage development route", () => {
 
     const response = await POST(request());
 
-    expect(response.status).toBe(502);
+    expect(logError).toHaveBeenCalledExactlyOnceWith(error, { report: true });
+    expect(response.status).toBe(200);
     expectDiagnosticHeaders(response);
     await expect(response.json()).resolves.toEqual({
       status: "failed",

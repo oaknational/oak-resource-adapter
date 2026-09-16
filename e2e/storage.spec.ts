@@ -127,7 +127,6 @@ test.describe("mocked artifact storage", { tag: "@deployment-safe" }, () => {
       attempts += 1;
       return attempts === 1
         ? route.fulfill({
-            status: 502,
             json: {
               status: "failed",
               bucket: success.bucket,
@@ -165,7 +164,6 @@ test.describe("mocked artifact storage", { tag: "@deployment-safe" }, () => {
   }) => {
     await page.route(roundTripPath, (route) =>
       route.fulfill({
-        status: 502,
         json: {
           status: "failed",
           bucket: success.bucket,
@@ -189,6 +187,22 @@ test.describe("mocked artifact storage", { tag: "@deployment-safe" }, () => {
     await expect(section).toContainText(success.key);
   });
 
+  test("reports an edge failure that replaced the body", async ({ page }) => {
+    await page.route(roundTripPath, (route) =>
+      route.fulfill({
+        status: 502,
+        contentType: "text/html",
+        body: "<!DOCTYPE html><title>Server error</title>",
+      }),
+    );
+    await page.goto("/?view=smoke-tests");
+    const section = panel(page);
+    await section.getByRole("button", { name: "Run storage round trip" }).click();
+
+    await expect(section).toContainText("Status: Failed");
+    await expect(section).toContainText("The API returned HTTP 502.");
+  });
+
   for (const { name, status, body, message } of [
     {
       name: "disabled dev routes",
@@ -198,7 +212,7 @@ test.describe("mocked artifact storage", { tag: "@deployment-safe" }, () => {
     },
     {
       name: "a failure without storage context",
-      status: 502,
+      status: 200,
       body: { status: "failed", message: "Storage is not configured." },
       message: "Storage is not configured.",
     },
