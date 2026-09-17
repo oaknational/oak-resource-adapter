@@ -1,8 +1,11 @@
+import { createServer } from "node:http";
+import { gzipSync } from "node:zlib";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { GET, POST } from "./route";
+import { DELETE, GET, POST } from "./route";
 
+const realFetch = globalThis.fetch;
 const fetchMock = vi.fn();
 
 function callProxy(path: string[]): Promise<Response> {
@@ -33,6 +36,24 @@ afterEach(() => {
 });
 
 describe("the adapter proxy", () => {
+  it("forwards authenticated fixture deletion", async () => {
+    const response = await DELETE(
+      new NextRequest(
+        "https://harness.example.com/adapter-proxy/dev/artifact-download-fixture",
+        {
+          method: "DELETE",
+          headers: { authorization: "Bearer test-token" },
+        },
+      ),
+      { params: Promise.resolve({ path: ["dev", "artifact-download-fixture"] }) },
+    );
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.objectContaining({ pathname: "/dev/artifact-download-fixture" }),
+      expect.objectContaining({ method: "DELETE", redirect: "manual" }),
+    );
+    expect(forwardedHeaders().get("authorization")).toBe("Bearer test-token");
+  });
   it("forwards a DOCX download's body, status and response headers", async () => {
     const bytes = new Uint8Array([80, 75, 3, 4, 0, 255]);
     const contentType =
@@ -93,5 +114,39 @@ describe("the adapter proxy", () => {
     await callProxy(["health"]);
 
     expect(forwardedHeaders().has("x-vercel-protection-bypass")).toBe(false);
+  });
+
+  it("forwards decompressed bytes without the compressed Content-Length", async () => {
+    const bytes = Buffer.from("image-heavy worksheet content ".repeat(30000));
+    const compressed = gzipSync(bytes);
+    const server = createServer((_request, response) => {
+      response.writeHead(200, {
+        "content-encoding": "gzip",
+        "content-length": compressed.length,
+        "content-type": "application/octet-stream",
+        "content-disposition": 'attachment; filename="worksheet.docx"',
+      });
+      response.end(compressed);
+    });
+    await new Promise<void>((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", resolve);
+    });
+    try {
+      const address = server.address();
+      if (!address || typeof address === "string")
+        throw new Error("No test server address");
+      process.env.RESOURCE_ADAPTER_API_ORIGIN = `http://127.0.0.1:${address.port}`;
+      vi.stubGlobal("fetch", realFetch);
+      const response = await callProxy(["resource-artifacts", "fixture"]);
+      expect(response.headers.has("content-length")).toBe(false);
+      expect(response.headers.has("content-encoding")).toBe(false);
+      expect(Buffer.from(await response.arrayBuffer())).toEqual(bytes);
+    } finally {
+      server.closeAllConnections();
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
+    }
   });
 });

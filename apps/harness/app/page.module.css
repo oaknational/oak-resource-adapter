@@ -253,6 +253,78 @@
   width: 100%;
 }
 
+.exportModes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.25rem 0;
+}
+
+.exportModes a {
+  border: 2px solid #222222;
+  border-radius: 0.375rem;
+  color: #222222;
+  font-weight: 600;
+  min-height: 2.75rem;
+  padding: 0.625rem 1rem;
+  text-decoration: none;
+}
+
+.exportModes a[aria-current="page"] {
+  background: #222222;
+  color: #ffffff;
+}
+
+.exportModes a:hover:not([aria-current="page"]) {
+  background: #ebfbeb;
+}
+
+.scenarioSelect {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  min-width: 0;
+}
+
+.scenarioSelect label {
+  font-weight: 600;
+}
+
+.scenarioSelect select {
+  background: #ffffff;
+  border: 2px solid #222222;
+  border-radius: 0.375rem;
+  color: #222222;
+  flex: 1 1 16rem;
+  font: inherit;
+  min-height: 2.75rem;
+  min-width: 0;
+  padding: 0.625rem;
+}
+
+.scenarioSelectControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.selectedScenario {
+  margin-top: 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.selectedScenario h2 {
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+
+.selectedScenario p {
+  color: #555555;
+  font-size: 0.8125rem;
+  margin-top: 0.25rem;
+}
+
 .scenarioNavigation ul {
   display: grid;
   gap: 0.75rem;
@@ -594,6 +666,7 @@
 
 .primaryActions button,
 .historyActions button,
+.scenarioSelectControls button,
 .resultPanel button {
   background: #ffffff;
   border: 2px solid #222222;
@@ -606,20 +679,23 @@
   padding: 0.5rem 0.875rem;
 }
 
-.primaryActions .primaryButton {
+.primaryActions .primaryButton,
+.scenarioSelectControls .primaryButton {
   background: #222222;
   color: #ffffff;
 }
 
 .primaryActions button:hover:not(:disabled),
 .historyActions button:hover:not(:disabled),
+.scenarioSelectControls button:hover:not(:disabled),
 .resultPanel button:hover:not(:disabled) {
   background: #ebfbeb;
   color: #222222;
 }
 
 .primaryActions button:disabled,
-.historyActions button:disabled {
+.historyActions button:disabled,
+.scenarioSelectControls button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -628,6 +704,57 @@
   background: #f5e9f2;
   border-left: 4px solid #b1044b;
   padding: 0.75rem 1rem;
+}
+
+.fixtureWarning {
+  background: #fff7cc;
+  border-left: 4px solid #8a6200;
+  color: #453100;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.artifactFeedback:not(:empty) {
+  margin-top: 0.75rem;
+}
+
+.fixtureStatus {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin-top: 1rem;
+}
+
+.fixtureStatusBadge {
+  align-items: center;
+  background: #f4f4f4;
+  border: 1px solid #c7c7c7;
+  border-radius: 0.5rem;
+  color: #444444;
+  display: inline-flex;
+  font-size: 0.875rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  line-height: 1.5;
+  padding: 0.5rem 0.75rem;
+}
+
+.fixtureStatusBadge svg {
+  flex-shrink: 0;
+}
+
+.fixtureStatusBadge[data-state="ready"] {
+  background: #ebfbeb;
+  border-color: #31693d;
+  color: #183f20;
+}
+
+.fixtureStatusBadge[data-state="attention"],
+.fixtureStatusBadge[data-state="working"] {
+  background: #fff7cc;
+  border-color: #8a6200;
+  color: #453100;
 }
 
 .resultPanel section,

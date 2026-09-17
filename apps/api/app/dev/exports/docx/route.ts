@@ -6,11 +6,8 @@ import {
   devRouteNotFound,
   devRoutesEnabled,
 } from "@/dev-routes";
-import {
-  attachmentDisposition,
-  devExportErrorResponse,
-  readDevExportCommand,
-} from "@/exports/dev-route";
+import { attachmentDisposition } from "@/exports/attachment-disposition";
+import { devExportErrorResponse, readDevExportCommand } from "@/exports/dev-route";
 import { generateDocx } from "@/exports/docx";
 import { docxArtifactFormat } from "@/exports/formats";
 
@@ -35,7 +32,10 @@ export async function POST(request: NextRequest): Promise<Response> {
     headers.set("Content-Type", docxArtifactFormat.mimeType);
     headers.set(
       "Content-Disposition",
-      attachmentDisposition(command.document, docxArtifactFormat.format),
+      attachmentDisposition(
+        command.document.metadata.title ?? null,
+        docxArtifactFormat.format,
+      ),
     );
     // Re-wrap rather than pass `bytes.buffer`, which for a Buffer is the shared pool.
     return new Response(new Uint8Array(bytes), { headers });

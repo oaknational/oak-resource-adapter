@@ -61,7 +61,7 @@ CI runs the same command. It verifies that:
 - portable published package code does not import Node.js built-ins; and
 - deprecated Node.js core modules or npm packages are not introduced.
 
-`pnpm test:artifact` covers what only the packed tarballs can show, including
+`pnpm test:package-artifact` covers what only the packed tarballs can show, including
 the matching fixed-group versions and transitive document dependency above.
 
 There is one documented runtime-cycle exception. Four Drizzle table modules

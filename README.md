@@ -51,7 +51,7 @@ pnpm type-check
 pnpm build
 pnpm test
 pnpm test:coverage
-pnpm test:artifact
+pnpm test:package-artifact
 pnpm test:e2e
 pnpm secrets:scan
 pnpm changeset

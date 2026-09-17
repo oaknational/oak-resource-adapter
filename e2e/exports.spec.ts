@@ -10,12 +10,16 @@ const docxRoute = "**/adapter-proxy/dev/exports/docx";
  * its handlers, and the export controls offer no signal of their own. The
  * header's health check is the first thing on any view that resolves only after
  * hydration, so waiting for it to leave "Checking" makes the controls usable.
+ *
+ * It waits well past the default: this is a gate rather than an assertion, and
+ * the first request to a freshly built server opens the API's database
+ * connection before the header can resolve.
  */
 async function openExports(page: Page, url = exportsUrl) {
   await page.goto(url);
   await expect(
     page.getByRole("banner").getByRole("button", { name: /^API:/ }),
-  ).not.toHaveText(/Checking/);
+  ).not.toHaveText(/Checking/, { timeout: 30_000 });
 }
 
 test("downloads a DOCX from the local API without embedding figures", async ({
@@ -62,14 +66,11 @@ test("exports the selected fixture and disables controls until generation finish
 
   try {
     await openExports(page);
-    const fixtures = page.getByRole("navigation", { name: "Export fixtures" });
-    await fixtures
-      .getByRole("link", { name: "Forming ions for ionic bonding" })
-      .click();
+    const fixtures = page.getByRole("combobox", { name: "Document fixture" });
+    await fixtures.selectOption("forming-ions-for-ionic-bonding");
+    await page.getByRole("button", { name: "Show" }).click();
     await expect(page).toHaveURL(/fixture=forming-ions-for-ionic-bonding(?:&|$)/);
-    await expect(
-      fixtures.getByRole("link", { name: "Forming ions for ionic bonding" }),
-    ).toHaveAttribute("aria-current", "page");
+    await expect(fixtures).toHaveValue("forming-ions-for-ionic-bonding");
 
     const embedFigures = page.getByRole("checkbox", { name: "Embed figures" });
     await embedFigures.uncheck();
@@ -133,3 +134,80 @@ for (const { status, message } of [
     await expect(page.getByRole("checkbox", { name: "Embed figures" })).toBeEnabled();
   });
 }
+
+test("separates export modes and commits a grouped fixture choice", async ({
+  page,
+}) => {
+  await openExports(page);
+  const fixtures = page.getByRole("combobox", { name: "Document fixture" });
+  await expect(
+    fixtures.locator('optgroup[label="Synthetic fixtures"] option'),
+  ).toHaveText(["Exploring linear equations"]);
+  await expect(
+    fixtures.locator('optgroup[label="Lesson fixtures"] option'),
+  ).toHaveCount(10);
+  await fixtures.selectOption("forming-ions-for-ionic-bonding");
+  // Choosing an option must not navigate until the choice is committed.
+  await expect(page).not.toHaveURL(/fixture=forming-ions-for-ionic-bonding/);
+  await page.getByRole("button", { name: "Show" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Forming ions for ionic bonding", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Stored downloads", exact: true }).click();
+  await expect(fixtures).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Shared download fixture", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Stored downloads", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  await page.goBack();
+  await expect(fixtures).toHaveValue("forming-ions-for-ionic-bonding");
+  await expect(
+    page.getByRole("link", { name: "Generate an export", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+});
+
+test("switching export modes aborts generation and resets its controls", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const fetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      if (String(input).endsWith("/adapter-proxy/dev/exports/docx")) {
+        document.documentElement.dataset.exportPending = "true";
+        return new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener(
+            "abort",
+            () => {
+              document.documentElement.dataset.exportAborted = "true";
+              reject(new DOMException("Aborted", "AbortError"));
+            },
+            { once: true },
+          );
+        });
+      }
+      return fetch(input, init);
+    };
+  });
+  await openExports(page);
+  await page.getByRole("checkbox", { name: "Embed figures" }).uncheck();
+  await page.getByRole("button", { name: "Download DOCX", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-export-pending", "true");
+  await expect(
+    page.getByRole("button", { name: "Generating DOCX…", exact: true }),
+  ).toBeDisabled();
+  await page.getByRole("link", { name: "Stored downloads", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-export-aborted", "true");
+  await page.getByRole("link", { name: "Generate an export", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Download DOCX", exact: true }),
+  ).toBeEnabled();
+  await expect(page.getByRole("checkbox", { name: "Embed figures" })).toBeChecked();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Download started." }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "DOCX export" }).getByRole("alert"),
+  ).toHaveCount(0);
+});

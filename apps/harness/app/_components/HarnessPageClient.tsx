@@ -43,7 +43,11 @@ export function HarnessPageClient({
         )}
         {view.section === "smoke-tests" && <SmokeTestsView />}
         {view.section === "exports" && (
-          <ExportsView key={view.fixtureId} {...view} lessonId={lessonId} />
+          <ExportsView
+            key={`${view.mode}:${view.fixtureId}`}
+            {...view}
+            lessonId={lessonId}
+          />
         )}
         {view.section === "transformations" && (
           <TransformationsView
