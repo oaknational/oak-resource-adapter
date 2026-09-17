@@ -739,25 +739,21 @@ describe("reviewing an applied scaffold", () => {
     });
   });
 
-  it("queues fresh suggestions while a review is pending", async () => {
+  it("refuses fresh suggestions while a review is pending", async () => {
     const dependencies = stubDependencies({
       repository: stubRepository({
         getPendingReview: vi.fn().mockResolvedValue(pendingReview()),
       }),
     });
 
-    await enqueueWorksheetScaffoldingRetrySuggestions(
-      { adaptationId: ADAPTATION_ID, requestId: REQUEST_ID },
-      teacher,
-      dependencies,
-    );
-
-    expect(dependencies.enqueue).toHaveBeenCalledWith(
-      expect.objectContaining({
-        idempotencyKey: `retrySuggestions:${DOCUMENT_ID}:${REQUEST_ID}`,
-        kind: "suggestions.generate",
-      }),
-    );
+    await expect(
+      enqueueWorksheetScaffoldingRetrySuggestions(
+        { adaptationId: ADAPTATION_ID, requestId: REQUEST_ID },
+        teacher,
+        dependencies,
+      ),
+    ).resolves.toBeNull();
+    expect(dependencies.enqueue).not.toHaveBeenCalled();
   });
 
   it("refuses fresh suggestions for an inaccessible adaptation", async () => {
@@ -773,6 +769,7 @@ describe("reviewing an applied scaffold", () => {
         dependencies,
       ),
     ).resolves.toBeNull();
+    expect(repository.getPendingReview).not.toHaveBeenCalled();
     expect(dependencies.enqueue).not.toHaveBeenCalled();
   });
 
