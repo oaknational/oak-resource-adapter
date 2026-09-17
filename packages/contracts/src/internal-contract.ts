@@ -75,7 +75,7 @@ export const worksheetScaffoldingRetryTransformationRequestSchema = z.object({
   requestId: internalIdSchema,
 });
 
-export const worksheetScaffoldingRetrySuggestionRequestSchema = z.object({
+export const worksheetScaffoldingRetrySuggestionsRequestSchema = z.object({
   adaptationId: internalIdSchema,
   requestId: internalIdSchema,
 });
@@ -105,8 +105,8 @@ export type WorksheetScaffoldingReviewRequest = z.infer<
 export type WorksheetScaffoldingRetryTransformationRequest = z.infer<
   typeof worksheetScaffoldingRetryTransformationRequestSchema
 >;
-export type WorksheetScaffoldingRetrySuggestionRequest = z.infer<
-  typeof worksheetScaffoldingRetrySuggestionRequestSchema
+export type WorksheetScaffoldingRetrySuggestionsRequest = z.infer<
+  typeof worksheetScaffoldingRetrySuggestionsRequestSchema
 >;
 export type WorksheetScaffoldingDismissRequest = z.infer<
   typeof worksheetScaffoldingDismissRequestSchema

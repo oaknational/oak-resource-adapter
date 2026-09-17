@@ -26,8 +26,8 @@ import {
   type WorksheetScaffoldingDismissRequest,
   type ResourceAdapterSourceDocumentRequest,
   type ResourceAdapterFeatureFlagsResponse,
-  type WorksheetScaffoldingRetrySuggestionRequest,
-  worksheetScaffoldingRetrySuggestionRequestSchema,
+  type WorksheetScaffoldingRetrySuggestionsRequest,
+  worksheetScaffoldingRetrySuggestionsRequestSchema,
 } from "./internal-contract.js";
 
 /** The service boundary required by the feature flags procedure. */
@@ -71,7 +71,7 @@ export type WorksheetScaffoldingService = Readonly<{
     target: ResourceAdapterAuthenticatedTeacher,
   ) => Promise<WorksheetScaffoldingState | null>;
   retrySuggestions: (
-    request: WorksheetScaffoldingRetrySuggestionRequest,
+    request: WorksheetScaffoldingRetrySuggestionsRequest,
     target: ResourceAdapterAuthenticatedTeacher,
   ) => Promise<WorksheetScaffoldingState | null>;
   dismiss: (
@@ -252,7 +252,7 @@ export const internalRouter = t_internal.router({
         ),
       ),
     retrySuggestions: internalAuthenticatedProcedure
-      .input(worksheetScaffoldingRetrySuggestionRequestSchema)
+      .input(worksheetScaffoldingRetrySuggestionsRequestSchema)
       .output(worksheetScaffoldingStateSchema)
       .mutation(async ({ ctx, input }) =>
         requireWorksheetScaffolding(

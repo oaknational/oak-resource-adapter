@@ -7,7 +7,7 @@ import type {
   WorksheetScaffoldingRemoveRequest,
   WorksheetScaffoldingState,
   WorksheetScaffoldingDismissRequest,
-  WorksheetScaffoldingRetrySuggestionRequest,
+  WorksheetScaffoldingRetrySuggestionsRequest,
 } from "@oaknational/resource-adapter-contracts/internal";
 
 import type { GetToken, LessonContext } from "./publicTypes.js";
@@ -92,7 +92,7 @@ export function acceptWorksheetScaffoldingReview(
   return reviewAction("accept", options);
 }
 
-export function retryTransformationWorksheetScaffoldingReview(
+export function retryWorksheetScaffoldingTransformation(
   options: ClientOptions & WorksheetScaffoldingRetryTransformationRequest,
 ): Promise<WorksheetScaffoldingState> {
   return callApi("Resource Adapter could not retry that scaffold.", () =>
@@ -106,10 +106,10 @@ export function retryTransformationWorksheetScaffoldingReview(
   );
 }
 
-export function retrySuggestionWorksheetScaffolding(
-  options: ClientOptions & WorksheetScaffoldingRetrySuggestionRequest,
+export function retryWorksheetScaffoldingSuggestions(
+  options: ClientOptions & WorksheetScaffoldingRetrySuggestionsRequest,
 ): Promise<WorksheetScaffoldingState> {
-  return callApi("Resource Adapter could not retry that suggestion.", () =>
+  return callApi("Resource Adapter could not suggest new scaffolds.", () =>
     createResourceAdapterInternalClient(
       options,
     ).worksheetScaffolding.retrySuggestions.mutate({

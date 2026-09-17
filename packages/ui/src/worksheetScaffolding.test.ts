@@ -12,8 +12,8 @@ import {
   enqueueWorksheetScaffoldingRemoval,
   getWorksheetScaffolding,
   openWorksheetScaffolding,
-  retrySuggestionWorksheetScaffolding,
-  retryTransformationWorksheetScaffoldingReview,
+  retryWorksheetScaffoldingSuggestions,
+  retryWorksheetScaffoldingTransformation,
   undoWorksheetScaffoldingReview,
 } from "./worksheetScaffolding.js";
 
@@ -153,7 +153,7 @@ describe("worksheet scaffolding client", () => {
     },
     {
       call: () =>
-        retryTransformationWorksheetScaffoldingReview({
+        retryWorksheetScaffoldingTransformation({
           ...options,
           adaptationId,
           attemptId,
@@ -164,7 +164,7 @@ describe("worksheet scaffolding client", () => {
     },
     {
       call: () =>
-        retrySuggestionWorksheetScaffolding({
+        retryWorksheetScaffoldingSuggestions({
           ...options,
           adaptationId,
           requestId,
@@ -203,7 +203,7 @@ describe("worksheet scaffolding client", () => {
   it("turns a client failure into a stable public error", async () => {
     api.retryTransformation.mockRejectedValue(new Error("offline"));
 
-    const result = retryTransformationWorksheetScaffoldingReview({
+    const result = retryWorksheetScaffoldingTransformation({
       ...options,
       adaptationId,
       attemptId,

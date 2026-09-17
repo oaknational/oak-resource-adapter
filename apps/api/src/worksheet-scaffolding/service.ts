@@ -9,7 +9,7 @@ import {
   type WorksheetScaffoldingJobKind,
   type WorksheetScaffoldingState,
   type WorksheetScaffoldingDismissRequest,
-  type WorksheetScaffoldingRetrySuggestionRequest,
+  type WorksheetScaffoldingRetrySuggestionsRequest,
 } from "@oaknational/resource-adapter-contracts/internal";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 import {
@@ -459,7 +459,7 @@ export async function enqueueWorksheetScaffoldingRetryTransformation(
 }
 
 export async function enqueueWorksheetScaffoldingRetrySuggestions(
-  input: WorksheetScaffoldingRetrySuggestionRequest,
+  input: WorksheetScaffoldingRetrySuggestionsRequest,
   target: ResourceAdapterAuthenticatedTeacher,
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingState | null> {
