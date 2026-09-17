@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Next writes AGENTS.md and CLAUDE.md into the app on every build.
+  agentRules: false,
   compiler: {
     styledComponents: true,
   },

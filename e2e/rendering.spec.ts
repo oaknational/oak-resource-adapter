@@ -100,7 +100,11 @@ test(
     // The icon exercises the harness's Cloudinary asset-host defaults.
     const icon = page.getByTestId("inline-banner-icon").locator("img");
     await expect
-      .poll(async () => icon.evaluate((image) => image.naturalWidth))
+      .poll(async () =>
+        icon.evaluate((image) =>
+          image instanceof HTMLImageElement ? image.naturalWidth : 0,
+        ),
+      )
       .toBeGreaterThan(0);
 
     await expect(
@@ -169,7 +173,14 @@ test(
       ).toHaveCount(0);
       for (const img of await worksheet.locator("img").all()) {
         await expect
-          .poll(() => img.evaluate((image) => image.complete && image.naturalWidth > 0))
+          .poll(() =>
+            img.evaluate(
+              (image) =>
+                image instanceof HTMLImageElement &&
+                image.complete &&
+                image.naturalWidth > 0,
+            ),
+          )
           .toBe(true);
       }
     }

@@ -5,7 +5,7 @@
       "Bash(pnpm test *)",
       "Bash(pnpm test:coverage *)",
       "Bash(pnpm test:integration *)",
-      "Bash(pnpm test:artifact *)",
+      "Bash(pnpm test:package-artifact *)",
       "Bash(pnpm test:e2e *)",
       "Bash(pnpm test:e2e:deployment *)",
       "Bash(pnpm turbo run test *)",

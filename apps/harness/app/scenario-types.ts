@@ -106,9 +106,12 @@ export type HarnessView =
     }>
   | Readonly<{
       section: "exports";
+      mode: "generate" | "stored-downloads";
       fixtureId: string;
+      artifactId?: string;
+      artifactIsShared: boolean;
       resourceDocument: ResourceDocument;
-      fixtures: readonly Readonly<{ id: string; title: string }>[];
+      fixtures: readonly Readonly<{ id: string; title: string; group: string }>[];
     }>
   | Readonly<{ section: "capabilities" }>
   | Readonly<{ section: "smoke-tests" }>;

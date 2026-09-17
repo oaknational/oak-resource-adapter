@@ -4,6 +4,7 @@
   // so neither `pnpm type-check` nor an editor type-checks them.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
     "noEmit": true,
     "types": ["node"]
   },

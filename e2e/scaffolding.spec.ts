@@ -47,7 +47,11 @@ test("shows the API state, a capability-based trigger, and the adapter sidebar",
   await expect(sidebar).toBeVisible();
   const closeIcon = sidebar.getByRole("button", { name: "Close Modal" }).locator("img");
   await expect
-    .poll(async () => closeIcon.evaluate((image) => image.naturalWidth))
+    .poll(async () =>
+      closeIcon.evaluate((image) =>
+        image instanceof HTMLImageElement ? image.naturalWidth : 0,
+      ),
+    )
     .toBeGreaterThan(0);
   await expectRenderedWorksheet(sidebar, title);
   await expect(
