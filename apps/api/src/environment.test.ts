@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { isDeployment, isProductionMode, isProductionDeployment } from "./environment";
+import {
+  isDeployment,
+  isProductionMode,
+  isProductionDeployment,
+  storageEnvironment,
+} from "./environment";
 
 beforeEach(() => {
   vi.stubEnv("VERCEL_ENV", undefined);
@@ -69,5 +74,33 @@ describe("environment predicates", () => {
     expect(isDeployment()).toBe(false);
     expect(isProductionDeployment()).toBe(false);
     expect(isProductionMode()).toBe(false);
+  });
+});
+
+describe("storageEnvironment", () => {
+  it.each([
+    { vercel: undefined, target: undefined, expected: "local" },
+    { vercel: "development", target: undefined, expected: "local" },
+    { vercel: "preview", target: undefined, expected: "preview" },
+    { vercel: "preview", target: "preview", expected: "preview" },
+    { vercel: "preview", target: "staging", expected: "staging" },
+    { vercel: "production", target: "production", expected: "production" },
+  ])(
+    "maps VERCEL_ENV=$vercel VERCEL_TARGET_ENV=$target to $expected",
+    ({ vercel, target, expected }) => {
+      vi.stubEnv("VERCEL_ENV", vercel);
+      vi.stubEnv("VERCEL_TARGET_ENV", target);
+
+      expect(storageEnvironment()).toBe(expected);
+    },
+  );
+
+  // Preview and staging share a bucket, so a shared prefix would mix them.
+  it("separates the staging custom environment from an ordinary Preview", () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    expect(storageEnvironment()).toBe("preview");
+
+    vi.stubEnv("VERCEL_TARGET_ENV", "staging");
+    expect(storageEnvironment()).toBe("staging");
   });
 });

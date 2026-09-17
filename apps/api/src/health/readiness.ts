@@ -2,12 +2,17 @@ import {
   probeDatabase,
   type DatabaseProbeFailure,
 } from "@oaknational/resource-adapter-db";
+import {
+  probeArtifactStorage,
+  type StorageProbeFailure,
+} from "@oaknational/resource-adapter-storage";
 
 import {
   ModelConfigurationError,
   modelConfigurationErrors,
   resolveModelTransport,
 } from "../ai/model-configuration";
+import { isDeployment } from "../environment";
 
 /** Public responses must use fixed messages, never upstream errors or env values. */
 const readinessMessages = {
@@ -19,6 +24,11 @@ const readinessMessages = {
   DATABASE_CERTIFICATE_REJECTED: "The database's certificate was not trusted.",
   DATABASE_REFUSED_CONNECTION: "The database refused the connection.",
   DATABASE_UNAVAILABLE: "The database could not be reached.",
+  ARTIFACT_STORAGE_CONFIGURED: "Artifact storage configured.",
+  ARTIFACT_STORAGE_NOT_CONFIGURED: "The artifact storage bucket is not configured.",
+  ARTIFACT_STORAGE_IDENTITY_INCOMPLETE: "The artifact storage identity is incomplete.",
+  ARTIFACT_STORAGE_IDENTITY_NOT_FEDERATED:
+    "The artifact storage identity is not federated.",
 } as const;
 
 type ReadinessCode = keyof typeof readinessMessages;
@@ -33,6 +43,9 @@ const terminalCodes: ReadonlySet<string> = new Set([
   "DATABASE_NOT_CONFIGURED",
   "DATABASE_CERTIFICATE_REJECTED",
   "DATABASE_REFUSED_CONNECTION",
+  "ARTIFACT_STORAGE_NOT_CONFIGURED",
+  "ARTIFACT_STORAGE_IDENTITY_INCOMPLETE",
+  "ARTIFACT_STORAGE_IDENTITY_NOT_FEDERATED",
 ]);
 
 type CheckOutcome = Readonly<{
@@ -84,6 +97,27 @@ async function database(): Promise<CheckOutcome> {
     : { label, status: "ready", code: "DATABASE_CONNECTED" };
 }
 
+const storageCodes: Record<StorageProbeFailure, ReadinessCode> = {
+  "bucket-not-configured": "ARTIFACT_STORAGE_NOT_CONFIGURED",
+  "identity-incomplete": "ARTIFACT_STORAGE_IDENTITY_INCOMPLETE",
+  "identity-not-federated": "ARTIFACT_STORAGE_IDENTITY_NOT_FEDERATED",
+};
+
+/**
+ * A deployment must impersonate a service account; elsewhere the same bucket is
+ * reached with the developer's own credentials, which no configuration names.
+ */
+function artifactStorage(): CheckOutcome {
+  const label = "Artifact storage";
+  const failure = probeArtifactStorage({
+    requireFederatedIdentity: isDeployment(),
+  });
+
+  return failure
+    ? { label, status: "not-ready", code: storageCodes[failure] }
+    : { label, status: "ready", code: "ARTIFACT_STORAGE_CONFIGURED" };
+}
+
 function describeCheck({ label, status, code }: CheckOutcome): ReadinessCheck {
   return {
     label,
@@ -94,9 +128,11 @@ function describeCheck({ label, status, code }: CheckOutcome): ReadinessCheck {
 }
 
 export async function checkReadiness() {
+  // The harness renders these in order, under liveness.
   const checks = {
     database: describeCheck(await database()),
     modelConfiguration: describeCheck(modelConfiguration()),
+    artifactStorage: describeCheck(artifactStorage()),
   };
   const status = Object.values(checks).every((check) => check.status === "ready")
     ? "ready"

@@ -12,11 +12,10 @@ import {
   readDevExportCommand,
 } from "@/exports/dev-route";
 import { generateDocx } from "@/exports/docx";
+import { docxArtifactFormat } from "@/exports/formats";
 
 const allowedMethods = "POST, OPTIONS";
 const format = "DOCX";
-const contentType =
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 export const OPTIONS = createDevOptionsHandler(allowedMethods);
 
@@ -33,8 +32,11 @@ export async function POST(request: NextRequest): Promise<Response> {
     const bytes = await generateDocx(command.document, {
       embedFigures: command.embedFigures,
     });
-    headers.set("Content-Type", contentType);
-    headers.set("Content-Disposition", attachmentDisposition(command.document, "docx"));
+    headers.set("Content-Type", docxArtifactFormat.mimeType);
+    headers.set(
+      "Content-Disposition",
+      attachmentDisposition(command.document, docxArtifactFormat.format),
+    );
     // Re-wrap rather than pass `bytes.buffer`, which for a Buffer is the shared pool.
     return new Response(new Uint8Array(bytes), { headers });
   } catch (error) {

@@ -1,3 +1,5 @@
+import type { ArtifactEnvironment } from "@oaknational/resource-adapter-storage";
+
 /** Vercel custom environments, including staging, use VERCEL_ENV=preview. */
 export function isDeployment(): boolean {
   return (
@@ -11,4 +13,21 @@ export function isProductionDeployment(): boolean {
 
 export function isProductionMode(): boolean {
   return process.env.NODE_ENV === "production";
+}
+
+/**
+ * Preview and the staging custom environment share a bucket, so they must not
+ * share a prefix. `VERCEL_ENV` reports both as `preview`; only
+ * `VERCEL_TARGET_ENV` separates them.
+ */
+export function storageEnvironment(): ArtifactEnvironment {
+  if (isProductionDeployment()) {
+    return "production";
+  }
+
+  if (process.env.VERCEL_TARGET_ENV === "staging") {
+    return "staging";
+  }
+
+  return isDeployment() ? "preview" : "local";
 }

@@ -1,0 +1,37 @@
+{
+  "name": "@oaknational/resource-adapter-storage",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Writes generated resource files to a private GCS bucket",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "dev": "tsc --project tsconfig.build.json --watch",
+    "lint": "eslint src --max-warnings=0",
+    "lint:fix": "eslint src --fix",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
+    "test:integration": "RUN_STORAGE_INTEGRATION_TESTS=1 vitest run src/upload.integration.test.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^8.0.1",
+    "@vercel/oidc": "^3.8.2",
+    "google-auth-library": "^9.15.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "vitest": "^4.1.11"
+  }
+}
