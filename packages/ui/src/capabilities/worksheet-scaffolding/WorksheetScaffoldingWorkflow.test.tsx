@@ -14,8 +14,8 @@ import {
   getWorksheetScaffolding,
   openWorksheetScaffolding,
   enqueueWorksheetScaffoldingRemoval,
-  retrySuggestionWorksheetScaffolding,
-  retryTransformationWorksheetScaffoldingReview,
+  retryWorksheetScaffoldingSuggestions,
+  retryWorksheetScaffoldingTransformation,
   enqueueWorksheetScaffoldingDismissal,
   undoWorksheetScaffoldingReview,
 } from "../../worksheetScaffolding.js";
@@ -28,8 +28,8 @@ vi.mock("../../worksheetScaffolding.js", () => ({
   getWorksheetScaffolding: vi.fn(),
   openWorksheetScaffolding: vi.fn(),
   enqueueWorksheetScaffoldingRemoval: vi.fn(),
-  retrySuggestionWorksheetScaffolding: vi.fn(),
-  retryTransformationWorksheetScaffoldingReview: vi.fn(),
+  retryWorksheetScaffoldingSuggestions: vi.fn(),
+  retryWorksheetScaffoldingTransformation: vi.fn(),
   enqueueWorksheetScaffoldingDismissal: vi.fn(),
   undoWorksheetScaffoldingReview: vi.fn(),
 }));
@@ -39,10 +39,8 @@ const removeContributionMock = vi.mocked(enqueueWorksheetScaffoldingRemoval);
 const getWorksheetScaffoldingMock = vi.mocked(getWorksheetScaffolding);
 const applySuggestionMock = vi.mocked(applyWorksheetScaffoldingSuggestion);
 const acceptReviewMock = vi.mocked(acceptWorksheetScaffoldingReview);
-const retrySuggestionReviewMock = vi.mocked(retrySuggestionWorksheetScaffolding);
-const retryTransformationReviewMock = vi.mocked(
-  retryTransformationWorksheetScaffoldingReview,
-);
+const retrySuggestionsMock = vi.mocked(retryWorksheetScaffoldingSuggestions);
+const retryTransformationMock = vi.mocked(retryWorksheetScaffoldingTransformation);
 const dismissTargetMock = vi.mocked(enqueueWorksheetScaffoldingDismissal);
 const undoReviewMock = vi.mocked(undoWorksheetScaffoldingReview);
 const apiBaseUrl = "https://resource-adapter-api.example";
@@ -278,7 +276,7 @@ beforeEach(() => {
     ...readyWithPendingReview,
     pendingReview: null,
   });
-  retrySuggestionReviewMock.mockResolvedValue({
+  retrySuggestionsMock.mockResolvedValue({
     ...readyWithSuggestion,
     job: {
       failureMessage: null,
@@ -287,7 +285,7 @@ beforeEach(() => {
       status: "queued",
     },
   });
-  retryTransformationReviewMock.mockResolvedValue({
+  retryTransformationMock.mockResolvedValue({
     ...readyWithPendingReview,
     job: {
       failureMessage: null,
@@ -460,12 +458,28 @@ describe("WorksheetScaffoldingWorkflow", () => {
       await screen.findByRole("button", { name: "Generate new suggestions" }),
     );
 
-    expect(retrySuggestionReviewMock).toHaveBeenCalledWith({
+    expect(retrySuggestionsMock).toHaveBeenCalledWith({
       adaptationId: "adaptation-1",
       apiBaseUrl,
       getToken: expect.any(Function),
       requestId: expect.any(String),
     });
+  });
+
+  it("offers fresh suggestions while a scaffold awaits review", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithPendingReview));
+    renderDialog();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Generate new suggestions" }),
+    );
+
+    expect(retrySuggestionsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adaptationId: "adaptation-1",
+        requestId: expect.any(String),
+      }),
+    );
   });
 
   it.each(["queued", "running"] as const)(
@@ -485,7 +499,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
       expect(
         screen.queryByRole("button", { name: "Generate new suggestions" }),
       ).not.toBeInTheDocument();
-      expect(retrySuggestionReviewMock).not.toHaveBeenCalled();
+      expect(retrySuggestionsMock).not.toHaveBeenCalled();
     },
   );
 
@@ -555,6 +569,25 @@ describe("WorksheetScaffoldingWorkflow", () => {
         }),
       ),
     );
+  });
+
+  it("still offers fresh suggestions once a scaffold has been accepted", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(readyWithAcceptedScaffold),
+    );
+    renderDialog();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Generate new suggestions" }),
+    );
+
+    expect(retrySuggestionsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adaptationId: "adaptation-1",
+        requestId: expect.any(String),
+      }),
+    );
+    expect(screen.getByRole("button", { name: "Remove all scaffolds" })).toBeVisible();
   });
 
   it("offers unfinished work back instead of opening the worksheet", async () => {
@@ -788,7 +821,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Retry" }));
 
-    expect(retryTransformationReviewMock).toHaveBeenCalledWith({
+    expect(retryTransformationMock).toHaveBeenCalledWith({
       adaptationId: "adaptation-1",
       apiBaseUrl,
       attemptId: "attempt-1",
@@ -1093,7 +1126,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
       await screen.findByRole("button", { name: "Generate new suggestions" }),
     );
 
-    expect(retrySuggestionReviewMock).toHaveBeenCalledWith(
+    expect(retrySuggestionsMock).toHaveBeenCalledWith(
       expect.objectContaining({ requestId: expect.any(String) }),
     );
   });

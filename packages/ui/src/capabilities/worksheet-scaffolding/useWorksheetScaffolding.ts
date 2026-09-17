@@ -20,10 +20,10 @@ import {
   getWorksheetScaffolding,
   openWorksheetScaffolding,
   enqueueWorksheetScaffoldingRemoval,
-  retryTransformationWorksheetScaffoldingReview,
+  retryWorksheetScaffoldingTransformation,
   enqueueWorksheetScaffoldingDismissal,
   undoWorksheetScaffoldingReview,
-  retrySuggestionWorksheetScaffolding,
+  retryWorksheetScaffoldingSuggestions,
 } from "../../worksheetScaffolding.js";
 
 type ScaffoldingAction = "accept" | "dismiss" | "remove" | "retry" | "undo";
@@ -403,7 +403,7 @@ export function useWorksheetScaffolding({
     [runReviewAction],
   );
 
-  const retrySuggestionReview = useCallback(
+  const retrySuggestions = useCallback(
     () =>
       runAction(
         "retry",
@@ -411,7 +411,7 @@ export function useWorksheetScaffolding({
           adaptationId,
           requestId: newRequestId(),
         }),
-        retrySuggestionWorksheetScaffolding,
+        retryWorksheetScaffoldingSuggestions,
       ),
     [runAction],
   );
@@ -428,7 +428,7 @@ export function useWorksheetScaffolding({
                 attemptId: pendingReview.attemptId,
                 requestId: newRequestId(),
               },
-        retryTransformationWorksheetScaffoldingReview,
+        retryWorksheetScaffoldingTransformation,
       ),
     [runAction],
   );
@@ -492,8 +492,8 @@ export function useWorksheetScaffolding({
     documentIsVisible,
     removeContribution,
     resume,
+    retrySuggestions,
     retryTransformationReview,
-    retrySuggestionReview,
     startFresh,
     state,
     tryAgain,

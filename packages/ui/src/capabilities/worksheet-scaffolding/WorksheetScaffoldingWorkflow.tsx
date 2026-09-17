@@ -117,7 +117,7 @@ const ReviewChevron = styled(OakIcon)<{ $isOpen: boolean }>`
   }
 `;
 
-const ReviewActions = styled.div`
+const ActionRow = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -415,7 +415,7 @@ function PendingReviewControls({
       <OakP hidden={!isOpen} id={panelId}>
         {reason}
       </OakP>
-      <ReviewActions>
+      <ActionRow>
         <OakSecondaryButton disabled={disabled} iconName="arrow-left" onClick={onUndo}>
           Undo
         </OakSecondaryButton>
@@ -425,7 +425,7 @@ function PendingReviewControls({
         <OakPrimaryButton disabled={disabled} onClick={onAccept}>
           Accept
         </OakPrimaryButton>
-      </ReviewActions>
+      </ActionRow>
     </OakFlex>
   );
 }
@@ -487,8 +487,8 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     documentIsVisible,
     removeContribution,
     resume,
+    retrySuggestions,
     retryTransformationReview,
-    retrySuggestionReview,
     startFresh,
     state,
     dismissTarget,
@@ -682,19 +682,24 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           <WorkflowStatusBanner
             cta={
               showWorkflowCta ? (
-                <OakTertiaryButton
-                  disabled={isWorking}
-                  iconName={hasScaffoldsInDocument ? "trash" : "ai"}
-                  onClick={
-                    hasScaffoldsInDocument
-                      ? () => startFresh(state.value.adaptationId)
-                      : retrySuggestionReview
-                  }
-                >
-                  {hasScaffoldsInDocument
-                    ? "Remove all scaffolds"
-                    : "Generate new suggestions"}
-                </OakTertiaryButton>
+                <ActionRow>
+                  <OakTertiaryButton
+                    disabled={isWorking}
+                    iconName="ai"
+                    onClick={retrySuggestions}
+                  >
+                    Generate new suggestions
+                  </OakTertiaryButton>
+                  {hasScaffoldsInDocument && (
+                    <OakTertiaryButton
+                      disabled={isWorking}
+                      iconName="trash"
+                      onClick={() => startFresh(state.value.adaptationId)}
+                    >
+                      Remove all scaffolds
+                    </OakTertiaryButton>
+                  )}
+                </ActionRow>
               ) : null
             }
             status={status}
