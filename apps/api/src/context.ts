@@ -10,12 +10,13 @@ import { getSourceDocument } from "./source-documents/service";
 import {
   acceptWorksheetScaffoldingReview,
   enqueueSuggestionApplication,
-  enqueueWorksheetScaffoldingRetry,
+  enqueueWorksheetScaffoldingRetryTransformation,
   getWorksheetScaffoldingState,
   openWorksheetScaffolding,
   enqueueWorksheetScaffoldingRemoval,
   enqueueWorksheetScaffoldingDismissal,
   undoWorksheetScaffoldingReview,
+  enqueueWorksheetScaffoldingRetrySuggestions,
 } from "./worksheet-scaffolding/service";
 import type { ResourceAdapterApiContextHost } from "@oaknational/resource-adapter-contracts/server";
 import type { ResourceAdapterApiContextInternal } from "@oaknational/resource-adapter-contracts/internal/server";
@@ -53,7 +54,10 @@ export async function createContextInternal(
         getWorksheetScaffoldingState(adaptationId, target),
       open: (request, target) => openWorksheetScaffolding(request, target),
       remove: (input, target) => enqueueWorksheetScaffoldingRemoval(input, target),
-      retry: (input, target) => enqueueWorksheetScaffoldingRetry(input, target),
+      retryTransformation: (input, target) =>
+        enqueueWorksheetScaffoldingRetryTransformation(input, target),
+      retrySuggestions: (input, target) =>
+        enqueueWorksheetScaffoldingRetrySuggestions(input, target),
       dismiss: (input, target) => enqueueWorksheetScaffoldingDismissal(input, target),
       undo: (input, target) => undoWorksheetScaffoldingReview(input, target),
     },

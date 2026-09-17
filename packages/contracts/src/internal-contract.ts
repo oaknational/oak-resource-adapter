@@ -68,10 +68,15 @@ export const worksheetScaffoldingReviewRequestSchema = z.object({
   attemptId: internalIdSchema,
 });
 
-export const worksheetScaffoldingRetryRequestSchema = z.object({
+export const worksheetScaffoldingRetryTransformationRequestSchema = z.object({
   adaptationId: internalIdSchema,
   attemptId: internalIdSchema,
   /** A fresh identifier for each deliberate retry; transport replays reuse it. */
+  requestId: internalIdSchema,
+});
+
+export const worksheetScaffoldingRetrySuggestionRequestSchema = z.object({
+  adaptationId: internalIdSchema,
   requestId: internalIdSchema,
 });
 
@@ -97,8 +102,11 @@ export type WorksheetScaffoldingApplyRequest = z.infer<
 export type WorksheetScaffoldingReviewRequest = z.infer<
   typeof worksheetScaffoldingReviewRequestSchema
 >;
-export type WorksheetScaffoldingRetryRequest = z.infer<
-  typeof worksheetScaffoldingRetryRequestSchema
+export type WorksheetScaffoldingRetryTransformationRequest = z.infer<
+  typeof worksheetScaffoldingRetryTransformationRequestSchema
+>;
+export type WorksheetScaffoldingRetrySuggestionRequest = z.infer<
+  typeof worksheetScaffoldingRetrySuggestionRequestSchema
 >;
 export type WorksheetScaffoldingDismissRequest = z.infer<
   typeof worksheetScaffoldingDismissRequestSchema

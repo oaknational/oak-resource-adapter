@@ -2,11 +2,12 @@ import { TRPCClientError } from "@trpc/client";
 import type {
   WorksheetScaffoldingApplyRequest,
   WorksheetScaffoldingReviewRequest,
-  WorksheetScaffoldingRetryRequest,
+  WorksheetScaffoldingRetryTransformationRequest,
   WorksheetScaffoldingEntry,
   WorksheetScaffoldingRemoveRequest,
   WorksheetScaffoldingState,
   WorksheetScaffoldingDismissRequest,
+  WorksheetScaffoldingRetrySuggestionRequest,
 } from "@oaknational/resource-adapter-contracts/internal";
 
 import type { GetToken, LessonContext } from "./publicTypes.js";
@@ -91,13 +92,28 @@ export function acceptWorksheetScaffoldingReview(
   return reviewAction("accept", options);
 }
 
-export function retryWorksheetScaffoldingReview(
-  options: ClientOptions & WorksheetScaffoldingRetryRequest,
+export function retryTransformationWorksheetScaffoldingReview(
+  options: ClientOptions & WorksheetScaffoldingRetryTransformationRequest,
 ): Promise<WorksheetScaffoldingState> {
   return callApi("Resource Adapter could not retry that scaffold.", () =>
-    createResourceAdapterInternalClient(options).worksheetScaffolding.retry.mutate({
+    createResourceAdapterInternalClient(
+      options,
+    ).worksheetScaffolding.retryTransformation.mutate({
       adaptationId: options.adaptationId,
       attemptId: options.attemptId,
+      requestId: options.requestId,
+    }),
+  );
+}
+
+export function retrySuggestionWorksheetScaffolding(
+  options: ClientOptions & WorksheetScaffoldingRetrySuggestionRequest,
+): Promise<WorksheetScaffoldingState> {
+  return callApi("Resource Adapter could not retry that suggestion.", () =>
+    createResourceAdapterInternalClient(
+      options,
+    ).worksheetScaffolding.retrySuggestions.mutate({
+      adaptationId: options.adaptationId,
       requestId: options.requestId,
     }),
   );

@@ -12,7 +12,8 @@ import {
   enqueueWorksheetScaffoldingRemoval,
   getWorksheetScaffolding,
   openWorksheetScaffolding,
-  retryWorksheetScaffoldingReview,
+  retrySuggestionWorksheetScaffolding,
+  retryTransformationWorksheetScaffoldingReview,
   undoWorksheetScaffoldingReview,
 } from "./worksheetScaffolding.js";
 
@@ -23,7 +24,8 @@ const api = vi.hoisted(() => ({
   get: vi.fn(),
   open: vi.fn(),
   remove: vi.fn(),
-  retry: vi.fn(),
+  retrySuggestions: vi.fn(),
+  retryTransformation: vi.fn(),
   undo: vi.fn(),
 }));
 
@@ -36,7 +38,8 @@ vi.mock("./client.js", () => ({
       get: { query: api.get },
       open: { mutate: api.open },
       remove: { mutate: api.remove },
-      retry: { mutate: api.retry },
+      retrySuggestions: { mutate: api.retrySuggestions },
+      retryTransformation: { mutate: api.retryTransformation },
       undo: { mutate: api.undo },
     },
   })),
@@ -150,14 +153,24 @@ describe("worksheet scaffolding client", () => {
     },
     {
       call: () =>
-        retryWorksheetScaffoldingReview({
+        retryTransformationWorksheetScaffoldingReview({
           ...options,
           adaptationId,
           attemptId,
           requestId,
         }),
-      request: api.retry,
+      request: api.retryTransformation,
       value: { adaptationId, attemptId, requestId },
+    },
+    {
+      call: () =>
+        retrySuggestionWorksheetScaffolding({
+          ...options,
+          adaptationId,
+          requestId,
+        }),
+      request: api.retrySuggestions,
+      value: { adaptationId, requestId },
     },
     {
       call: () =>
@@ -188,9 +201,9 @@ describe("worksheet scaffolding client", () => {
   });
 
   it("turns a client failure into a stable public error", async () => {
-    api.retry.mockRejectedValue(new Error("offline"));
+    api.retryTransformation.mockRejectedValue(new Error("offline"));
 
-    const result = retryWorksheetScaffoldingReview({
+    const result = retryTransformationWorksheetScaffoldingReview({
       ...options,
       adaptationId,
       attemptId,

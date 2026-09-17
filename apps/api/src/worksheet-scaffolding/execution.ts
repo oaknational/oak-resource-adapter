@@ -67,6 +67,7 @@ export type WorksheetScaffoldingExecutionRepository = Pick<
   | "listAppliedTransformations"
   | "storeOutputsAndAdvanceHead"
   | "completeSuggestionAttempt"
+  | "findSuggestionGeneration"
 >;
 
 const defaultDependencies: WorksheetScaffoldingJobDependencies = {
@@ -151,15 +152,25 @@ export async function executeGenerateSuggestions(
     throw new Error("The suggestion job no longer targets the adaptation head.");
   }
 
-  const attempt =
-    (await repository.getAttemptForJob(jobId)) ??
-    (await repository.createOperationAttempt({
-      adaptationId: input.adaptationId,
-      idempotencyKey: suggestionOperationKey(input.resourceDocumentId),
-      jobId,
-      kind: SUGGESTION_OPERATION_KIND,
-      resourceDocumentId: input.resourceDocumentId,
-    }));
+  let attempt = await repository.getAttemptForJob(jobId);
+  if (attempt === null) {
+    const suggestionGeneration = await repository.findSuggestionGeneration(
+      input.resourceDocumentId,
+    );
+    attempt =
+      suggestionGeneration === null
+        ? await repository.createOperationAttempt({
+            adaptationId: input.adaptationId,
+            idempotencyKey: suggestionOperationKey(input.resourceDocumentId),
+            jobId,
+            kind: SUGGESTION_OPERATION_KIND,
+            resourceDocumentId: input.resourceDocumentId,
+          })
+        : await repository.createRetryAttempt({
+            jobId,
+            transformationId: suggestionGeneration.id,
+          });
+  }
 
   if (await repository.isAttemptComplete(attempt.id)) {
     return;
@@ -290,6 +301,7 @@ export async function executeRetryTransformation(
 ): Promise<void> {
   const { repository } = dependencies;
   const job = await dependencies.readJob(jobId);
+
   if (job?.kind !== retryTransformationJob.kind) {
     throw new Error("The retry job does not exist or has the wrong kind.");
   }
@@ -306,6 +318,7 @@ export async function executeRetryTransformation(
     throw new Error("The retry no longer targets the adaptation head.");
   }
   const pending = await repository.getPendingReview(head.storedDocument.id);
+
   if (
     pending?.attempt.id !== input.attemptId ||
     !isRegisteredTransformationKind(pending.transformation.kind)

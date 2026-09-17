@@ -31,6 +31,8 @@ import {
 } from "@oaknational/resource-document";
 import { parseResourceDocument } from "@oaknational/resource-document/parse";
 
+import { SUGGESTION_OPERATION_KIND } from "./capability";
+
 const PRIMARY_SOURCE = "primary_source";
 
 type Transaction = Parameters<
@@ -459,34 +461,52 @@ export async function getLatestJobForConcurrencyKey(
 export async function listOpenSuggestions(
   resourceDocumentId: string,
 ): Promise<readonly StoredSuggestion[]> {
-  return getDatabaseClient()
-    .select()
+  const [latestAttempt] = await getDatabaseClient()
+    .select({ id: transformationAttempts.id })
+    .from(transformationAttempts)
+    .innerJoin(
+      transformations,
+      eq(transformations.id, transformationAttempts.transformationId),
+    )
+    .innerJoin(
+      transformationInputs,
+      eq(transformationInputs.transformationId, transformations.id),
+    )
+    .where(
+      and(
+        eq(transformations.kind, SUGGESTION_OPERATION_KIND),
+        eq(transformationInputs.resourceDocumentId, resourceDocumentId),
+        isNotNull(transformationAttempts.completedAt),
+      ),
+    )
+    .orderBy(desc(transformationAttempts.attemptNumber))
+    .limit(1);
+
+  if (latestAttempt === undefined) {
+    return [];
+  }
+
+  const rows = await getDatabaseClient()
+    .select({ suggestion: suggestedTransformations })
     .from(suggestedTransformations)
     .where(
       and(
+        eq(suggestedTransformations.transformationAttemptId, latestAttempt.id),
         eq(suggestedTransformations.resourceDocumentId, resourceDocumentId),
         isNull(suggestedTransformations.acceptedTransformationId),
       ),
     )
     .orderBy(suggestedTransformations.position);
+
+  return rows.map(({ suggestion }) => suggestion);
 }
 
 export async function getOpenSuggestion(
   suggestionId: string,
   resourceDocumentId: string,
 ): Promise<StoredSuggestion | null> {
-  const [row] = await getDatabaseClient()
-    .select()
-    .from(suggestedTransformations)
-    .where(
-      and(
-        eq(suggestedTransformations.id, suggestionId),
-        eq(suggestedTransformations.resourceDocumentId, resourceDocumentId),
-        isNull(suggestedTransformations.acceptedTransformationId),
-      ),
-    )
-    .limit(1);
-  return row ?? null;
+  const open = await listOpenSuggestions(resourceDocumentId);
+  return open.find((suggestion) => suggestion.id === suggestionId) ?? null;
 }
 
 export type ResumableAdaptation = Readonly<{
@@ -722,6 +742,28 @@ export async function getAttemptForJob(jobId: string): Promise<StoredAttempt | n
     .where(eq(transformationAttempts.jobId, jobId))
     .limit(1);
   return row ?? null;
+}
+
+/** find the suggestion transformation for a given resource document */
+export async function findSuggestionGeneration(
+  resourceDocumentId: string,
+): Promise<StoredTransformation | null> {
+  const [row] = await getDatabaseClient()
+    .select({ transformation: transformations })
+    .from(transformations)
+    .innerJoin(
+      transformationInputs,
+      eq(transformationInputs.transformationId, transformations.id),
+    )
+    .where(
+      and(
+        eq(transformations.kind, SUGGESTION_OPERATION_KIND),
+        eq(transformationInputs.resourceDocumentId, resourceDocumentId),
+      ),
+    )
+    .limit(1);
+
+  return row?.transformation ?? null;
 }
 
 /** Records one internal operation and its single attempt against a document. */

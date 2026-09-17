@@ -309,6 +309,17 @@ function failureMessage(kind: WorksheetScaffoldingJobKind): string {
     : "Start again to reopen the original worksheet.";
 }
 
+function foundNoScaffolds(
+  state: WorksheetScaffoldingState,
+  suggestedCount: number,
+): boolean {
+  return (
+    suggestedCount === 0 &&
+    state.job?.kind === "suggestions.generate" &&
+    state.job.status === "succeeded"
+  );
+}
+
 function readyStatus(
   state: WorksheetScaffoldingState,
   suggestedCount: number,
@@ -330,7 +341,7 @@ function readyStatus(
       tone: "info",
     };
   }
-  if (state.job?.kind === "suggestions.generate" && state.job.status === "succeeded") {
+  if (foundNoScaffolds(state, suggestedCount)) {
     return {
       message:
         "We didn't find a useful scaffold for this worksheet. It may already give pupils the support they need.",
@@ -455,6 +466,7 @@ function ResumeChoice({
           .filter((sentence) => sentence !== "")
           .join(" ")}
       </OakP>
+
       <OakFlex $flexWrap="wrap" $gap="spacing-8">
         <OakPrimaryButton onClick={onResume}>Carry on</OakPrimaryButton>
         <OakSecondaryButton onClick={onStartFresh}>
@@ -475,7 +487,8 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     documentIsVisible,
     removeContribution,
     resume,
-    retryReview,
+    retryTransformationReview,
+    retrySuggestionReview,
     startFresh,
     state,
     dismissTarget,
@@ -638,7 +651,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
         <PendingReviewControls
           disabled={isWorking}
           onAccept={acceptReview}
-          onRetry={retryReview}
+          onRetry={retryTransformationReview}
           onUndo={undoReview}
           reason={pendingReview.reason}
         />
@@ -654,6 +667,13 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
       ),
   };
 
+  const hasScaffoldsInDocument = addedCount > 0;
+  const hasSuggestedScaffolds = suggestedCount > 0;
+  // A run that offered nothing still needs a way to ask for different scaffolds.
+  const noScaffoldsFound = foundNoScaffolds(state.value, suggestedCount);
+  const showWorkflowCta =
+    hasScaffoldsInDocument || hasSuggestedScaffolds || noScaffoldsFound;
+
   return (
     <OakFlex $flexDirection="column" $gap="spacing-16">
       {announcement(status)}
@@ -661,15 +681,21 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
         <StickyWorkflowStatus data-testid="worksheet-scaffolding-status">
           <WorkflowStatusBanner
             cta={
-              addedCount === 0 ? undefined : (
+              showWorkflowCta ? (
                 <OakTertiaryButton
                   disabled={isWorking}
-                  iconName="trash"
-                  onClick={() => startFresh(state.value.adaptationId)}
+                  iconName={hasScaffoldsInDocument ? "trash" : "ai"}
+                  onClick={
+                    hasScaffoldsInDocument
+                      ? () => startFresh(state.value.adaptationId)
+                      : retrySuggestionReview
+                  }
                 >
-                  Remove all scaffolds
+                  {hasScaffoldsInDocument
+                    ? "Remove all scaffolds"
+                    : "Generate new suggestions"}
                 </OakTertiaryButton>
-              )
+              ) : null
             }
             status={status}
           />

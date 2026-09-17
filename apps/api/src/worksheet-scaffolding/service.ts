@@ -2,13 +2,14 @@ import {
   worksheetScaffoldingJobKinds,
   type WorksheetScaffoldingApplyRequest,
   type WorksheetScaffoldingReviewRequest,
-  type WorksheetScaffoldingRetryRequest,
+  type WorksheetScaffoldingRetryTransformationRequest,
   type WorksheetScaffoldingEntry,
   type WorksheetScaffoldingOpenRequest,
   type WorksheetScaffoldingRemoveRequest,
   type WorksheetScaffoldingJobKind,
   type WorksheetScaffoldingState,
   type WorksheetScaffoldingDismissRequest,
+  type WorksheetScaffoldingRetrySuggestionRequest,
 } from "@oaknational/resource-adapter-contracts/internal";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 import {
@@ -36,6 +37,7 @@ import {
   CAPABILITY,
   SUGGESTION_FLOW_ID,
   suggestionOperationKey,
+  suggestionRetryJobKey,
 } from "./capability";
 import * as scaffoldingRepository from "./repository";
 import { asParams } from "./repository";
@@ -424,8 +426,8 @@ export async function undoWorksheetScaffoldingReview(
   return readAndRequestSuggestions(input.adaptationId, target.teacherId, dependencies);
 }
 
-export async function enqueueWorksheetScaffoldingRetry(
-  input: WorksheetScaffoldingRetryRequest,
+export async function enqueueWorksheetScaffoldingRetryTransformation(
+  input: WorksheetScaffoldingRetryTransformationRequest,
   target: ResourceAdapterAuthenticatedTeacher,
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingState | null> {
@@ -451,6 +453,38 @@ export async function enqueueWorksheetScaffoldingRetry(
       resourceDocumentId: head.storedDocument.id,
     },
     kind: retryTransformationJob.kind,
+  });
+  const read = await readAdaptation(input.adaptationId, target.teacherId, repository);
+  return read?.state ?? null;
+}
+
+export async function enqueueWorksheetScaffoldingRetrySuggestions(
+  input: WorksheetScaffoldingRetrySuggestionRequest,
+  target: ResourceAdapterAuthenticatedTeacher,
+  dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
+): Promise<WorksheetScaffoldingState | null> {
+  const { repository } = dependencies;
+  const head = await repository.getAdaptationHead(input.adaptationId, target.teacherId);
+  if (head === null) {
+    return null;
+  }
+
+  if ((await repository.getPendingReview(head.storedDocument.id)) !== null) {
+    return null;
+  }
+
+  await enqueueUnlessAlreadyRunning(dependencies.enqueue, {
+    concurrencyKey: adaptationHeadConcurrencyKey(
+      input.adaptationId,
+      head.storedDocument.id,
+    ),
+    idempotencyKey: suggestionRetryJobKey(head.storedDocument.id, input.requestId),
+    input: {
+      adaptationId: input.adaptationId,
+      flowId: SUGGESTION_FLOW_ID,
+      resourceDocumentId: head.storedDocument.id,
+    },
+    kind: generateSuggestionsJob.kind,
   });
   const read = await readAdaptation(input.adaptationId, target.teacherId, repository);
   return read?.state ?? null;
