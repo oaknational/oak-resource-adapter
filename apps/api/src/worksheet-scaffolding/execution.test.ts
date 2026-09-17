@@ -107,9 +107,7 @@ describe("generating suggestions", () => {
 
   it("creates a retry attempt on the existing suggestion operation", async () => {
     const repository = stubRepository({
-      findSuggestionGeneration: vi
-        .fn()
-        .mockResolvedValue({ id: TRANSFORMATION_ID }),
+      findSuggestionGeneration: vi.fn().mockResolvedValue({ id: TRANSFORMATION_ID }),
     });
     const dependencies = stubDependencies({
       readJob: vi.fn().mockResolvedValue(generateJob()),
