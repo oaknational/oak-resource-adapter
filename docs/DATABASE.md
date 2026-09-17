@@ -23,9 +23,15 @@ Note that `db:generate` writes a migration file; it does not create a database.
 | `pnpm db:migrate:deploy` | Applies pending migrations to a deployed database.    |
 | `pnpm db:check`          | Checks the migration history for collisions.          |
 | `pnpm db:studio`         | Opens Drizzle Studio.                                 |
+| `pnpm db:seed:dev`       | Restores the local fixture data.                      |
+| `pnpm db:reset:seed:dev` | Resets, migrates and seeds in one step.               |
 
 `DATABASE_URL` is read from the process environment or the root `.env`.
-`db:reset` refuses any host but localhost.
+`db:reset` and the seed commands refuse any host but localhost.
+
+Seeding restores the records the browser tests expect. Today that is the
+download fixture alone, whose storage and Clerk prerequisites are in
+[resource artifact downloads](ARTIFACT_DOWNLOADS.md).
 
 ## Changing the schema
 

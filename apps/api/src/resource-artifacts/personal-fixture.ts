@@ -109,7 +109,6 @@ export async function personalFixture(
       !metadata.md5Hash
     )
       throw new Error("Invalid fixture metadata");
-    // Reconcile a deleted object or a rebuilt local database without changing other fixtures.
     let artifactId = row?.id;
     if (row) {
       await tx

@@ -11,9 +11,8 @@ const docxRoute = "**/adapter-proxy/dev/exports/docx";
  * header's health check is the first thing on any view that resolves only after
  * hydration, so waiting for it to leave "Checking" makes the controls usable.
  *
- * It waits well past the default: this is a gate rather than an assertion, and
- * the first request to a freshly built server opens the API's database
- * connection before the header can resolve.
+ * It is a gate rather than an assertion, so it waits well past the default: a
+ * freshly built server opens its database connection on this first request.
  */
 async function openExports(page: Page, url = exportsUrl) {
   await page.goto(url);
@@ -147,7 +146,6 @@ test("separates export modes and commits a grouped fixture choice", async ({
     fixtures.locator('optgroup[label="Lesson fixtures"] option'),
   ).toHaveCount(10);
   await fixtures.selectOption("forming-ions-for-ionic-bonding");
-  // Choosing an option must not navigate until the choice is committed.
   await expect(page).not.toHaveURL(/fixture=forming-ions-for-ionic-bonding/);
   await page.getByRole("button", { name: "Show" }).click();
   await expect(

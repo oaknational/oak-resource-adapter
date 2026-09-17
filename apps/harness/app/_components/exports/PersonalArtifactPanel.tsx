@@ -14,6 +14,73 @@ type Fixture = {
   environment: "local" | "preview" | "staging";
 };
 
+type FixtureAction = "GET" | "POST" | "DELETE" | "download";
+
+async function performFixtureAction(
+  action: FixtureAction,
+  artifactId: string | null | undefined,
+  token: string,
+  signal: AbortSignal,
+): Promise<Fixture | undefined> {
+  if (action === "download") {
+    if (!artifactId) throw new Error("Refresh the fixture status before downloading.");
+    const result = await downloadArtifactFile(artifactId, token, signal);
+    if (!signal.aborted) downloadBlob(result.blob, result.filename);
+    return;
+  }
+  const response = await fetch(`${adapterProxyPath}/dev/artifact-download-fixture`, {
+    method: action,
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+    signal,
+  });
+  if (response.status === 404)
+    throw new Error(
+      "Your download fixture needs ENABLE_DEV_ROUTES enabled on a local, preview or staging API.",
+    );
+  if (!response.ok)
+    throw new Error(
+      "Could not update your fixture. Check API access, then refresh its status.",
+    );
+  return response.json();
+}
+
+function fixtureStatus(
+  signedIn: boolean | undefined,
+  busy: boolean,
+  fixture: Fixture | null,
+) {
+  if (!signedIn) return "Sign in to manage your download fixture.";
+  if (busy) return "Working…";
+  if (!fixture) return "Fixture status unknown.";
+  if (fixture.ready) return "Fixture ready to download.";
+  if (fixture.stored)
+    return "File stored; create the fixture to restore its database records.";
+  if (fixture.artifactId)
+    return "Stored file missing; create the fixture to restore it.";
+  return "No download fixture stored.";
+}
+
+function fixtureStatusState(
+  busy: boolean,
+  error: string | null,
+  fixture: Fixture | null,
+) {
+  if (busy) return "working";
+  if (error) return "attention";
+  if (!fixture) return "empty";
+  if (fixture.ready) return "ready";
+  if (fixture.stored || fixture.artifactId) return "attention";
+  return "empty";
+}
+
+const statusIcons = {
+  ready: "m8 12 3 3 5-6",
+  working: "M12 7v5l3 2",
+  attention: "M12 7v6m0 4h.01",
+  empty: "M8 12h8",
+} as const;
+
 export function PersonalArtifactPanel() {
   const { getToken, isSignedIn, userId } = useAuth();
   const [fixture, setFixture] = useState<Fixture | null>(null);
@@ -22,10 +89,7 @@ export function PersonalArtifactPanel() {
   const [error, setError] = useState<string | null>(null);
   const active = useRef<AbortController | null>(null);
   const run = useCallback(
-    async (
-      action: "GET" | "POST" | "DELETE" | "download",
-      artifactId?: string | null,
-    ) => {
+    async (action: FixtureAction, artifactId?: string | null) => {
       if (active.current) return;
       const controller = new AbortController();
       active.current = controller;
@@ -36,35 +100,15 @@ export function PersonalArtifactPanel() {
         const token = await getToken();
         if (controller.signal.aborted) return;
         if (!token) throw new Error("Sign in to manage your download fixture.");
-        if (action === "download") {
-          if (!artifactId) return;
-          const result = await downloadArtifactFile(
-            artifactId,
-            token,
-            controller.signal,
-          );
-          if (controller.signal.aborted) return;
-          downloadBlob(result.blob, result.filename);
-          setMessage("Download started.");
-        } else {
-          const response = await fetch(
-            `${adapterProxyPath}/dev/artifact-download-fixture`,
-            {
-              method: action,
-              headers: { Authorization: `Bearer ${token}` },
-              cache: "no-store",
-              signal: controller.signal,
-            },
-          );
-          if (!response.ok)
-            throw new Error(
-              response.status === 404
-                ? "Your download fixture needs ENABLE_DEV_ROUTES enabled on a local, preview or staging API."
-                : "Could not update your fixture. Check API access, then refresh its status.",
-            );
-          const result: Fixture = await response.json();
-          if (!controller.signal.aborted) setFixture(result);
-        }
+        const result = await performFixtureAction(
+          action,
+          artifactId,
+          token,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        if (action === "download") setMessage("Download started.");
+        else if (result) setFixture(result);
       } catch (cause) {
         if (!controller.signal.aborted) {
           setFixture(null);
@@ -95,26 +139,8 @@ export function PersonalArtifactPanel() {
     };
   }, [isSignedIn, userId, run]);
 
-  const status = !isSignedIn
-    ? "Sign in to manage your download fixture."
-    : busy
-      ? "Working…"
-      : !fixture
-        ? "Fixture status unknown."
-        : fixture.ready
-          ? "Fixture ready to download."
-          : fixture.stored
-            ? "File stored; create the fixture to restore its database records."
-            : fixture.artifactId
-              ? "Stored file missing; create the fixture to restore it."
-              : "No download fixture stored.";
-  const statusState = busy
-    ? "working"
-    : error || (fixture && !fixture.ready && (fixture.stored || fixture.artifactId))
-      ? "attention"
-      : fixture?.ready
-        ? "ready"
-        : "empty";
+  const status = fixtureStatus(isSignedIn, busy, fixture);
+  const statusState = fixtureStatusState(busy, error, fixture);
 
   return (
     <section className={styles.controls} aria-labelledby="personal-fixture-heading">
@@ -142,15 +168,7 @@ export function PersonalArtifactPanel() {
             strokeLinejoin="round"
           >
             <circle cx="12" cy="12" r="9" />
-            {statusState === "ready" ? (
-              <path d="m8 12 3 3 5-6" />
-            ) : statusState === "working" ? (
-              <path d="M12 7v5l3 2" />
-            ) : statusState === "attention" ? (
-              <path d="M12 7v6m0 4h.01" />
-            ) : (
-              <path d="M8 12h8" />
-            )}
+            <path d={statusIcons[statusState]} />
           </svg>
           <span>{status}</span>
         </span>

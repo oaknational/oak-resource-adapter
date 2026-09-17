@@ -113,7 +113,7 @@ try {
       const metadata = await getArtifactMetadata(key);
       if (
         Number(metadata.size) !== existing.artifact.byteSize ||
-        metadata.md5Hash !== existing.artifact.checksum
+        (metadata.md5Hash ?? null) !== existing.artifact.checksum
       )
         throw new Error("Stored fixture metadata does not match its database row.");
       return existing.artifact;

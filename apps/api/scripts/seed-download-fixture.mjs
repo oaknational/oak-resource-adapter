@@ -84,11 +84,19 @@ export async function seedLocalDatabase({ reset = false } = {}) {
     throw new Error("The shared local DOCX fixture has invalid storage metadata.");
   // Validate the local target and fixture prerequisites before destructive work.
   if (reset) {
-    const result = spawnSync("pnpm", ["db:reset"], {
-      cwd: fileURLToPath(new URL("../../../", import.meta.url)),
-      env: process.env,
-      stdio: "inherit",
-    });
+    const result = spawnSync(
+      process.execPath,
+      [
+        fileURLToPath(
+          new URL("../../../packages/db/scripts/reset.mjs", import.meta.url),
+        ),
+      ],
+      {
+        cwd: fileURLToPath(new URL("../../../", import.meta.url)),
+        env: process.env,
+        stdio: "inherit",
+      },
+    );
     if (result.error || result.status !== 0)
       throw new Error("Local database reset failed; seeding was not attempted.");
   }
@@ -115,7 +123,9 @@ export async function seedLocalDatabase({ reset = false } = {}) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { values } = parseArgs({ options: { reset: { type: "boolean" } } });
-  seedLocalDatabase({ reset: values.reset }).catch((error) => {
+  try {
+    await seedLocalDatabase({ reset: values.reset });
+  } catch (error) {
     // Driver errors can contain connection details; report only the actionable outer message.
     console.error(
       error instanceof Error && !error.cause
@@ -123,5 +133,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         : "Local fixture seeding failed. Check database access, migrations and GCP credentials.",
     );
     process.exitCode = 1;
-  });
+  }
 }

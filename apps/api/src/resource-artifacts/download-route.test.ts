@@ -92,7 +92,7 @@ it("lengths the response from storage, not the recorded byte size", async () => 
   });
   const response = await downloadArtifact(request(), id);
   expect(response.headers.get("content-length")).toBe(String(stored.length));
-  expect(Buffer.from(await response.arrayBuffer()).length).toBe(stored.length);
+  expect(Buffer.from(await response.arrayBuffer())).toHaveLength(stored.length);
 });
 
 it("omits the length rather than sending one storage did not report", async () => {

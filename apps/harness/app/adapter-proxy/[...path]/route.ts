@@ -37,6 +37,10 @@ async function proxy(
     }
   }
 
+  // Same-origin browser GETs omit Origin; Clerk still needs the harness origin
+  // to validate preview tokens. The API applies its own origin allowlist.
+  if (!headers.has("origin")) headers.set("origin", request.nextUrl.origin);
+
   // Not VERCEL_AUTOMATION_BYPASS_SECRET: Vercel injects that name into every
   // project with the project's *own* secret, and the harness's own secret opens
   // nothing on the API. The deploy workflow sets this one from the API project.

@@ -37,7 +37,19 @@ test(
     await expect(button).toBeEnabled();
     const [download] = await Promise.all([
       page.waitForEvent("download"),
-      button.click(),
+      (async () => {
+        const [response] = await Promise.all([
+          page.waitForResponse((response) =>
+            response.url().includes("/adapter-proxy/resource-artifacts/"),
+          ),
+          button.click(),
+        ]);
+        expect(
+          response.status(),
+          "The authenticated fixture download must succeed",
+        ).toBe(200);
+        expect(await response.finished()).toBeNull();
+      })(),
     ]);
     expect(download.suggestedFilename()).toBe(
       "Persistent-artifact-download-fixture.docx",

@@ -36,6 +36,19 @@ afterEach(() => {
 });
 
 describe("the adapter proxy", () => {
+  it("supplies the harness origin for a same-origin GET", async () => {
+    await callProxy(["resource-artifacts", "fixture"]);
+    expect(forwardedHeaders().get("origin")).toBe("https://harness.example.com");
+  });
+  it("preserves an explicit caller origin for the API to validate", async () => {
+    await GET(
+      new NextRequest("https://harness.example.com/adapter-proxy/health", {
+        headers: { origin: "https://other.example.com" },
+      }),
+      { params: Promise.resolve({ path: ["health"] }) },
+    );
+    expect(forwardedHeaders().get("origin")).toBe("https://other.example.com");
+  });
   it("forwards authenticated fixture deletion", async () => {
     const response = await DELETE(
       new NextRequest(
@@ -116,11 +129,15 @@ describe("the adapter proxy", () => {
     expect(forwardedHeaders().has("x-vercel-protection-bypass")).toBe(false);
   });
 
+  // A real server and fetch: only undici's transparent decompression makes the
+  // upstream Content-Length wrong, so a mocked response would assume what this
+  // checks. The body streams through NextResponse, so keep the payload small.
   it("forwards decompressed bytes without the compressed Content-Length", async () => {
-    const bytes = Buffer.from("image-heavy worksheet content ".repeat(30000));
+    const bytes = Buffer.from("image-heavy worksheet content ".repeat(3000));
     const compressed = gzipSync(bytes);
     const server = createServer((_request, response) => {
       response.writeHead(200, {
+        connection: "close",
         "content-encoding": "gzip",
         "content-length": compressed.length,
         "content-type": "application/octet-stream",
@@ -148,5 +165,5 @@ describe("the adapter proxy", () => {
         server.close((error) => (error ? reject(error) : resolve())),
       );
     }
-  });
+  }, 15_000);
 });

@@ -12,8 +12,7 @@ if (!process.env.VERCEL_DEPLOYMENT_ID && !process.env.WORKFLOW_TARGET_WORLD) {
 }
 
 const nextConfig: NextConfig = {
-  // Next writes AGENTS.md and CLAUDE.md into the app on every build; this
-  // repository keeps its own at the root.
+  // Next writes AGENTS.md and CLAUDE.md into the app on every build.
   agentRules: false,
   // The fixture corpus is read at runtime by a path the bundler cannot see, so
   // file tracing leaves it out of the deployed function unless it is named here,

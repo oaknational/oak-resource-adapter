@@ -55,8 +55,8 @@ afterEach(() => {
 it("checks fixture access, resets and migrates, then seeds", async () => {
   await seedLocalDatabase({ reset: true });
   expect(spawnSync).toHaveBeenCalledWith(
-    "pnpm",
-    ["db:reset"],
+    process.execPath,
+    [expect.stringMatching(/packages\/db\/scripts\/reset\.mjs$/)],
     expect.objectContaining({ stdio: "inherit" }),
   );
   expect(getArtifactMetadata.mock.invocationCallOrder[0]).toBeLessThan(

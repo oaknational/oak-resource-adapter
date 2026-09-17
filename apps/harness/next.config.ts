@@ -1,8 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Next writes AGENTS.md and CLAUDE.md into the app on every build; this
-  // repository keeps its own at the root.
+  // Next writes AGENTS.md and CLAUDE.md into the app on every build.
   agentRules: false,
   compiler: {
     styledComponents: true,
