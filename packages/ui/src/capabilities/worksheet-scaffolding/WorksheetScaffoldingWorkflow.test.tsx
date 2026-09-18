@@ -572,17 +572,23 @@ describe("WorksheetScaffoldingWorkflow", () => {
   });
 
   it("still offers fresh suggestions once a scaffold has been accepted", async () => {
+    const retryJob = {
+      failureMessage: null,
+      id: "suggestion-retry-job-1",
+      kind: "suggestions.generate",
+      status: "queued",
+    } as const;
     openWorksheetScaffoldingMock.mockResolvedValueOnce(
       opened(readyWithAcceptedScaffold),
     );
     retrySuggestionsMock.mockResolvedValueOnce({
       ...readyWithAcceptedScaffold,
-      job: {
-        failureMessage: null,
-        id: "suggestion-retry-job-1",
-        kind: "suggestions.generate",
-        status: "queued",
-      },
+      job: retryJob,
+    });
+    getWorksheetScaffoldingMock.mockResolvedValue({
+      ...readyWithAcceptedScaffold,
+      job: { ...retryJob, status: "succeeded" },
+      suggestions: [wordBankSuggestion],
     });
     renderDialog();
 
@@ -601,8 +607,10 @@ describe("WorksheetScaffoldingWorkflow", () => {
         requestId: expect.any(String),
       }),
     );
+    expect(
+    ).toBeVisible();
     // The accepted scaffold survives a fresh run of suggestions.
-    expect(await screen.findByText("denominator")).toBeVisible();
+    expect(screen.getByText("denominator")).toBeVisible();
   });
 
   it("offers unfinished work back instead of opening the worksheet", async () => {
