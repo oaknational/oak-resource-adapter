@@ -117,7 +117,7 @@ const ReviewChevron = styled(OakIcon)<{ $isOpen: boolean }>`
   }
 `;
 
-const ReviewActions = styled.div`
+const ActionRow = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -309,6 +309,17 @@ function failureMessage(kind: WorksheetScaffoldingJobKind): string {
     : "Start again to reopen the original worksheet.";
 }
 
+function foundNoScaffolds(
+  state: WorksheetScaffoldingState,
+  suggestedCount: number,
+): boolean {
+  return (
+    suggestedCount === 0 &&
+    state.job?.kind === "suggestions.generate" &&
+    state.job.status === "succeeded"
+  );
+}
+
 function readyStatus(
   state: WorksheetScaffoldingState,
   suggestedCount: number,
@@ -330,7 +341,7 @@ function readyStatus(
       tone: "info",
     };
   }
-  if (state.job?.kind === "suggestions.generate" && state.job.status === "succeeded") {
+  if (foundNoScaffolds(state, suggestedCount)) {
     return {
       message:
         "We didn't find a useful scaffold for this worksheet. It may already give pupils the support they need.",
@@ -404,7 +415,7 @@ function PendingReviewControls({
       <OakP hidden={!isOpen} id={panelId}>
         {reason}
       </OakP>
-      <ReviewActions>
+      <ActionRow>
         <OakSecondaryButton disabled={disabled} iconName="arrow-left" onClick={onUndo}>
           Undo
         </OakSecondaryButton>
@@ -414,7 +425,7 @@ function PendingReviewControls({
         <OakPrimaryButton disabled={disabled} onClick={onAccept}>
           Accept
         </OakPrimaryButton>
-      </ReviewActions>
+      </ActionRow>
     </OakFlex>
   );
 }
@@ -455,6 +466,7 @@ function ResumeChoice({
           .filter((sentence) => sentence !== "")
           .join(" ")}
       </OakP>
+
       <OakFlex $flexWrap="wrap" $gap="spacing-8">
         <OakPrimaryButton onClick={onResume}>Carry on</OakPrimaryButton>
         <OakSecondaryButton onClick={onStartFresh}>
@@ -475,7 +487,8 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     documentIsVisible,
     removeContribution,
     resume,
-    retryReview,
+    retrySuggestions,
+    retryTransformationReview,
     startFresh,
     state,
     dismissTarget,
@@ -638,7 +651,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
         <PendingReviewControls
           disabled={isWorking}
           onAccept={acceptReview}
-          onRetry={retryReview}
+          onRetry={retryTransformationReview}
           onUndo={undoReview}
           reason={pendingReview.reason}
         />
@@ -654,6 +667,13 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
       ),
   };
 
+  const hasScaffoldsInDocument = addedCount > 0;
+  const hasSuggestedScaffolds = suggestedCount > 0;
+  // A run that offered nothing still needs a way to ask for different scaffolds.
+  const noScaffoldsFound = foundNoScaffolds(state.value, suggestedCount);
+  const showWorkflowCta =
+    hasScaffoldsInDocument || hasSuggestedScaffolds || noScaffoldsFound;
+
   return (
     <OakFlex $flexDirection="column" $gap="spacing-16">
       {announcement(status)}
@@ -661,15 +681,26 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
         <StickyWorkflowStatus data-testid="worksheet-scaffolding-status">
           <WorkflowStatusBanner
             cta={
-              addedCount === 0 ? undefined : (
-                <OakTertiaryButton
-                  disabled={isWorking}
-                  iconName="trash"
-                  onClick={() => startFresh(state.value.adaptationId)}
-                >
-                  Remove all scaffolds
-                </OakTertiaryButton>
-              )
+              showWorkflowCta ? (
+                <ActionRow>
+                  <OakTertiaryButton
+                    disabled={isWorking}
+                    iconName="ai"
+                    onClick={retrySuggestions}
+                  >
+                    Generate new suggestions
+                  </OakTertiaryButton>
+                  {hasScaffoldsInDocument && (
+                    <OakTertiaryButton
+                      disabled={isWorking}
+                      iconName="trash"
+                      onClick={() => startFresh(state.value.adaptationId)}
+                    >
+                      Remove all scaffolds
+                    </OakTertiaryButton>
+                  )}
+                </ActionRow>
+              ) : null
             }
             status={status}
           />
