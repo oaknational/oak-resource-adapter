@@ -42,12 +42,13 @@
     "@types/node": "^24.13.4",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.0",
     "dotenv-cli": "^11.0.0",
     "fast-xml-parser": "^5.11.1",
     "fast-xml-validator": "^1.4.2",
     "fflate": "^0.8.3",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "vitest": "^4.1.11"
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
   }
 }
