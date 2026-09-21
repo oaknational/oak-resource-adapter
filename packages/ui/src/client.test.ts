@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import {
+  fetchResourceArtifact,
   createResourceAdapterClient,
   createResourceAdapterInternalClient,
 } from "./client.js";
@@ -155,5 +156,70 @@ describe("createResourceAdapterInternalClient", () => {
         getToken: async () => "token",
       }),
     ).toThrow(expectedMessage);
+  });
+});
+
+describe("fetchResourceArtifact", () => {
+  const options = {
+    apiBaseUrl: "https://adapter.example/api/",
+    artifactId: "artifact/id",
+    signal: new AbortController().signal,
+  };
+  it("refreshes authentication on each delivery and returns binary content and its disposition", async () => {
+    const getToken = vi
+      .fn()
+      .mockResolvedValueOnce("first")
+      .mockResolvedValueOnce("second");
+    const fetchMock = vi.fn().mockImplementation(
+      async () =>
+        new Response(new Uint8Array([80, 75, 0, 255]), {
+          headers: { "content-disposition": "attachment; filename=worksheet.docx" },
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await fetchResourceArtifact({ ...options, getToken });
+    await fetchResourceArtifact({ ...options, getToken });
+    expect(new Uint8Array(await result.blob.arrayBuffer())).toEqual(
+      new Uint8Array([80, 75, 0, 255]),
+    );
+    expect(result.contentDisposition).toBe("attachment; filename=worksheet.docx");
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://adapter.example/api/resource-artifacts/artifact%2Fid",
+      {
+        headers: { Authorization: "Bearer second" },
+        cache: "no-store",
+        signal: options.signal,
+      },
+    );
+  });
+  it.each([401, 404, 503])("preserves HTTP %s for caller recovery", async (status) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status })));
+    await expect(
+      fetchResourceArtifact({ ...options, getToken: async () => "token" }),
+    ).rejects.toMatchObject({ status });
+  });
+  it("does not send a request without a token", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(
+      fetchResourceArtifact({ ...options, getToken: async () => null }),
+    ).rejects.toMatchObject({ status: 401 });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("does not fetch when cancelled while obtaining a token", async () => {
+    const controller = new AbortController();
+    const token = Promise.withResolvers<string>();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const pending = fetchResourceArtifact({
+      ...options,
+      signal: controller.signal,
+      getToken: () => token.promise,
+    });
+    controller.abort();
+    token.resolve("token");
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

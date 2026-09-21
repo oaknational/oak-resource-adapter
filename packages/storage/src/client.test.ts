@@ -18,6 +18,35 @@ afterEach(() => {
 });
 
 describe("getStorage", () => {
+  it("uses a local emulator for both metadata and object requests", async () => {
+    vi.stubEnv("GCP_WORKLOAD_IDENTITY_PROVIDER", "");
+    vi.stubEnv("VERCEL_ENV", "");
+    vi.stubEnv("RESOURCE_ARTIFACTS_EMULATOR_ORIGIN", "http://127.0.0.1:4443");
+    const { getStorage } = await import("./client.js");
+    const storage = getStorage();
+    expect(storage.apiEndpoint).toBe("http://127.0.0.1:4443");
+    expect(storage.baseUrl).toBe("http://127.0.0.1:4443/storage/v1");
+    expect(getStorage()).toBe(storage);
+    vi.stubEnv("RESOURCE_ARTIFACTS_EMULATOR_ORIGIN", "http://127.0.0.1:4444");
+    expect(getStorage()).not.toBe(storage);
+  });
+
+  it.each([
+    { origin: "https://storage.example.com", vercel: "", federated: false },
+    { origin: "http://127.0.0.1:4443/storage/v1", vercel: "", federated: false },
+    { origin: "http://127.0.0.1:4443", vercel: "preview", federated: false },
+    { origin: "http://127.0.0.1:4443", vercel: "", federated: true },
+  ])(
+    "refuses nonlocal or hosted emulator configuration: $origin $vercel $federated",
+    async ({ origin, vercel, federated }) => {
+      vi.stubEnv("GCP_WORKLOAD_IDENTITY_PROVIDER", federated ? provider : "");
+      vi.stubEnv("VERCEL_ENV", vercel);
+      vi.stubEnv("RESOURCE_ARTIFACTS_EMULATOR_ORIGIN", origin);
+      const { getStorage } = await import("./client.js");
+      expect(() => getStorage()).toThrow("Artifact storage emulation requires");
+    },
+  );
+
   it("lets the SDK cache its auth client and retrieve fresh subject tokens", async () => {
     const { getVercelOidcToken } = await import("@vercel/oidc");
     vi.mocked(getVercelOidcToken)
