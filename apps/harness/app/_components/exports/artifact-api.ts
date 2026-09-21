@@ -1,5 +1,5 @@
 import { adapterProxyPath } from "../../harness-api";
-import { downloadFilename } from "./export-api";
+import { downloadFilename } from "@oaknational/resource-adapter/internal/downloads";
 
 export async function downloadArtifactFile(
   artifactId: string,

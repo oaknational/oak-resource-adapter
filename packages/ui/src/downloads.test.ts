@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { downloadBlob } from "./download-blob";
+import { downloadBlob, downloadFilename } from "./downloads.js";
 
 const link = { click: vi.fn(), download: "", href: "", remove: vi.fn() };
 const append = vi.fn();
@@ -54,4 +54,44 @@ describe("DOCX blob download", () => {
     vi.runAllTimers();
     expect(URL.revokeObjectURL).toHaveBeenCalledExactlyOnceWith("blob:download");
   });
+});
+
+it.each(["pdf", "pptx"])(
+  "supports safe filenames for %s without accepting a different extension",
+  (format) => {
+    expect(downloadFilename(`attachment; filename="worksheet.${format}"`, format)).toBe(
+      `worksheet.${format}`,
+    );
+    expect(downloadFilename('attachment; filename="worksheet.exe"', format)).toBe(
+      `resource-document.${format}`,
+    );
+    expect(
+      downloadFilename(`attachment; filename="../../worksheet.${format}"`, format),
+    ).toBe(`resource-document.${format}`);
+  },
+);
+
+it.each([
+  ['attachment; filename="Worksheet 1.docx"', "Worksheet 1.docx"],
+  ["attachment; filename=worksheet.docx", "worksheet.docx"],
+  [
+    "attachment; filename=worksheet.docx; filename*=UTF-8''Maths%20caf%C3%A9.docx",
+    "Maths café.docx",
+  ],
+  [
+    "attachment; filename=worksheet.docx; filename*=UTF-8''bad%ZZ.docx",
+    "worksheet.docx",
+  ],
+  // The shape the API emits for a title the ASCII filename cannot carry.
+  [
+    "attachment; filename=\"R-sum.docx\"; filename*=UTF-8''R%C3%A9sum%C3%A9.docx",
+    "Résumé.docx",
+  ],
+  ['attachment; filename="../../worksheet.docx"', "resource-document.docx"],
+  ['attachment; filename="C:\\worksheet.docx"', "resource-document.docx"],
+  ['attachment; filename="worksheet.exe"', "resource-document.docx"],
+  ["attachment; filename*=UTF-8''bad%0Aname.docx", "resource-document.docx"],
+  ["attachment", "resource-document.docx"],
+])("handles Content-Disposition %s", (disposition, filename) => {
+  expect(downloadFilename(disposition)).toBe(filename);
 });

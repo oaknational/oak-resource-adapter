@@ -12,6 +12,7 @@ import {
   type DatabaseClient,
   type Job,
 } from "@oaknational/resource-adapter-db";
+import { documentChangingJobKinds } from "@oaknational/resource-adapter-contracts/internal";
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import {
   and,
@@ -149,6 +150,10 @@ export function asParams(value: unknown): Readonly<Record<string, unknown>> {
 }
 
 export type StoredAdaptationHead = Readonly<{
+  completedAt: Date | null;
+  acceptedAt: Date | null;
+  producingAdaptationId: string | null;
+  busy: boolean;
   adaptation: typeof adaptations.$inferSelect;
   storedDocument: typeof resourceDocuments.$inferSelect;
 }>;
@@ -184,12 +189,40 @@ export async function getAdaptationHead(
   if (teacherId !== undefined) {
     predicates.push(eq(adaptations.clerkUserId, teacherId));
   }
-  const [row] = await getDatabaseClient()
-    .select({ adaptation: adaptations, storedDocument: resourceDocuments })
+  const database = getDatabaseClient();
+  // One statement gives ownership, head, review and pending work the same MVCC snapshot.
+  const [row] = await database
+    .select({
+      adaptation: adaptations,
+      storedDocument: resourceDocuments,
+      completedAt: transformationAttempts.completedAt,
+      acceptedAt: transformationAttempts.acceptedAt,
+      producingAdaptationId: transformations.adaptationId,
+      busy: exists(
+        database
+          .select({ id: jobs.id })
+          .from(jobs)
+          .where(
+            and(
+              inArray(jobs.kind, documentChangingJobKinds),
+              inArray(jobs.status, ["queued", "running"]),
+              sql`${jobs.input}->>'adaptationId' = ${adaptations.id}::text`,
+            ),
+          ),
+      ).mapWith(Boolean),
+    })
     .from(adaptations)
     .innerJoin(
       resourceDocuments,
       eq(resourceDocuments.id, adaptations.headResourceDocumentId),
+    )
+    .leftJoin(
+      transformationAttempts,
+      eq(transformationAttempts.id, resourceDocuments.transformationAttemptId),
+    )
+    .leftJoin(
+      transformations,
+      eq(transformations.id, transformationAttempts.transformationId),
     )
     .where(and(...predicates))
     .limit(1);

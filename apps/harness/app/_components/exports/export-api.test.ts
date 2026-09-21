@@ -40,37 +40,6 @@ describe("DOCX harness API", () => {
     },
   );
 
-  it.each([
-    ['attachment; filename="Worksheet 1.docx"', "Worksheet 1.docx"],
-    ["attachment; filename=worksheet.docx", "worksheet.docx"],
-    [
-      "attachment; filename=worksheet.docx; filename*=UTF-8''Maths%20caf%C3%A9.docx",
-      "Maths café.docx",
-    ],
-    [
-      "attachment; filename=worksheet.docx; filename*=UTF-8''bad%ZZ.docx",
-      "worksheet.docx",
-    ],
-    // The shape the API emits for a title the ASCII filename cannot carry.
-    [
-      "attachment; filename=\"R-sum.docx\"; filename*=UTF-8''R%C3%A9sum%C3%A9.docx",
-      "Résumé.docx",
-    ],
-    ['attachment; filename="../../worksheet.docx"', "resource-document.docx"],
-    ['attachment; filename="C:\\worksheet.docx"', "resource-document.docx"],
-    ['attachment; filename="worksheet.exe"', "resource-document.docx"],
-    ["attachment; filename*=UTF-8''bad%0Aname.docx", "resource-document.docx"],
-    ["attachment", "resource-document.docx"],
-  ])("handles Content-Disposition %s", async (disposition, filename) => {
-    respond(
-      new Response("binary", { headers: { "content-disposition": disposition } }),
-    );
-
-    await expect(exportDocx({ document, embedFigures: true })).resolves.toMatchObject({
-      filename,
-    });
-  });
-
   it("explains an unavailable development route even with an empty 404", async () => {
     respond(new Response(null, { status: 404 }));
 

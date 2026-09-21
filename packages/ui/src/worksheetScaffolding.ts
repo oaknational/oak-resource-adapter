@@ -1,5 +1,6 @@
 import { TRPCClientError } from "@trpc/client";
 import type {
+  WorksheetExportRequest,
   WorksheetScaffoldingApplyRequest,
   WorksheetScaffoldingReviewRequest,
   WorksheetScaffoldingRetryRequest,
@@ -128,5 +129,22 @@ export function enqueueWorksheetScaffoldingDismissal(
       adaptationId: options.adaptationId,
       targetBlockId: options.targetBlockId,
     }),
+  );
+}
+
+export function prepareWorksheetExport(
+  options: ClientOptions & WorksheetExportRequest & { signal: AbortSignal },
+) {
+  return callApi("Resource Adapter could not prepare the DOCX.", () =>
+    createResourceAdapterInternalClient(
+      options,
+    ).worksheetScaffolding.prepareExport.mutate(
+      {
+        adaptationId: options.adaptationId,
+        resourceDocumentId: options.resourceDocumentId,
+        format: options.format,
+      },
+      { signal: options.signal },
+    ),
   );
 }
