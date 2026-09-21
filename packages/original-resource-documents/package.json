@@ -33,7 +33,7 @@
     "@oaknational/resource-document": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^24.13.4",
     "@vitest/coverage-v8": "^4.1.11",
     "vitest": "^4.1.11"
   }
