@@ -105,6 +105,16 @@ function downloadMessage(state: ResourceDownloadState): string {
   }
 }
 
+function idleMessage(
+  availability: WorksheetDownloadAvailability,
+  worksheetWasRefreshed: boolean,
+): string {
+  if (!worksheetWasRefreshed) return explanations[availability];
+  if (availability === "available")
+    return "Worksheet refreshed. You can try downloading again.";
+  return `Worksheet refreshed. ${explanations[availability]}`;
+}
+
 export function WorksheetDownload({
   apiBaseUrl,
   getToken,
@@ -148,12 +158,7 @@ export function WorksheetDownload({
   const active =
     phase === "preparing" || phase === "downloading" || phase === "refreshing";
   const failed = phase === "error" || phase === "tooLarge";
-  const idleFeedback = worksheetWasRefreshed
-    ? availability === "available"
-      ? "Worksheet refreshed. You can try downloading again."
-      : `Worksheet refreshed. ${explanations[availability]}`
-    : explanations[availability];
-  const feedback = message || idleFeedback;
+  const feedback = message || idleMessage(availability, worksheetWasRefreshed);
   return (
     <DownloadRow>
       <DownloadButton

@@ -44,6 +44,35 @@ export function useResourceDownload({
     };
   }, [apiBaseUrl, resourceDocumentId, format, enabled]);
 
+  async function refreshStaleDocument(signal: AbortSignal) {
+    setState({ phase: "refreshing" });
+    try {
+      await onStale();
+      if (!signal.aborted) setState({ phase: "idle" });
+    } catch (error) {
+      if (signal.aborted) return;
+      reportToHost(onError, error);
+      setState({ phase: "error", error, stage: "refresh" });
+    }
+  }
+
+  async function handleFailure(
+    error: unknown,
+    stage: DownloadStage,
+    signal: AbortSignal,
+  ) {
+    if (signal.aborted) return;
+    const status = error instanceof ResourceAdapterApiError ? error.status : undefined;
+    if (stage === "preparation" && status === 409) {
+      await refreshStaleDocument(signal);
+      return;
+    }
+    // A collected artifact never returns, so drop the id and let the retry prepare a new one.
+    if (stage === "delivery" && status === 404) artifactId.current = null;
+    reportToHost(onError, error);
+    setState({ phase: status === 413 ? "tooLarge" : "error", error, stage });
+  }
+
   async function download() {
     if (request.current !== null || !enabled) return;
     const controller = new AbortController();
@@ -69,25 +98,7 @@ export function useResourceDownload({
       downloadBlob(blob, downloadFilename(contentDisposition, format));
       setState({ phase: "done" });
     } catch (error) {
-      if (signal.aborted) return;
-      const status =
-        error instanceof ResourceAdapterApiError ? error.status : undefined;
-      if (stage === "preparation" && status === 409) {
-        setState({ phase: "refreshing" });
-        try {
-          await onStale();
-          if (!signal.aborted) setState({ phase: "idle" });
-        } catch (refreshError) {
-          if (!signal.aborted) {
-            reportToHost(onError, refreshError);
-            setState({ phase: "error", error: refreshError, stage: "refresh" });
-          }
-        }
-      } else {
-        if (stage === "delivery" && status === 404) artifactId.current = null;
-        reportToHost(onError, error);
-        setState({ phase: status === 413 ? "tooLarge" : "error", error, stage });
-      }
+      await handleFailure(error, stage, signal);
     } finally {
       if (request.current === controller) request.current = null;
     }
