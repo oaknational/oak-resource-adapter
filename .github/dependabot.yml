@@ -30,6 +30,12 @@ updates:
           - "@google-cloud/cloud-sql-connector"
           - google-auth-library
         update-types: [major, minor, patch]
+      # Vitest and its coverage provider must use matching versions, including majors.
+      vitest:
+        patterns:
+          - vitest
+          - "@vitest/*"
+        update-types: [major, minor, patch]
       # First matching group wins. Keep React types with React in production.
       dev-tooling:
         patterns:
@@ -38,8 +44,7 @@ updates:
           - typescript-eslint
           - globals
           - prettier
-          - vitest
-          - "@vitest/*"
+          - vite
           - "@testing-library/*"
           - jsdom
           - typescript
