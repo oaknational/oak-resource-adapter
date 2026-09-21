@@ -23,9 +23,15 @@ Note that `db:generate` writes a migration file; it does not create a database.
 | `pnpm db:migrate:deploy` | Applies pending migrations to a deployed database.    |
 | `pnpm db:check`          | Checks the migration history for collisions.          |
 | `pnpm db:studio`         | Opens Drizzle Studio.                                 |
+| `pnpm db:seed:dev`       | Restores the local fixture data.                      |
+| `pnpm db:reset:seed:dev` | Resets, migrates and seeds in one step.               |
 
 `DATABASE_URL` is read from the process environment or the root `.env`.
-`db:reset` refuses any host but localhost.
+`db:reset` and the seed commands refuse any host but localhost.
+
+Seeding restores the records the browser tests expect. Today that is the
+download fixture alone, whose storage and Clerk prerequisites are in
+[resource artifact downloads](ARTIFACT_DOWNLOADS.md).
 
 ## Changing the schema
 
@@ -66,6 +72,21 @@ application. Expand first and contract in a later release.
 All Previews, including the durable `main` Preview used as staging, see schema
 changes applied by any schema-changing PR. Their code must continue to work while
 the shared schema runs ahead of `main`.
+
+### Sequencing a migration ticket
+
+The rules above make a schema change contend with everyone else's, because only
+one can be in test at a time. Raise the schema as its own pull request and merge
+it before building on it, rather than holding that slot for the life of a
+feature.
+
+Settle the columns before raising it, prototyping locally if the shape isn't yet
+obvious. Once a Preview has applied the migration, a change of mind costs a
+second one.
+
+A purely additive table that nothing references yet is safe to merge alone even
+if the work above it never lands. A change to an existing table is not, and wants
+its feature close behind it.
 
 ## Migrating a live database
 

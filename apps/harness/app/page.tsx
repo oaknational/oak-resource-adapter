@@ -82,13 +82,22 @@ async function resolveView(
     );
     const fixture = await loadOriginalResourceDocumentFixture(fixtureId);
 
+    const artifactId =
+      typeof parameters.artifact === "string"
+        ? parameters.artifact
+        : process.env.RESOURCE_ARTIFACT_DOWNLOAD_FIXTURE_ID;
+
     return {
       section,
+      mode: parameters.mode === "stored-downloads" ? "stored-downloads" : "generate",
       fixtureId,
+      ...(artifactId ? { artifactId } : {}),
+      artifactIsShared: parameters.artifact === undefined,
       resourceDocument: fixture.expectedDocument,
-      fixtures: originalResourceDocumentFixtureManifest.map(({ id, title }) => ({
-        id,
-        title,
+      fixtures: originalResourceDocumentFixtureManifest.map((entry) => ({
+        id: entry.id,
+        title: entry.title,
+        group: "oakLesson" in entry ? "Lesson fixtures" : "Synthetic fixtures",
       })),
     };
   }

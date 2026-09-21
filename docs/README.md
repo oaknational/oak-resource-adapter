@@ -27,6 +27,8 @@ How the service works:
   from Oak, the errors that reach callers, and the local setup it needs.
 - [Dependency architecture](DEPENDENCY_ARCHITECTURE.md): the allowed workspace
   graph and the checks that enforce package boundaries.
+- [Resource artifact downloads](ARTIFACT_DOWNLOADS.md): authenticated delivery and the
+  download fixtures used to exercise it.
 - [Database](DATABASE.md): the schema, the migration workflow, and the data
   protection implications of what it stores.
 - [Background jobs](BACKGROUND_JOBS.md): how the API and worker divide

@@ -94,4 +94,4 @@ fi
 # changed export, or an edit to the check itself, and the module lists it
 # enforces are maintained by hand.
 echo "Verifying the published package artifact..."
-pnpm test:artifact
+pnpm test:package-artifact
