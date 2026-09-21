@@ -33,6 +33,7 @@
   "devDependencies": {
     "@types/node": "^24.13.4",
     "@vitest/coverage-v8": "^5.0.0",
-    "vitest": "^4.1.11"
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
   }
 }

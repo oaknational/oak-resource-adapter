@@ -62,7 +62,8 @@
     "react-dom": "^19.2.8",
     "styled-components": "^6.1.0",
     "tsup": "^8.5.1",
-    "vitest": "^4.1.11"
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
   },
   "dependencies": {
     "@oaknational/resource-adapter-contracts": "workspace:*",
