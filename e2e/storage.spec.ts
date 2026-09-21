@@ -32,7 +32,7 @@ test(
     const body = await response.text();
 
     expect(response.status(), body).toBe(200);
-    expect(JSON.parse(body)).toMatchObject({
+    expect(JSON.parse(body), body).toMatchObject({
       federated: true,
       environment: expect.stringMatching(/^(?:preview|staging)$/),
       key: expect.stringMatching(/^(?:preview|staging)\/_round-trip\//),
@@ -67,7 +67,7 @@ test.describe("mocked artifact storage", { tag: "@deployment-safe" }, () => {
   });
 
   for (const { federated, credentials } of [
-    { federated: true, credentials: "An impersonated service account" },
+    { federated: true, credentials: "Service-account impersonation configured" },
     { federated: false, credentials: "Application default credentials" },
   ]) {
     test(`shows a successful round trip using ${credentials}`, async ({ page }) => {
@@ -145,6 +145,8 @@ test.describe("mocked artifact storage", { tag: "@deployment-safe" }, () => {
 
     await expect(section).toContainText("Status: Failed");
     await expect(section).toContainText("Read denied");
+    await expect(section).toContainText("Authentication configuration");
+    await expect(section).toContainText("Service-account impersonation configured");
     await expect(section).toContainText(
       "Cleanup failed; the object may remain: Delete denied",
     );

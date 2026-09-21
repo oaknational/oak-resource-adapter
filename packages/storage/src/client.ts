@@ -1,17 +1,17 @@
 import { Storage } from "@google-cloud/storage";
 
 import { readFederatedIdentity, type FederatedIdentity } from "./configuration.js";
-import { createFederatedAuthClient } from "./credentials.js";
+import { buildExternalAccountOptions } from "./credentials.js";
 
 let cached: { client: Storage; key: string } | undefined;
 
 function createStorage(identity: FederatedIdentity | null): Storage {
   return identity
-    ? new Storage({ authClient: createFederatedAuthClient(identity) })
+    ? new Storage({ credentials: buildExternalAccountOptions(identity) })
     : new Storage();
 }
 
-/** Whether this process impersonates a service account, rather than using ADC. */
+/** Whether federation is configured; this does not attempt a token exchange. */
 export function isFederated(): boolean {
   return readFederatedIdentity() !== null;
 }

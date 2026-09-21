@@ -26,8 +26,7 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^8.0.1",
-    "@vercel/oidc": "^3.8.2",
-    "google-auth-library": "^9.15.1"
+    "@vercel/oidc": "^3.8.2"
   },
   "devDependencies": {
     "@types/node": "^24.13.4",

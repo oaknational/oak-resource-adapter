@@ -23,7 +23,7 @@ function describeCredentials(federated: boolean | null): string | null {
   }
 
   return federated
-    ? "An impersonated service account"
+    ? "Service-account impersonation configured"
     : "Application default credentials";
 }
 
@@ -33,7 +33,7 @@ function StorageFacts({
   storageKey,
 }: Readonly<Pick<Outcome, "bucket" | "credentials" | "storageKey">>) {
   const facts: readonly (readonly [string, string | null])[] = [
-    ["Credentials", credentials],
+    ["Authentication configuration", credentials],
     ["Key", storageKey],
     ["Bucket", bucket],
   ];

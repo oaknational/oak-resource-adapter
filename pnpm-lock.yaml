@@ -427,9 +427,6 @@ importers:
       '@vercel/oidc':
         specifier: ^3.8.2
         version: 3.8.5
-      google-auth-library:
-        specifier: ^9.15.1
-        version: 9.15.1
     devDependencies:
       '@types/node':
         specifier: ^24.13.4
