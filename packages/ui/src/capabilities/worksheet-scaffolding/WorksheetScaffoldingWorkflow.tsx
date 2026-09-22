@@ -303,10 +303,17 @@ const FAILURE_TITLES = {
   "transformations.retry": "We couldn't try that scaffold again",
 } as const satisfies Record<WorksheetScaffoldingJobKind, string>;
 
-function failureMessage(kind: WorksheetScaffoldingJobKind): string {
-  return kind === "transformations.retry"
-    ? "You can retry again, accept this version, undo it, or start again."
-    : "Start again to reopen the original worksheet.";
+function failureMessage(
+  kind: WorksheetScaffoldingJobKind,
+  canKeepScaffolds: boolean,
+): string {
+  if (kind === "transformations.retry") {
+    return "You can retry again, accept this version, undo it, or start again.";
+  }
+  if (canKeepScaffolds) {
+    return "Try again to keep the scaffolds you have added, or start again to reopen the original worksheet.";
+  }
+  return "Start again to reopen the original worksheet.";
 }
 
 function foundNoScaffolds(
@@ -674,10 +681,17 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
 
   const hasScaffoldsInDocument = addedCount > 0;
   const hasSuggestedScaffolds = suggestedCount > 0;
-  // A run that offered nothing still needs a way to ask for different scaffolds.
   const noScaffoldsFound = foundNoScaffolds(state.value, suggestedCount);
-  const showWorkflowCta =
-    hasScaffoldsInDocument || hasSuggestedScaffolds || noScaffoldsFound;
+
+  const canAskForNewSuggestions =
+    pendingReview === null &&
+    (hasScaffoldsInDocument || hasSuggestedScaffolds || noScaffoldsFound);
+  const showWorkflowCta = canAskForNewSuggestions || hasScaffoldsInDocument;
+
+  const canRetryFailedSuggestions =
+    failedJob?.kind === "suggestions.generate" &&
+    hasScaffoldsInDocument &&
+    pendingReview === null;
 
   return (
     <OakFlex $flexDirection="column" $gap="spacing-16">
@@ -688,13 +702,15 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
             cta={
               showWorkflowCta ? (
                 <ActionRow>
-                  <OakTertiaryButton
-                    disabled={isWorking}
-                    iconName="ai"
-                    onClick={retrySuggestions}
-                  >
-                    Generate new suggestions
-                  </OakTertiaryButton>
+                  {canAskForNewSuggestions && (
+                    <OakTertiaryButton
+                      disabled={isWorking}
+                      iconName="ai"
+                      onClick={retrySuggestions}
+                    >
+                      Generate new suggestions
+                    </OakTertiaryButton>
+                  )}
                   {hasScaffoldsInDocument && (
                     <OakTertiaryButton
                       disabled={isWorking}
@@ -716,9 +732,16 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           <OakInlineBanner
             isOpen
             cta={
-              <OakSecondaryButton onClick={tryAgain}>Start again</OakSecondaryButton>
+              <ActionRow>
+                {canRetryFailedSuggestions && (
+                  <OakSecondaryButton disabled={isWorking} onClick={retrySuggestions}>
+                    Try again
+                  </OakSecondaryButton>
+                )}
+                <OakSecondaryButton onClick={tryAgain}>Start again</OakSecondaryButton>
+              </ActionRow>
             }
-            message={failureMessage(failedJob.kind)}
+            message={failureMessage(failedJob.kind, canRetryFailedSuggestions)}
             title={FAILURE_TITLES[failedJob.kind]}
             titleTag="h3"
             type="error"

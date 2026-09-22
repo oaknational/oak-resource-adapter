@@ -466,20 +466,15 @@ describe("WorksheetScaffoldingWorkflow", () => {
     });
   });
 
-  it("offers fresh suggestions while a scaffold awaits review", async () => {
+  it("withholds fresh suggestions while a scaffold awaits review", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithPendingReview));
     renderDialog();
 
-    await userEvent.click(
-      await screen.findByRole("button", { name: "Generate new suggestions" }),
-    );
+    await screen.findByRole("button", { name: "Accept" });
 
-    expect(retrySuggestionsMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        adaptationId: "adaptation-1",
-        requestId: expect.any(String),
-      }),
-    );
+    expect(
+      screen.queryByRole("button", { name: "Generate new suggestions" }),
+    ).not.toBeInTheDocument();
   });
 
   it.each(["queued", "running"] as const)(
@@ -1170,11 +1165,65 @@ describe("WorksheetScaffoldingWorkflow", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("We couldn't find scaffolds");
     expect(alert).not.toHaveTextContent("background job");
+    expect(alert).toHaveTextContent("Start again to reopen the original worksheet.");
+    expect(
+      within(alert).queryByRole("button", { name: "Try again" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("article", { name: "Adding fractions worksheet" }),
     ).toBeVisible();
     await userEvent.click(within(alert).getByRole("button", { name: "Start again" }));
     expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps accepted scaffolds when a failed suggestion run is tried again", async () => {
+    const retryJob = {
+      failureMessage: null,
+      id: "suggestion-retry-job-1",
+      kind: "suggestions.generate",
+      status: "queued",
+    } as const;
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened({
+        ...readyWithAcceptedScaffold,
+        job: {
+          failureMessage: null,
+          id: "job-1",
+          kind: "suggestions.generate",
+          status: "failed",
+        },
+      }),
+    );
+    retrySuggestionsMock.mockResolvedValueOnce({
+      ...readyWithAcceptedScaffold,
+      job: retryJob,
+    });
+    getWorksheetScaffoldingMock.mockResolvedValue({
+      ...readyWithAcceptedScaffold,
+      job: { ...retryJob, status: "succeeded" },
+      suggestions: [wordBankSuggestion],
+    });
+    renderDialog();
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(
+      "Try again to keep the scaffolds you have added, or start again to reopen the original worksheet.",
+    );
+
+    await userEvent.click(within(alert).getByRole("button", { name: "Try again" }));
+
+    expect(retrySuggestionsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adaptationId: "adaptation-1",
+        requestId: expect.any(String),
+      }),
+    );
+    // The adaptation is kept, so the accepted scaffold survives the failure.
+    expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(1);
+    expect(
+      await screen.findByRole("button", { name: "Add a word bank" }),
+    ).toBeVisible();
+    expect(screen.getByText("denominator")).toBeVisible();
   });
 
   it("reports a document failure and lets the teacher retry", async () => {
