@@ -127,6 +127,20 @@ describe("prepareRegisteredTransformation", () => {
 });
 
 describe("previewRegisteredTransformation", () => {
+  it("previews a word bank when optional key-stage metadata is absent", async () => {
+    const document = {
+      ...worksheet,
+      metadata: { ...worksheet.metadata, keyStage: undefined },
+    };
+
+    await expect(
+      previewRegisteredTransformation(command({ document }), { prepare }),
+    ).resolves.toMatchObject({
+      kind: "scaffold-add-word-bank",
+      prompt: { identifier: "scaffold-add-word-bank" },
+    });
+  });
+
   it("returns the rendered prompt without invoking a model", async () => {
     const preview = await previewRegisteredTransformation(command(), { prepare });
 

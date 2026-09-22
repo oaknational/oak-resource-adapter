@@ -77,12 +77,12 @@ function paramsSchema<TDeclaration extends TransformationDeclaration>(
 
 function validateDeclaration(declaration: TransformationDeclaration): void {
   if (
-    declaration.status === "active" &&
+    declaration.status !== "draft" &&
     declaration.execution.strategy === "model" &&
     declaration.execution.contribution === undefined
   ) {
     throw new Error(
-      `Active transformation ${declaration.kind} needs a structured contribution.`,
+      `Model transformation ${declaration.kind} needs a structured contribution unless it is a draft.`,
     );
   }
 

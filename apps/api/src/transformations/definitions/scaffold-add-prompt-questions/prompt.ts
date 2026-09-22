@@ -10,27 +10,32 @@ export const addPromptQuestionsPrompt = defineTransformationPrompt({
 
 YOUR SCAFFOLD: recall questions
 
-Create up to three pupil-facing questions that prompt recall before the pupil attempts the worksheet's tasks.
+Create a set of questions prompting a pupil to recall the declarative, substantive or procedural knowledge needed to complete the task. The questions may make knowledge that is implicit in the task explicit to the pupil, or prompt them to recall the prerequisite knowledge they need. Do not assume a pupil will know that this knowledge has to be recalled.
 
-Treat the resource as one worksheet. Choose the questions that best support it as a whole. If its tasks need different knowledge, prioritise knowledge used across tasks and then knowledge needed earliest. Make this choice yourself from the lesson material and resource. Never ask the teacher or pupil which task or question to support, and never ask for clarification.
+The set is either knowledge-based or sequence-based, depending on the task. Ask yourself: if a pupil gave a poor or incorrect response, would that primarily be because
 
-Ask one thing per question, order the questions as the tasks will need them, and only ask about knowledge the tasks actually depend on.
+- they lacked a fact, term or concept, or
+- they missed, mis-ordered or badly executed a step?
 
-The question set can be knowledge-based or sequence-based, depending on the worksheet's main barrier. Questions must not directly tell pupils what the knowledge is or how to complete a task.
+For the first, prompt the pupil to recall the specific knowledge. For the second, prompt them to recall the correct sequence for completing the skill, process or method.
 
-Think: if a pupil gave a poor or incorrect response, would this be primarily because:
+Questions must not tell the pupil what the knowledge is or how to complete the task. Where the resource carries a model answer, the correct knowledge or sequence is usually contained within it.
 
-a) they lacked a fact, term or concept
-b) they missed, mis-ordered or badly executed a step.
+How to write them:
 
-If a, create a set of questions to prompt pupils to recall specific knowledge.
-If b, create a set of questions to prompt pupils to recall the correct sequence of completing the skill, process or method.
+- make each question different from the task instruction or question, not a rewording of it;
+- prompt only knowledge directly related to answering the task;
+- use simple present tense, familiar vocabulary and simple syntax, so the question is not itself a load;
+- put one idea in each question;
+- write at most three questions, matching the number to the age of the pupil and what the task asks for.
 
-Where the resource carries a model answer, the correct knowledge or sequence is usually contained within it.
+Where the lesson's own checks for understanding are given, keep to the knowledge they establish the lesson taught, and let them set the pitch and phrasing a question of this kind takes. Where its practice task and feedback are given, take the sequence from them.
 
-At {{supportLevel}} support, ask rather than tell: do not include the answers, and do not ask anything the lesson did not cover.
+For example, for the task "Explain why the plant left in the cupboard grew poorly": "What do plants need to make their own food?"; "Where does light come from in a classroom?"; "What happens to a plant that does not get enough light?"
 
-For example, before a task on separating mixtures: "What does 'soluble' mean?", "Which method separates a soluble solid from water?".
+For the task "Add 3/4 and 2/3": "What do you look at first when you add two fractions?"; "What do you do when the denominators are different?"; "What happens to the numerators once the denominators match?"
+
+Never state the fact, term or step inside a question, and never introduce vocabulary, knowledge or a strategy the task and lesson do not already use.
 
 {{lessonMaterial}}
 

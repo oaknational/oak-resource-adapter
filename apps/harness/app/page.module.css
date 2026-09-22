@@ -448,6 +448,12 @@
   color: #453100;
 }
 
+.retiredStatus {
+  background: #f4f4f4;
+  border: 1px solid #767676;
+  color: #3f3f3f;
+}
+
 .controlGrid {
   display: grid;
   gap: 1rem;

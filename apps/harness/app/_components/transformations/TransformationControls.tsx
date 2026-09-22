@@ -2,6 +2,7 @@ import { resourceNodeLabel } from "../shared/resource-node-label";
 import type { TransformationCatalogueItem } from "./transformation-api";
 import type { TransformationWorkbench } from "./useTransformationWorkbench";
 import { readableIdentifier } from "../shared/readable-identifier";
+import { statusBadgeClass } from "../shared/status-badge";
 import styles from "../../page.module.css";
 
 type TransformationControlsProps = Pick<
@@ -74,6 +75,7 @@ export function TransformationControls({
 }: TransformationControlsProps) {
   const drafts = catalogue.filter(({ status }) => status === "draft");
   const active = catalogue.filter(({ status }) => status === "active");
+  const retired = catalogue.filter(({ status }) => status === "retired");
   const selectedLevel = selected?.supportLevels?.find(
     ({ level }) => level === supportLevel,
   );
@@ -82,13 +84,7 @@ export function TransformationControls({
       <div className={styles.controlHeader}>
         <h2 id="transformation-controls">Transformation</h2>
         {selected !== undefined && (
-          <span
-            className={`${styles.statusBadge} ${
-              selected.status === "active" ? styles.activeStatus : styles.draftStatus
-            }`}
-          >
-            {selected.status}
-          </span>
+          <span className={statusBadgeClass(selected.status)}>{selected.status}</span>
         )}
       </div>
 
@@ -102,6 +98,7 @@ export function TransformationControls({
             {[
               { items: active, label: "Active", marker: "✅" },
               { items: drafts, label: "Draft", marker: "🧪" },
+              { items: retired, label: "Retired", marker: "📦" },
             ].map((group) =>
               group.items.length === 0 ? null : (
                 <optgroup key={group.label} label={group.label}>

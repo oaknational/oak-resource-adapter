@@ -10,20 +10,27 @@ const offers = {
     params: { supportLevel: "low" },
     reason: "Use a short vocabulary list to support the question.",
   },
+  "scaffold-add-task-vocabulary": {
+    params: {},
+    reason: "Explain the words the task instruction uses.",
+  },
   "scaffold-add-prompt-questions": {
-    params: { supportLevel: "low" },
+    params: {},
     reason: "Recall earlier learning before starting the worksheet.",
   },
-  "scaffold-chunk-tasks": {
-    params: { supportLevel: "low" },
-    reason: "Work through the task one step at a time.",
+  "scaffold-add-sentence-starters": {
+    params: {},
+    reason: "Open the first clause of the written response.",
+  },
+  "scaffold-add-sentence-frames": {
+    params: {},
+    reason: "Hold the shape of a response that has several moves.",
   },
 } as const;
 
 const vocabulary = {
   term: "compare",
   definition: "Identify what is the same and what is different.",
-  example: "Compare the two examples before choosing an approach.",
 };
 const steps = [
   "Read the question and identify what it asks.",
@@ -36,9 +43,15 @@ const scaffoldResponses: Readonly<Record<string, JsonValue>> = {
   word_bank_mid: {
     entries: [{ term: vocabulary.term, definition: vocabulary.definition }],
   },
-  word_bank_high: { entries: [vocabulary] },
+  task_vocabulary: {
+    entries: [{ term: vocabulary.term, definition: vocabulary.definition }],
+  },
   prompt_questions: {
     questions: ["What do you remember from the lesson that could help you begin?"],
+  },
+  sentence_starters: { lines: ["When I compare the two approaches, I can see that…"] },
+  sentence_frames: {
+    lines: ["I think that … because … which means that …"],
   },
   chunk_tasks_2_3: { steps },
   chunk_tasks_3_5: { steps },
