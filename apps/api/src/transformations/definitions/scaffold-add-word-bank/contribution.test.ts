@@ -87,30 +87,7 @@ describe("wordBankContribution", () => {
     ]);
   });
 
-  it("requires and preserves an example for high support", () => {
-    const prepared = wordBankContribution.prepare(context("high"));
-    const output = {
-      entries: [
-        {
-          definition: "a point of view",
-          example: "The two narrators offer different perspectives.",
-          term: "perspective",
-        },
-      ],
-    };
-
-    expect(
-      prepared.schema.safeParse({
-        entries: [{ definition: "a point of view", term: "perspective" }],
-      }).success,
-    ).toBe(false);
-    expect(addedEntries(prepared.apply(output)[0])[0]).toMatchObject({
-      example: [
-        {
-          type: "text",
-          text: "The two narrators offer different perspectives.",
-        },
-      ],
-    });
+  it("refuses a level the definition no longer offers", () => {
+    expect(() => wordBankContribution.prepare(context("high"))).toThrow(/high support/);
   });
 });

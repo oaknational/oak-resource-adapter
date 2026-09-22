@@ -67,12 +67,19 @@ test("generates and lists named scaffolding suggestions when the drawer opens", 
     scaffoldingLessons.generatingSuggestions,
   );
   await expectSuggestionsReady(drawer);
+  for (const name of [
+    "Add a task vocabulary bank",
+    "Add sentence starters",
+    "Add sentence frames",
+  ]) {
+    await expect(drawer.getByRole("button", { name, exact: true })).toBeEnabled();
+  }
   await expect(
     drawer.getByRole("button", {
       name: "Break the task into ordered steps",
       exact: true,
     }),
-  ).toBeEnabled();
+  ).toHaveCount(0);
   await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(0);
 });
 
@@ -158,6 +165,32 @@ test("shows the future multi-capability launcher shape", async ({ page }) => {
   const drawer = page.getByRole("dialog", { name: "Add extra scaffolding" });
   await expect(drawer).toBeVisible();
   await expectRenderedWorksheet(drawer, "Adopting different perspectives");
+});
+
+test("keeps a retired transformation deep link consistent with the selector", async ({
+  page,
+}) => {
+  await page.goto("/?view=transformations&selection=scaffold-chunk-tasks");
+  const definition = page
+    .locator("label")
+    .filter({ has: page.getByText("Definition", { exact: true }) })
+    .getByRole("combobox");
+
+  await expect(definition).toHaveValue("scaffold-chunk-tasks");
+  await expect(
+    definition.locator('optgroup[label="Retired"] option:checked'),
+  ).toHaveText("📦 Break the task into ordered steps");
+  await expect(
+    page.getByRole("heading", {
+      name: "Break the task into ordered steps",
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Preview prompt", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Rendered prompt" })).toContainText(
+    "YOUR SCAFFOLD:",
+  );
 });
 
 test(

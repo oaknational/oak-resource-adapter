@@ -6,13 +6,14 @@ holds the registry that names them; `transformations.kind` and
 Suggestion-generation attempts are internal operations and use a namespaced
 kind owned by the suggestion-flow registry.
 
-The registry also holds draft prompt experiments. Drafts are visible to the
-development harness but cannot be exposed by a product capability.
+The registry also holds kinds a teacher is never offered: draft prompt
+experiments, visible to the development harness, and retired kinds, which stay
+registered so that rows already storing their kind still resolve.
 
 ## Naming
 
 `<family>-<verb>-<artefact>`, lowercase and hyphen-separated:
-`scaffold-add-word-bank`, `scaffold-simplify-instructions`,
+`scaffold-add-word-bank`, `scaffold-add-sentence-frames`,
 `scaffold-chunk-tasks`.
 
 The verb slot exists because removing, replacing and modifying a scaffold are
@@ -37,20 +38,20 @@ definitions/scaffold-add-word-bank/
 
 A definition carries:
 
-| Field                  |                                                                        |
-| ---------------------- | ---------------------------------------------------------------------- |
-| `kind`                 | The stable internal name stored in the database.                       |
-| `status`               | `draft` for experiments or `active` for product-ready work.            |
-| `label`                | What the teacher reads.                                                |
-| `suggestion`           | What a suggestion flow uses to decide when this change is useful.      |
-| `params`               | Strict arguments beyond the support level, if it takes any.            |
-| `target`               | The whole document, or one node selected from declared node types.     |
-| `outputs`              | What it produces, in order: a revision, companion documents, or both.  |
-| `supportLevels`        | The levels of support it offers, weakest first.                        |
-| `barriers`             | The pupil barriers it addresses.                                       |
-| `materialRequirements` | The parts of the Oak lesson it consumes, and whether each is required. |
-| `isAvailable`          | Whether to offer the kind, given the work so far.                      |
-| `execution`            | `deterministic` with an `apply`, or `model` with a prompt.             |
+| Field                  |                                                                                                       |
+| ---------------------- | ----------------------------------------------------------------------------------------------------- |
+| `kind`                 | The stable internal name stored in the database.                                                      |
+| `status`               | `draft` for experiments, `active` for product-ready work, `retired` for work withdrawn from teachers. |
+| `label`                | What the teacher reads.                                                                               |
+| `suggestion`           | What a suggestion flow uses to decide when this change is useful.                                     |
+| `params`               | Strict arguments beyond the support level, if it takes any.                                           |
+| `target`               | The whole document, or one node selected from declared node types.                                    |
+| `outputs`              | What it produces, in order: a revision, companion documents, or both.                                 |
+| `supportLevels`        | The levels of support it offers, weakest first.                                                       |
+| `barriers`             | The pupil barriers it addresses.                                                                      |
+| `materialRequirements` | The parts of the Oak lesson it consumes, and whether each is required.                                |
+| `isAvailable`          | Whether to offer the kind, given the work so far.                                                     |
+| `execution`            | `deterministic` with an `apply`, or `model` with a prompt.                                            |
 
 `supportLevels` and `barriers` are optional: a kind that offers no support dial,
 or addresses no particular barrier, declares neither. A level is declared with the
@@ -67,9 +68,9 @@ nodeTypes: ["question"] }`. The same declaration validates execution and drives
 the target picker; a question transformation cannot be run against an existing
 paragraph or response-space ID.
 
-An active model definition must have a structured contribution. A model without
-one is necessarily a draft, and its raw text is an experiment rather than a
-product transformation.
+A model definition must have a structured contribution unless it is a draft. A
+model without one is necessarily a draft, and its raw text is an experiment
+rather than a product transformation.
 
 ## Prompts
 
@@ -184,12 +185,21 @@ Changing the model or the gateway behind a role is an edit to that table alone.
 4. Give it a structured contribution and mark it `active`.
 5. Add its kind to each capability that should own it.
 
+## Withdrawing a kind
+
+Mark it `retired` and leave it registered and listed by its capability. It stops
+being offered and stops being suggested, while the rows that already store its
+kind still resolve against the registry. Deleting the definition instead leaves
+those rows unresolvable; `worksheet-scaffolding/execution.ts` drops them rather
+than failing, so the work disappears from an adaptation's history.
+
 ## Which kinds a capability offers
 
 A capability definition in `apps/api/src/capabilities` lists the kinds it owns,
 in display order, and the list is typed against the registry's keys. It is the
 single source for both direct offerings and that capability's suggestion flow,
-and may include draft kinds. Being registered exposes nothing on its own.
+and may include kinds that are not active. Being registered exposes nothing on
+its own.
 
 `isAvailable` decides whether a listed kind is offered for a particular document
 and adaptation. The rules live in `availability.ts` and compose: `always`,

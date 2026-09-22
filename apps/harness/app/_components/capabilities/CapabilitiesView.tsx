@@ -10,6 +10,7 @@ import {
   type TransformationCatalogueItem,
 } from "../transformations/transformation-api";
 import { readableIdentifier } from "../shared/readable-identifier";
+import { statusBadgeClass } from "../shared/status-badge";
 import styles from "../../page.module.css";
 
 function targetLabel(target: TransformationCatalogueItem["target"]): string {
@@ -32,13 +33,7 @@ function TransformationRow({
     <li>
       <div className={styles.capabilityTransformationHeading}>
         <h4>{transformation.label}</h4>
-        <span
-          className={`${styles.statusBadge} ${
-            transformation.status === "active"
-              ? styles.activeStatus
-              : styles.draftStatus
-          }`}
-        >
+        <span className={statusBadgeClass(transformation.status)}>
           {readableIdentifier(transformation.status)}
         </span>
       </div>
@@ -124,6 +119,7 @@ function Capability({
   });
   const active = transformations.filter(({ status }) => status === "active");
   const drafts = transformations.filter(({ status }) => status === "draft");
+  const retired = transformations.filter(({ status }) => status === "retired");
 
   return (
     <li>
@@ -177,6 +173,11 @@ function Capability({
           lessonId={lessonId}
           title="Configured drafts"
           transformations={drafts}
+        />
+        <TransformationGroup
+          lessonId={lessonId}
+          title="Retired"
+          transformations={retired}
         />
       </section>
     </li>
