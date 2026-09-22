@@ -19,6 +19,10 @@ const materialRequirementSchema = z.strictObject({
   unavailableBecause: z.string().optional(),
 });
 
+const transformationStatusSchema = z.enum(["active", "draft", "retired"]);
+
+export type TransformationStatus = z.infer<typeof transformationStatusSchema>;
+
 const transformationCatalogueItemSchema = z.strictObject({
   barriers: z.array(z.string()).optional(),
   execution: z.enum(["deterministic", "structured-model", "text-model"]),
@@ -26,7 +30,7 @@ const transformationCatalogueItemSchema = z.strictObject({
   label: z.string(),
   materialRequirements: z.array(materialRequirementSchema),
   outputs: transformationOutputsSchema,
-  status: z.enum(["active", "draft"]),
+  status: transformationStatusSchema,
   suggestion: suggestionGuidanceSchema,
   supportLevels: z.array(supportLevelSchema).min(1).optional(),
   target: targetSchema,
@@ -73,7 +77,7 @@ const previewResponseSchema = z.strictObject({
       text: z.string(),
     })
     .nullable(),
-  status: z.enum(["active", "draft"]),
+  status: transformationStatusSchema,
   warnings: z.array(z.string()),
 });
 

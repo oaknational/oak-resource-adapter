@@ -5,7 +5,6 @@ import {
 import {
   applyDefinitionList,
   definedTermsSchema,
-  exemplifiedTermsSchema,
   termsOnlySchema,
   type DefinitionListSchema,
 } from "../../contributions/definition-list";
@@ -21,7 +20,7 @@ function schemaFor(supportLevel: SupportLevel): DefinitionListSchema {
     case "mid":
       return definedTermsSchema;
     case "high":
-      return exemplifiedTermsSchema;
+      throw new Error("scaffold-add-word-bank does not offer high support.");
   }
 }
 

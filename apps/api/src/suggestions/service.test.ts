@@ -92,15 +92,17 @@ describe("worksheet scaffolding suggestions", () => {
 
     expect(result.candidates.map(({ kind }) => kind)).toEqual([
       "scaffold-add-word-bank",
+      "scaffold-add-task-vocabulary",
       "scaffold-add-prompt-questions",
-      "scaffold-chunk-tasks",
+      "scaffold-add-sentence-starters",
+      "scaffold-add-sentence-frames",
     ]);
     expect(result.candidates[0]?.eligibleTargets).toEqual({
       blockIds: questionIds,
       scope: "node",
     });
     expect(result.preparedPrompt.text).toContain("one of these eligible node IDs:");
-    expect(result.preparedPrompt.text).not.toContain("scaffold-simplify-instructions");
+    expect(result.preparedPrompt.text).not.toContain("scaffold-chunk-tasks");
   });
 
   it("offers each node transformation only for targets where it remains valid", async () => {
@@ -268,17 +270,17 @@ describe("worksheet scaffolding suggestions", () => {
   it("returns no suggestions without invoking the model when every target is used", async () => {
     const createInvoker = vi.fn(() => invokerWith({ suggestions: [] }));
     const appliedTransformations = [
-      {
-        kind: "scaffold-add-prompt-questions",
-        params: { supportLevel: "low" },
-      },
-      ...questionIds.flatMap((targetBlockId) =>
-        ["scaffold-add-word-bank", "scaffold-chunk-tasks"].map((kind) => ({
-          kind,
+      { kind: "scaffold-add-prompt-questions", params: {} },
+      ...questionIds.flatMap((targetBlockId) => [
+        {
+          kind: "scaffold-add-word-bank",
           params: { supportLevel: "low" },
           targetBlockId,
-        })),
-      ),
+        },
+        { kind: "scaffold-add-task-vocabulary", params: {}, targetBlockId },
+        { kind: "scaffold-add-sentence-starters", params: {}, targetBlockId },
+        { kind: "scaffold-add-sentence-frames", params: {}, targetBlockId },
+      ]),
     ];
 
     await expect(

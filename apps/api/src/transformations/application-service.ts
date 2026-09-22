@@ -13,6 +13,7 @@ import {
 import type { OakMaterial, OakMaterialRequirement } from "../oak-material/material";
 import { isRegisteredTransformationKind, transformationDefinitions } from "./registry";
 import { executionType } from "./service";
+import type { TransformationStatus } from "./types";
 
 import type { ResourceAdapterModelInvoker } from "@/ai/model-roles";
 
@@ -84,7 +85,7 @@ export type TransformationPreview = Readonly<{
     identifier: string;
     text: string;
   }>;
-  status: "active" | "draft";
+  status: TransformationStatus;
   warnings: readonly string[];
 }>;
 
