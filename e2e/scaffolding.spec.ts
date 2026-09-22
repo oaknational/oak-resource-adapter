@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import { strFromU8, unzipSync } from "fflate";
+import type { Locator, Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 
 import { test } from "./fixtures.js";
@@ -14,6 +17,22 @@ import {
 // @deployment-safe marks a spec as runnable against a deployed environment, which
 // means two things: it writes no rows another run could see, and it depends on no
 // local-only state. Untagged specs run only against CI's throwaway database.
+
+async function downloadWorksheetXml(page: Page, button: Locator) {
+  await expect(button).toBeEnabled();
+  await button.focus();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    button.press("Enter"),
+  ]);
+  expect(await download.failure()).toBeNull();
+  expect(download.suggestedFilename()).toMatch(/\.docx$/);
+  const file = await download.path();
+  if (file === null) throw new Error("The DOCX download has no local file.");
+  const xml = unzipSync(await readFile(file))["word/document.xml"];
+  if (xml === undefined) throw new Error("The DOCX has no document XML.");
+  return strFromU8(xml);
+}
 
 test("shows the API state, a capability-based trigger, and the adapter sidebar", async ({
   page,
@@ -83,7 +102,7 @@ test("generates and lists named scaffolding suggestions when the drawer opens", 
   await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(0);
 });
 
-test("applying a suggestion adds an attributed contribution that survives reopening", async ({
+test("adapts, accepts, downloads, resumes and removes a scaffold without losing work", async ({
   page,
   trackAdaptation,
 }) => {
@@ -114,11 +133,57 @@ test("applying a suggestion adds an attributed contribution that survives reopen
   await expect(
     worksheet.getByRole("button", { name: "Undo", exact: true }),
   ).toBeEnabled();
+  // Keep suggestion progress visible even when deterministic generation finishes quickly.
+  let holdSuggestionProgress = true;
+  await page.route(/worksheetScaffolding\.(accept|get)(?:\?|$)/, async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    if (holdSuggestionProgress) {
+      for (const entry of Array.isArray(body) ? body : [body]) {
+        const state = entry.result?.data;
+        if (state?.pendingReview === null && state?.resourceDocumentId) {
+          state.job = {
+            id: "11111111-1111-4111-8111-111111111111",
+            kind: "suggestions.generate",
+            status: "running",
+            failureMessage: null,
+          };
+        }
+      }
+    }
+    await route.fulfill({ response, json: body });
+  });
   await worksheet.getByRole("button", { name: "Accept", exact: true }).click();
-  await expect(
-    worksheet.getByRole("button", { name: "Remove", exact: true }),
-  ).toBeEnabled();
-  await expectSuggestionsReady(drawer);
+  await expect(drawer.getByRole("status", { name: "Worksheet status" })).toContainText(
+    "Considering scaffold selections",
+  );
+
+  let preparations = 0;
+  page.on("request", (request) => {
+    if (request.url().includes("worksheetScaffolding.prepareExport")) preparations += 1;
+  });
+  const downloadButton = drawer.getByRole("button", {
+    name: "Download worksheet",
+    exact: true,
+  });
+  await expect(downloadButton).toBeEnabled();
+  await page.route(
+    "**/adapter-proxy/resource-artifacts/*",
+    (route) => route.fulfill({ status: 503 }),
+    { times: 1 },
+  );
+  await downloadButton.click();
+  const retryDownload = drawer.getByRole("button", { name: "Retry download" });
+  await expect(retryDownload).toBeEnabled();
+  await expect(worksheet.getByText("compare", { exact: true })).toBeVisible();
+  const firstXml = await downloadWorksheetXml(page, retryDownload);
+  expect(firstXml).toContain("Vocabulary you could include:");
+  expect(firstXml).toContain("compare");
+  expect(preparations).toBe(1);
+  await expect(drawer.getByRole("status", { name: "Worksheet status" })).toContainText(
+    "Considering scaffold selections",
+  );
+  holdSuggestionProgress = false;
 
   await page.reload();
   await page
@@ -138,6 +203,10 @@ test("applying a suggestion adds an attributed contribution that survives reopen
   ).toBeEnabled();
   await expectSuggestionsReady(drawer);
 
+  const resumedXml = await downloadWorksheetXml(page, downloadButton);
+  expect(resumedXml).toContain("Vocabulary you could include:");
+  expect(resumedXml).toContain("compare");
+
   await worksheet.getByRole("button", { name: "Remove", exact: true }).click();
   await expect(applied).toHaveCount(0);
   await expectRenderedWorksheet(drawer, title);
@@ -148,6 +217,8 @@ test("applying a suggestion adds an attributed contribution that survives reopen
   await expect(
     worksheet.getByText("Vocabulary you could include:", { exact: true }),
   ).toHaveCount(0);
+  const removedXml = await downloadWorksheetXml(page, downloadButton);
+  expect(removedXml).not.toContain("Vocabulary you could include:");
 });
 
 test("shows the future multi-capability launcher shape", async ({ page }) => {

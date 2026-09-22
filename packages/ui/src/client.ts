@@ -113,3 +113,31 @@ export function createResourceAdapterInternalClient({
     ],
   });
 }
+
+export async function fetchResourceArtifact({
+  apiBaseUrl,
+  getToken,
+  artifactId,
+  signal,
+}: CreateResourceAdapterClientOptions & { artifactId: string; signal: AbortSignal }) {
+  const token = await getToken();
+  signal.throwIfAborted();
+  if (!token)
+    throw new ResourceAdapterApiError("Sign in again to download this file.", 401);
+  const response = await fetch(
+    `${normalizeApiBaseUrl(apiBaseUrl)}/resource-artifacts/${encodeURIComponent(artifactId)}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal,
+    },
+  );
+  if (!response.ok)
+    throw new ResourceAdapterApiError(
+      "The file could not be downloaded.",
+      response.status,
+    );
+  const blob = await response.blob();
+  signal.throwIfAborted();
+  return { blob, contentDisposition: response.headers.get("content-disposition") };
+}

@@ -16,6 +16,32 @@ The harness proxy must not forward Content-Length or Content-Encoding: undici
 has already decompressed its fetch body, so the upstream length describes the
 compressed bytes and would truncate the download.
 
+## Adapted worksheets
+
+The scaffolding workflow prepares a DOCX through the internal API using the
+adaptation ID and displayed database document ID. Ownership, the current head,
+completed acceptance and pending document-changing operations are checked in one database
+snapshot. Rendering and storage run after that read; they do not modify the
+adaptation. A stale request must refresh the worksheet before preparing again.
+
+The browser downloads the returned artifact through the authenticated route above.
+A delivery retry reuses the artifact; a preparation retry renders again. Closing
+or changing the worksheet cancels browser requests and discards late results.
+
+Each successful preparation creates a new artifact row and bucket object, including
+preparation after a reload. There is no persistent export cache or automatic
+artifact cleanup. Reuse needs an invalidation policy covering renderer changes
+and remote assets; immutable document JSON alone is not a sufficient cache key.
+Retention, orphan cleanup and the follow-up decisions on reuse are tracked in
+[ADAPT-94](https://linear.app/oaknational/issue/ADAPT-94/decide-and-record-oras-data-lifecycle-retention-deletion-and-erasure).
+
+The deterministic browser journey uses real rendering, persistence and delivery
+against [fake-gcs-server](https://github.com/fsouza/fake-gcs-server) 1.56.1. CI starts
+it on port 4443 and creates `resource-adapter-e2e`. To use an equivalent local
+emulator, set `RESOURCE_ARTIFACTS_EMULATOR_ORIGIN=http://127.0.0.1:4443` and
+`RESOURCE_ARTIFACTS_BUCKET=resource-adapter-e2e` on both the API and browser test
+processes.
+
 ## The shared download fixture
 
 One artifact per environment, owned by the Clerk test teacher. Exclude this

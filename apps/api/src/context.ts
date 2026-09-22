@@ -6,6 +6,7 @@ import {
 import { requestAuthenticator, type RequestAuthenticator } from "./authentication";
 import { getCapabilities, hasCapabilities } from "./capabilities/service";
 import { getFeatureFlagService } from "./feature-flags/service";
+import { prepareWorksheetExport } from "./worksheet-scaffolding/export-service";
 import { getSourceDocument } from "./source-documents/service";
 import {
   acceptWorksheetScaffoldingReview,
@@ -47,6 +48,7 @@ export async function createContextInternal(
     featureFlags: getFeatureFlagService(),
     sourceDocuments: { getSourceDocument },
     worksheetScaffolding: {
+      prepareExport: prepareWorksheetExport,
       accept: (input, target) => acceptWorksheetScaffoldingReview(input, target),
       applySuggestion: (input, target) => enqueueSuggestionApplication(input, target),
       get: ({ adaptationId }, target) =>

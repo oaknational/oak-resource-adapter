@@ -3,7 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { useEffect, useRef, useState } from "react";
 import { downloadArtifactFile } from "./artifact-api";
-import { downloadBlob } from "./download-blob";
+import { downloadBlob } from "@oaknational/resource-adapter/internal/downloads";
 import styles from "../../page.module.css";
 
 export function ArtifactDownloadPanel({

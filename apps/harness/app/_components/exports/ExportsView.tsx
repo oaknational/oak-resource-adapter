@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { ArtifactDownloadPanel } from "./ArtifactDownloadPanel";
 import { PersonalArtifactPanel } from "./PersonalArtifactPanel";
-import { downloadBlob } from "./download-blob";
+import { downloadBlob } from "@oaknational/resource-adapter/internal/downloads";
 import { exportDocx } from "./export-api";
 import { ScenarioSelect } from "../shared/ScenarioSelect";
 import styles from "../../page.module.css";

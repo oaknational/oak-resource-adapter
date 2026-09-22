@@ -42,6 +42,10 @@ export const worksheetScaffoldingJobKinds = [
 
 export type WorksheetScaffoldingJobKind = (typeof worksheetScaffoldingJobKinds)[number];
 
+// Suggestion generation writes suggestions, never the head document.
+export const documentChangingJobKinds: readonly WorksheetScaffoldingJobKind[] =
+  worksheetScaffoldingJobKinds.filter((kind) => kind !== "suggestions.generate");
+
 export const worksheetScaffoldingOpenRequestSchema = z.object({
   lesson: lessonContextSchema,
   /** The adaptation the teacher chose not to resume. Abandoned before the new one opens. */
@@ -119,9 +123,32 @@ export type WorksheetScaffoldingEntry =
   | Readonly<{ outcome: "opened"; state: WorksheetScaffoldingState }>
   | Readonly<{ outcome: "resumable"; resumable: WorksheetScaffoldingResumable }>;
 
+export const worksheetDownloadAvailabilitySchema = z.enum([
+  "available",
+  "original",
+  "review",
+  "busy",
+  "unavailable",
+]);
+export type WorksheetDownloadAvailability = z.infer<
+  typeof worksheetDownloadAvailabilitySchema
+>;
+
+export const worksheetExportRequestSchema = z.strictObject({
+  adaptationId: internalIdSchema,
+  resourceDocumentId: internalIdSchema,
+  format: z.literal("docx"),
+});
+export type WorksheetExportRequest = z.infer<typeof worksheetExportRequestSchema>;
+export type WorksheetExportResult = Readonly<{
+  artifactId: string;
+}>;
+
 export type WorksheetScaffoldingState = Readonly<{
   adaptationId: string;
   document: ResourceDocument;
+  resourceDocumentId: string;
+  downloadAvailability: WorksheetDownloadAvailability;
   job: null | Readonly<{
     failureMessage: string | null;
     id: string;

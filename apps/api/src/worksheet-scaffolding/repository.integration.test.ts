@@ -1,3 +1,4 @@
+import { downloadAvailability } from "./download-availability";
 import { randomUUID } from "node:crypto";
 
 import {
@@ -11,7 +12,7 @@ import {
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import type { ResourceDocument } from "@oaknational/resource-document";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { createOrGetJob, failJob } from "../jobs/job-repository";
@@ -151,6 +152,146 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
     });
     return { accepted, adaptationId, pendingHeadId, resourceDocumentId, suggestion };
   }
+
+  async function settleJobs(adaptationId: string) {
+    await getDatabaseClient()
+      .update(jobs)
+      .set({ status: "succeeded", completedAt: new Date() })
+      .where(sql`${jobs.input}->>'adaptationId' = ${adaptationId}`);
+  }
+
+  async function getDownloadHead(...args: Parameters<typeof getAdaptationHead>) {
+    const head = await getAdaptationHead(...args);
+    return head === null
+      ? null
+      : { ...head, downloadAvailability: downloadAvailability(head) };
+  }
+
+  it("exposes download eligibility only for an owned, completed and accepted generated head", async () => {
+    const fixture = await newPendingReview();
+    const { adaptationId, pendingHeadId, accepted } = fixture;
+    const teacherId = accepted.adaptation.clerkUserId;
+    expect(await getDownloadHead(adaptationId, "another-teacher")).toBeNull();
+    expect((await getDownloadHead(adaptationId, teacherId))?.downloadAvailability).toBe(
+      "busy",
+    );
+    await settleJobs(adaptationId);
+    expect((await getDownloadHead(adaptationId, teacherId))?.downloadAvailability).toBe(
+      "review",
+    );
+    await acceptPendingReview({
+      adaptationId,
+      attemptId: accepted.attempt.id,
+      expectedHeadId: pendingHeadId,
+    });
+    const head = await getDownloadHead(adaptationId, teacherId);
+    expect(head).toMatchObject({
+      downloadAvailability: "available",
+      storedDocument: { id: pendingHeadId },
+    });
+    await getDatabaseClient()
+      .update(transformationAttempts)
+      .set({ completedAt: null, acceptedAt: null })
+      .where(eq(transformationAttempts.id, accepted.attempt.id));
+    expect((await getDownloadHead(adaptationId, teacherId))?.downloadAvailability).toBe(
+      "unavailable",
+    );
+    await getDatabaseClient()
+      .update(transformationAttempts)
+      .set({ completedAt: new Date(), acceptedAt: new Date() })
+      .where(eq(transformationAttempts.id, accepted.attempt.id));
+    await getDatabaseClient()
+      .update(adaptations)
+      .set({ abandonedAt: new Date() })
+      .where(eq(adaptations.id, adaptationId));
+    expect((await getDownloadHead(adaptationId, teacherId))?.downloadAvailability).toBe(
+      "unavailable",
+    );
+  });
+
+  it.each(["queued", "running"] as const)(
+    "permits an accepted head while suggestion generation is %s",
+    async (status) => {
+      const { adaptationId, pendingHeadId, accepted } = await newPendingReview();
+      await settleJobs(adaptationId);
+      await acceptPendingReview({
+        adaptationId,
+        attemptId: accepted.attempt.id,
+        expectedHeadId: pendingHeadId,
+      });
+      const generation = await createOrGetJob({
+        kind: "suggestions.generate",
+        idempotencyKey: `integration-${randomUUID()}`,
+        input: {
+          adaptationId,
+          resourceDocumentId: pendingHeadId,
+          flowId: "worksheet-scaffolding",
+        },
+      });
+      await getDatabaseClient()
+        .update(jobs)
+        .set({ status })
+        .where(eq(jobs.id, generation.job.id));
+      expect(await getDownloadHead(adaptationId)).toMatchObject({
+        downloadAvailability: "available",
+        storedDocument: { id: pendingHeadId },
+      });
+    },
+  );
+
+  it("blocks export during operations on an earlier head and permits the accepted removal output", async () => {
+    const { adaptationId, pendingHeadId, resourceDocumentId, accepted } =
+      await newPendingReview();
+    await settleJobs(adaptationId);
+    await acceptPendingReview({
+      adaptationId,
+      attemptId: accepted.attempt.id,
+      expectedHeadId: pendingHeadId,
+    });
+    const work = await createOrGetJob({
+      kind: "transformations.remove",
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { adaptationId, resourceDocumentId },
+    });
+    expect((await getDownloadHead(adaptationId))?.downloadAvailability).toBe("busy");
+    const attempt = await createOperationAttempt({
+      adaptationId,
+      idempotencyKey: `integration-${randomUUID()}`,
+      jobId: work.job.id,
+      kind: "transformations.remove",
+      resourceDocumentId: pendingHeadId,
+    });
+    const removedHeadId = await storeOutputsAndAdvanceHead({
+      adaptationId,
+      attemptId: attempt.id,
+      expectedHeadId: pendingHeadId,
+      outputs: [{ document: worksheet, purpose: "revised-resource" }],
+      revisedPosition: 0,
+      review: "accepted",
+    });
+    expect((await getDownloadHead(adaptationId))?.downloadAvailability).toBe("busy");
+    await settleJobs(adaptationId);
+    expect(await getDownloadHead(adaptationId)).toMatchObject({
+      downloadAvailability: "available",
+      storedDocument: { id: removedHeadId },
+    });
+  });
+
+  it("makes the original head unavailable after undo without losing the worksheet", async () => {
+    const { adaptationId, pendingHeadId, resourceDocumentId, accepted } =
+      await newPendingReview();
+    await settleJobs(adaptationId);
+    await undoPendingReview({
+      adaptationId,
+      expectedHeadId: pendingHeadId,
+      previousHeadId: resourceDocumentId,
+      transformationId: accepted.transformation.id,
+    });
+    expect(await getDownloadHead(adaptationId)).toMatchObject({
+      downloadAvailability: "original",
+      storedDocument: { id: resourceDocumentId, document: worksheet },
+    });
+  });
 
   it("points a new adaptation's head at the worksheet it stored", async () => {
     const { adaptationId, resourceDocumentId, teacherId } = await newAdaptation();

@@ -68,6 +68,10 @@ export function head(
   document: ResourceDocument = worksheet,
 ): StoredAdaptationHead {
   return {
+    completedAt: fixtureTimestamp,
+    acceptedAt: fixtureTimestamp,
+    producingAdaptationId: ADAPTATION_ID,
+    busy: false,
     adaptation: {
       abandonedAt: null,
       capabilityId: "worksheetScaffolding",

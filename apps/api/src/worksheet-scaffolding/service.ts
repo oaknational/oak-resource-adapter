@@ -1,3 +1,4 @@
+import { downloadAvailability } from "./download-availability";
 import {
   worksheetScaffoldingJobKinds,
   type WorksheetScaffoldingApplyRequest,
@@ -187,6 +188,8 @@ async function readAdaptation(
     state: {
       adaptationId,
       document: parseResourceDocument(head.storedDocument.document),
+      resourceDocumentId: head.storedDocument.id,
+      downloadAvailability: downloadAvailability(head),
       job:
         job === null || !isSuggestionJobKind(job.kind)
           ? null

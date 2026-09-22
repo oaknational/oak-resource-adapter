@@ -30,8 +30,10 @@ import type {
   LessonContext,
   ResourceAdapterErrorHandler,
 } from "../../publicTypes.js";
+import { WorksheetDownload } from "./WorksheetDownload.js";
 import {
   jobIsBusy,
+  documentUpdateIsBusy,
   useWorksheetScaffolding,
   type ApplyingSuggestion,
   type WorkflowState,
@@ -474,6 +476,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     applyingSuggestion,
     documentIsVisible,
     removeContribution,
+    refresh,
     resume,
     retryReview,
     startFresh,
@@ -481,6 +484,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     dismissTarget,
     tryAgain,
     undoReview,
+    worksheetWasRefreshed,
   } = useWorksheetScaffolding(props);
   const groupIdPrefix = useId();
 
@@ -491,7 +495,12 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   // A region mounted alongside its own text is announced unreliably, whereas changing
   // the text of a mounted region is not, so every branch renders this same region.
   const announcement = (status: WorkflowStatus | null) => (
-    <StatusAnnouncement aria-atomic="true" aria-live="polite" role="status">
+    <StatusAnnouncement
+      aria-label="Worksheet status"
+      aria-atomic="true"
+      aria-live="polite"
+      role="status"
+    >
       {status === null
         ? ""
         : [status.title, status.message]
@@ -540,6 +549,13 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
 
   const isWorking =
     applyingSuggestion !== null || actionInFlight !== null || jobIsBusy(state.value);
+  const downloadAvailability =
+    state.value.downloadAvailability === "available" &&
+    (applyingSuggestion !== null ||
+      actionInFlight !== null ||
+      documentUpdateIsBusy(state.value))
+      ? "busy"
+      : state.value.downloadAvailability;
   const failedJob = state.value.job?.status === "failed" ? state.value.job : undefined;
   const listedSuggestions =
     applyingSuggestion?.listedSuggestions ?? state.value.suggestions;
@@ -692,6 +708,16 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
       )}
       {documentIsVisible && (
         <>
+          <WorksheetDownload
+            apiBaseUrl={props.apiBaseUrl}
+            getToken={props.getToken}
+            adaptationId={state.value.adaptationId}
+            resourceDocumentId={state.value.resourceDocumentId}
+            availability={downloadAvailability}
+            onRefresh={refresh}
+            worksheetWasRefreshed={worksheetWasRefreshed}
+            onError={props.onError}
+          />
           {renderSuggestionGroup(null)}
           <ResourceDocumentRenderer
             decorations={decorations}
