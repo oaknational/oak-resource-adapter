@@ -607,7 +607,6 @@ describe("WorksheetScaffoldingWorkflow", () => {
         requestId: expect.any(String),
       }),
     );
-    expect().toBeVisible();
     // The accepted scaffold survives a fresh run of suggestions.
     expect(screen.getByText("denominator")).toBeVisible();
   });
