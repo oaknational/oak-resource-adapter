@@ -3,7 +3,8 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import {
   acceptWorksheetScaffoldingReview,
   enqueueSuggestionApplication,
-  enqueueWorksheetScaffoldingRetry,
+  enqueueWorksheetScaffoldingRetrySuggestions,
+  enqueueWorksheetScaffoldingRetryTransformation,
   getWorksheetScaffoldingState,
   openWorksheetScaffolding,
   enqueueWorksheetScaffoldingRemoval,
@@ -535,7 +536,7 @@ describe("work that collides with a job already running on the head", () => {
     });
 
     await expect(
-      enqueueWorksheetScaffoldingRetry(
+      enqueueWorksheetScaffoldingRetryTransformation(
         { adaptationId: ADAPTATION_ID, attemptId: ATTEMPT_ID, requestId: REQUEST_ID },
         teacher,
         dependencies,
@@ -631,7 +632,7 @@ describe("reviewing an applied scaffold", () => {
       }),
     });
 
-    await enqueueWorksheetScaffoldingRetry(
+    await enqueueWorksheetScaffoldingRetryTransformation(
       { adaptationId: ADAPTATION_ID, attemptId: ATTEMPT_ID, requestId: REQUEST_ID },
       teacher,
       dependencies,
@@ -658,12 +659,12 @@ describe("reviewing an applied scaffold", () => {
     });
     const anotherRequestId = "99999999-9999-4999-8999-999999999999";
 
-    await enqueueWorksheetScaffoldingRetry(
+    await enqueueWorksheetScaffoldingRetryTransformation(
       { adaptationId: ADAPTATION_ID, attemptId: ATTEMPT_ID, requestId: REQUEST_ID },
       teacher,
       dependencies,
     );
-    await enqueueWorksheetScaffoldingRetry(
+    await enqueueWorksheetScaffoldingRetryTransformation(
       {
         adaptationId: ADAPTATION_ID,
         attemptId: ATTEMPT_ID,
@@ -715,6 +716,61 @@ describe("reviewing an applied scaffold", () => {
     expect(dependencies.enqueue).toHaveBeenCalledWith(
       expect.objectContaining({ kind: "suggestions.generate" }),
     );
+  });
+
+  it("queues fresh suggestions against the current head", async () => {
+    const dependencies = stubDependencies();
+
+    await enqueueWorksheetScaffoldingRetrySuggestions(
+      { adaptationId: ADAPTATION_ID, requestId: REQUEST_ID },
+      teacher,
+      dependencies,
+    );
+
+    expect(dependencies.enqueue).toHaveBeenCalledWith({
+      concurrencyKey: `adaptation:${ADAPTATION_ID}:head:${DOCUMENT_ID}`,
+      idempotencyKey: `retrySuggestions:${DOCUMENT_ID}:${REQUEST_ID}`,
+      input: {
+        adaptationId: ADAPTATION_ID,
+        flowId: "worksheet-scaffolding",
+        resourceDocumentId: DOCUMENT_ID,
+      },
+      kind: "suggestions.generate",
+    });
+  });
+
+  it("refuses fresh suggestions while a review is pending", async () => {
+    const dependencies = stubDependencies({
+      repository: stubRepository({
+        getPendingReview: vi.fn().mockResolvedValue(pendingReview()),
+      }),
+    });
+
+    await expect(
+      enqueueWorksheetScaffoldingRetrySuggestions(
+        { adaptationId: ADAPTATION_ID, requestId: REQUEST_ID },
+        teacher,
+        dependencies,
+      ),
+    ).resolves.toBeNull();
+    expect(dependencies.enqueue).not.toHaveBeenCalled();
+  });
+
+  it("refuses fresh suggestions for an inaccessible adaptation", async () => {
+    const repository = stubRepository({
+      getAdaptationHead: vi.fn().mockResolvedValue(null),
+    });
+    const dependencies = stubDependencies({ repository });
+
+    await expect(
+      enqueueWorksheetScaffoldingRetrySuggestions(
+        { adaptationId: ADAPTATION_ID, requestId: REQUEST_ID },
+        teacher,
+        dependencies,
+      ),
+    ).resolves.toBeNull();
+    expect(repository.getPendingReview).not.toHaveBeenCalled();
+    expect(dependencies.enqueue).not.toHaveBeenCalled();
   });
 
   it("queues removal of an accepted contribution on the current head", async () => {
@@ -782,7 +838,7 @@ describe("reviewing an applied scaffold", () => {
     async (action) => {
       const run = {
         accept: acceptWorksheetScaffoldingReview,
-        retry: enqueueWorksheetScaffoldingRetry,
+        retry: enqueueWorksheetScaffoldingRetryTransformation,
         undo: undoWorksheetScaffoldingReview,
       }[action];
       const repository = stubRepository({
@@ -933,7 +989,7 @@ describe("reviewing an applied scaffold", () => {
   it.each([
     ["accept", acceptWorksheetScaffoldingReview],
     ["undo", undoWorksheetScaffoldingReview],
-    ["retry", enqueueWorksheetScaffoldingRetry],
+    ["retry", enqueueWorksheetScaffoldingRetryTransformation],
   ] as const)(
     "declines %s on an adaptation the teacher does not own",
     async (_, run) => {

@@ -117,7 +117,7 @@ const ReviewChevron = styled(OakIcon)<{ $isOpen: boolean }>`
   }
 `;
 
-const ReviewActions = styled.div`
+const ActionRow = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -303,10 +303,28 @@ const FAILURE_TITLES = {
   "transformations.retry": "We couldn't try that scaffold again",
 } as const satisfies Record<WorksheetScaffoldingJobKind, string>;
 
-function failureMessage(kind: WorksheetScaffoldingJobKind): string {
-  return kind === "transformations.retry"
-    ? "You can retry again, accept this version, undo it, or start again."
-    : "Start again to reopen the original worksheet.";
+function failureMessage(
+  kind: WorksheetScaffoldingJobKind,
+  canKeepScaffolds: boolean,
+): string {
+  if (kind === "transformations.retry") {
+    return "You can retry again, accept this version, undo it, or start again.";
+  }
+  if (canKeepScaffolds) {
+    return "Try again to keep the scaffolds you have added, or start again to reopen the original worksheet.";
+  }
+  return "Start again to reopen the original worksheet.";
+}
+
+function foundNoScaffolds(
+  state: WorksheetScaffoldingState,
+  suggestedCount: number,
+): boolean {
+  return (
+    suggestedCount === 0 &&
+    state.job?.kind === "suggestions.generate" &&
+    state.job.status === "succeeded"
+  );
 }
 
 function readyStatus(
@@ -330,7 +348,7 @@ function readyStatus(
       tone: "info",
     };
   }
-  if (state.job?.kind === "suggestions.generate" && state.job.status === "succeeded") {
+  if (foundNoScaffolds(state, suggestedCount)) {
     return {
       message:
         "We didn't find a useful scaffold for this worksheet. It may already give pupils the support they need.",
@@ -404,7 +422,7 @@ function PendingReviewControls({
       <OakP hidden={!isOpen} id={panelId}>
         {reason}
       </OakP>
-      <ReviewActions>
+      <ActionRow>
         <OakSecondaryButton disabled={disabled} iconName="arrow-left" onClick={onUndo}>
           Undo
         </OakSecondaryButton>
@@ -414,9 +432,28 @@ function PendingReviewControls({
         <OakPrimaryButton disabled={disabled} onClick={onAccept}>
           Accept
         </OakPrimaryButton>
-      </ReviewActions>
+      </ActionRow>
     </OakFlex>
   );
+}
+
+type ScaffoldSuggestion = WorksheetScaffoldingState["suggestions"][number];
+
+function groupSuggestionsByTarget(
+  suggestions: WorksheetScaffoldingState["suggestions"],
+): Map<ApplyingSuggestion["targetBlockId"], ScaffoldSuggestion[]> {
+  const grouped = new Map<ApplyingSuggestion["targetBlockId"], ScaffoldSuggestion[]>();
+
+  for (const suggestion of suggestions) {
+    const existing = grouped.get(suggestion.targetBlockId);
+    if (existing === undefined) {
+      grouped.set(suggestion.targetBlockId, [suggestion]);
+    } else {
+      existing.push(suggestion);
+    }
+  }
+
+  return grouped;
 }
 
 function ResumeChoice({
@@ -455,6 +492,7 @@ function ResumeChoice({
           .filter((sentence) => sentence !== "")
           .join(" ")}
       </OakP>
+
       <OakFlex $flexWrap="wrap" $gap="spacing-8">
         <OakPrimaryButton onClick={onResume}>Carry on</OakPrimaryButton>
         <OakSecondaryButton onClick={onStartFresh}>
@@ -475,7 +513,8 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     documentIsVisible,
     removeContribution,
     resume,
-    retryReview,
+    retrySuggestions,
+    retryTransformationReview,
     startFresh,
     state,
     dismissTarget,
@@ -551,23 +590,9 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     addedCount,
     applyingSuggestion !== null,
   );
-  const suggestionsByTarget = new Map<
-    ApplyingSuggestion["targetBlockId"],
-    WorksheetScaffoldingState["suggestions"][number][]
-  >();
+  const suggestionsByTarget = groupSuggestionsByTarget(listedSuggestions);
 
-  for (const suggestion of listedSuggestions) {
-    const suggestions = suggestionsByTarget.get(suggestion.targetBlockId);
-    if (suggestions === undefined) {
-      suggestionsByTarget.set(suggestion.targetBlockId, [suggestion]);
-    } else {
-      suggestions.push(suggestion);
-    }
-  }
-
-  const renderSuggestionItem = (
-    suggestion: WorksheetScaffoldingState["suggestions"][number],
-  ) => {
+  const renderSuggestionItem = (suggestion: ScaffoldSuggestion) => {
     return (
       <SuggestionItem key={suggestion.id}>
         <div>
@@ -638,7 +663,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
         <PendingReviewControls
           disabled={isWorking}
           onAccept={acceptReview}
-          onRetry={retryReview}
+          onRetry={retryTransformationReview}
           onUndo={undoReview}
           reason={pendingReview.reason}
         />
@@ -654,6 +679,20 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
       ),
   };
 
+  const hasScaffoldsInDocument = addedCount > 0;
+  const hasSuggestedScaffolds = suggestedCount > 0;
+  const noScaffoldsFound = foundNoScaffolds(state.value, suggestedCount);
+
+  const canAskForNewSuggestions =
+    pendingReview === null &&
+    (hasScaffoldsInDocument || hasSuggestedScaffolds || noScaffoldsFound);
+  const showWorkflowCta = canAskForNewSuggestions || hasScaffoldsInDocument;
+
+  const canRetryFailedSuggestions =
+    failedJob?.kind === "suggestions.generate" &&
+    hasScaffoldsInDocument &&
+    pendingReview === null;
+
   return (
     <OakFlex $flexDirection="column" $gap="spacing-16">
       {announcement(status)}
@@ -661,15 +700,28 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
         <StickyWorkflowStatus data-testid="worksheet-scaffolding-status">
           <WorkflowStatusBanner
             cta={
-              addedCount === 0 ? undefined : (
-                <OakTertiaryButton
-                  disabled={isWorking}
-                  iconName="trash"
-                  onClick={() => startFresh(state.value.adaptationId)}
-                >
-                  Remove all scaffolds
-                </OakTertiaryButton>
-              )
+              showWorkflowCta ? (
+                <ActionRow>
+                  {canAskForNewSuggestions && (
+                    <OakTertiaryButton
+                      disabled={isWorking}
+                      iconName="ai"
+                      onClick={retrySuggestions}
+                    >
+                      Generate new suggestions
+                    </OakTertiaryButton>
+                  )}
+                  {hasScaffoldsInDocument && (
+                    <OakTertiaryButton
+                      disabled={isWorking}
+                      iconName="trash"
+                      onClick={() => startFresh(state.value.adaptationId)}
+                    >
+                      Remove all scaffolds
+                    </OakTertiaryButton>
+                  )}
+                </ActionRow>
+              ) : null
             }
             status={status}
           />
@@ -680,9 +732,16 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           <OakInlineBanner
             isOpen
             cta={
-              <OakSecondaryButton onClick={tryAgain}>Start again</OakSecondaryButton>
+              <ActionRow>
+                {canRetryFailedSuggestions && (
+                  <OakSecondaryButton disabled={isWorking} onClick={retrySuggestions}>
+                    Try again
+                  </OakSecondaryButton>
+                )}
+                <OakSecondaryButton onClick={tryAgain}>Start again</OakSecondaryButton>
+              </ActionRow>
             }
-            message={failureMessage(failedJob.kind)}
+            message={failureMessage(failedJob.kind, canRetryFailedSuggestions)}
             title={FAILURE_TITLES[failedJob.kind]}
             titleTag="h3"
             type="error"

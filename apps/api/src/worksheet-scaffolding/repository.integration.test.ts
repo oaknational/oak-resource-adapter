@@ -100,6 +100,19 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
     return { attempt, jobId: job.job.id };
   }
 
+  async function newRetryAttempt(
+    adaptationId: string,
+    resourceDocumentId: string,
+    transformationId: string,
+  ) {
+    const job = await createOrGetJob({
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { adaptationId, flowId: "worksheet-scaffolding", resourceDocumentId },
+      kind: "suggestions.generate",
+    });
+    return createRetryAttempt({ jobId: job.job.id, transformationId });
+  }
+
   /** An adaptation whose head is a generated revision awaiting the teacher's decision. */
   async function newPendingReview() {
     const { adaptationId, resourceDocumentId } = await newAdaptation();
@@ -202,6 +215,119 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
 
     await expect(isAttemptComplete(attempt.id)).resolves.toBe(true);
     await expect(listOpenSuggestions(resourceDocumentId)).resolves.toEqual([]);
+  });
+
+  it("replaces earlier offers with a retry's suggestions", async () => {
+    const { adaptationId, resourceDocumentId } = await newAdaptation();
+    const { attempt } = await newAttempt(adaptationId, resourceDocumentId);
+    await completeSuggestionAttempt({
+      attemptId: attempt.id,
+      resourceDocumentId,
+      suggestions: [
+        {
+          kind: "scaffold-add-word-bank",
+          params: { supportLevel: "low" },
+          reason: "The original offer.",
+          targetBlockId: null,
+        },
+      ],
+    });
+    const [originalSuggestion] = await listOpenSuggestions(resourceDocumentId);
+    if (originalSuggestion === undefined) {
+      throw new Error("The original offer was not stored.");
+    }
+    const retryAttempt = await newRetryAttempt(
+      adaptationId,
+      resourceDocumentId,
+      attempt.transformationId,
+    );
+
+    await completeSuggestionAttempt({
+      attemptId: retryAttempt.id,
+      resourceDocumentId,
+      suggestions: [
+        {
+          kind: "scaffold-chunk-tasks",
+          params: { supportLevel: "low" },
+          reason: "The replacement offer.",
+          targetBlockId: null,
+        },
+      ],
+    });
+
+    await expect(listOpenSuggestions(resourceDocumentId)).resolves.toMatchObject([
+      { reason: "The replacement offer." },
+    ]);
+    await expect(
+      getOpenSuggestion(originalSuggestion.id, resourceDocumentId),
+    ).resolves.toBeNull();
+  });
+
+  it("clears open suggestions and invalidates earlier IDs after an empty retry", async () => {
+    const { adaptationId, resourceDocumentId } = await newAdaptation();
+    const { attempt } = await newAttempt(adaptationId, resourceDocumentId);
+    await completeSuggestionAttempt({
+      attemptId: attempt.id,
+      resourceDocumentId,
+      suggestions: [
+        {
+          kind: "scaffold-add-word-bank",
+          params: { supportLevel: "low" },
+          reason: "The original offer.",
+          targetBlockId: null,
+        },
+      ],
+    });
+    const [originalSuggestion] = await listOpenSuggestions(resourceDocumentId);
+    if (originalSuggestion === undefined) {
+      throw new Error("The original offer was not stored.");
+    }
+    const retryAttempt = await newRetryAttempt(
+      adaptationId,
+      resourceDocumentId,
+      attempt.transformationId,
+    );
+
+    await completeSuggestionAttempt({
+      attemptId: retryAttempt.id,
+      resourceDocumentId,
+      suggestions: [],
+    });
+
+    await expect(listOpenSuggestions(resourceDocumentId)).resolves.toEqual([]);
+    await expect(
+      getOpenSuggestion(originalSuggestion.id, resourceDocumentId),
+    ).resolves.toBeNull();
+  });
+
+  it("keeps current offers available while a retry is incomplete", async () => {
+    const { adaptationId, resourceDocumentId } = await newAdaptation();
+    const { attempt } = await newAttempt(adaptationId, resourceDocumentId);
+    await completeSuggestionAttempt({
+      attemptId: attempt.id,
+      resourceDocumentId,
+      suggestions: [
+        {
+          kind: "scaffold-add-word-bank",
+          params: { supportLevel: "low" },
+          reason: "The current offer.",
+          targetBlockId: null,
+        },
+      ],
+    });
+    const [currentSuggestion] = await listOpenSuggestions(resourceDocumentId);
+    if (currentSuggestion === undefined) {
+      throw new Error("The current offer was not stored.");
+    }
+
+    await newRetryAttempt(adaptationId, resourceDocumentId, attempt.transformationId);
+
+    await expect(listOpenSuggestions(resourceDocumentId)).resolves.toMatchObject([
+      { id: currentSuggestion.id, reason: "The current offer." },
+    ]);
+    await expect(
+      getOpenSuggestion(currentSuggestion.id, resourceDocumentId),
+    ).resolves.toMatchObject({ id: currentSuggestion.id });
   });
 
   it("lets only one request accept an offer", async () => {
