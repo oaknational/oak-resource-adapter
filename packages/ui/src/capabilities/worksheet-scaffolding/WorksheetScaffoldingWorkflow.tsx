@@ -430,6 +430,25 @@ function PendingReviewControls({
   );
 }
 
+type ScaffoldSuggestion = WorksheetScaffoldingState["suggestions"][number];
+
+function groupSuggestionsByTarget(
+  suggestions: WorksheetScaffoldingState["suggestions"],
+): Map<ApplyingSuggestion["targetBlockId"], ScaffoldSuggestion[]> {
+  const grouped = new Map<ApplyingSuggestion["targetBlockId"], ScaffoldSuggestion[]>();
+
+  for (const suggestion of suggestions) {
+    const existing = grouped.get(suggestion.targetBlockId);
+    if (existing === undefined) {
+      grouped.set(suggestion.targetBlockId, [suggestion]);
+    } else {
+      existing.push(suggestion);
+    }
+  }
+
+  return grouped;
+}
+
 function ResumeChoice({
   onResume,
   onStartFresh,
@@ -564,23 +583,9 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     addedCount,
     applyingSuggestion !== null,
   );
-  const suggestionsByTarget = new Map<
-    ApplyingSuggestion["targetBlockId"],
-    WorksheetScaffoldingState["suggestions"][number][]
-  >();
+  const suggestionsByTarget = groupSuggestionsByTarget(listedSuggestions);
 
-  for (const suggestion of listedSuggestions) {
-    const suggestions = suggestionsByTarget.get(suggestion.targetBlockId);
-    if (suggestions === undefined) {
-      suggestionsByTarget.set(suggestion.targetBlockId, [suggestion]);
-    } else {
-      suggestions.push(suggestion);
-    }
-  }
-
-  const renderSuggestionItem = (
-    suggestion: WorksheetScaffoldingState["suggestions"][number],
-  ) => {
+  const renderSuggestionItem = (suggestion: ScaffoldSuggestion) => {
     return (
       <SuggestionItem key={suggestion.id}>
         <div>
