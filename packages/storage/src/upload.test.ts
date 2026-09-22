@@ -21,10 +21,6 @@ vi.mock("@google-cloud/storage", () => ({
   },
 }));
 
-vi.mock("google-auth-library", () => ({
-  ExternalAccountClient: { fromJSON: vi.fn(() => ({ federated: true })) },
-}));
-
 const federatedEnv = {
   GCP_SERVICE_ACCOUNT: "wif-vercel-ora@oak.iam.gserviceaccount.com",
   GCP_WORKLOAD_IDENTITY_PROVIDER:
@@ -135,7 +131,7 @@ describe("uploadArtifact", () => {
     expect(storageOptions).toEqual([undefined]);
   });
 
-  it("impersonates the service account when a provider is set", async () => {
+  it("configures federation when a provider is set", async () => {
     vi.stubEnv("GCP_SERVICE_ACCOUNT", federatedEnv.GCP_SERVICE_ACCOUNT);
     vi.stubEnv(
       "GCP_WORKLOAD_IDENTITY_PROVIDER",
@@ -145,7 +141,15 @@ describe("uploadArtifact", () => {
 
     await uploadArtifact(upload());
 
-    expect(storageOptions).toEqual([{ authClient: { federated: true } }]);
+    expect(storageOptions).toEqual([
+      {
+        credentials: expect.objectContaining({
+          type: "external_account",
+          audience: `//iam.googleapis.com/${federatedEnv.GCP_WORKLOAD_IDENTITY_PROVIDER}`,
+          subject_token_supplier: { getSubjectToken: expect.any(Function) },
+        }),
+      },
+    ]);
   });
 
   it("builds one Storage client across uploads, so the token exchange is not repeated", async () => {

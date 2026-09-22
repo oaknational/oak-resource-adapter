@@ -51,7 +51,7 @@ pnpm type-check
 pnpm build
 pnpm test
 pnpm test:coverage
-pnpm test:artifact
+pnpm test:package-artifact
 pnpm test:e2e
 pnpm secrets:scan
 pnpm changeset
@@ -169,6 +169,7 @@ Day to day:
 ```sh
 pnpm db:migrate:dev    # apply migrations someone else added
 pnpm db:generate       # write a migration for a schema change you made
+pnpm db:seed:dev       # restore the fixture data the browser tests expect
 ```
 
 Note that `db:generate` writes a migration file; it does not create a database.

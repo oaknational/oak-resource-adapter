@@ -27,7 +27,7 @@
     "lint:fix": "eslint scripts src --fix",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
-    "test:integration": "RUN_DATABASE_INTEGRATION_TESTS=1 vitest run src/schema.integration.test.ts",
+    "test:integration": "RUN_DATABASE_INTEGRATION_TESTS=1 vitest run src/schema.integration.test.ts src/fixtures.integration.test.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
@@ -40,8 +40,9 @@
   },
   "devDependencies": {
     "@types/pg": "^8.20.0",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.0",
     "drizzle-kit": "^0.31.10",
-    "vitest": "^4.1.11"
+    "vite": "^8.3.0",
+    "vitest": "^5.0.0"
   }
 }

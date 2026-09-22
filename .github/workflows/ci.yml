@@ -199,6 +199,12 @@ jobs:
         # have nowhere to authenticate from.
         run: pnpm test:integration --filter=@oaknational/resource-adapter-db
 
+      - name: Run artifact ownership and fixture integration tests
+        # These suites use synthetic database rows and mock all storage operations.
+        run: |
+          pnpm --filter @oaknational/resource-adapter-api^... build
+          RUN_DATABASE_INTEGRATION_TESTS=1 pnpm --filter @oaknational/resource-adapter-api exec vitest run src/resource-artifacts/repository.integration.test.ts src/resource-artifacts/personal-fixture.integration.test.ts
+
   package-artifact:
     name: Verify published package
     runs-on: ubuntu-latest
@@ -223,7 +229,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Verify published package
-        run: pnpm test:artifact
+        run: pnpm test:package-artifact
 
   browser-tests:
     name: Run browser tests

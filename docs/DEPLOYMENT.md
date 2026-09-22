@@ -159,6 +159,24 @@ database configuration and is initialised asynchronously by
 [`instrumentation.ts`](../apps/api/instrumentation.ts); it never falls back to
 `DATABASE_URL` on failure.
 
+## How artifact storage is reached
+
+The deployed API uses proof of its Vercel identity to get temporary Google Cloud
+credentials for a service account. Google Cloud decides which deployments can use
+that account:
+
+- Non-production allows any environment of `oak-resource-adapter-api`.
+- Production requires both the `oak-resource-adapter-api` API project and the `production` environment.
+
+These rules live in Cloud-Config, using `attribute.project` for non-production and
+`attribute.project_env` for production.
+
+Preview and staging share a service account and storage bucket. Their file names
+start with different environment prefixes, but either environment's credentials
+can access both sets of files. Download routes must decide which files a caller
+can access using server-side records and configuration, not a prefix the caller
+supplies.
+
 ## Secrets the workflows use
 
 Terraform owns project shape, domains, protection and every Vercel environment

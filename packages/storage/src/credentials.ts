@@ -1,5 +1,3 @@
-import { ExternalAccountClient } from "google-auth-library";
-
 import type { FederatedIdentity } from "./configuration.js";
 
 /**
@@ -31,16 +29,4 @@ export function buildExternalAccountOptions(identity: FederatedIdentity) {
     token_url: "https://sts.googleapis.com/v1/token",
     type: "external_account",
   };
-}
-
-export function createFederatedAuthClient(identity: FederatedIdentity) {
-  const client = ExternalAccountClient.fromJSON(buildExternalAccountOptions(identity));
-
-  if (!client) {
-    throw new Error(
-      "Could not build a Google external account client from the storage configuration.",
-    );
-  }
-
-  return client;
 }
