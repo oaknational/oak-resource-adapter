@@ -8,9 +8,12 @@ producing `oak-resource-adapter-api` from `apps/api` and
 
 ## Environment variables
 
-Every Vercel environment variable on the Preview, `staging` and production
-deployments is owned here, from workspace variables in
-`oak-resource-adapter-project-api`. `locals.tf` decides each value's
+The Vercel environment variables on the Preview, `staging` and production
+deployments are owned here, from workspace variables in
+`oak-resource-adapter-project-api`, apart from the two the deploy workflow sets
+on each harness deployment (see
+[deployment](../../docs/DEPLOYMENT.md#how-the-preview-pair-is-wired)).
+`locals.tf` decides each value's
 destination: secrets arrive as the sensitive variables in `variables.tf` and
 everything else in `var.env_vars`, grouped by target.
 

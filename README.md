@@ -36,8 +36,7 @@ local, gitignored `.env` once after cloning, and again whenever they change usin
 doppler secrets download --project oak-resource-adapter --config dev --no-file --format env > .env
 ```
 
-Repository commands read that file, and a variable already set in your shell
-takes precedence over it. Preview, staging and production get their
+Repository commands read that file. Preview, staging and production get their
 configuration from Terraform instead. [Development
 notes](docs/DEVELOPMENT.md#where-configuration-lives) explains where each
 environment's configuration lives and why `pnpm env:pull:dev` no longer works.

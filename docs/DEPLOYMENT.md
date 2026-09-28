@@ -179,8 +179,10 @@ supplies.
 
 ## Secrets the workflows use
 
-Terraform owns project shape, domains, protection and every Vercel environment
-variable on the Preview, `staging` and production deployments;
+Terraform owns project shape, domains, protection and the Vercel environment
+variables on the Preview, `staging` and production deployments, apart from the
+two the workflow [sets on each harness
+deployment](#how-the-preview-pair-is-wired);
 [`locals.tf`](../infrastructure/project/locals.tf) decides each value's
 destination. Local development gets its values from Doppler instead; see [where
 configuration lives](DEVELOPMENT.md#where-configuration-lives).
