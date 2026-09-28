@@ -26,19 +26,21 @@ Contributor documentation is indexed in [docs/README.md](docs/README.md).
 
 - Node.js 24 LTS (see `.nvmrc`)
 - pnpm 10 or later
-- Access to Oak's Vercel team, signed in with `pnpm exec vercel login`, before
-  refreshing local secrets
+- The [Doppler CLI](https://docs.doppler.com/docs/install-cli), signed in with
+  `doppler login`, with access to the `oak-resource-adapter` project
 
-Terraform Cloud is the single source of truth for secrets, and it cannot be read
-back: a sensitive workspace variable is write-only. So shared development values
-are pulled from the API project's Vercel development environment, which Terraform
-writes, into a local, gitignored `.env`. Other repository commands read the
-process environment or that file. Run this once after cloning, and again whenever
-secrets change:
+Shared development values live in Doppler's `dev` config. Write them into a
+local, gitignored `.env` once after cloning, and again whenever they change using the following command:
 
 ```sh
-pnpm env:pull:dev   # writes the development environment into a local, gitignored .env
+doppler secrets download --project oak-resource-adapter --config dev --no-file --format env > .env
 ```
+
+Repository commands read that file, and a variable already set in your shell
+takes precedence over it. Preview, staging and production get their
+configuration from Terraform instead. [Development
+notes](docs/DEVELOPMENT.md#where-configuration-lives) explains where each
+environment's configuration lives and why `pnpm env:pull:dev` no longer works.
 
 ## Commands
 
@@ -129,9 +131,8 @@ const capabilities = await getResourceAdapterCapabilities({
 ## Local database
 
 PostgreSQL, accessed through Drizzle. `DATABASE_URL` is read from the process
-environment or the root `.env`. Run `pnpm env:pull:dev` first (see
-Prerequisites), then point it at any local PostgreSQL instance you control and
-build the schema:
+environment or the root `.env` (see Prerequisites). Point it at any local
+PostgreSQL instance you control and build the schema:
 
 ```sh
 pnpm db:reset          # drops and recreates the local schema, then migrates
@@ -141,8 +142,6 @@ pnpm db:reset          # drops and recreates the local schema, then migrates
 
 ```sh
 pnpm docker:db:bootstrap
-
-pnpm env:pull:dev
 pnpm db:reset
 ```
 

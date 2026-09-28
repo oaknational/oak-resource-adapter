@@ -82,10 +82,12 @@ integration test: a new view can drop or rename a column this package reads.
 ## Local setup
 
 The three `CURRICULUM_*` values in [`.env.example`](../.env.example) are needed in
-the gitignored root `.env`. Once the deployments are provisioned, `pnpm
-env:pull:dev` writes them: the two URLs belong with the other non-secret values in
-`env_vars`, and the API key follows [adding a new
-secret](DEVELOPMENT.md#adding-a-new-secret).
+the gitignored root `.env`. The Doppler `dev` config includes them; see [where
+configuration lives](DEVELOPMENT.md#where-configuration-lives). For
+deployments, follow [adding or rotating a
+secret](DEVELOPMENT.md#adding-or-rotating-a-secret): the two URLs belong with
+the other non-secret values in `env_vars`, and the API key is a sensitive
+variable.
 
 Development points at Oak's staging curriculum rather than production, so no
 production credential is needed on a developer machine. An API key is accepted

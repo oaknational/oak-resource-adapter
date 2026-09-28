@@ -3,44 +3,67 @@
 This is the shared home for repository-operational knowledge that is useful to
 Resource Adapter contributors but does not belong in the public README.
 
-## Adding a new secret
+## Where configuration lives
 
-The Terraform Cloud workspace is the source of truth. To add a secret:
+Each environment gets its configuration from a different place. Hosted values
+cannot be read back out of Terraform Cloud, because a sensitive workspace
+variable is write-only through the Variables API, so local development and CI
+keep their own copies. Workspace outputs are readable, and that is where the
+project IDs and bypass secrets held as GitHub repository secrets are copied
+from.
 
-1. Add a `sensitive = true` variable to
+| Environment             | Where it is edited                                                                                                                                                             | Who reads it                                                                                                                    | How it gets there                                                                                    | To change or rotate a value                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local development       | Doppler project `oak-resource-adapter`, config `dev`                                                                                                                           | everything that runs locally: `pnpm dev`, both apps, the db scripts, the integration and browser tests, all via the root `.env` | `doppler secrets download --project oak-resource-adapter --config dev --no-file --format env > .env` | edit it in Doppler, then run the download again                                                                                                                |
+| Machine-local overrides | your shell, or `.env` by hand                                                                                                                                                  | as above                                                                                                                        | a variable set in the process environment overrides the same key in `.env`                           | nothing shared to update. The `dev` config already holds the docker `DATABASE_URL`, so a refresh does not break a standard local database                      |
+| Preview                 | Terraform Cloud workspace variables ([`variables.tf`](../infrastructure/project/variables.tf), routed by [`locals.tf`](../infrastructure/project/locals.tf)), `preview` target | API and harness Preview deployments                                                                                             | `terraform apply` writes them to the Vercel projects, and Vercel builds with them                    | edit the workspace variable, apply, redeploy                                                                                                                   |
+| `staging`               | as above, `staging` custom environment                                                                                                                                         | `main`'s deployments of both apps                                                                                               | as above                                                                                             | as above                                                                                                                                                       |
+| production              | as above, `production` target                                                                                                                                                  | the API's production deployment                                                                                                 | as above                                                                                             | as above                                                                                                                                                       |
+| GitHub Actions          | repository secrets, plus the `staging` and `production` Environments for migrations                                                                                            | the deploy, migrate, browser-test and release workflows                                                                         | the workflow reads them at run time                                                                  | edit the secret in GitHub. The project IDs and bypass secrets are copied from the Terraform outputs; see [deployment](DEPLOYMENT.md#secrets-the-workflows-use) |
+| Dependabot              | the Dependabot secret store                                                                                                                                                    | browser tests on Dependabot pull requests                                                                                       | as above                                                                                             | edit it by hand; it holds copies of the Clerk and curriculum values                                                                                            |
+
+`pnpm env:pull:dev` no longer works. It pulled the API project's Vercel
+`development` target, and Terraform stopped writing that target: Vercel rejects
+a key that exists in both `development` and a custom environment, and the
+`staging` custom environment was kept instead
+([`locals.tf`](../infrastructure/project/locals.tf)). Local development uses
+Doppler until [ADAPT-98](https://linear.app/oaknational/issue/ADAPT-98)
+restores a Terraform-managed pull.
+
+Every loader the repository uses (Node's `--env-file-if-exists`, `dotenv-cli`
+and `dotenv`) lets a variable already in the process environment override the
+same key in `.env`, so a variable exported in your shell is unaffected by a
+refresh of the file. The `dev` config's `DATABASE_URL` is the docker container
+value shown in `.env.example`; export your own if you use a different local
+database.
+
+Migrations take their credentials from the GitHub Environment matching the
+workflow's target ([`db-migrate.yml`](../.github/workflows/db-migrate.yml)):
+`MIGRATION_DATABASE_URL` and the Cloud SQL variables for staging live in the
+`staging` Environment, and the production equivalents in `production`. Browser
+tests need `CURRICULUM_API_URL` and
+`CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY` in both the Actions and
+Dependabot secret stores, because capability discovery reads live curriculum
+restrictions.
+
+## Adding or rotating a secret
+
+1. Local development: add or change it in the Doppler `dev` config, then run the
+   download above.
+2. Hosted: add a `sensitive = true` variable to
    [`variables.tf`](../infrastructure/project/variables.tf), place it against the
    destinations that need it in
    [`locals.tf`](../infrastructure/project/locals.tf), then set the value as a
    workspace variable and apply. An empty value is dropped rather than written,
-   so a value that does not exist yet stays absent from the deployment.
-2. If any `turbo run` task reads it, declare it in that task's `env` (or
+   so a value that does not exist yet stays absent from the deployment. To
+   rotate, change the workspace variable, apply and redeploy.
+3. If any `turbo run` task reads it, declare it in that task's `env` (or
    `globalEnv`) in [`turbo.json`](../turbo.json). Turbo hashes caches on declared
    env vars only — an undeclared secret means stale or cross-environment cache.
    Declare it on `build` only if it is read while building: the `NEXT_PUBLIC_*`
    values are baked into the client bundle, so a build belongs to one environment.
-3. A workflow that reads the value itself, rather than a deployment reading it,
-   needs a GitHub secret too — see below. Locally, `pnpm env:pull:dev` refreshes
-   the gitignored `.env` read by repository tooling.
-
-## How CI reads secrets
-
-Terraform Cloud cannot be read back — a sensitive workspace variable is
-write-only, and the API returns it as null — so a workflow needing a value holds
-it as a GitHub secret rather than fetching it at run time. Vercel environment
-variables are not here at all: Terraform writes them straight to the projects.
-
-| Scope                    | Holds                                                                     | Used by                                                                 |
-| ------------------------ | ------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Repository secrets       | the Clerk test credentials, curriculum read credentials, and Vercel's own | pull request CI and preview deployments                                 |
-| `staging` Environment    | staging's `MIGRATION_DATABASE_URL` and its Cloud SQL variables            | [`db-migrate.yml`](../.github/workflows/db-migrate.yml) against staging |
-| `production` Environment | the production equivalents                                                | the same workflow against production                                    |
-
-The Vercel credentials are listed in
-[deployment](DEPLOYMENT.md#secrets-the-workflows-use).
-
-Browser tests require `CURRICULUM_API_URL` and
-`CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY` in both the Actions and
-Dependabot secret stores. Capability discovery reads live curriculum restrictions.
+4. A workflow that reads the value itself, rather than a deployment reading it,
+   needs a GitHub secret too, and a Dependabot copy if the browser tests read it.
 
 ## Browser-test model configuration
 
