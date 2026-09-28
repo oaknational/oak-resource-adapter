@@ -179,12 +179,16 @@ supplies.
 
 ## Secrets the workflows use
 
-Terraform owns project shape, domains, protection and every Vercel environment
-variable — see [`locals.tf`](../infrastructure/project/locals.tf), which is where
-each value's destination is decided.
+Terraform owns project shape, domains, protection and the Vercel environment
+variables on the Preview, `staging` and production deployments, apart from the
+two the workflow [sets on each harness
+deployment](#how-the-preview-pair-is-wired);
+[`locals.tf`](../infrastructure/project/locals.tf) decides each value's
+destination.
 
-What the workflows need for themselves they hold as repository secrets. The first
-six are readable from the Terraform workspace outputs:
+What the workflows need for themselves they hold as repository secrets. The
+project IDs and bypass secrets are readable from the Terraform workspace
+outputs; the token and team ID come from Vercel:
 
 | Secret                              | Purpose                                |
 | ----------------------------------- | -------------------------------------- |
@@ -201,7 +205,7 @@ six are readable from the Terraform workspace outputs:
 The three Clerk values must belong to the instance the deployed harness verifies
 against, or the suite dies at sign-in. Migrations take their credentials from the
 GitHub Environment instead; see
-[development notes](DEVELOPMENT.md#how-ci-reads-secrets).
+[development notes](DEVELOPMENT.md#where-configuration-lives).
 
 The same three Clerk values are duplicated into the repository's Dependabot
 secret store, which is all a Dependabot-triggered run can read, so

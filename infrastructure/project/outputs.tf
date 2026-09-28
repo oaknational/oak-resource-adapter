@@ -1,8 +1,6 @@
 # The deploy workflows need the project IDs to target a deployment and both
 # bypass secrets to reach protected ones. Reading them from the workspace keeps
 # them out of the Vercel dashboard and out of anyone's clipboard.
-#
-# These depend on the module gaining an outputs.tf; see README.md.
 
 output "api_project_id" {
   description = "Vercel project ID for the API, for VERCEL_PROJECT_ID_API"
