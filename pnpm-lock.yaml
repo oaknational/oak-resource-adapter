@@ -265,7 +265,7 @@ importers:
         version: link:../resource-document
       '@trpc/server':
         specifier: 11.18.0
-        version: 11.18.0(@typescript/typescript6@6.0.2)
+        version: 11.18.0(typescript@7.0.2)
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -323,8 +323,8 @@ importers:
         specifier: ^0.45.2
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.22.0)
       google-auth-library:
-        specifier: ^11.0.2
-        version: 11.0.2
+        specifier: ^11.1.0
+        version: 11.1.0
       pg:
         specifier: ^8.22.0
         version: 8.22.0
@@ -451,7 +451,7 @@ importers:
         version: link:../resource-document
       '@trpc/client':
         specifier: 11.18.0
-        version: 11.18.0(@trpc/server@11.18.0(@typescript/typescript6@6.0.2))(@typescript/typescript6@6.0.2)
+        version: 11.18.0(@trpc/server@11.18.0(typescript@7.0.2))(typescript@7.0.2)
     devDependencies:
       '@oaknational/oak-components':
         specifier: ^3.0.0
@@ -497,7 +497,7 @@ importers:
         version: 6.4.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       tsup:
         specifier: ^8.5.1
-        version: 8.5.1(@swc/core@1.15.3(@swc/helpers@0.5.23))(@typescript/typescript6@6.0.2)(jiti@2.7.0)(postcss@8.5.28)(tsx@4.23.1)(yaml@2.9.0)
+        version: 8.5.1(@swc/core@1.15.3(@swc/helpers@0.5.23))(jiti@2.7.0)(postcss@8.5.28)(tsx@4.23.1)(typescript@7.0.2)(yaml@2.9.0)
       vite:
         specifier: ^8.3.0
         version: 8.3.0(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0)
@@ -5147,8 +5147,8 @@ packages:
     resolution: {integrity: sha512-YGGyuEdVIjqxkxVH1pUTMY/XtmmsApXrCVv5EU25iX6inEPbV+VakJfLealkBtJN69AQmh1eGOdCl9Sm1UP6XQ==}
     engines: {node: '>=18'}
 
-  gaxios@7.3.0:
-    resolution: {integrity: sha512-RB5vLV+vvQeoFPCX4QMK6/hjVkbIamPp1QSUD0CiZcnj12qbpiL+pLbYtgD+oZkWl0tl9z+o2Utp+MpM3QRhBA==}
+  gaxios@7.3.1:
+    resolution: {integrity: sha512-kB3rzJV7d9juLZh8/56QTXCwQfxyhdOMdyYk1HdQKFtF8TJTDTZQJtixWIwXdE9Jji91mC41DUNpjleo4L4eAQ==}
     engines: {node: '>=18'}
 
   gaxios@8.0.0:
@@ -5163,8 +5163,8 @@ packages:
     resolution: {integrity: sha512-iJ9KMsiu+xKtNRX0PmGLSaIU3bUBAyzWTyqKemKPzNPsmmsBCQYmlNg+brEbES7IHSXtdVwzBPzx1vz3FAaipw==}
     engines: {node: '>=18'}
 
-  gcp-metadata@9.0.3:
-    resolution: {integrity: sha512-2YYnIlHaKBGT2IPg3G2M57hia9Galz15zsEOvw9T3oRf0lSn6KN6VcHQLqby7x8ksYKnjXvp3rp2KJyLCN6zfQ==}
+  gcp-metadata@9.0.4:
+    resolution: {integrity: sha512-p6WvbXOhfwnVtv/MyPq5kBiVhfV/qglMIxwwTVNEI1Ha1HmOgz5uHYHtYO6SfGckFaXe8blA11IJJ3wqXmvmBA==}
     engines: {node: '>=22'}
 
   generic-pool@3.4.2:
@@ -5253,8 +5253,8 @@ packages:
     resolution: {integrity: sha512-7ABviyMOlX5hIVD60YOfHw4/CxOfBhyduaYB+wbFWCWoni4N7SLcV46hrVRktuBbZjFC9ONyqamZITN7q3n32w==}
     engines: {node: '>=18'}
 
-  google-auth-library@11.0.2:
-    resolution: {integrity: sha512-vzpgPutxrghPsnjrjpzLX2bdv8IOL719Rh0oEjGnQu8YCIbnbMuTTQ5zU9LcKvLdOPgCxBwppbvnhgW90Qna5Q==}
+  google-auth-library@11.1.0:
+    resolution: {integrity: sha512-YIBq5KNoHQrZ9PM4PeodDBqqBGlSTIxh1zibN8u3zNIO9UJg8gvKuCpdKV7fWXhsZ2zRkU6FhGrgKNgLJ2IRgw==}
     engines: {node: '>=22'}
 
   google-auth-library@9.15.1:
@@ -8486,7 +8486,7 @@ snapshots:
       '@googleapis/sqladmin': 38.0.0
       '@grpc/grpc-js': 1.14.4
       gaxios: 8.0.0
-      google-auth-library: 11.0.2
+      google-auth-library: 11.1.0
       p-throttle: 8.1.0
     transitivePeerDependencies:
       - supports-color
@@ -9795,14 +9795,18 @@ snapshots:
 
   '@tootallnate/once@2.0.0': {}
 
-  '@trpc/client@11.18.0(@trpc/server@11.18.0(@typescript/typescript6@6.0.2))(@typescript/typescript6@6.0.2)':
+  '@trpc/client@11.18.0(@trpc/server@11.18.0(typescript@7.0.2))(typescript@7.0.2)':
     dependencies:
-      '@trpc/server': 11.18.0(@typescript/typescript6@6.0.2)
-      typescript: '@typescript/typescript6@6.0.2'
+      '@trpc/server': 11.18.0(typescript@7.0.2)
+      typescript: 7.0.2
 
   '@trpc/server@11.18.0(@typescript/typescript6@6.0.2)':
     dependencies:
       typescript: '@typescript/typescript6@6.0.2'
+
+  '@trpc/server@11.18.0(typescript@7.0.2)':
+    dependencies:
+      typescript: 7.0.2
 
   '@ts-morph/common@0.11.1':
     dependencies:
@@ -11911,7 +11915,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  gaxios@7.3.0:
+  gaxios@7.3.1:
     dependencies:
       extend: 3.0.2
       https-proxy-agent: 7.0.6
@@ -11944,9 +11948,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  gcp-metadata@9.0.3:
+  gcp-metadata@9.0.4:
     dependencies:
-      gaxios: 7.3.0
+      gaxios: 7.3.1
       google-logging-utils: 2.0.1
       json-bigint: 1.0.0
     transitivePeerDependencies:
@@ -12037,7 +12041,7 @@ snapshots:
     dependencies:
       base64-js: 1.5.1
       ecdsa-sig-formatter: 1.0.11
-      gaxios: 7.3.0
+      gaxios: 7.3.1
       gcp-metadata: 8.1.4
       google-logging-utils: 1.1.3
       gtoken: 8.0.0
@@ -12045,12 +12049,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  google-auth-library@11.0.2:
+  google-auth-library@11.1.0:
     dependencies:
       base64-js: 1.5.1
       ecdsa-sig-formatter: 1.0.11
-      gaxios: 7.3.0
-      gcp-metadata: 9.0.3
+      gaxios: 7.3.1
+      gcp-metadata: 9.0.4
       google-logging-utils: 2.0.1
       jws: 4.0.1
     transitivePeerDependencies:
@@ -12115,7 +12119,7 @@ snapshots:
 
   gtoken@8.0.0:
     dependencies:
-      gaxios: 7.3.0
+      gaxios: 7.3.1
       jws: 4.0.1
     transitivePeerDependencies:
       - supports-color
@@ -13845,7 +13849,7 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsup@8.5.1(@swc/core@1.15.3(@swc/helpers@0.5.23))(@typescript/typescript6@6.0.2)(jiti@2.7.0)(postcss@8.5.28)(tsx@4.23.1)(yaml@2.9.0):
+  tsup@8.5.1(@swc/core@1.15.3(@swc/helpers@0.5.23))(jiti@2.7.0)(postcss@8.5.28)(tsx@4.23.1)(typescript@7.0.2)(yaml@2.9.0):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.27.7)
       cac: 6.7.14
@@ -13867,7 +13871,7 @@ snapshots:
     optionalDependencies:
       '@swc/core': 1.15.3(@swc/helpers@0.5.23)
       postcss: 8.5.28
-      typescript: '@typescript/typescript6@6.0.2'
+      typescript: 7.0.2
     transitivePeerDependencies:
       - jiti
       - supports-color
