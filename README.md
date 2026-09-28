@@ -30,16 +30,15 @@ Contributor documentation is indexed in [docs/README.md](docs/README.md).
   `doppler login`, with access to the `oak-resource-adapter` project
 
 Shared development values live in Doppler's `dev` config. Write them into a
-local, gitignored `.env` once after cloning, and again whenever they change using the following command:
+local, gitignored `.env` once after cloning, and again whenever they change:
 
 ```sh
 doppler secrets download --project oak-resource-adapter --config dev --no-file --format env > .env
 ```
 
 Repository commands read that file. Preview, staging and production get their
-configuration from Terraform instead. [Development
-notes](docs/DEVELOPMENT.md#where-configuration-lives) explains where each
-environment's configuration lives and why `pnpm env:pull:dev` no longer works.
+configuration from Terraform instead; see [development
+notes](docs/DEVELOPMENT.md#where-configuration-lives).
 
 ## Commands
 

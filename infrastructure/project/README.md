@@ -27,14 +27,9 @@ projects.
 | staging     | `preview` target, and the `staging` custom environment | `api_preview`, then `api_staging` overrides | every branch; `main`    |
 | production  | `production` target                                    | `api_shared` and `api_production`           | the `production` branch |
 
-There is no `development` target: Vercel rejects a key present in both
-`development` and a custom environment. Local development gets its values from
-Doppler instead; see [where configuration
-lives](../../docs/DEVELOPMENT.md#where-configuration-lives).
+There is no `development` target; see `locals.tf`.
 
 ## Applying
 
-The workspace is `oak-resource-adapter-project-api` in Terraform Cloud, selected
-by the tags in `terraform.tf`. Plans and applies run there; no GitHub workflow
-runs Terraform. The project IDs and bypass secrets the deploy workflows need are
-copied from the workspace outputs into GitHub repository secrets.
+Plans and applies run in the Terraform Cloud workspace; no GitHub workflow runs
+Terraform.

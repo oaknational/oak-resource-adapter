@@ -5,38 +5,15 @@ Resource Adapter contributors but does not belong in the public README.
 
 ## Where configuration lives
 
-Each environment gets its configuration from a different place. Hosted values
-cannot be read back out of Terraform Cloud, because a sensitive workspace
-variable is write-only through the Variables API, so local development and CI
-keep their own copies. Workspace outputs are readable, and that is where the
-project IDs and bypass secrets held as GitHub repository secrets are copied
-from.
+Local development reads the root `.env`, generated from the Doppler `dev`
+config (see [Prerequisites](../README.md#prerequisites)). `pnpm env:pull:dev` is
+unavailable.
 
-| Environment             | Where it is edited                                                                                                                                                             | Who reads it                                                                                                                    | How it gets there                                                                                    | To change or rotate a value                                                                                                                                    |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Local development       | Doppler project `oak-resource-adapter`, config `dev`                                                                                                                           | everything that runs locally: `pnpm dev`, both apps, the db scripts, the integration and browser tests, all via the root `.env` | `doppler secrets download --project oak-resource-adapter --config dev --no-file --format env > .env` | edit it in Doppler, then run the download again                                                                                                                |
-| Machine-local overrides | your shell, or `.env` by hand                                                                                                                                                  | as above                                                                                                                        | a shell variable beats the same key in `.env`, if turbo passes it on (see below)                     | nothing shared to update. The `dev` config already holds the docker `DATABASE_URL`, so a refresh does not break a standard local database                      |
-| Preview                 | Terraform Cloud workspace variables ([`variables.tf`](../infrastructure/project/variables.tf), routed by [`locals.tf`](../infrastructure/project/locals.tf)), `preview` target | API and harness Preview deployments                                                                                             | `terraform apply` writes them to the Vercel projects, and Vercel builds with them                    | edit the workspace variable, apply, redeploy                                                                                                                   |
-| `staging`               | as above, `staging` custom environment                                                                                                                                         | `main`'s deployments of both apps                                                                                               | as above                                                                                             | as above                                                                                                                                                       |
-| Per-deployment values   | `deploy-preview.yml`, and the GitHub secret `VERCEL_API_BYPASS_SECRET`                                                                                                         | the harness on Preview and `staging`: `RESOURCE_ADAPTER_API_ORIGIN` and `RESOURCE_ADAPTER_API_BYPASS_SECRET`                    | the workflow passes them to `vercel deploy`; Terraform does not set them                             | after rotating the API bypass secret, update `VERCEL_API_BYPASS_SECRET` in GitHub and redeploy; see [deployment](DEPLOYMENT.md#how-the-preview-pair-is-wired)  |
-| production              | as above, `production` target                                                                                                                                                  | the API's production deployment                                                                                                 | as above                                                                                             | as above                                                                                                                                                       |
-| GitHub Actions          | repository secrets, plus the `staging` and `production` Environments for migrations                                                                                            | the deploy, migrate, browser-test and release workflows                                                                         | the workflow reads them at run time                                                                  | edit the secret in GitHub. The project IDs and bypass secrets are copied from the Terraform outputs; see [deployment](DEPLOYMENT.md#secrets-the-workflows-use) |
-| Dependabot              | the Dependabot secret store                                                                                                                                                    | browser tests on Dependabot pull requests                                                                                       | as above                                                                                             | edit it by hand; it holds copies of the Clerk and curriculum values                                                                                            |
-
-`pnpm env:pull:dev` no longer works. It pulled the API project's Vercel
-`development` target, and Terraform stopped writing that target: Vercel rejects
-a key that exists in both `development` and a custom environment, and the
-`staging` custom environment was kept instead
-([`locals.tf`](../infrastructure/project/locals.tf)). Local development uses
-Doppler until [ADAPT-98](https://linear.app/oaknational/issue/ADAPT-98)
-restores a Terraform-managed pull.
-
-A variable already in your shell beats the same one in `.env`, with one catch.
-Commands that run through turbo (`pnpm dev`, `pnpm test:integration`) only pass
-on the variables listed for that task in [`turbo.json`](../turbo.json).
-Anything else you export is dropped, and the app reads the file value instead.
-`DATABASE_URL` is on the list, so exporting it works if you use a different
-local database. For anything else, edit `.env`.
+Preview, `staging` and production get their environment variables from
+Terraform Cloud workspace variables, routed by
+[`locals.tf`](../infrastructure/project/locals.tf). A sensitive workspace
+variable cannot be read back, so workflows hold what they need as GitHub
+secrets; see [deployment](DEPLOYMENT.md#secrets-the-workflows-use).
 
 Migrations take their credentials from the GitHub Environment matching the
 workflow's target ([`db-migrate.yml`](../.github/workflows/db-migrate.yml)):
@@ -49,8 +26,8 @@ restrictions.
 
 ## Adding or rotating a secret
 
-1. Local development: add or change it in the Doppler `dev` config, then run the
-   download above.
+1. Local development: add or change it in the Doppler `dev` config, then
+   regenerate `.env`.
 2. Hosted: add a `sensitive = true` variable to
    [`variables.tf`](../infrastructure/project/variables.tf), place it against the
    destinations that need it in

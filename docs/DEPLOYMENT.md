@@ -184,8 +184,7 @@ variables on the Preview, `staging` and production deployments, apart from the
 two the workflow [sets on each harness
 deployment](#how-the-preview-pair-is-wired);
 [`locals.tf`](../infrastructure/project/locals.tf) decides each value's
-destination. Local development gets its values from Doppler instead; see [where
-configuration lives](DEVELOPMENT.md#where-configuration-lives).
+destination.
 
 What the workflows need for themselves they hold as repository secrets. The
 project IDs and bypass secrets are readable from the Terraform workspace
