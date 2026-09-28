@@ -84,7 +84,7 @@ variable "clerk_secret_key_production" {
 # The deployed harness and the browser tests verify the same sessions, so a
 # second instance fails the suite at sign-in.
 variable "clerk_secret_key_test" {
-  description = "Clerk secret key shared by preview, staging and local development"
+  description = "Clerk secret key shared by preview and staging"
   type        = string
   sensitive   = true
   default     = ""

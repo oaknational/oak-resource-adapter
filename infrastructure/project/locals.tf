@@ -78,7 +78,7 @@ locals {
   )
 
   # No production target: the harness is never deployed there. No development one
-  # either, because one root .env feeds both apps and the API project carries it.
+  # either; see api_targets.
   harness_targets = {
     preview = local.groups.harness_preview
   }
