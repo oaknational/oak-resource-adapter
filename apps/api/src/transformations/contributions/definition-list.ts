@@ -10,7 +10,6 @@ import { insertBeneath } from "./place";
 
 const termSchema = z.string().trim().min(1).max(60);
 const definitionSchema = z.string().trim().min(1).max(100);
-const exampleSchema = z.string().trim().min(1).max(160);
 
 /** Terms alone, for a list that names the words without defining them. */
 export const termsOnlySchema = z.strictObject({
@@ -20,32 +19,21 @@ export const termsOnlySchema = z.strictObject({
     .max(6),
 });
 
-export const definedTermsSchema = z.strictObject({
-  entries: z
-    .array(z.strictObject({ definition: definitionSchema, term: termSchema }))
-    .min(1)
-    .max(6),
-});
+export function definedTermsSchemaOf(maxEntries: number) {
+  return z.strictObject({
+    entries: z
+      .array(z.strictObject({ definition: definitionSchema, term: termSchema }))
+      .min(1)
+      .max(maxEntries),
+  });
+}
 
-export const exemplifiedTermsSchema = z.strictObject({
-  entries: z
-    .array(
-      z.strictObject({
-        definition: definitionSchema,
-        example: exampleSchema,
-        term: termSchema,
-      }),
-    )
-    .min(1)
-    .max(6),
-});
+export const definedTermsSchema = definedTermsSchemaOf(6);
 
-export type DefinitionListSchema =
-  typeof definedTermsSchema | typeof exemplifiedTermsSchema | typeof termsOnlySchema;
+export type DefinitionListSchema = typeof definedTermsSchema | typeof termsOnlySchema;
 
 type ModelEntry = Readonly<{
   definition?: string;
-  example?: string;
   term: string;
 }>;
 
@@ -79,7 +67,6 @@ function toEntry(
   return {
     term: text(value.term),
     ...(definition === undefined ? {} : { definition: text(definition) }),
-    ...(value.example === undefined ? {} : { example: text(value.example) }),
     ...(keyword === undefined ? {} : { source: "oak-lesson" as const }),
   };
 }

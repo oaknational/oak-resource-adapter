@@ -7,7 +7,7 @@ import type { TransformationContribution } from "./contributions/contribution";
 import type { OakMaterialRequirement } from "../oak-material/material";
 import type { SupportLevel, SupportLevelOptions } from "./support-level";
 
-export type TransformationStatus = "active" | "draft";
+export type TransformationStatus = "active" | "draft" | "retired";
 
 /** What a transformation reads and changes. Node types also drive target pickers. */
 export type TransformationTarget =
@@ -115,7 +115,7 @@ export type TransformationDefinition<
   outputs: TransformationOutputs;
   /** Validates `transformations.params`. Derived by `defineTransformation`. */
   params: TParamsSchema;
-  /** Drafts are visible to development tooling but never offered to teachers. */
+  /** Only `active` is offered: a draft is unfinished, a retired kind withdrawn. */
   status: TransformationStatus;
   suggestion: TransformationSuggestionGuidance;
   /** Weakest first; absent when support level does not apply. */

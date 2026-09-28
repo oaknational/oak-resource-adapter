@@ -272,14 +272,17 @@ describe("deterministic suggestion catalogue", () => {
   it("skips invocation when all document and question targets are already applied", async () => {
     const document = documentFor();
     const applied = [
-      { kind: "scaffold-add-prompt-questions", params: { supportLevel: "low" } },
-      ...getResourceNodesByType(document, "question").flatMap(({ id }) =>
-        ["scaffold-add-word-bank", "scaffold-chunk-tasks"].map((kind) => ({
-          kind,
+      { kind: "scaffold-add-prompt-questions", params: {} },
+      ...getResourceNodesByType(document, "question").flatMap(({ id }) => [
+        {
+          kind: "scaffold-add-word-bank",
           params: { supportLevel: "low" },
           targetBlockId: id,
-        })),
-      ),
+        },
+        { kind: "scaffold-add-task-vocabulary", params: {}, targetBlockId: id },
+        { kind: "scaffold-add-sentence-starters", params: {}, targetBlockId: id },
+        { kind: "scaffold-add-sentence-frames", params: {}, targetBlockId: id },
+      ]),
     ];
     const config = setup();
     expect(
@@ -378,7 +381,7 @@ describe("deterministic suggestion catalogue", () => {
 });
 
 describe("deterministic transformation contributions", () => {
-  it.each(["low", "mid", "high"] as const)(
+  it.each(["low", "mid"] as const)(
     "applies the real %s word-bank contract",
     async (supportLevel) => {
       const document = documentFor();
@@ -412,16 +415,6 @@ describe("deterministic transformation contributions", () => {
                   {
                     type: "text",
                     text: "Identify what is the same and what is different.",
-                  },
-                ],
-              }),
-          ...(supportLevel !== "high"
-            ? {}
-            : {
-                example: [
-                  {
-                    type: "text",
-                    text: "Compare the two examples before choosing an approach.",
                   },
                 ],
               }),
@@ -503,7 +496,7 @@ describe("deterministic transformation contributions", () => {
     const request = {
       document,
       contributionId: "recall",
-      params: { supportLevel: "low" },
+      params: {},
     };
     await expect(
       executeTransformation(transformationDefinitions[kind], request, config),

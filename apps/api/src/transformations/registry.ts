@@ -1,31 +1,24 @@
 import { identityTransformation } from "./definitions/identity";
-import { addGlossaryBilingualTransformation } from "./definitions/scaffold-add-glossary-bilingual";
-import { addKnowledgeSummaryTransformation } from "./definitions/scaffold-add-knowledge-summary";
-import { addModelledExampleTransformation } from "./definitions/scaffold-add-modelled-example";
 import { addPromptQuestionsTransformation } from "./definitions/scaffold-add-prompt-questions";
-import { addPromptRemindersTransformation } from "./definitions/scaffold-add-prompt-reminders";
-import { addStructureFrameTransformation } from "./definitions/scaffold-add-structure-frame";
-import { addSuccessCriteriaTransformation } from "./definitions/scaffold-add-success-criteria";
+import { addSentenceFramesTransformation } from "./definitions/scaffold-add-sentence-frames";
+import { addSentenceStartersTransformation } from "./definitions/scaffold-add-sentence-starters";
+import { addTaskVocabularyTransformation } from "./definitions/scaffold-add-task-vocabulary";
 import { addWordBankTransformation } from "./definitions/scaffold-add-word-bank";
 import { chunkTasksTransformation } from "./definitions/scaffold-chunk-tasks";
-import { simplifyInstructionsTransformation } from "./definitions/scaffold-simplify-instructions";
 
 /**
  * Add new transformation definitions to this map. A capability chooses from it;
- * being registered does not expose a kind to teachers.
+ * being registered does not expose a kind to teachers. Retired kinds stay here
+ * so that rows already storing their kind still resolve.
  */
 export const transformationDefinitions = {
   [identityTransformation.kind]: identityTransformation,
   [addWordBankTransformation.kind]: addWordBankTransformation,
-  [addGlossaryBilingualTransformation.kind]: addGlossaryBilingualTransformation,
-  [simplifyInstructionsTransformation.kind]: simplifyInstructionsTransformation,
-  [addKnowledgeSummaryTransformation.kind]: addKnowledgeSummaryTransformation,
+  [addTaskVocabularyTransformation.kind]: addTaskVocabularyTransformation,
   [addPromptQuestionsTransformation.kind]: addPromptQuestionsTransformation,
-  [addPromptRemindersTransformation.kind]: addPromptRemindersTransformation,
+  [addSentenceStartersTransformation.kind]: addSentenceStartersTransformation,
+  [addSentenceFramesTransformation.kind]: addSentenceFramesTransformation,
   [chunkTasksTransformation.kind]: chunkTasksTransformation,
-  [addStructureFrameTransformation.kind]: addStructureFrameTransformation,
-  [addModelledExampleTransformation.kind]: addModelledExampleTransformation,
-  [addSuccessCriteriaTransformation.kind]: addSuccessCriteriaTransformation,
 } as const;
 
 export type RegisteredTransformationKind = keyof typeof transformationDefinitions;

@@ -11,11 +11,11 @@ export const addWordBankTransformation = defineTransformation({
   status: "active",
   suggestion: {
     description:
-      "Adds the vocabulary a pupil needs for one question, with optional definitions and examples.",
+      "Adds the vocabulary a pupil needs for one question, with optional definitions.",
     useWhen:
-      "Answering the question depends on recalling or selecting relevant subject vocabulary.",
+      "A correct response has to use specific subject vocabulary, and the pupil knows the content but may not retrieve those words unprompted.",
     avoidWhen:
-      "The question already supplies the vocabulary, or vocabulary is not the barrier to answering it.",
+      "The task sets no specific vocabulary for the answer, already supplies the words, tests understanding of them, or is practical or divergent.",
   },
   barriers: ["working-memory", "gaps-in-knowledge"],
   supportLevels: [
@@ -24,10 +24,6 @@ export const addWordBankTransformation = defineTransformation({
       description: "Lists the words a pupil needs, without definitions.",
     },
     { level: "mid", description: "Lists the words with a short definition of each." },
-    {
-      level: "high",
-      description: "Lists the words with a definition and an example of each in use.",
-    },
   ],
   target: { scope: "node", nodeTypes: ["question"] },
   materialRequirements: [

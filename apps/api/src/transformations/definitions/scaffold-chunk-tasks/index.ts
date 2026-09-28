@@ -8,7 +8,7 @@ const KIND = "scaffold-chunk-tasks";
 export const chunkTasksTransformation = defineTransformation({
   kind: KIND,
   label: "Break the task into ordered steps",
-  status: "active",
+  status: "retired",
   suggestion: {
     description: "Breaks one multi-stage task into a short sequence of ordered steps.",
     useWhen:
