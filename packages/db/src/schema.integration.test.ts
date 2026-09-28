@@ -522,6 +522,7 @@ describeWithDatabase("schema integration", () => {
         {
           kind: "lower-reading-age",
           position: 0,
+          reason: "Synthetic reason.",
           resourceDocumentId: document.id,
           transformationAttemptId: suggestingAttempt.id,
         },
@@ -529,6 +530,7 @@ describeWithDatabase("schema integration", () => {
           kind: "add-scaffolding",
           params: { questionCount: 2 },
           position: 1,
+          reason: "Synthetic reason.",
           resourceDocumentId: document.id,
           targetBlockId: "b1",
           transformationAttemptId: suggestingAttempt.id,
@@ -575,6 +577,7 @@ describeWithDatabase("schema integration", () => {
       acceptedTransformationId: accepted.id,
       kind: "add-scaffolding",
       position: 0,
+      reason: "Synthetic reason.",
       resourceDocumentId: document.id,
       transformationAttemptId: attempt.id,
     });
@@ -584,6 +587,7 @@ describeWithDatabase("schema integration", () => {
         acceptedTransformationId: accepted.id,
         kind: "add-scaffolding",
         position: 1,
+        reason: "Synthetic reason.",
         resourceDocumentId: document.id,
         transformationAttemptId: attempt.id,
       }),
@@ -602,6 +606,7 @@ describeWithDatabase("schema integration", () => {
       .values({
         kind: "add-scaffolding",
         position: 0,
+        reason: "Synthetic reason.",
         resourceDocumentId: document.id,
         transformationAttemptId: attempt.id,
       })
@@ -620,6 +625,27 @@ describeWithDatabase("schema integration", () => {
     );
   });
 
+  it.each(["", "  ", "\t", "\n", "\r\n", " \t\n\r\f\v "])(
+    "rejects a suggestion with a blank reason: %j",
+    async (reason) => {
+      const adaptation = await insertAdaptation();
+      const suggesting = await insertTransformation(adaptation.id, "suggest");
+      const { attempt } = await insertAttempt(suggesting.id);
+      const document = await insertOakResourceDocument("Worksheet to analyse");
+
+      await expectConstraintViolation(
+        database().insert(suggestedTransformations).values({
+          kind: "add-scaffolding",
+          position: 0,
+          reason,
+          resourceDocumentId: document.id,
+          transformationAttemptId: attempt.id,
+        }),
+        "suggested_transformations_reason_check",
+      );
+    },
+  );
+
   it("discards a document's offers with the document, keeping earlier ones intact", async () => {
     const adaptation = await insertAdaptation();
     const suggesting = await insertTransformation(adaptation.id, "suggest");
@@ -633,12 +659,14 @@ describeWithDatabase("schema integration", () => {
         {
           kind: "lower-reading-age",
           position: 0,
+          reason: "Synthetic reason.",
           resourceDocumentId: superseded.id,
           transformationAttemptId: attempt.id,
         },
         {
           kind: "lower-reading-age",
           position: 1,
+          reason: "Synthetic reason.",
           resourceDocumentId: survivor.id,
           transformationAttemptId: attempt.id,
         },
@@ -1001,6 +1029,7 @@ describeWithDatabase("schema integration", () => {
     await database().insert(suggestedTransformations).values({
       kind: "add-scaffolding",
       position: 0,
+      reason: "Synthetic reason.",
       resourceDocumentId: output.id,
       transformationAttemptId: attempt.id,
     });

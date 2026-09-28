@@ -1,35 +1,24 @@
 import { sql } from "drizzle-orm";
-import { integer, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { resourceAdapterSchema } from "./pg-schema.js";
 
 /** An immutable cache of source-controlled prompts, upserted by content hash. */
-export const promptTemplates = resourceAdapterSchema.table(
-  "prompt_templates",
-  {
-    createdAt: timestamp("created_at", { precision: 3, withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    /** The commit the template was compiled from. */
-    gitSha: text("git_sha"),
-    /** The upsert target: a hash over the identifier and body together. */
-    hash: text("hash").notNull().unique(),
-    id: uuid("id")
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
-    /** The stable logical name, such as "lower-reading-age". */
-    identifier: text("identifier").notNull(),
-    template: text("template").notNull(),
-    /** Nullable so application versions deployed before content addressing can write. */
-    version: integer("version"),
-  },
-  (table) => [
-    unique("prompt_templates_identifier_version_key").on(
-      table.identifier,
-      table.version,
-    ),
-  ],
-);
+export const promptTemplates = resourceAdapterSchema.table("prompt_templates", {
+  createdAt: timestamp("created_at", { precision: 3, withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  /** The commit the template was compiled from. */
+  gitSha: text("git_sha"),
+  /** The upsert target: a hash over the identifier and body together. */
+  hash: text("hash").notNull().unique(),
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  /** The stable logical name, such as "lower-reading-age". */
+  identifier: text("identifier").notNull(),
+  template: text("template").notNull(),
+});
 
 export type PromptTemplate = typeof promptTemplates.$inferSelect;
 export type NewPromptTemplate = typeof promptTemplates.$inferInsert;
