@@ -7,6 +7,10 @@ import type { ResourceAdapterAuthenticatedTeacher } from "./authentication.js";
 import {
   resourceAdapterFeatureFlagsResponseSchema,
   resourceAdapterSourceDocumentRequestSchema,
+  worksheetExportRequestSchema,
+  worksheetDownloadAvailabilitySchema,
+  type WorksheetExportRequest,
+  type WorksheetExportResult,
   worksheetScaffoldingApplyRequestSchema,
   worksheetScaffoldingReviewRequestSchema,
   worksheetScaffoldingRetryTransformationRequestSchema,
@@ -46,6 +50,10 @@ export type ResourceAdapterSourceDocumentService = Readonly<{
 }>;
 
 export type WorksheetScaffoldingService = Readonly<{
+  prepareExport: (
+    request: WorksheetExportRequest,
+    target: ResourceAdapterAuthenticatedTeacher,
+  ) => Promise<WorksheetExportResult | null>;
   accept: (
     request: WorksheetScaffoldingReviewRequest,
     target: ResourceAdapterAuthenticatedTeacher,
@@ -95,6 +103,8 @@ const t_internal = initTRPC.context<ResourceAdapterApiContextInternal>().create(
 
 const worksheetScaffoldingStateSchema = z.object({
   adaptationId: z.string(),
+  resourceDocumentId: z.uuid(),
+  downloadAvailability: worksheetDownloadAvailabilitySchema,
   document: resourceDocumentSchema,
   job: z.nullable(
     z.object({
@@ -197,6 +207,14 @@ export const internalRouter = t_internal.router({
       }),
   }),
   worksheetScaffolding: t_internal.router({
+    prepareExport: internalAuthenticatedProcedure
+      .input(worksheetExportRequestSchema)
+      .output(z.object({ artifactId: z.uuid() }))
+      .mutation(async ({ ctx, input }) =>
+        requireWorksheetScaffolding(
+          await ctx.worksheetScaffolding.prepareExport(input, ctx.authenticatedTeacher),
+        ),
+      ),
     accept: internalAuthenticatedProcedure
       .input(worksheetScaffoldingReviewRequestSchema)
       .output(worksheetScaffoldingStateSchema)

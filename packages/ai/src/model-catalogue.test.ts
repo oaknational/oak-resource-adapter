@@ -8,6 +8,7 @@ describe("model catalogue", () => {
     expectTypeOf<ModelId>().toEqualTypeOf<keyof typeof SUPPORTED_MODELS>();
     expectTypeOf<"gpt-5.6-luna">().toExtend<ModelId>();
     expectTypeOf<"gpt-5.6-terra">().toExtend<ModelId>();
+    expectTypeOf<"gpt-6-luna">().toExtend<ModelId>();
     // @ts-expect-error an unlisted model is not a valid ModelId
     expectTypeOf<"totally-not-a-real-model">().toExtend<ModelId>();
   });

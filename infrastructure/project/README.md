@@ -8,8 +8,12 @@ producing `oak-resource-adapter-api` from `apps/api` and
 
 ## Environment variables
 
-Every Vercel environment variable for both projects is owned here, from workspace
-variables in `oak-resource-adapter-project-api`. `locals.tf` decides each value's
+The Vercel environment variables on the Preview, `staging` and production
+deployments are owned here, from workspace variables in
+`oak-resource-adapter-project-api`, apart from the two the deploy workflow sets
+on each harness deployment (see
+[deployment](../../docs/DEPLOYMENT.md#how-the-preview-pair-is-wired)).
+`locals.tf` decides each value's
 destination: secrets arrive as the sensitive variables in `variables.tf` and
 everything else in `var.env_vars`, grouped by target.
 
@@ -20,17 +24,12 @@ projects.
 
 | Environment | Vercel destination                                     | Fed from                                    | Reached by              |
 | ----------- | ------------------------------------------------------ | ------------------------------------------- | ----------------------- |
-| development | `development` target, never deployed                   | `api_development`                           | `pnpm env:pull:dev`     |
 | staging     | `preview` target, and the `staging` custom environment | `api_preview`, then `api_staging` overrides | every branch; `main`    |
 | production  | `production` target                                    | `api_shared` and `api_production`           | the `production` branch |
 
-## Not ready to apply
+There is no `development` target; see `locals.tf`.
 
-Written ahead of the infrastructure it needs, so that it can be reviewed and
-corrected rather than described. Before a first apply it needs a Terraform Cloud
-workspace and the three domains under `var.cloudflare_zone_domain`.
+## Applying
 
-The two module additions this configuration was written against —
-`auto_assign_custom_domains` as an input, and `project_id` and
-`protection_bypass_for_automation_secret` on `outputs.tf` — landed in v2.3.0,
-which `main.tf` now pins by commit.
+Plans and applies run in the Terraform Cloud workspace; no GitHub workflow runs
+Terraform.

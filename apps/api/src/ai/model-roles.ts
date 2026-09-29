@@ -9,19 +9,19 @@ import type { ModelInvoker, ModelRole } from "@oaknational/resource-adapter-ai";
  */
 export const modelRoleBindings = defineRoleBindings({
   "dev-smoke": {
-    model: "gpt-5.6-luna",
+    model: "gpt-6-luna",
     transport: "openai",
   },
   "lesson-transcript-summary": {
-    model: "gpt-5.6-luna",
+    model: "gpt-6-luna",
     transport: "openai",
   },
   "worksheet-scaffold": {
-    model: "gpt-5.6-luna",
+    model: "gpt-6-luna",
     transport: "openai",
   },
   "worksheet-scaffolding-suggester": {
-    model: "gpt-5.6-luna",
+    model: "gpt-6-luna",
     transport: "openai",
   },
 });

@@ -66,7 +66,7 @@ describe("invokeDevSmokeText", () => {
       expect.objectContaining({
         input: "ping",
         max_output_tokens: 256,
-        model: "gpt-5.6-luna",
+        model: "gpt-6-luna",
         store: false,
       }),
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
