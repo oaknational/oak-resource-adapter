@@ -225,8 +225,43 @@ describe("reading worksheet scaffolding state", () => {
     await expect(
       getWorksheetScaffoldingState(ADAPTATION_ID, teacher, dependencies),
     ).resolves.toMatchObject({
-      suggestions: [{ id: SUGGESTION_ID, label: "Add a word bank" }],
+      suggestions: [
+        {
+          id: SUGGESTION_ID,
+          inputs: [
+            {
+              id: "supportLevel",
+              kind: "choice",
+              label: "Support level",
+              options: [
+                expect.objectContaining({ label: "Low", value: "low" }),
+                expect.objectContaining({ label: "Mid", value: "mid" }),
+                expect.objectContaining({ label: "High", value: "high" }),
+              ],
+            },
+          ],
+          label: "Add a word bank",
+        },
+      ],
     });
+  });
+
+  it("omits inputs for a transformation that declares none", async () => {
+    const dependencies = stubDependencies({
+      repository: stubRepository({
+        listOpenSuggestions: vi
+          .fn()
+          .mockResolvedValue([storedSuggestion({ kind: "identity", params: {} })]),
+      }),
+    });
+
+    const state = await getWorksheetScaffoldingState(
+      ADAPTATION_ID,
+      teacher,
+      dependencies,
+    );
+
+    expect(state?.suggestions[0]).not.toHaveProperty("inputs");
   });
 
   it("ignores a job whose kind this workflow does not own", async () => {
@@ -435,7 +470,9 @@ describe("accepting a suggestion", () => {
     );
 
     expect(dependencies.enqueue).toHaveBeenCalledWith(
-      expect.objectContaining({ idempotencyKey: `apply:${SUGGESTION_ID}:1` }),
+      expect.objectContaining({
+        idempotencyKey: expect.stringMatching(new RegExp(`^apply:${SUGGESTION_ID}:1:`)),
+      }),
     );
   });
 
@@ -451,10 +488,56 @@ describe("accepting a suggestion", () => {
     expect(dependencies.enqueue).toHaveBeenCalledWith(
       expect.objectContaining({
         concurrencyKey: `adaptation:${ADAPTATION_ID}:head:${DOCUMENT_ID}`,
-        idempotencyKey: `apply:${SUGGESTION_ID}:0`,
+        idempotencyKey: expect.stringMatching(new RegExp(`^apply:${SUGGESTION_ID}:0:`)),
         input: expect.objectContaining({ resourceDocumentId: DOCUMENT_ID }),
       }),
     );
+  });
+
+  it("keys the suggested level and the same level sent explicitly alike", async () => {
+    const dependencies = stubDependencies();
+
+    await enqueueSuggestionApplication(
+      { adaptationId: ADAPTATION_ID, suggestionId: SUGGESTION_ID },
+      teacher,
+      dependencies,
+    );
+    await enqueueSuggestionApplication(
+      {
+        adaptationId: ADAPTATION_ID,
+        params: { supportLevel: "low" },
+        suggestionId: SUGGESTION_ID,
+      },
+      teacher,
+      dependencies,
+    );
+
+    const [first, second] = vi
+      .mocked(dependencies.enqueue)
+      .mock.calls.map(([request]) => request.idempotencyKey);
+    expect(second).toBe(first);
+  });
+
+  it("keys a different level apart, so it is not refused as the same request", async () => {
+    const dependencies = stubDependencies();
+
+    for (const supportLevel of ["high", "mid"]) {
+      await enqueueSuggestionApplication(
+        {
+          adaptationId: ADAPTATION_ID,
+          params: { supportLevel },
+          suggestionId: SUGGESTION_ID,
+        },
+        teacher,
+        dependencies,
+      );
+    }
+
+    const [first, second] = vi
+      .mocked(dependencies.enqueue)
+      .mock.calls.map(([request]) => request);
+    expect(second?.idempotencyKey).not.toBe(first?.idempotencyKey);
+    expect(second?.concurrencyKey).toBe(first?.concurrencyKey);
   });
 
   it("does not ask for suggestions while an application is being queued", async () => {
@@ -485,6 +568,22 @@ describe("accepting a suggestion", () => {
     expect(dependencies.enqueue).toHaveBeenCalledWith(
       expect.objectContaining({
         input: expect.objectContaining({ params: { supportLevel: "mid" } }),
+      }),
+    );
+  });
+
+  it("uses the suggested parameters when no override is sent", async () => {
+    const dependencies = stubDependencies();
+
+    await enqueueSuggestionApplication(
+      { adaptationId: ADAPTATION_ID, suggestionId: SUGGESTION_ID },
+      teacher,
+      dependencies,
+    );
+
+    expect(dependencies.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.objectContaining({ params: { supportLevel: "low" } }),
       }),
     );
   });

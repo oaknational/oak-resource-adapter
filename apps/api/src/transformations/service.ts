@@ -29,19 +29,20 @@ export function toCatalogueItem(
 ): TransformationCatalogueItem {
   const {
     barriers,
+    inputs,
     kind,
     label,
     materialRequirements = [],
     outputs,
     status,
     suggestion,
-    supportLevels,
     target,
   } = definition;
 
   return {
     barriers,
     execution: executionType(definition),
+    inputs,
     kind,
     label,
     materialRequirements: materialRequirements.map(({ key, required }) => {
@@ -61,7 +62,6 @@ export function toCatalogueItem(
     outputs,
     status,
     suggestion,
-    supportLevels,
     target,
   };
 }
@@ -107,13 +107,13 @@ export function evaluateTransformations(
         hasEligibleTarget(definition, context) &&
         definition.isAvailable(context),
     )
-    .map(({ barriers, kind, label, outputs, suggestion, supportLevels, target }) => ({
+    .map(({ barriers, inputs, kind, label, outputs, suggestion, target }) => ({
       barriers,
+      inputs,
       kind,
       label,
       outputs,
       suggestion,
-      supportLevels,
       target,
     }));
 }

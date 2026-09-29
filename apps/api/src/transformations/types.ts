@@ -1,4 +1,5 @@
 import type { PromptTemplate } from "@oaknational/resource-adapter-ai";
+import type { TransformationInput } from "@oaknational/resource-adapter-contracts/internal";
 import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
 import type { z } from "zod";
 
@@ -105,6 +106,7 @@ export type TransformationDefinition<
   /** Absent for a transformation that addresses no particular barrier. */
   barriers?: readonly PupilBarrier[];
   execution: TExecution;
+  inputs?: readonly TransformationInput[];
   isAvailable: (context: TransformationAvailabilityContext) => boolean;
   /** Keys `transformations.kind` and `suggested_transformations.kind`. */
   kind: TKind;
@@ -136,13 +138,13 @@ export type TransformationMaterialSummary = Readonly<{
 export type TransformationCatalogueItem = Readonly<{
   barriers?: readonly PupilBarrier[] | undefined;
   execution: "deterministic" | "structured-model" | "text-model";
+  inputs?: readonly TransformationInput[] | undefined;
   kind: string;
   label: string;
   materialRequirements: readonly TransformationMaterialSummary[];
   outputs: TransformationOutputs;
   status: TransformationStatus;
   suggestion: TransformationSuggestionGuidance;
-  supportLevels?: SupportLevelOptions | undefined;
   target: TransformationTarget;
 }>;
 

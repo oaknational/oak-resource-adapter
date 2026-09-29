@@ -117,19 +117,29 @@ describe("listTransformationsForCapability", () => {
         avoidWhen:
           "The question already supplies the vocabulary, or vocabulary is not the barrier to answering it.",
       },
-      supportLevels: [
+      inputs: [
         {
-          level: "low",
-          description: "Lists the words a pupil needs, without definitions.",
-        },
-        {
-          level: "mid",
-          description: "Lists the words with a short definition of each.",
-        },
-        {
-          level: "high",
-          description:
-            "Lists the words with a definition and an example of each in use.",
+          id: "supportLevel",
+          kind: "choice",
+          label: "Support level",
+          options: [
+            {
+              description: "Lists the words a pupil needs, without definitions.",
+              label: "Low",
+              value: "low",
+            },
+            {
+              description: "Lists the words with a short definition of each.",
+              label: "Mid",
+              value: "mid",
+            },
+            {
+              description:
+                "Lists the words with a definition and an example of each in use.",
+              label: "High",
+              value: "high",
+            },
+          ],
         },
       ],
       target: { scope: "node", nodeTypes: ["question"] },

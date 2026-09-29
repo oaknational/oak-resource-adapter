@@ -84,9 +84,14 @@ function renderCandidates(candidates: readonly SuggestionCandidate[]): string {
         candidate.eligibleTargets.scope === "document"
           ? "whole document"
           : `one of these eligible node IDs: ${candidate.eligibleTargets.blockIds.join(", ")}`;
-      const levels = candidate.supportLevels
-        ?.map(({ description, level }) => `${level}: ${description}`)
-        .join("; ");
+      const inputs = candidate.inputs
+        ?.map(
+          (input) =>
+            `${input.label}: ${input.options
+              .map(({ description, value }) => `${value}: ${description}`)
+              .join("; ")}`,
+        )
+        .join("\n");
 
       return [
         `Kind: ${candidate.kind}`,
@@ -95,7 +100,7 @@ function renderCandidates(candidates: readonly SuggestionCandidate[]): string {
         `Use when: ${candidate.suggestion.useWhen}`,
         `Avoid when: ${candidate.suggestion.avoidWhen}`,
         `Target: ${target}`,
-        ...(levels === undefined ? [] : [`Support levels: ${levels}`]),
+        ...(inputs === undefined ? [] : [inputs]),
       ].join("\n");
     })
     .join("\n\n");
