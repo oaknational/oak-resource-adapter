@@ -121,14 +121,29 @@ describe("listTransformationsForCapability", () => {
       label: "Add a word bank",
       outputs: ["revised-resource"],
       suggestion: transformationDefinitions["scaffold-add-word-bank"].suggestion,
-      supportLevels: [
+      inputs: [
         {
-          level: "low",
-          description: "Lists the words a pupil needs, without definitions.",
-        },
-        {
-          level: "mid",
-          description: "Lists the words with a short definition of each.",
+          id: "supportLevel",
+          kind: "choice",
+          label: "Support level",
+          options: [
+            {
+              description: "Lists the words a pupil needs, without definitions.",
+              label: "Low",
+              value: "low",
+            },
+            {
+              description: "Lists the words with a short definition of each.",
+              label: "Mid",
+              value: "mid",
+            },
+            {
+              description:
+                "Lists the words with a definition and an example of each in use.",
+              label: "High",
+              value: "high",
+            },
+          ],
         },
       ],
       target: { scope: "node", nodeTypes: ["question"] },

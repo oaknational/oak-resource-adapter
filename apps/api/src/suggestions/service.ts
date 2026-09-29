@@ -118,12 +118,17 @@ function renderCandidates(candidates: readonly SuggestionCandidate[]): string {
         candidate.eligibleTargets.scope === "document"
           ? "whole document"
           : `one of these eligible node IDs: ${candidate.eligibleTargets.blockIds.join(", ")}`;
+      const inputs = candidate.inputs
+        ?.map(
+          (input) =>
+            `${input.label}: ${input.options
+              .map(({ description, value }) => `${value}: ${description}`)
+              .join("; ")}`,
+        )
+        .join("\n");
       const excluded = (transformationDefinitionFor(candidate.kind).excludes ?? []).map(
         (kind) => transformationDefinitionFor(kind).label,
       );
-      const levels = candidate.supportLevels
-        ?.map(({ description, level }) => `${level}: ${description}`)
-        .join("; ");
 
       return [
         `Kind: ${candidate.kind}`,
@@ -132,10 +137,10 @@ function renderCandidates(candidates: readonly SuggestionCandidate[]): string {
         `Use when: ${candidate.suggestion.useWhen}`,
         `Avoid when: ${candidate.suggestion.avoidWhen}`,
         `Target: ${target}`,
+        ...(inputs === undefined ? [] : [inputs]),
         ...(excluded.length === 0
           ? []
           : [`Never on the same target as: ${excluded.join(", ")}`]),
-        ...(levels === undefined ? [] : [`Support levels: ${levels}`]),
       ].join("\n");
     })
     .join("\n\n");

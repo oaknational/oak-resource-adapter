@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { TransformationInput } from "@oaknational/resource-adapter-contracts/internal";
 
 import {
   supportLevelsOf,
@@ -19,6 +20,12 @@ import type {
 } from "./types";
 
 type ParamsObject = z.ZodObject;
+
+const SUPPORT_LEVEL_LABELS = {
+  high: "High",
+  low: "Low",
+  mid: "Mid",
+} as const satisfies Record<SupportLevel, string>;
 
 export type TransformationDeclaration = Readonly<{
   barriers?: readonly PupilBarrier[];
@@ -58,6 +65,27 @@ export type DefinedTransformation<TDeclaration extends TransformationDeclaration
     TDeclaration["target"],
     TDeclaration["execution"]
   >;
+
+function inputsFromSupportLevels(
+  supportLevels: SupportLevelOptions | undefined,
+): readonly TransformationInput[] | undefined {
+  if (supportLevels === undefined) {
+    return undefined;
+  }
+
+  return [
+    {
+      id: "supportLevel",
+      kind: "choice",
+      label: "Support level",
+      options: supportLevels.map(({ description, level }) => ({
+        description,
+        label: SUPPORT_LEVEL_LABELS[level],
+        value: level,
+      })),
+    },
+  ];
+}
 
 function paramsSchema<TDeclaration extends TransformationDeclaration>(
   declaration: TDeclaration,
@@ -103,5 +131,10 @@ export function defineTransformation<
 >(declaration: TDeclaration): DefinedTransformation<TDeclaration> {
   validateDeclaration(declaration);
 
-  return { ...declaration, params: paramsSchema(declaration) };
+  const inputs = inputsFromSupportLevels(declaration.supportLevels);
+  return {
+    ...declaration,
+    ...(inputs === undefined ? {} : { inputs }),
+    params: paramsSchema(declaration),
+  };
 }
