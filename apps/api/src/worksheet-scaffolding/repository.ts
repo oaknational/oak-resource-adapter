@@ -777,7 +777,6 @@ export async function getAttemptForJob(jobId: string): Promise<StoredAttempt | n
   return row ?? null;
 }
 
-/** find the suggestion transformation for a given resource document */
 export async function findSuggestionGeneration(
   resourceDocumentId: string,
 ): Promise<StoredTransformation | null> {

@@ -578,9 +578,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
       kind: "suggestions.generate",
       status: "queued",
     } as const;
-    openWorksheetScaffoldingMock.mockResolvedValueOnce(
-      opened(readyWithAcceptedScaffold),
-    );
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithPendingReview));
     retrySuggestionsMock.mockResolvedValueOnce({
       ...readyWithAcceptedScaffold,
       job: retryJob,
@@ -592,13 +590,9 @@ describe("WorksheetScaffoldingWorkflow", () => {
     });
     renderDialog();
 
-    expect(
-      await screen.findByRole("button", { name: "Generate new suggestions" }),
-    ).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Remove all scaffolds" })).toBeVisible();
-
+    await userEvent.click(await screen.findByRole("button", { name: "Accept" }));
     await userEvent.click(
-      screen.getByRole("button", { name: "Generate new suggestions" }),
+      await screen.findByRole("button", { name: "Generate new suggestions" }),
     );
 
     expect(retrySuggestionsMock).toHaveBeenCalledWith(
@@ -607,7 +601,9 @@ describe("WorksheetScaffoldingWorkflow", () => {
         requestId: expect.any(String),
       }),
     );
-    // The accepted scaffold survives a fresh run of suggestions.
+    expect(
+      await screen.findByRole("button", { name: "Add a word bank" }),
+    ).toBeVisible();
     expect(screen.getByText("denominator")).toBeVisible();
   });
 
@@ -1214,6 +1210,9 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(alert).toHaveTextContent(
       "Try again to keep the scaffolds you have added, or start again to reopen the original worksheet.",
     );
+    expect(
+      screen.queryByRole("button", { name: "Generate new suggestions" }),
+    ).not.toBeInTheDocument();
 
     await userEvent.click(within(alert).getByRole("button", { name: "Try again" }));
 
@@ -1223,7 +1222,6 @@ describe("WorksheetScaffoldingWorkflow", () => {
         requestId: expect.any(String),
       }),
     );
-    // The adaptation is kept, so the accepted scaffold survives the failure.
     expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(1);
     expect(
       await screen.findByRole("button", { name: "Add a word bank" }),
