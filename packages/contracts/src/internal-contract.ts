@@ -131,6 +131,17 @@ export type WorksheetScaffoldingEntry =
   | Readonly<{ outcome: "opened"; state: WorksheetScaffoldingState }>
   | Readonly<{ outcome: "resumable"; resumable: WorksheetScaffoldingResumable }>;
 
+export type TransformationInput = Readonly<{
+  id: string;
+  kind: "choice";
+  label: string;
+  options: readonly Readonly<{
+    description: string;
+    label: string;
+    value: string;
+  }>[];
+}>;
+
 export const worksheetDownloadAvailabilitySchema = z.enum([
   "available",
   "original",
@@ -173,9 +184,10 @@ export type WorksheetScaffoldingState = Readonly<{
   }>;
   suggestions: readonly Readonly<{
     id: string;
+    inputs?: readonly TransformationInput[];
     kind: string;
     label: string;
-    params: Readonly<Record<string, unknown>>;
+    params: Readonly<NonNullable<WorksheetScaffoldingApplyRequest["params"]>>;
     reason: string;
     targetBlockId: string | null;
   }>[];
