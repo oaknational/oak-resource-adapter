@@ -123,27 +123,27 @@ describe("versioned document reading", () => {
       }),
     );
   });
+});
 
-  it("requires exactly one correctly typed upgrade per adjacent pair", () => {
-    const pair = defineSchemaVersions({
-      order: ["1.0", "1.1"],
-      schemas: { "1.0": nameSchema, "1.1": fullNameSchema },
-    });
-    // @ts-expect-error missing the 1.1 upgrade
-    pair.withUpgrades({});
-    // @ts-expect-error the upgrade must produce 1.1 input
-    pair.withUpgrades({ "1.1": (document) => document });
-    defineSchemaVersions({
-      order: ["1.0"],
-      schemas: { "1.0": nameSchema },
-    }).withUpgrades({
-      // @ts-expect-error an upgrade with no version before it
-      "1.0": (document: unknown) => document,
-    });
-    defineSchemaVersions({
-      order: ["1.0", "1.1"],
-      // @ts-expect-error each schema must declare its own version
-      schemas: { "1.0": nameSchema, "1.1": nameSchema },
-    });
-  });
+// Compile-time checks: `pnpm type-check` fails if any of these stops being an
+// error.
+const pair = defineSchemaVersions({
+  order: ["1.0", "1.1"],
+  schemas: { "1.0": nameSchema, "1.1": fullNameSchema },
+});
+// @ts-expect-error missing the 1.1 upgrade
+pair.withUpgrades({});
+// @ts-expect-error the upgrade must produce 1.1 input
+pair.withUpgrades({ "1.1": (document) => document });
+defineSchemaVersions({
+  order: ["1.0"],
+  schemas: { "1.0": nameSchema },
+}).withUpgrades({
+  // @ts-expect-error an upgrade with no version before it
+  "1.0": (document: unknown) => document,
+});
+defineSchemaVersions({
+  order: ["1.0", "1.1"],
+  // @ts-expect-error each schema must declare its own version
+  schemas: { "1.0": nameSchema, "1.1": nameSchema },
 });

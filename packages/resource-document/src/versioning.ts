@@ -91,7 +91,7 @@ export function defineSchemaVersions<
 export function currentSchemaVersion<Order extends readonly [string, ...string[]]>(
   registry: Readonly<{ order: Order }>,
 ): Last<Order> {
-  return registry.order[registry.order.length - 1] as Last<Order>;
+  return registry.order.at(-1) as Last<Order>;
 }
 
 function probeSchemaVersion<Version extends string>(
