@@ -67,8 +67,8 @@ export function useTransformationWorkbench(
   useEffect(() => {
     invalidateRequest();
     setSupportLevel(
-      catalogue.selected?.inputs?.find(({ id }) => id === "supportLevel")
-        ?.options[0]?.value ?? "",
+      catalogue.selected?.inputs?.find(({ id }) => id === "supportLevel")?.options[0]
+        ?.value ?? "",
     );
   }, [catalogue.selected, invalidateRequest]);
 

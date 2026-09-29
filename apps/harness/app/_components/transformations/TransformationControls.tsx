@@ -74,9 +74,7 @@ export function TransformationControls({
 }: TransformationControlsProps) {
   const drafts = catalogue.filter(({ status }) => status === "draft");
   const active = catalogue.filter(({ status }) => status === "active");
-  const supportLevelInput = selected?.inputs?.find(
-    ({ id }) => id === "supportLevel",
-  );
+  const supportLevelInput = selected?.inputs?.find(({ id }) => id === "supportLevel");
   const selectedLevel = supportLevelInput?.options.find(
     ({ value }) => value === supportLevel,
   );

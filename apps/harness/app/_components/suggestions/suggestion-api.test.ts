@@ -74,9 +74,7 @@ describe("suggestion harness API", () => {
               id: "supportLevel",
               kind: "choice",
               label: "Support level",
-              options: [
-                { description: "Words only.", label: "Low", value: "low" },
-              ],
+              options: [{ description: "Words only.", label: "Low", value: "low" }],
             },
           ],
           target: { nodeTypes: ["question"], scope: "node" },
