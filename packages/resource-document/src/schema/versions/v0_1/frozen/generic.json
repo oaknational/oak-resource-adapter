@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "0.1",
+  "id": "frozen-0.1-generic",
+  "profile": "generic.v0",
+  "language": "en",
+  "metadata": { "title": "A generic 0.1 document" },
+  "content": [
+    {
+      "id": "paragraph-1",
+      "type": "paragraph",
+      "content": [
+        { "type": "text", "text": "Generic documents share the node vocabulary." }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": { "system": "frozen-fixture", "id": "frozen-0.1-generic" },
+    "producer": { "name": "resource-document", "version": "0.1.0" }
+  },
+  "diagnostics": []
+}

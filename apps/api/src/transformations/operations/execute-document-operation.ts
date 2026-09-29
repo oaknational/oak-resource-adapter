@@ -1,5 +1,4 @@
 import type { ResourceDocument } from "@oaknational/resource-document";
-import { parseResourceDocument } from "@oaknational/resource-document/parse";
 
 import type { TransformationOutput } from "../types";
 
@@ -14,9 +13,9 @@ export type DocumentOperationRepository = Readonly<{
     resourceDocumentId: string;
     targetBlockId?: string | null;
   }) => Promise<OperationAttempt>;
-  getAdaptationHead: (
-    adaptationId: string,
-  ) => Promise<null | Readonly<{ storedDocument: { document: unknown; id: string } }>>;
+  getAdaptationHead: (adaptationId: string) => Promise<null | Readonly<{
+    storedDocument: { document: ResourceDocument; id: string };
+  }>>;
   getAttemptForJob: (jobId: string) => Promise<null | OperationAttempt>;
   /** Only its presence matters here, so the capability's own row type stays private. */
   getPendingReview: (resourceDocumentId: string) => Promise<object | null>;
@@ -66,7 +65,7 @@ export async function executeAcceptedDocumentOperation(input: {
     throw new Error(`${input.operationName} cannot run while a review is pending.`);
   }
 
-  const document = parseResourceDocument(head.storedDocument.document);
+  const document = head.storedDocument.document;
   await input.validate?.(document);
   const attempt =
     existingAttempt ??

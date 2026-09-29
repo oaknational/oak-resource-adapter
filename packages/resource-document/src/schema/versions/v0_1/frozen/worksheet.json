@@ -1,0 +1,223 @@
+{
+  "schemaVersion": "0.1",
+  "id": "frozen-0.1",
+  "profile": "worksheet.v0",
+  "language": "en-GB",
+  "metadata": {
+    "title": "Every 0.1 shape",
+    "subject": { "id": "science", "label": "Science" },
+    "keyStage": { "id": "ks3", "label": "Key Stage 3" },
+    "yearGroup": { "id": "year-8", "label": "Year 8" },
+    "targetReadingAge": 11
+  },
+  "content": [
+    {
+      "id": "heading-1",
+      "type": "heading",
+      "level": 1,
+      "content": [{ "type": "text", "text": "Forces" }],
+      "sourceRef": "region-heading",
+      "layout": {
+        "keepTogether": true,
+        "keepWithNext": true,
+        "breakBefore": "page",
+        "breakAfter": "auto",
+        "preferredWidth": "full"
+      },
+      "extensions": { "oak:source-kind": "title" }
+    },
+    {
+      "id": "callout-1",
+      "type": "callout",
+      "role": "learning-objective",
+      "content": [{ "type": "text", "text": "Describe balanced forces." }]
+    },
+    {
+      "id": "section-1",
+      "type": "section",
+      "children": [
+        {
+          "id": "paragraph-1",
+          "type": "paragraph",
+          "content": [
+            { "type": "text", "text": "Weight is " },
+            { "type": "math", "value": "W = mg", "display": false }
+          ]
+        },
+        {
+          "id": "definitions-1",
+          "type": "definitionList",
+          "lead": [{ "type": "text", "text": "Words you could use:" }],
+          "entries": [
+            { "term": [{ "type": "text", "text": "force" }] },
+            {
+              "term": [{ "type": "text", "text": "mass" }],
+              "definition": [
+                { "type": "text", "text": "the amount of matter in an object" }
+              ],
+              "example": [{ "type": "text", "text": "a 2 kg bag of flour" }],
+              "source": "oak-lesson"
+            }
+          ]
+        },
+        {
+          "id": "figure-1",
+          "type": "figure",
+          "assetId": "asset-1",
+          "caption": [{ "type": "text", "text": "A parachutist falling." }]
+        },
+        {
+          "id": "code-1",
+          "type": "codeBlock",
+          "language": "python",
+          "source": "print(9.8 * 2)"
+        },
+        {
+          "id": "unsupported-1",
+          "type": "unsupported",
+          "description": "An interactive diagram.",
+          "accessibleText": "Arrows showing air resistance and weight.",
+          "original": { "format": "html", "value": "<canvas></canvas>" }
+        }
+      ]
+    },
+    {
+      "id": "question-1",
+      "type": "question",
+      "label": "1",
+      "marks": 2,
+      "children": [
+        {
+          "id": "question-1-prompt",
+          "type": "paragraph",
+          "content": [{ "type": "text", "text": "Complete the table." }]
+        },
+        {
+          "id": "table-1",
+          "type": "table",
+          "role": "fill-in",
+          "header": [
+            { "kind": "content", "content": [{ "type": "text", "text": "Force" }] },
+            { "kind": "content", "content": [{ "type": "text", "text": "Size" }] },
+            { "kind": "empty" }
+          ],
+          "rows": [
+            [
+              { "kind": "content", "content": [{ "type": "text", "text": "Weight" }] },
+              { "kind": "answer" },
+              { "kind": "empty" }
+            ]
+          ]
+        },
+        { "id": "response-1", "type": "responseSpace", "kind": "lines", "lines": 3 },
+        { "id": "response-2", "type": "responseSpace", "kind": "box" },
+        { "id": "response-3", "type": "responseSpace", "kind": "grid" }
+      ]
+    }
+  ],
+  "answers": [
+    {
+      "id": "answer-1",
+      "targetId": "response-1",
+      "placement": "replace-response",
+      "content": [
+        {
+          "id": "answer-1-content",
+          "type": "paragraph",
+          "content": [
+            { "type": "math", "value": "19.6\\,\\mathrm{N}", "display": true }
+          ]
+        }
+      ],
+      "sourceRef": "region-answer",
+      "extensions": { "oak:answer-origin": "source" }
+    },
+    {
+      "id": "answer-2",
+      "targetId": "question-1",
+      "placement": "append",
+      "content": [
+        {
+          "id": "answer-2-content",
+          "type": "paragraph",
+          "content": [{ "type": "text", "text": "Weight is 19.6 N." }]
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "asset-1",
+      "mediaType": "image/svg+xml",
+      "contentRef": "fixtures/parachute.svg",
+      "dimensions": { "width": 400, "height": 300 },
+      "alternative": {
+        "kind": "text",
+        "text": "A parachutist with arrows for weight and air resistance.",
+        "origin": "authored"
+      },
+      "rights": "OGL-UK-3.0",
+      "credit": "Oak National Academy",
+      "sourceRef": "region-figure",
+      "extensions": { "oak:asset-kind": "diagram" }
+    },
+    {
+      "id": "asset-2",
+      "mediaType": "image/png",
+      "contentRef": "fixtures/border.png",
+      "alternative": { "kind": "decorative" }
+    },
+    {
+      "id": "asset-3",
+      "mediaType": "image/png",
+      "contentRef": "fixtures/missing.png",
+      "alternative": { "kind": "missing" }
+    }
+  ],
+  "provenance": {
+    "source": {
+      "system": "frozen-fixture",
+      "id": "frozen-0.1",
+      "uri": "https://example.test/frozen-0.1",
+      "checksum": {
+        "algorithm": "sha256",
+        "value": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    "producer": { "name": "resource-document", "version": "0.1.0" }
+  },
+  "sourceMap": {
+    "region-heading": {
+      "source": "worksheet.pdf",
+      "page": 1,
+      "boundingBox": { "x": 0.1, "y": 0.05, "width": 0.8, "height": 0.1 },
+      "readingOrder": 0,
+      "confidence": 0.9
+    },
+    "region-figure": {
+      "source": "worksheet.pdf",
+      "page": 1,
+      "boundingBox": { "x": 0.1, "y": 0.4, "width": 0.5, "height": 0.3 },
+      "readingOrder": 1
+    },
+    "region-answer": {
+      "source": "answers.pdf",
+      "page": 2,
+      "boundingBox": { "x": 0.1, "y": 0.1, "width": 0.3, "height": 0.05 },
+      "readingOrder": 0
+    }
+  },
+  "diagnostics": [
+    {
+      "category": "uncertain-semantics",
+      "severity": "warning",
+      "message": "The diagram could not be converted.",
+      "nodeId": "unsupported-1",
+      "sourceRef": "region-figure",
+      "confidence": 0.4,
+      "fallback": "Kept as an unsupported node.",
+      "reviewRequired": true
+    }
+  ],
+  "extensions": { "oak:lesson-slug": "forces" }
+}

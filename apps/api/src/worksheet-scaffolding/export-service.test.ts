@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import { ResourceDocumentParseError } from "@oaknational/resource-document/parse";
 
 import type { generateDocx } from "../exports/docx";
 
@@ -106,6 +107,23 @@ describe("worksheet export preparation", () => {
     await expect(prepareWorksheetExport(input, teacher, deps)).resolves.toMatchObject({
       artifactId: ARTIFACT_ID,
     });
+  });
+
+  it("reports unreadable stored documents without rendering or storing an export", async () => {
+    const deps = dependencies();
+    const cause = new ResourceDocumentParseError(
+      "invalid_document",
+      "Resource document does not match schema 0.1.",
+    );
+    deps.getAdaptationHead.mockRejectedValueOnce(cause);
+
+    await expect(prepareWorksheetExport(input, teacher, deps)).rejects.toMatchObject({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "The DOCX could not be prepared. Your worksheet is saved; try again.",
+      cause,
+    });
+    expect(deps.generateDocx).not.toHaveBeenCalled();
+    expect(deps.storeResourceArtifact).not.toHaveBeenCalled();
   });
 
   it("preserves the worksheet when storage fails", async () => {

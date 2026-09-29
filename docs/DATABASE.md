@@ -186,6 +186,15 @@ The stored template is the body with its `{{placeholders}}` intact, not the text
 that was sent. The rendered text, with the teacher's content substituted in,
 lives in `model_invocations.request`.
 
+### Stored document versions
+
+`resource_documents.document` is `jsonb` that the database does not validate.
+Repositories parse it on the way out, which upgrades a document written at an
+older schema version to the current one. A document schema change is therefore
+a new schema version with an upgrade, not a database migration. See
+[updating the document schema](../packages/resource-document/README.md#updating-the-document-schema).
+Stored rows are never rewritten to a newer version.
+
 ## Deletion
 
 These rules apply when the row referenced by each foreign key is deleted:

@@ -30,11 +30,17 @@ import {
   contributionIdsInDocument,
   type ResourceDocument,
 } from "@oaknational/resource-document";
-import { parseResourceDocument } from "@oaknational/resource-document/parse";
+import {
+  parseResourceDocument,
+  safeParseResourceDocument,
+} from "@oaknational/resource-document/parse";
+import { raLogger } from "@oaknational/resource-adapter-logger";
 
 import { SUGGESTION_OPERATION_KIND } from "./capability";
 
 const PRIMARY_SOURCE = "primary_source";
+
+const log = raLogger("internal-api");
 
 type Transaction = Parameters<
   Parameters<ReturnType<typeof getDatabaseClient>["transaction"]>[0]
@@ -151,13 +157,29 @@ export function asParams(value: unknown): Readonly<Record<string, unknown>> {
   return value as Readonly<Record<string, unknown>>;
 }
 
+export type ParsedStoredDocument = Omit<
+  typeof resourceDocuments.$inferSelect,
+  "document"
+> &
+  Readonly<{ document: ResourceDocument }>;
+
+/**
+ * Stored documents leave the repository only through here, so older schema
+ * versions are upgraded in memory. Stored rows are not rewritten.
+ */
+function parseStoredDocumentRow(
+  row: typeof resourceDocuments.$inferSelect,
+): ParsedStoredDocument {
+  return { ...row, document: parseResourceDocument(row.document) };
+}
+
 export type StoredAdaptationHead = Readonly<{
   completedAt: Date | null;
   acceptedAt: Date | null;
   producingAdaptationId: string | null;
   busy: boolean;
   adaptation: typeof adaptations.$inferSelect;
-  storedDocument: typeof resourceDocuments.$inferSelect;
+  storedDocument: ParsedStoredDocument;
 }>;
 
 export type StoredSuggestion = typeof suggestedTransformations.$inferSelect;
@@ -173,7 +195,7 @@ export type PendingReview = Readonly<{
 export type AcceptedSuggestion = Readonly<{
   adaptation: typeof adaptations.$inferSelect;
   attempt: StoredAttempt;
-  sourceDocument: typeof resourceDocuments.$inferSelect;
+  sourceDocument: ParsedStoredDocument;
   suggestion: StoredSuggestion;
   transformation: StoredTransformation;
 }>;
@@ -229,7 +251,9 @@ export async function getAdaptationHead(
     .where(and(...predicates))
     .limit(1);
 
-  return row ?? null;
+  return row === undefined
+    ? null
+    : { ...row, storedDocument: parseStoredDocumentRow(row.storedDocument) };
 }
 
 /** The unaccepted teacher-facing attempt that produced this document, if any. */
@@ -326,7 +350,7 @@ export async function acceptPendingReview(input: {
 /** Returns the immutable primary document shared by every retry of a request. */
 export async function getPrimaryTransformationInput(
   transformationId: string,
-): Promise<typeof resourceDocuments.$inferSelect | null> {
+): Promise<ParsedStoredDocument | null> {
   const [row] = await getDatabaseClient()
     .select({ storedDocument: resourceDocuments })
     .from(transformationInputs)
@@ -343,7 +367,7 @@ export async function getPrimaryTransformationInput(
     )
     .limit(1);
 
-  return row?.storedDocument ?? null;
+  return row === undefined ? null : parseStoredDocumentRow(row.storedDocument);
 }
 
 export async function isAcceptedContribution(
@@ -594,9 +618,16 @@ export async function findResumableAdaptation(input: {
   if (row === undefined) {
     return null;
   }
-  const scaffoldCount = contributionIdsInDocument(
-    parseResourceDocument(row.document),
-  ).length;
+  const read = safeParseResourceDocument(row.document);
+  if (!read.success) {
+    // Throwing here would stop the teacher opening the lesson at all.
+    log.error(
+      new Error(`Adaptation ${row.id} cannot be resumed.`, { cause: read.error }),
+      { report: true },
+    );
+    return null;
+  }
+  const scaffoldCount = contributionIdsInDocument(read.data).length;
   return scaffoldCount === 0
     ? null
     : {
@@ -924,7 +955,9 @@ export async function getAcceptedSuggestion(
     .where(eq(transformationAttempts.jobId, jobId))
     .limit(1);
 
-  return row ?? null;
+  return row === undefined
+    ? null
+    : { ...row, sourceDocument: parseStoredDocumentRow(row.sourceDocument) };
 }
 
 /**

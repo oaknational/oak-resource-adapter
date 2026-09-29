@@ -3,7 +3,6 @@ import {
   getResourceNodeById,
   type ResourceDocument,
 } from "@oaknational/resource-document";
-import { parseResourceDocument } from "@oaknational/resource-document/parse";
 
 import { createApplicationModelInvoker } from "../ai/application-invoker";
 import { getJob } from "../jobs/job-repository";
@@ -176,7 +175,7 @@ export async function executeGenerateSuggestions(
     return;
   }
 
-  const document = parseResourceDocument(head.storedDocument.document);
+  const document = head.storedDocument.document;
   const suggestions = await dependencies.generate(
     suggestionFlowDefinitions[input.flowId],
     document,
@@ -265,7 +264,7 @@ export async function executeApplySuggestion(
   const { run } = await dependencies.executeTransformation(
     {
       contributionId: transformation.id,
-      document: parseResourceDocument(sourceDocument.document),
+      document: sourceDocument.document,
       kind: transformation.kind,
       lesson:
         adaptation.lessonSlug === null || adaptation.programmeSlug === null
@@ -346,7 +345,7 @@ export async function executeRetryTransformation(
   const { run } = await dependencies.executeTransformation(
     {
       contributionId: pending.transformation.id,
-      document: parseResourceDocument(sourceDocument.document),
+      document: sourceDocument.document,
       kind: pending.transformation.kind,
       lesson:
         head.adaptation.lessonSlug === null || head.adaptation.programmeSlug === null

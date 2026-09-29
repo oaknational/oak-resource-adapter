@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "0.1",
+  "id": "frozen-0.1-contribution",
+  "profile": "worksheet.v0",
+  "language": "en-GB",
+  "metadata": { "title": "A scaffolded worksheet" },
+  "content": [
+    {
+      "id": "scaffold-1",
+      "type": "paragraph",
+      "content": [{ "type": "text", "text": "Start by identifying the forces." }],
+      "extensions": {
+        "oak:contribution": "transformation-1",
+        "example:metadata": { "labels": ["scaffold"], "reviewed": true }
+      }
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": { "system": "frozen-fixture", "id": "frozen-0.1-contribution" },
+    "producer": { "name": "resource-document", "version": "0.1.0" }
+  },
+  "diagnostics": []
+}

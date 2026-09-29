@@ -17,7 +17,6 @@ import {
   contributionIdsInDocument,
   getResourceNodeById,
 } from "@oaknational/resource-document";
-import { parseResourceDocument } from "@oaknational/resource-document/parse";
 import { z } from "zod";
 
 import { enqueueJob } from "../jobs/enqueue-job";
@@ -189,7 +188,7 @@ async function readAdaptation(
     headResourceDocumentId: head.storedDocument.id,
     state: {
       adaptationId,
-      document: parseResourceDocument(head.storedDocument.document),
+      document: head.storedDocument.document,
       resourceDocumentId: head.storedDocument.id,
       downloadAvailability: downloadAvailability(head),
       job:
@@ -506,7 +505,7 @@ export async function enqueueWorksheetScaffoldingRemoval(
   if ((await repository.getPendingReview(head.storedDocument.id)) !== null) {
     return null;
   }
-  const document = parseResourceDocument(head.storedDocument.document);
+  const document = head.storedDocument.document;
   if (
     !contributionIdsInDocument(document).includes(input.contributionId) ||
     !(await repository.isAcceptedContribution(input.adaptationId, input.contributionId))
@@ -544,7 +543,7 @@ export async function enqueueWorksheetScaffoldingDismissal(
   if ((await repository.getPendingReview(head.storedDocument.id)) !== null) {
     return null;
   }
-  const document = parseResourceDocument(head.storedDocument.document);
+  const document = head.storedDocument.document;
   if (
     input.targetBlockId !== null &&
     getResourceNodeById(document, input.targetBlockId) === undefined

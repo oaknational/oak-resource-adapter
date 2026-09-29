@@ -13,7 +13,7 @@ import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import type { ResourceDocument } from "@oaknational/resource-document";
 import { eq, inArray, sql } from "drizzle-orm";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { createOrGetJob, failJob } from "../jobs/job-repository";
 import { adaptationHeadConcurrencyKey } from "./capability";
@@ -1008,6 +1008,46 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
           notBefore: new Date(Date.now() + 60_000),
         }),
       ).resolves.toBeNull();
+    });
+
+    it("does not offer work whose stored document no longer parses", async () => {
+      const { adaptationId, teacherId } = await withPendingScaffold();
+      const database = getDatabaseClient();
+      const [adaptation] = await database
+        .select({ headId: adaptations.headResourceDocumentId })
+        .from(adaptations)
+        .where(eq(adaptations.id, adaptationId));
+      if (!adaptation?.headId) {
+        throw new Error("The adaptation has no head.");
+      }
+      await database
+        .update(resourceDocuments)
+        .set({
+          document: {
+            ...worksheet,
+            content: [
+              {
+                id: "table-before-table-cells",
+                type: "table",
+                role: "data",
+                header: [[{ type: "text", text: "Verb" }]],
+                rows: [[{ kind: "empty" }]],
+              },
+            ],
+          },
+        })
+        .where(eq(resourceDocuments.id, adaptation.headId));
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      await expect(
+        findResumableAdaptation(resumableQuery(teacherId)),
+      ).resolves.toBeNull();
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cause: expect.objectContaining({ code: "invalid_document" }),
+        }),
+      );
+      consoleError.mockRestore();
     });
 
     it("counts present scaffolds and reports that the generated head is pending", async () => {
