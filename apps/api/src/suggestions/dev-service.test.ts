@@ -22,7 +22,7 @@ describe("development suggestion service", () => {
         {
           capabilityId: "worksheetScaffolding",
           id: "worksheet-scaffolding",
-          maxSuggestions: 5,
+          maxSuggestions: 20,
         },
       ],
     });

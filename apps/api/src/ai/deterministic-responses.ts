@@ -5,6 +5,11 @@ import {
 } from "@oaknational/resource-adapter-ai";
 import { z } from "zod";
 
+import {
+  isRegisteredTransformationKind,
+  transformationDefinitions,
+} from "../transformations/registry";
+
 const offers = {
   "scaffold-add-word-bank": {
     params: { supportLevel: "low" },
@@ -114,14 +119,14 @@ type TargetBlockIdSchema = z.infer<
   typeof candidateSchema
 >["properties"]["targetBlockId"];
 
-function suggestedTarget(target: TargetBlockIdSchema): string | null {
+function eligibleTargets(target: TargetBlockIdSchema): readonly (string | null)[] {
   if ("enum" in target) {
-    return target.enum[0];
+    return target.enum;
   }
   if ("const" in target) {
-    return target.const;
+    return [target.const];
   }
-  return null;
+  return [null];
 }
 
 function unsupported(contract: string): never {
@@ -141,17 +146,28 @@ function suggestions(schema: z.ZodType): JsonValue {
   }
   const { items, maxItems } = parsed.data.properties.value.properties.suggestions;
   const candidates = "anyOf" in items ? items.anyOf : [items];
-  const generated = candidates.map(({ properties }) => {
+  const generated: { kind: string; targetBlockId: string | null }[] = [];
+  for (const { properties } of candidates) {
     const kind = properties.kind.const;
-    if (!Object.hasOwn(offers, kind)) {
+    if (!Object.hasOwn(offers, kind) || !isRegisteredTransformationKind(kind)) {
       return unsupported(`suggestion kind ${kind}`);
     }
-    return {
-      kind,
-      ...offers[kind as keyof typeof offers],
-      targetBlockId: suggestedTarget(properties.targetBlockId),
-    };
-  });
+    const excludes = transformationDefinitions[kind].excludes ?? [];
+    const targetBlockId = eligibleTargets(properties.targetBlockId).find(
+      (target) =>
+        !generated.some(
+          (earlier) =>
+            earlier.targetBlockId === target && excludes.includes(earlier.kind),
+        ),
+    );
+    if (targetBlockId !== undefined) {
+      generated.push({
+        kind,
+        ...offers[kind as keyof typeof offers],
+        targetBlockId,
+      });
+    }
+  }
   return { suggestions: generated.slice(0, maxItems) };
 }
 

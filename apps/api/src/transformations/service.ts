@@ -77,6 +77,16 @@ function hasResolvableMaterial(definition: TransformationDefinition): boolean {
     .every(({ key }) => oakMaterialIsAvailable(key));
 }
 
+function isExcludedByApplied(
+  definition: TransformationDefinition,
+  { appliedTransformations, targetBlockId }: TransformationAvailabilityContext,
+): boolean {
+  return appliedTransformations.some(
+    ({ kind, targetBlockId: appliedTarget }) =>
+      appliedTarget === targetBlockId && (definition.excludes ?? []).includes(kind),
+  );
+}
+
 function hasEligibleTarget(
   definition: TransformationDefinition,
   context: TransformationAvailabilityContext,
@@ -105,6 +115,7 @@ export function evaluateTransformations(
         definition.status === "active" &&
         hasResolvableMaterial(definition) &&
         hasEligibleTarget(definition, context) &&
+        !isExcludedByApplied(definition, context) &&
         definition.isAvailable(context),
     )
     .map(({ barriers, kind, label, outputs, suggestion, supportLevels, target }) => ({
