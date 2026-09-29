@@ -7,6 +7,7 @@ import type { ResourceAdapterAuthenticatedTeacher } from "./authentication.js";
 import {
   resourceAdapterFeatureFlagsResponseSchema,
   resourceAdapterSourceDocumentRequestSchema,
+  transformationInputSchema,
   worksheetScaffoldingApplyRequestSchema,
   worksheetScaffoldingReviewRequestSchema,
   worksheetScaffoldingRetryRequestSchema,
@@ -86,21 +87,6 @@ export type ResourceAdapterApiContextInternal = Readonly<{
 }>;
 
 const t_internal = initTRPC.context<ResourceAdapterApiContextInternal>().create();
-
-const transformationInputSchema = z.object({
-  id: z.string(),
-  kind: z.literal("choice"),
-  label: z.string(),
-  options: z.readonly(
-    z.array(
-      z.object({
-        description: z.string(),
-        label: z.string(),
-        value: z.string(),
-      }),
-    ),
-  ),
-});
 
 const worksheetScaffoldingStateSchema = z.object({
   adaptationId: z.string(),
