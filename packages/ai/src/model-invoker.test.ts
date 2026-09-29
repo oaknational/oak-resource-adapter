@@ -104,6 +104,13 @@ describe("createModelInvoker", () => {
     expectTypeOf<ModelRole<typeof roleBindings>>().toEqualTypeOf<"quick-classifier">();
   });
 
+  it("reports the binding a role resolves to", () => {
+    expect(invokerFixture().binding("quick-classifier")).toEqual({
+      model: "gpt-5.6-luna",
+      transport: "primary",
+    });
+  });
+
   it("prepares, records, executes, and records success in order", async () => {
     const lifecycle: string[] = [];
     const response = responseFixture();

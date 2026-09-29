@@ -203,7 +203,7 @@ jobs:
         # These suites use synthetic database rows and mock all storage operations.
         run: |
           pnpm --filter @oaknational/resource-adapter-api^... build
-          RUN_DATABASE_INTEGRATION_TESTS=1 pnpm --filter @oaknational/resource-adapter-api exec vitest run src/resource-artifacts/repository.integration.test.ts src/resource-artifacts/personal-fixture.integration.test.ts
+          RUN_DATABASE_INTEGRATION_TESTS=1 pnpm --filter @oaknational/resource-adapter-api exec vitest run src/resource-artifacts/repository.integration.test.ts src/resource-artifacts/personal-fixture.integration.test.ts src/oak-material/transcript-summary/cache.integration.test.ts
 
   package-artifact:
     name: Verify published package

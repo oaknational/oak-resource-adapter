@@ -4,6 +4,7 @@ export {
   initialiseDatabaseClient,
   type DatabaseClient,
 } from "./client.js";
+export { readDatabaseErrorCode } from "./error-code.js";
 export {
   downloadFixtureDocument,
   downloadFixtureMimeType,

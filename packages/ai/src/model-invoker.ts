@@ -42,7 +42,12 @@ import type {
   ModelTransportInvocation,
   ResolvedModelInvocation,
 } from "./resolved-invocation.js";
-import type { ModelRole, ModelTransportId, RoleBindings } from "./role-bindings.js";
+import type {
+  ModelRole,
+  ModelTransportId,
+  RoleBinding,
+  RoleBindings,
+} from "./role-bindings.js";
 
 export type InvokeModelParams<TRole extends string> = Readonly<{
   /** Correlation metadata only; grants no idempotency. */
@@ -77,6 +82,7 @@ export type InvokeStructuredModelParams<
   }>;
 
 export type ModelInvoker<TBindings extends RoleBindings> = Readonly<{
+  binding(role: ModelRole<TBindings>): RoleBinding;
   invoke(
     params: InvokeModelParams<ModelRole<TBindings>>,
   ): Promise<ModelInvocationResponse>;
@@ -197,6 +203,14 @@ export function createModelInvoker<const TBindings extends RoleBindings>(
     "defaultTimeoutMs",
   );
 
+  function bindingFor(role: ModelRole<TBindings>): RoleBinding {
+    const binding = config.roleBindings[role];
+    if (!binding) {
+      throw invalidConfiguration(new Error(`Unknown model role: ${role}`));
+    }
+    return binding;
+  }
+
   async function recordOutcome(
     stage: RecordingStage,
     write: () => Promise<void> | void,
@@ -233,11 +247,7 @@ export function createModelInvoker<const TBindings extends RoleBindings>(
     timeoutMs: number;
     transport: ModelTransport;
   }> {
-    const binding = config.roleBindings[params.role];
-    if (!binding) {
-      throw invalidConfiguration(new Error(`Unknown model role: ${params.role}`));
-    }
-
+    const binding = bindingFor(params.role);
     const transport =
       config.transports[binding.transport as ModelTransportId<TBindings>];
     if (!transport) {
@@ -367,6 +377,8 @@ export function createModelInvoker<const TBindings extends RoleBindings>(
   }
 
   return {
+    binding: bindingFor,
+
     async invoke(params) {
       const { outcome } = await invokeWithOutput(
         params,
