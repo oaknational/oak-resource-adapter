@@ -87,6 +87,21 @@ export type ResourceAdapterApiContextInternal = Readonly<{
 
 const t_internal = initTRPC.context<ResourceAdapterApiContextInternal>().create();
 
+const transformationInputSchema = z.object({
+  id: z.string(),
+  kind: z.literal("choice"),
+  label: z.string(),
+  options: z.readonly(
+    z.array(
+      z.object({
+        description: z.string(),
+        label: z.string(),
+        value: z.string(),
+      }),
+    ),
+  ),
+});
+
 const worksheetScaffoldingStateSchema = z.object({
   adaptationId: z.string(),
   document: resourceDocumentSchema,
@@ -111,9 +126,10 @@ const worksheetScaffoldingStateSchema = z.object({
     z.array(
       z.object({
         id: z.string(),
+        inputs: z.optional(z.readonly(z.array(transformationInputSchema))),
         kind: z.string(),
         label: z.string(),
-        params: z.record(z.string(), z.unknown()),
+        params: z.record(z.string(), z.json()),
         reason: z.string(),
         targetBlockId: z.nullable(z.string()),
       }),
