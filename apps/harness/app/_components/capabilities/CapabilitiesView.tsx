@@ -51,10 +51,11 @@ function TransformationRow({
         <div>
           <dt>Support choices</dt>
           <dd>
-            {transformation.supportLevels === undefined
+            {transformation.inputs === undefined
               ? "No level selection"
-              : transformation.supportLevels
-                  .map(({ level }) => readableIdentifier(level))
+              : transformation.inputs
+                  .flatMap(({ options }) => options)
+                  .map(({ label }) => label)
                   .join(", ")}
           </dd>
         </div>

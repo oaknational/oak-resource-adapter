@@ -91,16 +91,18 @@ export function SuggestionResults({
                       ))}
                     </ul>
                   </div>
-                  {candidate.supportLevels !== undefined && (
+                  {candidate.inputs !== undefined && (
                     <div className={styles.candidateLevels}>
                       <h4>Support options</h4>
                       <ul>
-                        {candidate.supportLevels.map(({ description, level }) => (
-                          <li key={level}>
-                            <strong>{readableIdentifier(level)}</strong>
-                            <span>{description}</span>
-                          </li>
-                        ))}
+                        {candidate.inputs.flatMap((input) =>
+                          input.options.map(({ description, label, value }) => (
+                            <li key={`${input.id}:${value}`}>
+                              <strong>{label}</strong>
+                              <span>{description}</span>
+                            </li>
+                          )),
+                        )}
                       </ul>
                     </div>
                   )}

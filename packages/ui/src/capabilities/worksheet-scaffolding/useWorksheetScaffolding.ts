@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
+  WorksheetScaffoldingApplyRequest,
   WorksheetScaffoldingEntry,
   WorksheetScaffoldingResumable,
   WorksheetScaffoldingState,
@@ -265,7 +266,7 @@ export function useWorksheetScaffolding({
   }, [applyingSuggestion]);
 
   const applySuggestion = useCallback(
-    (suggestionId: string) => {
+    (suggestionId: string, params?: WorksheetScaffoldingApplyRequest["params"]) => {
       if (
         state.status !== "ready" ||
         jobIsBusy(state.value) ||
@@ -289,6 +290,7 @@ export function useWorksheetScaffolding({
         adaptationId: state.value.adaptationId,
         apiBaseUrl,
         getToken: () => getTokenRef.current(),
+        ...(params === undefined ? {} : { params }),
         suggestionId,
       })
         .then((value) => {

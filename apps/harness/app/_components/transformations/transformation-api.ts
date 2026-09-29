@@ -4,8 +4,8 @@ import { z } from "zod";
 import { adapterProxyPath } from "../../harness-api";
 import {
   suggestionGuidanceSchema,
-  supportLevelSchema,
   targetSchema,
+  transformationInputSchema,
   transformationOutputsSchema,
 } from "../shared/catalogue-schemas";
 import type { LessonScenario } from "../../scenario-types";
@@ -22,13 +22,13 @@ const materialRequirementSchema = z.strictObject({
 const transformationCatalogueItemSchema = z.strictObject({
   barriers: z.array(z.string()).optional(),
   execution: z.enum(["deterministic", "structured-model", "text-model"]),
+  inputs: z.array(transformationInputSchema).optional(),
   kind: z.string(),
   label: z.string(),
   materialRequirements: z.array(materialRequirementSchema),
   outputs: transformationOutputsSchema,
   status: z.enum(["active", "draft"]),
   suggestion: suggestionGuidanceSchema,
-  supportLevels: z.array(supportLevelSchema).min(1).optional(),
   target: targetSchema,
 });
 
