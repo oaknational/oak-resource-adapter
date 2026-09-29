@@ -66,7 +66,10 @@ export function useTransformationWorkbench(
 
   useEffect(() => {
     invalidateRequest();
-    setSupportLevel(catalogue.selected?.supportLevels?.[0]?.level ?? "");
+    setSupportLevel(
+      catalogue.selected?.inputs?.find(({ id }) => id === "supportLevel")
+        ?.options[0]?.value ?? "",
+    );
   }, [catalogue.selected, invalidateRequest]);
 
   // Keeps the chosen question while it still exists, so applying one scaffold

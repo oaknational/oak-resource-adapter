@@ -168,6 +168,30 @@ function deferred<T>() {
 
 const wordBankSuggestion = {
   id: "suggestion-1",
+  inputs: [
+    {
+      id: "supportLevel",
+      kind: "choice",
+      label: "Support level",
+      options: [
+        {
+          description: "Lists the words a pupil needs, without definitions.",
+          label: "Low",
+          value: "low",
+        },
+        {
+          description: "Lists the words with a short definition of each.",
+          label: "Mid",
+          value: "mid",
+        },
+        {
+          description: "Lists the words with a definition and an example.",
+          label: "High",
+          value: "high",
+        },
+      ],
+    },
+  ],
   kind: "scaffold-add-word-bank",
   label: "Add a word bank",
   params: { supportLevel: "low" },
@@ -379,6 +403,12 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(
       screen.queryByText("This question depends on recalling several topic words."),
     ).not.toBeInTheDocument();
+    const lowSupport = screen.getByRole("radio", { name: "Low" });
+    expect(lowSupport).toBeChecked();
+    expect(lowSupport).toHaveAccessibleName("Low");
+    expect(lowSupport).toHaveAccessibleDescription(
+      "Lists the words a pupil needs, without definitions.",
+    );
     await userEvent.click(screen.getByRole("button", { name: "Add a word bank" }));
 
     expect(screen.getByTestId("worksheet-scaffolding-local-spinner")).toBeVisible();
@@ -391,8 +421,57 @@ describe("WorksheetScaffoldingWorkflow", () => {
       adaptationId: "adaptation-1",
       apiBaseUrl,
       getToken: expect.any(Function),
+      params: { supportLevel: "low" },
       suggestionId: "suggestion-1",
     });
+  });
+
+  it("changes a choice with the keyboard without applying until requested", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    renderDialog();
+    const user = userEvent.setup();
+
+    const lowSupport = await screen.findByRole("radio", { name: "Low" });
+    lowSupport.focus();
+    await user.keyboard("{ArrowRight}");
+
+    const midSupport = screen.getByRole("radio", { name: "Mid" });
+    expect(midSupport).toBeChecked();
+    expect(midSupport).toHaveFocus();
+    expect(applySuggestionMock).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Add a word bank" }));
+
+    expect(applySuggestionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ params: { supportLevel: "mid" } }),
+    );
+  });
+
+  it("offers no choice when a suggestion has only one option", async () => {
+    const [supportLevel] = wordBankSuggestion.inputs;
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(
+        readyState({
+          job: generatedJob,
+          suggestions: [
+            {
+              ...wordBankSuggestion,
+              inputs: [{ ...supportLevel, options: [supportLevel.options[0]] }],
+            },
+          ],
+        }),
+      ),
+    );
+    renderDialog();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Add a word bank" }),
+    );
+
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+    expect(applySuggestionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ params: { supportLevel: "low" } }),
+    );
   });
 
   it("counts current suggestions separately from added scaffolds", async () => {

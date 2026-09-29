@@ -8,6 +8,8 @@ import {
   OakInlineBanner,
   OakP,
   OakPrimaryButton,
+  OakRadioButton,
+  OakRadioGroup,
   OakSecondaryButton,
   OakTertiaryButton,
   parseColor,
@@ -129,6 +131,26 @@ const SuggestionItem = styled.li`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+`;
+
+const SuggestionCard = styled(SuggestionItem)`
+  background: ${parseColor("bg-primary")};
+  border: 1px solid ${parseColor("border-neutral-lighter")};
+  border-radius: 0.5rem;
+  flex-basis: 100%;
+  gap: 0.75rem;
+  padding: 0.75rem;
+`;
+
+const ChoiceOption = styled.div`
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+`;
+
+const ChoiceDescription = styled(OakP)`
+  flex: 1;
+  min-width: 0;
 `;
 
 const LocalWorking = styled.div`
@@ -526,6 +548,9 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     worksheetWasRefreshed,
   } = useWorksheetScaffolding(props);
   const groupIdPrefix = useId();
+  const [selectedInputValues, setSelectedInputValues] = useState<
+    Readonly<Record<string, Readonly<Record<string, string>>>>
+  >({});
 
   if (state.status === "idle") {
     return null;
@@ -608,18 +633,99 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   );
   const suggestionsByTarget = groupSuggestionsByTarget(listedSuggestions);
 
-  const renderSuggestionItem = (suggestion: ScaffoldSuggestion) => {
+  const inputValue = (
+    suggestion: WorksheetScaffoldingState["suggestions"][number],
+    input: NonNullable<
+      WorksheetScaffoldingState["suggestions"][number]["inputs"]
+    >[number],
+  ) => {
+    const selectedValue = selectedInputValues[suggestion.id]?.[input.id];
+    if (selectedValue !== undefined) {
+      return selectedValue;
+    }
+    const suggestedValue = suggestion.params[input.id];
+    return typeof suggestedValue === "string" ? suggestedValue : "";
+  };
+
+  const setInputValue = (suggestionId: string, inputId: string, value: string) => {
+    setSelectedInputValues((current) => ({
+      ...current,
+      [suggestionId]: { ...current[suggestionId], [inputId]: value },
+    }));
+  };
+
+  const selectedParams = (
+    suggestion: WorksheetScaffoldingState["suggestions"][number],
+  ) =>
+    suggestion.inputs === undefined
+      ? undefined
+      : {
+          ...suggestion.params,
+          ...Object.fromEntries(
+            suggestion.inputs.map((input) => [input.id, inputValue(suggestion, input)]),
+          ),
+        };
+
+  const choicesFor = (suggestion: WorksheetScaffoldingState["suggestions"][number]) =>
+    suggestion.inputs?.filter(({ options }) => options.length > 1) ?? [];
+
+  const renderSuggestionItem = (
+    suggestion: WorksheetScaffoldingState["suggestions"][number],
+  ) => {
+    const choices = choicesFor(suggestion);
+    const applyButton = (
+      <div>
+        <OakSecondaryButton
+          disabled={isWorking}
+          onClick={() => applySuggestion(suggestion.id, selectedParams(suggestion))}
+        >
+          {suggestion.label}
+        </OakSecondaryButton>
+      </div>
+    );
+
+    if (choices.length === 0) {
+      return <SuggestionItem key={suggestion.id}>{applyButton}</SuggestionItem>;
+    }
+
     return (
-      <SuggestionItem key={suggestion.id}>
-        <div>
-          <OakSecondaryButton
+      <SuggestionCard key={suggestion.id}>
+        <OakP $font="body-2-bold">{suggestion.label}</OakP>
+        {choices.map((input) => (
+          <OakRadioGroup
+            key={input.id}
+            $font="body-3-bold"
+            $gap="spacing-8"
             disabled={isWorking}
-            onClick={() => applySuggestion(suggestion.id)}
+            label={input.label}
+            name={`${suggestion.id}-${input.id}`}
+            onChange={(event) =>
+              setInputValue(suggestion.id, input.id, event.target.value)
+            }
+            value={inputValue(suggestion, input)}
           >
-            {suggestion.label}
-          </OakSecondaryButton>
-        </div>
-      </SuggestionItem>
+            {input.options.map((option) => {
+              const descriptionId = `${groupIdPrefix}-${suggestion.id}-${input.id}-${option.value}-description`;
+              return (
+                <ChoiceOption key={option.value}>
+                  <OakRadioButton
+                    aria-describedby={descriptionId}
+                    id={`${groupIdPrefix}-${suggestion.id}-${input.id}-${option.value}`}
+                    $font="body-3-bold"
+                    label={option.label}
+                    value={option.value}
+                  />
+                  <ChoiceDescription $font="body-3">
+                    <span aria-hidden="true">&ndash; </span>
+                    <span id={descriptionId}>{option.description}</span>
+                  </ChoiceDescription>
+                </ChoiceOption>
+              );
+            })}
+          </OakRadioGroup>
+        ))}
+        {applyButton}
+      </SuggestionCard>
     );
   };
 
@@ -645,6 +751,10 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     }
 
     const headingId = `${groupIdPrefix}-${targetBlockId ?? "document"}`;
+    const ordered = [
+      ...suggestions.filter((suggestion) => choicesFor(suggestion).length > 0),
+      ...suggestions.filter((suggestion) => choicesFor(suggestion).length === 0),
+    ];
 
     return (
       <SuggestionGroup aria-labelledby={headingId} role="group">
@@ -652,7 +762,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           Suggested scaffolds
         </OakP>
         <SuggestionList>
-          {suggestions.map((suggestion) =>
+          {ordered.map((suggestion) =>
             suggestion.id === applyingSuggestion?.id
               ? renderWorkingItem(suggestion.id)
               : renderSuggestionItem(suggestion),
