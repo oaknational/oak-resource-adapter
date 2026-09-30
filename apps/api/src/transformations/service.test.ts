@@ -137,12 +137,6 @@ describe("listTransformationsForCapability", () => {
               label: "Mid",
               value: "mid",
             },
-            {
-              description:
-                "Lists the words with a definition and an example of each in use.",
-              label: "High",
-              value: "high",
-            },
           ],
         },
       ],

@@ -289,7 +289,7 @@ describe("applying an accepted suggestion", () => {
         applyJob({
           input: {
             adaptationId: ADAPTATION_ID,
-            params: { supportLevel: "high" },
+            params: { supportLevel: "mid" },
             resourceDocumentId: DOCUMENT_ID,
             suggestionId: SUGGESTION_ID,
           },
@@ -301,10 +301,10 @@ describe("applying an accepted suggestion", () => {
     await executeApplySuggestion(JOB_ID, dependencies);
 
     expect(repository.acceptSuggestion).toHaveBeenCalledWith(
-      expect.objectContaining({ params: { supportLevel: "high" } }),
+      expect.objectContaining({ params: { supportLevel: "mid" } }),
     );
     expect(dependencies.executeTransformation).toHaveBeenCalledWith(
-      expect.objectContaining({ params: { supportLevel: "high" } }),
+      expect.objectContaining({ params: { supportLevel: "mid" } }),
       expect.any(Object),
     );
   });
