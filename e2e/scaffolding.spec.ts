@@ -238,31 +238,33 @@ test("shows the future multi-capability launcher shape", async ({ page }) => {
   await expectRenderedWorksheet(drawer, "Adopting different perspectives");
 });
 
-test("keeps a retired transformation deep link consistent with the selector", async ({
-  page,
-}) => {
-  await page.goto("/?view=transformations&selection=scaffold-chunk-tasks");
-  const definition = page
-    .locator("label")
-    .filter({ has: page.getByText("Definition", { exact: true }) })
-    .getByRole("combobox");
+test(
+  "keeps a retired transformation deep link consistent with the selector",
+  { tag: "@deployment-safe" },
+  async ({ page }) => {
+    await page.goto("/?view=transformations&selection=scaffold-chunk-tasks");
+    const definition = page
+      .locator("label")
+      .filter({ has: page.getByText("Definition", { exact: true }) })
+      .getByRole("combobox");
 
-  await expect(definition).toHaveValue("scaffold-chunk-tasks");
-  await expect(
-    definition.locator('optgroup[label="Retired"] option:checked'),
-  ).toHaveText("📦 Break the task into ordered steps");
-  await expect(
-    page.getByRole("heading", {
-      name: "Break the task into ordered steps",
-      exact: true,
-    }),
-  ).toBeVisible();
+    await expect(definition).toHaveValue("scaffold-chunk-tasks");
+    await expect(
+      definition.locator('optgroup[label="Retired"] option:checked'),
+    ).toHaveText("📦 Break the task into ordered steps");
+    await expect(
+      page.getByRole("heading", {
+        name: "Break the task into ordered steps",
+        exact: true,
+      }),
+    ).toBeVisible();
 
-  await page.getByRole("button", { name: "Preview prompt", exact: true }).click();
-  await expect(page.getByRole("region", { name: "Rendered prompt" })).toContainText(
-    "YOUR SCAFFOLD:",
-  );
-});
+    await page.getByRole("button", { name: "Preview prompt", exact: true }).click();
+    await expect(page.getByRole("region", { name: "Rendered prompt" })).toContainText(
+      "YOUR SCAFFOLD:",
+    );
+  },
+);
 
 test(
   "previews a transformation prompt against a fixture",
