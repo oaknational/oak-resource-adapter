@@ -121,8 +121,7 @@ function canonicalJson(value: JobJsonValue): string {
 
 /**
  * Undoing reopens the same offer, so keying on the offer alone would make a second
- * acceptance replay the first job and silently do nothing. The parameters are
- * keyed too: reusing a key with different job input is an idempotency conflict.
+ * acceptance replay the first job and silently do nothing.
  */
 function applicationIdempotencyKey(
   suggestion: { id: string; undoCount: number },
