@@ -655,6 +655,8 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
       ({ kind, options }) => kind === "choice" && options.length > 1,
     ) ?? [];
 
+  const choiceValue = (value: unknown) => (typeof value === "string" ? value : "");
+
   const renderSuggestionItem = (suggestion: ScaffoldSuggestion) => {
     const choices = choicesFor(suggestion);
     const params = selectedParams(suggestion);
@@ -692,7 +694,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
             onChange={(event) =>
               selectInput(suggestion.id, input.id, event.target.value)
             }
-            value={String(params[input.id] ?? "")}
+            value={choiceValue(params[input.id])}
           >
             {input.options.map((option) => {
               const optionId = `${groupIdPrefix}-${suggestion.id}-${input.id}-${option.value}`;
