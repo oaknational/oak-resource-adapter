@@ -59,12 +59,9 @@ teacher-facing description of what it adds, because "mid" alone tells a teacher
 nothing, and a kind's `params` schema is derived from the levels it declares, so
 the control a teacher sees and the arguments the database accepts cannot disagree.
 
-Clients see the levels as `inputs` rather than `supportLevels`. A kind with levels
-exposes one `choice` input, `{ id: "supportLevel", kind: "choice", label:
-"Support level", options }`, where each option has the level as its `value`
-(`"mid"`), a display `label` (`"Mid"`) and the level's description. A client draws
-a control from each input and sends the chosen `value` back in `params` under the
-input's `id`.
+Clients see a kind's levels as a `choice` input with the id `supportLevel`, one
+option per level, rather than as `supportLevels`. A client sends the chosen
+option's `value`, such as `"mid"`, back in `params` under the input's `id`.
 
 `outputs` declares what a run produces and in what order. Execution is checked
 against it, so a kind cannot quietly return a revision where a companion document
@@ -241,9 +238,9 @@ Suggestion parameters are stored with the offer, and each offer carries its
 kind's `inputs` so the teacher can change the level before accepting. Accepting
 uses the stored parameters unless the application request supplies its own,
 which are validated against the kind's `params` schema. Acceptance is keyed on
-the offer, its undo count and a hash of the parameters, so repeating a request
-is the same work rather than a second application, while reusing a key with
-different parameters is an idempotency conflict.
+the offer and its parameters, so repeating a request is the same work rather
+than a second application, and a request at a different level is not treated as
+a repeat.
 
 ## Development harness
 
