@@ -237,7 +237,6 @@ describe("reading worksheet scaffolding state", () => {
               options: [
                 expect.objectContaining({ label: "Low", value: "low" }),
                 expect.objectContaining({ label: "Mid", value: "mid" }),
-                expect.objectContaining({ label: "High", value: "high" }),
               ],
             },
           ],
@@ -522,7 +521,7 @@ describe("accepting a suggestion", () => {
   it("keys a different level apart, so it is not refused as the same request", async () => {
     const dependencies = stubDependencies();
 
-    for (const supportLevel of ["high", "mid"]) {
+    for (const supportLevel of ["low", "mid"]) {
       await enqueueSuggestionApplication(
         {
           adaptationId: ADAPTATION_ID,

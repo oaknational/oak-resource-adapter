@@ -447,6 +447,15 @@ describe("WorksheetScaffoldingWorkflow", () => {
     );
   });
 
+  it("lists each suggestion once", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    renderDialog();
+
+    await screen.findByRole("button", { name: "Add a word bank" });
+
+    expect(screen.getAllByRole("button", { name: "Add a word bank" })).toHaveLength(1);
+  });
+
   it("offers no choice when a suggestion has only one option", async () => {
     const [supportLevel] = wordBankSuggestion.inputs;
     openWorksheetScaffoldingMock.mockResolvedValueOnce(
@@ -519,7 +528,14 @@ describe("WorksheetScaffoldingWorkflow", () => {
       name: "No scaffold required",
     });
     expect(rejection).toBeVisible();
-    expect(within(group).getByRole("list")).toContainElement(rejection);
+    const [buttonRow, choiceColumn] = within(group).getAllByRole("list");
+    expect(buttonRow).toContainElement(rejection);
+    expect(buttonRow).toContainElement(
+      within(group).getByRole("button", { name: "Add recall questions" }),
+    );
+    expect(choiceColumn).toContainElement(
+      within(group).getByRole("button", { name: "Add a word bank" }),
+    );
 
     await userEvent.click(
       within(group).getByRole("button", { name: "Add a word bank" }),

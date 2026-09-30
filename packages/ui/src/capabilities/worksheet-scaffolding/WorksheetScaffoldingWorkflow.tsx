@@ -77,11 +77,10 @@ const SuggestionGroup = styled.div`
   }
 `;
 
-/* Stacked so the service's usefulness order reads top to bottom. */
 const SuggestionList = styled.ul`
   align-items: flex-start;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 0.75rem;
   list-style: none;
   margin: 0;
@@ -90,6 +89,11 @@ const SuggestionList = styled.ul`
   button {
     min-height: 3.5rem;
   }
+`;
+
+const SuggestionCardList = styled(SuggestionList)`
+  align-items: stretch;
+  flex-direction: column;
 `;
 
 const ReviewDisclosure = styled.button`
@@ -136,7 +140,6 @@ const SuggestionItem = styled.li`
 `;
 
 const SuggestionCard = styled(SuggestionItem)`
-  align-self: stretch;
   background: ${parseColor("bg-primary")};
   border: 1px solid ${parseColor("border-neutral-lighter")};
   border-radius: 0.5rem;
@@ -635,60 +638,34 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   );
   const suggestionsByTarget = groupSuggestionsByTarget(listedSuggestions);
 
-  for (const suggestion of listedSuggestions) {
-    const suggestions = suggestionsByTarget.get(suggestion.targetBlockId);
-    if (suggestions === undefined) {
-      suggestionsByTarget.set(suggestion.targetBlockId, [suggestion]);
-    } else {
-      suggestions.push(suggestion);
-    }
-  }
+  const selectedParams = (suggestion: ScaffoldSuggestion) => ({
+    ...suggestion.params,
+    ...selectedInputValues[suggestion.id],
+  });
 
-  const inputValue = (
-    suggestion: WorksheetScaffoldingState["suggestions"][number],
-    input: NonNullable<
-      WorksheetScaffoldingState["suggestions"][number]["inputs"]
-    >[number],
-  ) => {
-    const selectedValue = selectedInputValues[suggestion.id]?.[input.id];
-    if (selectedValue !== undefined) {
-      return selectedValue;
-    }
-    const suggestedValue = suggestion.params[input.id];
-    return typeof suggestedValue === "string" ? suggestedValue : "";
-  };
-
-  const setInputValue = (suggestionId: string, inputId: string, value: string) => {
+  const selectInput = (suggestionId: string, inputId: string, value: string) => {
     setSelectedInputValues((current) => ({
       ...current,
       [suggestionId]: { ...current[suggestionId], [inputId]: value },
     }));
   };
 
-  const selectedParams = (
-    suggestion: WorksheetScaffoldingState["suggestions"][number],
-  ) =>
-    suggestion.inputs === undefined
-      ? undefined
-      : {
-          ...suggestion.params,
-          ...Object.fromEntries(
-            suggestion.inputs.map((input) => [input.id, inputValue(suggestion, input)]),
-          ),
-        };
-
-  const choicesFor = (suggestion: WorksheetScaffoldingState["suggestions"][number]) =>
+  const choicesFor = (suggestion: ScaffoldSuggestion) =>
     suggestion.inputs?.filter(({ options }) => options.length > 1) ?? [];
 
-  const renderSuggestionItem = (
-    suggestion: WorksheetScaffoldingState["suggestions"][number],
-  ) => {
+  const renderSuggestionItem = (suggestion: ScaffoldSuggestion) => {
     const choices = choicesFor(suggestion);
+    const params = selectedParams(suggestion);
     const applyButton = (
       <div>
         <OakSecondaryButton
           disabled={isWorking}
-          onClick={() => applySuggestion(suggestion.id, selectedParams(suggestion))}
+          onClick={() =>
+            applySuggestion(
+              suggestion.id,
+              suggestion.inputs === undefined ? undefined : params,
+            )
+          }
         >
           {suggestion.label}
         </OakSecondaryButton>
@@ -711,9 +688,9 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
             label={input.label}
             name={`${suggestion.id}-${input.id}`}
             onChange={(event) =>
-              setInputValue(suggestion.id, input.id, event.target.value)
+              selectInput(suggestion.id, input.id, event.target.value)
             }
-            value={inputValue(suggestion, input)}
+            value={String(params[input.id] ?? "")}
           >
             {input.options.map((option) => {
               const descriptionId = `${groupIdPrefix}-${suggestion.id}-${input.id}-${option.value}-description`;
@@ -762,6 +739,16 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     }
 
     const headingId = `${groupIdPrefix}-${targetBlockId ?? "document"}`;
+    const renderEntry = (suggestion: ScaffoldSuggestion) =>
+      suggestion.id === applyingSuggestion?.id
+        ? renderWorkingItem(suggestion.id)
+        : renderSuggestionItem(suggestion);
+    const withChoices = suggestions.filter(
+      (suggestion) => choicesFor(suggestion).length > 0,
+    );
+    const withoutChoices = suggestions.filter(
+      (suggestion) => choicesFor(suggestion).length === 0,
+    );
 
     return (
       <SuggestionGroup aria-labelledby={headingId} role="group">
@@ -769,11 +756,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           Suggested scaffolds
         </OakP>
         <SuggestionList>
-          {suggestions.map((suggestion) =>
-            suggestion.id === applyingSuggestion?.id
-              ? renderWorkingItem(suggestion.id)
-              : renderSuggestionItem(suggestion),
-          )}
+          {withoutChoices.map(renderEntry)}
           <SuggestionItem>
             <OakSecondaryButton
               disabled={isWorking}
@@ -784,6 +767,9 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
             </OakSecondaryButton>
           </SuggestionItem>
         </SuggestionList>
+        {withChoices.length > 0 && (
+          <SuggestionCardList>{withChoices.map(renderEntry)}</SuggestionCardList>
+        )}
       </SuggestionGroup>
     );
   };

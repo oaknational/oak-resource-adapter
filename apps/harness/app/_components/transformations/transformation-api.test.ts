@@ -63,21 +63,6 @@ describe("transformation harness API", () => {
             transformationKinds: ["scaffold-add-word-bank"],
           },
         ],
-        inputs: [
-          {
-            id: "supportLevel",
-            kind: "choice",
-            label: "Support level",
-            options: [
-              { value: "low", label: "Low", description: "Words only." },
-              {
-                value: "mid",
-                label: "Mid",
-                description: "Words and definitions.",
-              },
-            ],
-          },
-        ],
         material: [
           {
             available: true,
@@ -106,9 +91,20 @@ describe("transformation harness API", () => {
               description: "Adds vocabulary for one question.",
               useWhen: "Relevant vocabulary needs recalling.",
             },
-            supportLevels: [
-              { level: "low", description: "Words only." },
-              { level: "mid", description: "Words and definitions." },
+            inputs: [
+              {
+                id: "supportLevel",
+                kind: "choice",
+                label: "Support level",
+                options: [
+                  { value: "low", label: "Low", description: "Words only." },
+                  {
+                    value: "mid",
+                    label: "Mid",
+                    description: "Words and definitions.",
+                  },
+                ],
+              },
             ],
             target: { scope: "node", nodeTypes: ["question"] },
           },
