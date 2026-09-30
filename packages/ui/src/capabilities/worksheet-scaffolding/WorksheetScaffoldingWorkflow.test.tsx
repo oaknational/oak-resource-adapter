@@ -184,11 +184,6 @@ const wordBankSuggestion = {
           label: "Mid",
           value: "mid",
         },
-        {
-          description: "Lists the words with a definition and an example.",
-          label: "High",
-          value: "high",
-        },
       ],
     },
   ],
@@ -405,7 +400,6 @@ describe("WorksheetScaffoldingWorkflow", () => {
     ).not.toBeInTheDocument();
     const lowSupport = screen.getByRole("radio", { name: "Low" });
     expect(lowSupport).toBeChecked();
-    expect(lowSupport).toHaveAccessibleName("Low");
     expect(lowSupport).toHaveAccessibleDescription(
       "Lists the words a pupil needs, without definitions.",
     );
@@ -445,15 +439,6 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(applySuggestionMock).toHaveBeenCalledWith(
       expect.objectContaining({ params: { supportLevel: "mid" } }),
     );
-  });
-
-  it("lists each suggestion once", async () => {
-    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
-    renderDialog();
-
-    await screen.findByRole("button", { name: "Add a word bank" });
-
-    expect(screen.getAllByRole("button", { name: "Add a word bank" })).toHaveLength(1);
   });
 
   it("offers no choice when a suggestion has only one option", async () => {

@@ -695,12 +695,13 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
             value={String(params[input.id] ?? "")}
           >
             {input.options.map((option) => {
-              const descriptionId = `${groupIdPrefix}-${suggestion.id}-${input.id}-${option.value}-description`;
+              const optionId = `${groupIdPrefix}-${suggestion.id}-${input.id}-${option.value}`;
+              const descriptionId = `${optionId}-description`;
               return (
                 <ChoiceOption key={option.value}>
                   <OakRadioButton
                     aria-describedby={descriptionId}
-                    id={`${groupIdPrefix}-${suggestion.id}-${input.id}-${option.value}`}
+                    id={optionId}
                     $font="body-3-bold"
                     label={option.label}
                     value={option.value}
