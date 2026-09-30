@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   previewTransformation,
   runTransformation,
+  supportLevelInputOf,
   type TransformationPreviewResponse,
   type TransformationRunResponse,
 } from "./transformation-api";
@@ -66,10 +67,7 @@ export function useTransformationWorkbench(
 
   useEffect(() => {
     invalidateRequest();
-    setSupportLevel(
-      catalogue.selected?.inputs?.find(({ id }) => id === "supportLevel")?.options[0]
-        ?.value ?? "",
-    );
+    setSupportLevel(supportLevelInputOf(catalogue.selected)?.options[0]?.value ?? "");
   }, [catalogue.selected, invalidateRequest]);
 
   // Keeps the chosen question while it still exists, so applying one scaffold
