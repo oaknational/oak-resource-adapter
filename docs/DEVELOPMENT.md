@@ -3,44 +3,45 @@
 This is the shared home for repository-operational knowledge that is useful to
 Resource Adapter contributors but does not belong in the public README.
 
-## Adding a new secret
+## Where configuration lives
 
-The Terraform Cloud workspace is the source of truth. To add a secret:
+Local development reads the root `.env`, generated from the Doppler `dev`
+config (see [Prerequisites](../README.md#prerequisites)). `pnpm env:pull:dev` is
+unavailable.
 
-1. Add a `sensitive = true` variable to
+Preview, `staging` and production get their environment variables from
+Terraform Cloud workspace variables, routed by
+[`locals.tf`](../infrastructure/project/locals.tf). A sensitive workspace
+variable cannot be read back, so workflows hold what they need as GitHub
+secrets; see [deployment](DEPLOYMENT.md#secrets-the-workflows-use).
+
+Migrations take their credentials from the GitHub Environment matching the
+workflow's target ([`db-migrate.yml`](../.github/workflows/db-migrate.yml)):
+`MIGRATION_DATABASE_URL` and the Cloud SQL variables for staging live in the
+`staging` Environment, and the production equivalents in `production`. Browser
+tests need `CURRICULUM_API_URL` and
+`CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY` in both the Actions and
+Dependabot secret stores, because capability discovery reads live curriculum
+restrictions.
+
+## Adding or rotating a secret
+
+1. Local development: add or change it in the Doppler `dev` config, then
+   regenerate `.env`.
+2. Hosted: add a `sensitive = true` variable to
    [`variables.tf`](../infrastructure/project/variables.tf), place it against the
    destinations that need it in
    [`locals.tf`](../infrastructure/project/locals.tf), then set the value as a
    workspace variable and apply. An empty value is dropped rather than written,
-   so a value that does not exist yet stays absent from the deployment.
-2. If any `turbo run` task reads it, declare it in that task's `env` (or
+   so a value that does not exist yet stays absent from the deployment. To
+   rotate, change the workspace variable, apply and redeploy.
+3. If any `turbo run` task reads it, declare it in that task's `env` (or
    `globalEnv`) in [`turbo.json`](../turbo.json). Turbo hashes caches on declared
    env vars only — an undeclared secret means stale or cross-environment cache.
    Declare it on `build` only if it is read while building: the `NEXT_PUBLIC_*`
    values are baked into the client bundle, so a build belongs to one environment.
-3. A workflow that reads the value itself, rather than a deployment reading it,
-   needs a GitHub secret too — see below. Locally, `pnpm env:pull:dev` refreshes
-   the gitignored `.env` read by repository tooling.
-
-## How CI reads secrets
-
-Terraform Cloud cannot be read back — a sensitive workspace variable is
-write-only, and the API returns it as null — so a workflow needing a value holds
-it as a GitHub secret rather than fetching it at run time. Vercel environment
-variables are not here at all: Terraform writes them straight to the projects.
-
-| Scope                    | Holds                                                                     | Used by                                                                 |
-| ------------------------ | ------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Repository secrets       | the Clerk test credentials, curriculum read credentials, and Vercel's own | pull request CI and preview deployments                                 |
-| `staging` Environment    | staging's `MIGRATION_DATABASE_URL` and its Cloud SQL variables            | [`db-migrate.yml`](../.github/workflows/db-migrate.yml) against staging |
-| `production` Environment | the production equivalents                                                | the same workflow against production                                    |
-
-The Vercel credentials are listed in
-[deployment](DEPLOYMENT.md#secrets-the-workflows-use).
-
-Browser tests require `CURRICULUM_API_URL` and
-`CURRICULUM_DB_HASURA_AUTH_RESOURCE_ADAPTER_API_KEY` in both the Actions and
-Dependabot secret stores. Capability discovery reads live curriculum restrictions.
+4. A workflow that reads the value itself, rather than a deployment reading it,
+   needs a GitHub secret too, and a Dependabot copy if the browser tests read it.
 
 ## Browser-test model configuration
 

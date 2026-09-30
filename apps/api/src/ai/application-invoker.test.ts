@@ -124,7 +124,7 @@ describe("application model transport selection", () => {
       });
       expect(mocks.recorder.recordStarted).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: "gpt-5.6-luna",
+          model: "gpt-6-luna",
           provider: "openai",
           transport: "deterministic",
           role: "worksheet-scaffold",

@@ -105,6 +105,24 @@ describe("generating suggestions", () => {
     expect(repository.createOperationAttempt).not.toHaveBeenCalled();
   });
 
+  it("creates a retry attempt on the existing suggestion operation", async () => {
+    const repository = stubRepository({
+      findSuggestionGeneration: vi.fn().mockResolvedValue({ id: TRANSFORMATION_ID }),
+    });
+    const dependencies = stubDependencies({
+      readJob: vi.fn().mockResolvedValue(generateJob()),
+      repository,
+    });
+
+    await executeGenerateSuggestions(JOB_ID, dependencies);
+
+    expect(repository.createOperationAttempt).not.toHaveBeenCalled();
+    expect(repository.createRetryAttempt).toHaveBeenCalledWith({
+      jobId: JOB_ID,
+      transformationId: TRANSFORMATION_ID,
+    });
+  });
+
   it("does not invoke the model again once a result is stored", async () => {
     const repository = stubRepository({
       getAttemptForJob: vi.fn().mockResolvedValue({ id: ATTEMPT_ID }),

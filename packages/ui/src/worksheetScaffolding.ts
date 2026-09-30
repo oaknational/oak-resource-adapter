@@ -1,12 +1,14 @@
 import { TRPCClientError } from "@trpc/client";
 import type {
+  WorksheetExportRequest,
   WorksheetScaffoldingApplyRequest,
   WorksheetScaffoldingReviewRequest,
-  WorksheetScaffoldingRetryRequest,
+  WorksheetScaffoldingRetryTransformationRequest,
   WorksheetScaffoldingEntry,
   WorksheetScaffoldingRemoveRequest,
   WorksheetScaffoldingState,
   WorksheetScaffoldingDismissRequest,
+  WorksheetScaffoldingRetrySuggestionsRequest,
 } from "@oaknational/resource-adapter-contracts/internal";
 
 import type { GetToken, LessonContext } from "./publicTypes.js";
@@ -91,13 +93,28 @@ export function acceptWorksheetScaffoldingReview(
   return reviewAction("accept", options);
 }
 
-export function retryWorksheetScaffoldingReview(
-  options: ClientOptions & WorksheetScaffoldingRetryRequest,
+export function retryWorksheetScaffoldingTransformation(
+  options: ClientOptions & WorksheetScaffoldingRetryTransformationRequest,
 ): Promise<WorksheetScaffoldingState> {
   return callApi("Resource Adapter could not retry that scaffold.", () =>
-    createResourceAdapterInternalClient(options).worksheetScaffolding.retry.mutate({
+    createResourceAdapterInternalClient(
+      options,
+    ).worksheetScaffolding.retryTransformation.mutate({
       adaptationId: options.adaptationId,
       attemptId: options.attemptId,
+      requestId: options.requestId,
+    }),
+  );
+}
+
+export function retryWorksheetScaffoldingSuggestions(
+  options: ClientOptions & WorksheetScaffoldingRetrySuggestionsRequest,
+): Promise<WorksheetScaffoldingState> {
+  return callApi("Resource Adapter could not suggest new scaffolds.", () =>
+    createResourceAdapterInternalClient(
+      options,
+    ).worksheetScaffolding.retrySuggestions.mutate({
+      adaptationId: options.adaptationId,
       requestId: options.requestId,
     }),
   );
@@ -128,5 +145,22 @@ export function enqueueWorksheetScaffoldingDismissal(
       adaptationId: options.adaptationId,
       targetBlockId: options.targetBlockId,
     }),
+  );
+}
+
+export function prepareWorksheetExport(
+  options: ClientOptions & WorksheetExportRequest & { signal: AbortSignal },
+) {
+  return callApi("Resource Adapter could not prepare the DOCX.", () =>
+    createResourceAdapterInternalClient(
+      options,
+    ).worksheetScaffolding.prepareExport.mutate(
+      {
+        adaptationId: options.adaptationId,
+        resourceDocumentId: options.resourceDocumentId,
+        format: options.format,
+      },
+      { signal: options.signal },
+    ),
   );
 }

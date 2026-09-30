@@ -34,7 +34,7 @@ export const suggestedTransformations = resourceAdapterSchema.table(
     params: jsonb("params").notNull().default({}),
     position: integer("position").notNull(),
     /** The short explanation shown with the suggestion. */
-    reason: text("reason").notNull().default(""),
+    reason: text("reason").notNull(),
     /** The document this offer is about, which is not always what produced it. */
     resourceDocumentId: uuid("resource_document_id").notNull(),
     /** The block this offer targets. Null when it applies to the whole document. */
@@ -49,6 +49,10 @@ export const suggestedTransformations = resourceAdapterSchema.table(
   },
   (table) => [
     check("suggested_transformations_position_check", sql`${table.position} >= 0`),
+    check(
+      "suggested_transformations_reason_check",
+      sql`${table.reason} ~ '[^[:space:]]'`,
+    ),
     check("suggested_transformations_undo_count_check", sql`${table.undoCount} >= 0`),
     unique("suggested_transformations_attempt_position_key").on(
       table.transformationAttemptId,

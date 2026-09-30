@@ -8,14 +8,10 @@ export const worksheetScaffoldingCapability = {
   suggestionFlowId: "worksheet-scaffolding",
   transformationKinds: [
     "scaffold-add-word-bank",
-    "scaffold-add-glossary-bilingual",
-    "scaffold-add-knowledge-summary",
-    "scaffold-add-modelled-example",
+    "scaffold-add-task-vocabulary",
     "scaffold-add-prompt-questions",
-    "scaffold-add-prompt-reminders",
-    "scaffold-add-structure-frame",
-    "scaffold-add-success-criteria",
+    "scaffold-add-sentence-starters",
+    "scaffold-add-sentence-frames",
     "scaffold-chunk-tasks",
-    "scaffold-simplify-instructions",
   ],
 } as const satisfies CapabilityDefinition;

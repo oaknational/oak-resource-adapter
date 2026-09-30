@@ -68,6 +68,10 @@ export function head(
   document: ResourceDocument = worksheet,
 ): StoredAdaptationHead {
   return {
+    completedAt: fixtureTimestamp,
+    acceptedAt: fixtureTimestamp,
+    producingAdaptationId: ADAPTATION_ID,
+    busy: false,
     adaptation: {
       abandonedAt: null,
       capabilityId: "worksheetScaffolding",
@@ -320,6 +324,7 @@ export function repositoryDefaults(): RepositoryResults {
     getOpenSuggestion: storedSuggestion(),
     getPendingReview: null,
     getPrimaryTransformationInput: storedDocument(DOCUMENT_ID),
+    findSuggestionGeneration: null,
     isAcceptedContribution: true,
     isAttemptComplete: false,
     listAppliedTransformations: [],

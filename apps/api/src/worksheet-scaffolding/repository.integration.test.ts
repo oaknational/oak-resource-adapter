@@ -1,3 +1,4 @@
+import { downloadAvailability } from "./download-availability";
 import { randomUUID } from "node:crypto";
 
 import {
@@ -11,7 +12,7 @@ import {
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import type { ResourceDocument } from "@oaknational/resource-document";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { createOrGetJob, failJob } from "../jobs/job-repository";
@@ -100,6 +101,19 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
     return { attempt, jobId: job.job.id };
   }
 
+  async function newRetryAttempt(
+    adaptationId: string,
+    resourceDocumentId: string,
+    transformationId: string,
+  ) {
+    const job = await createOrGetJob({
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { adaptationId, flowId: "worksheet-scaffolding", resourceDocumentId },
+      kind: "suggestions.generate",
+    });
+    return createRetryAttempt({ jobId: job.job.id, transformationId });
+  }
+
   /** An adaptation whose head is a generated revision awaiting the teacher's decision. */
   async function newPendingReview() {
     const { adaptationId, resourceDocumentId } = await newAdaptation();
@@ -152,6 +166,146 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
     return { accepted, adaptationId, pendingHeadId, resourceDocumentId, suggestion };
   }
 
+  async function settleJobs(adaptationId: string) {
+    await getDatabaseClient()
+      .update(jobs)
+      .set({ status: "succeeded", completedAt: new Date() })
+      .where(sql`${jobs.input}->>'adaptationId' = ${adaptationId}`);
+  }
+
+  async function getDownloadHead(...args: Parameters<typeof getAdaptationHead>) {
+    const head = await getAdaptationHead(...args);
+    return head === null
+      ? null
+      : { ...head, downloadAvailability: downloadAvailability(head) };
+  }
+
+  it("exposes download eligibility only for an owned, completed and accepted generated head", async () => {
+    const fixture = await newPendingReview();
+    const { adaptationId, pendingHeadId, accepted } = fixture;
+    const teacherId = accepted.adaptation.clerkUserId;
+    expect(await getDownloadHead(adaptationId, "another-teacher")).toBeNull();
+    expect((await getDownloadHead(adaptationId, teacherId))?.downloadAvailability).toBe(
+      "busy",
+    );
+    await settleJobs(adaptationId);
+    expect((await getDownloadHead(adaptationId, teacherId))?.downloadAvailability).toBe(
+      "review",
+    );
+    await acceptPendingReview({
+      adaptationId,
+      attemptId: accepted.attempt.id,
+      expectedHeadId: pendingHeadId,
+    });
+    const head = await getDownloadHead(adaptationId, teacherId);
+    expect(head).toMatchObject({
+      downloadAvailability: "available",
+      storedDocument: { id: pendingHeadId },
+    });
+    await getDatabaseClient()
+      .update(transformationAttempts)
+      .set({ completedAt: null, acceptedAt: null })
+      .where(eq(transformationAttempts.id, accepted.attempt.id));
+    expect((await getDownloadHead(adaptationId, teacherId))?.downloadAvailability).toBe(
+      "unavailable",
+    );
+    await getDatabaseClient()
+      .update(transformationAttempts)
+      .set({ completedAt: new Date(), acceptedAt: new Date() })
+      .where(eq(transformationAttempts.id, accepted.attempt.id));
+    await getDatabaseClient()
+      .update(adaptations)
+      .set({ abandonedAt: new Date() })
+      .where(eq(adaptations.id, adaptationId));
+    expect((await getDownloadHead(adaptationId, teacherId))?.downloadAvailability).toBe(
+      "unavailable",
+    );
+  });
+
+  it.each(["queued", "running"] as const)(
+    "permits an accepted head while suggestion generation is %s",
+    async (status) => {
+      const { adaptationId, pendingHeadId, accepted } = await newPendingReview();
+      await settleJobs(adaptationId);
+      await acceptPendingReview({
+        adaptationId,
+        attemptId: accepted.attempt.id,
+        expectedHeadId: pendingHeadId,
+      });
+      const generation = await createOrGetJob({
+        kind: "suggestions.generate",
+        idempotencyKey: `integration-${randomUUID()}`,
+        input: {
+          adaptationId,
+          resourceDocumentId: pendingHeadId,
+          flowId: "worksheet-scaffolding",
+        },
+      });
+      await getDatabaseClient()
+        .update(jobs)
+        .set({ status })
+        .where(eq(jobs.id, generation.job.id));
+      expect(await getDownloadHead(adaptationId)).toMatchObject({
+        downloadAvailability: "available",
+        storedDocument: { id: pendingHeadId },
+      });
+    },
+  );
+
+  it("blocks export during operations on an earlier head and permits the accepted removal output", async () => {
+    const { adaptationId, pendingHeadId, resourceDocumentId, accepted } =
+      await newPendingReview();
+    await settleJobs(adaptationId);
+    await acceptPendingReview({
+      adaptationId,
+      attemptId: accepted.attempt.id,
+      expectedHeadId: pendingHeadId,
+    });
+    const work = await createOrGetJob({
+      kind: "transformations.remove",
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { adaptationId, resourceDocumentId },
+    });
+    expect((await getDownloadHead(adaptationId))?.downloadAvailability).toBe("busy");
+    const attempt = await createOperationAttempt({
+      adaptationId,
+      idempotencyKey: `integration-${randomUUID()}`,
+      jobId: work.job.id,
+      kind: "transformations.remove",
+      resourceDocumentId: pendingHeadId,
+    });
+    const removedHeadId = await storeOutputsAndAdvanceHead({
+      adaptationId,
+      attemptId: attempt.id,
+      expectedHeadId: pendingHeadId,
+      outputs: [{ document: worksheet, purpose: "revised-resource" }],
+      revisedPosition: 0,
+      review: "accepted",
+    });
+    expect((await getDownloadHead(adaptationId))?.downloadAvailability).toBe("busy");
+    await settleJobs(adaptationId);
+    expect(await getDownloadHead(adaptationId)).toMatchObject({
+      downloadAvailability: "available",
+      storedDocument: { id: removedHeadId },
+    });
+  });
+
+  it("makes the original head unavailable after undo without losing the worksheet", async () => {
+    const { adaptationId, pendingHeadId, resourceDocumentId, accepted } =
+      await newPendingReview();
+    await settleJobs(adaptationId);
+    await undoPendingReview({
+      adaptationId,
+      expectedHeadId: pendingHeadId,
+      previousHeadId: resourceDocumentId,
+      transformationId: accepted.transformation.id,
+    });
+    expect(await getDownloadHead(adaptationId)).toMatchObject({
+      downloadAvailability: "original",
+      storedDocument: { id: resourceDocumentId, document: worksheet },
+    });
+  });
+
   it("points a new adaptation's head at the worksheet it stored", async () => {
     const { adaptationId, resourceDocumentId, teacherId } = await newAdaptation();
 
@@ -202,6 +356,119 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
 
     await expect(isAttemptComplete(attempt.id)).resolves.toBe(true);
     await expect(listOpenSuggestions(resourceDocumentId)).resolves.toEqual([]);
+  });
+
+  it("replaces earlier offers with a retry's suggestions", async () => {
+    const { adaptationId, resourceDocumentId } = await newAdaptation();
+    const { attempt } = await newAttempt(adaptationId, resourceDocumentId);
+    await completeSuggestionAttempt({
+      attemptId: attempt.id,
+      resourceDocumentId,
+      suggestions: [
+        {
+          kind: "scaffold-add-word-bank",
+          params: { supportLevel: "low" },
+          reason: "The original offer.",
+          targetBlockId: null,
+        },
+      ],
+    });
+    const [originalSuggestion] = await listOpenSuggestions(resourceDocumentId);
+    if (originalSuggestion === undefined) {
+      throw new Error("The original offer was not stored.");
+    }
+    const retryAttempt = await newRetryAttempt(
+      adaptationId,
+      resourceDocumentId,
+      attempt.transformationId,
+    );
+
+    await completeSuggestionAttempt({
+      attemptId: retryAttempt.id,
+      resourceDocumentId,
+      suggestions: [
+        {
+          kind: "scaffold-chunk-tasks",
+          params: { supportLevel: "low" },
+          reason: "The replacement offer.",
+          targetBlockId: null,
+        },
+      ],
+    });
+
+    await expect(listOpenSuggestions(resourceDocumentId)).resolves.toMatchObject([
+      { reason: "The replacement offer." },
+    ]);
+    await expect(
+      getOpenSuggestion(originalSuggestion.id, resourceDocumentId),
+    ).resolves.toBeNull();
+  });
+
+  it("clears open suggestions and invalidates earlier IDs after an empty retry", async () => {
+    const { adaptationId, resourceDocumentId } = await newAdaptation();
+    const { attempt } = await newAttempt(adaptationId, resourceDocumentId);
+    await completeSuggestionAttempt({
+      attemptId: attempt.id,
+      resourceDocumentId,
+      suggestions: [
+        {
+          kind: "scaffold-add-word-bank",
+          params: { supportLevel: "low" },
+          reason: "The original offer.",
+          targetBlockId: null,
+        },
+      ],
+    });
+    const [originalSuggestion] = await listOpenSuggestions(resourceDocumentId);
+    if (originalSuggestion === undefined) {
+      throw new Error("The original offer was not stored.");
+    }
+    const retryAttempt = await newRetryAttempt(
+      adaptationId,
+      resourceDocumentId,
+      attempt.transformationId,
+    );
+
+    await completeSuggestionAttempt({
+      attemptId: retryAttempt.id,
+      resourceDocumentId,
+      suggestions: [],
+    });
+
+    await expect(listOpenSuggestions(resourceDocumentId)).resolves.toEqual([]);
+    await expect(
+      getOpenSuggestion(originalSuggestion.id, resourceDocumentId),
+    ).resolves.toBeNull();
+  });
+
+  it("keeps current offers available while a retry is incomplete", async () => {
+    const { adaptationId, resourceDocumentId } = await newAdaptation();
+    const { attempt } = await newAttempt(adaptationId, resourceDocumentId);
+    await completeSuggestionAttempt({
+      attemptId: attempt.id,
+      resourceDocumentId,
+      suggestions: [
+        {
+          kind: "scaffold-add-word-bank",
+          params: { supportLevel: "low" },
+          reason: "The current offer.",
+          targetBlockId: null,
+        },
+      ],
+    });
+    const [currentSuggestion] = await listOpenSuggestions(resourceDocumentId);
+    if (currentSuggestion === undefined) {
+      throw new Error("The current offer was not stored.");
+    }
+
+    await newRetryAttempt(adaptationId, resourceDocumentId, attempt.transformationId);
+
+    await expect(listOpenSuggestions(resourceDocumentId)).resolves.toMatchObject([
+      { id: currentSuggestion.id, reason: "The current offer." },
+    ]);
+    await expect(
+      getOpenSuggestion(currentSuggestion.id, resourceDocumentId),
+    ).resolves.toMatchObject({ id: currentSuggestion.id });
   });
 
   it("lets only one request accept an offer", async () => {

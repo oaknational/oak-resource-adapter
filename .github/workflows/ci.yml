@@ -242,9 +242,6 @@ jobs:
       # The harness posts to the /dev routes, which fail closed without this.
       ENABLE_DEV_ROUTES: "1"
       MODEL_TRANSPORT: deterministic
-      # Not a real bucket. Readiness only reads the name, and the
-      # runner holds no Google credentials, so a write would fail either way.
-      RESOURCE_ARTIFACTS_BUCKET: resource-adapter-ci-no-such-bucket
       # The three values e2e/global.setup.ts asserts. `secrets` cannot be read
       # from an `if:` condition; `env` can.
       CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
@@ -336,7 +333,19 @@ jobs:
       # secret store, which holds them. Guarded per step, not per job:
       # `Run browser tests` is a required check, and a skipped job blocks a merge
       # just as a failed one does.
+      - name: Start isolated artifact storage
+        if: env.CLERK_SECRET_KEY != ''
+        run: |
+          docker run --detach --rm --name artifact-storage --publish 4443:4443 fsouza/fake-gcs-server:1.56.1 -scheme http -backend memory -external-url http://127.0.0.1:4443
+          curl --fail --retry 10 --retry-connrefused --retry-delay 1 --max-time 30 \
+            --header 'Content-Type: application/json' \
+            --data '{"name":"resource-adapter-e2e"}' \
+            http://127.0.0.1:4443/storage/v1/b
+
       - name: Run browser tests
+        env:
+          RESOURCE_ARTIFACTS_EMULATOR_ORIGIN: http://127.0.0.1:4443
+          RESOURCE_ARTIFACTS_BUCKET: resource-adapter-e2e
         if: env.CLERK_SECRET_KEY != ''
         run: |
           set -o pipefail

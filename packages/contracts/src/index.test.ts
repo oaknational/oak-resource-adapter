@@ -27,12 +27,14 @@ const sourceDocument: ResourceDocument = {
 };
 
 const worksheetScaffolding = {
+  prepareExport: () => Promise.resolve(null),
   accept: () => Promise.resolve(null),
   applySuggestion: () => Promise.resolve(null),
   get: () => Promise.resolve(null),
   open: () => Promise.resolve(null),
   remove: () => Promise.resolve(null),
-  retry: () => Promise.resolve(null),
+  retryTransformation: () => Promise.resolve(null),
+  retrySuggestions: () => Promise.resolve(null),
   dismiss: () => Promise.resolve(null),
   undo: () => Promise.resolve(null),
 };
@@ -47,6 +49,8 @@ const suggestionId = "33333333-3333-4333-8333-333333333333";
 const requestId = "44444444-4444-4444-8444-444444444444";
 const worksheetState = {
   adaptationId,
+  resourceDocumentId: attemptId,
+  downloadAvailability: "original",
   document: sourceDocument,
   job: null,
   pendingReview: null,
@@ -280,6 +284,52 @@ describe("Resource Adapter API contracts", () => {
       });
     }
 
+    it("prepares exports with database identity and authenticated ownership", async () => {
+      const prepareExport = vi.fn().mockResolvedValue({ artifactId: suggestionId });
+      const request = {
+        adaptationId,
+        resourceDocumentId: attemptId,
+        format: "docx" as const,
+      };
+      await expect(
+        callerWithWorksheet({ prepareExport }).worksheetScaffolding.prepareExport(
+          request,
+        ),
+      ).resolves.toEqual({ artifactId: suggestionId });
+      expect(prepareExport).toHaveBeenCalledWith(request, internalTeacher);
+      await expect(
+        callerWithWorksheet({ prepareExport }).worksheetScaffolding.prepareExport({
+          ...request,
+          document: sourceDocument,
+        } as typeof request),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(prepareExport).toHaveBeenCalledOnce();
+    });
+
+    it("refuses unauthenticated exports and hides missing or foreign adaptations", async () => {
+      const prepareExport = vi.fn().mockResolvedValue(null);
+      const request = {
+        adaptationId,
+        resourceDocumentId: attemptId,
+        format: "docx" as const,
+      };
+      const anonymous = internalRouter.createCaller({
+        authenticatedTeacher: null,
+        featureFlags: { getEnabledFlags: () => [] },
+        sourceDocuments: { getSourceDocument: () => sourceDocument },
+        worksheetScaffolding: { ...worksheetScaffolding, prepareExport },
+      });
+      await expect(
+        anonymous.worksheetScaffolding.prepareExport(request),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+      expect(prepareExport).not.toHaveBeenCalled();
+      await expect(
+        callerWithWorksheet({ prepareExport }).worksheetScaffolding.prepareExport(
+          request,
+        ),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
     it("calls the feature flags service through the typed router", async () => {
       const caller = internalRouter.createCaller({
         authenticatedTeacher: {
@@ -391,10 +441,21 @@ describe("Resource Adapter API contracts", () => {
       },
       {
         invoke: (caller: InternalCaller) =>
-          caller.worksheetScaffolding.retry({ adaptationId, attemptId, requestId }),
-        name: "retry",
+          caller.worksheetScaffolding.retryTransformation({
+            adaptationId,
+            attemptId,
+            requestId,
+          }),
+        name: "retryTransformation",
         request: { adaptationId, attemptId, requestId },
-        service: "retry" as const,
+        service: "retryTransformation" as const,
+      },
+      {
+        invoke: (caller: InternalCaller) =>
+          caller.worksheetScaffolding.retrySuggestions({ adaptationId, requestId }),
+        name: "retrySuggestions",
+        request: { adaptationId, requestId },
+        service: "retrySuggestions" as const,
       },
       {
         invoke: (caller: InternalCaller) =>

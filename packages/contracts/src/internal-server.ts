@@ -8,9 +8,13 @@ import {
   resourceAdapterFeatureFlagsResponseSchema,
   resourceAdapterSourceDocumentRequestSchema,
   transformationInputSchema,
+  worksheetExportRequestSchema,
+  worksheetDownloadAvailabilitySchema,
+  type WorksheetExportRequest,
+  type WorksheetExportResult,
   worksheetScaffoldingApplyRequestSchema,
   worksheetScaffoldingReviewRequestSchema,
-  worksheetScaffoldingRetryRequestSchema,
+  worksheetScaffoldingRetryTransformationRequestSchema,
   worksheetScaffoldingGetRequestSchema,
   worksheetScaffoldingJobKinds,
   worksheetScaffoldingOpenRequestSchema,
@@ -18,7 +22,7 @@ import {
   worksheetScaffoldingDismissRequestSchema,
   type WorksheetScaffoldingApplyRequest,
   type WorksheetScaffoldingReviewRequest,
-  type WorksheetScaffoldingRetryRequest,
+  type WorksheetScaffoldingRetryTransformationRequest,
   type WorksheetScaffoldingEntry,
   type WorksheetScaffoldingGetRequest,
   type WorksheetScaffoldingOpenRequest,
@@ -27,6 +31,8 @@ import {
   type WorksheetScaffoldingDismissRequest,
   type ResourceAdapterSourceDocumentRequest,
   type ResourceAdapterFeatureFlagsResponse,
+  type WorksheetScaffoldingRetrySuggestionsRequest,
+  worksheetScaffoldingRetrySuggestionsRequestSchema,
 } from "./internal-contract.js";
 
 /** The service boundary required by the feature flags procedure. */
@@ -45,6 +51,10 @@ export type ResourceAdapterSourceDocumentService = Readonly<{
 }>;
 
 export type WorksheetScaffoldingService = Readonly<{
+  prepareExport: (
+    request: WorksheetExportRequest,
+    target: ResourceAdapterAuthenticatedTeacher,
+  ) => Promise<WorksheetExportResult | null>;
   accept: (
     request: WorksheetScaffoldingReviewRequest,
     target: ResourceAdapterAuthenticatedTeacher,
@@ -65,8 +75,12 @@ export type WorksheetScaffoldingService = Readonly<{
     request: WorksheetScaffoldingRemoveRequest,
     target: ResourceAdapterAuthenticatedTeacher,
   ) => Promise<WorksheetScaffoldingState | null>;
-  retry: (
-    request: WorksheetScaffoldingRetryRequest,
+  retryTransformation: (
+    request: WorksheetScaffoldingRetryTransformationRequest,
+    target: ResourceAdapterAuthenticatedTeacher,
+  ) => Promise<WorksheetScaffoldingState | null>;
+  retrySuggestions: (
+    request: WorksheetScaffoldingRetrySuggestionsRequest,
     target: ResourceAdapterAuthenticatedTeacher,
   ) => Promise<WorksheetScaffoldingState | null>;
   dismiss: (
@@ -90,6 +104,8 @@ const t_internal = initTRPC.context<ResourceAdapterApiContextInternal>().create(
 
 const worksheetScaffoldingStateSchema = z.object({
   adaptationId: z.string(),
+  resourceDocumentId: z.uuid(),
+  downloadAvailability: worksheetDownloadAvailabilitySchema,
   document: resourceDocumentSchema,
   job: z.nullable(
     z.object({
@@ -193,6 +209,14 @@ export const internalRouter = t_internal.router({
       }),
   }),
   worksheetScaffolding: t_internal.router({
+    prepareExport: internalAuthenticatedProcedure
+      .input(worksheetExportRequestSchema)
+      .output(z.object({ artifactId: z.uuid() }))
+      .mutation(async ({ ctx, input }) =>
+        requireWorksheetScaffolding(
+          await ctx.worksheetScaffolding.prepareExport(input, ctx.authenticatedTeacher),
+        ),
+      ),
     accept: internalAuthenticatedProcedure
       .input(worksheetScaffoldingReviewRequestSchema)
       .output(worksheetScaffoldingStateSchema)
@@ -236,12 +260,26 @@ export const internalRouter = t_internal.router({
           await ctx.worksheetScaffolding.remove(input, ctx.authenticatedTeacher),
         ),
       ),
-    retry: internalAuthenticatedProcedure
-      .input(worksheetScaffoldingRetryRequestSchema)
+    retryTransformation: internalAuthenticatedProcedure
+      .input(worksheetScaffoldingRetryTransformationRequestSchema)
       .output(worksheetScaffoldingStateSchema)
       .mutation(async ({ ctx, input }) =>
         requireWorksheetScaffolding(
-          await ctx.worksheetScaffolding.retry(input, ctx.authenticatedTeacher),
+          await ctx.worksheetScaffolding.retryTransformation(
+            input,
+            ctx.authenticatedTeacher,
+          ),
+        ),
+      ),
+    retrySuggestions: internalAuthenticatedProcedure
+      .input(worksheetScaffoldingRetrySuggestionsRequestSchema)
+      .output(worksheetScaffoldingStateSchema)
+      .mutation(async ({ ctx, input }) =>
+        requireWorksheetScaffolding(
+          await ctx.worksheetScaffolding.retrySuggestions(
+            input,
+            ctx.authenticatedTeacher,
+          ),
         ),
       ),
     dismiss: internalAuthenticatedProcedure

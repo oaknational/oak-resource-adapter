@@ -1,6 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { downloadArtifactFile } from "./artifact-api";
-import { downloadFilename } from "./export-api";
 afterEach(() => vi.unstubAllGlobals());
 
 it("sends the bearer token only in the header and preserves the download", async () => {
@@ -39,18 +38,3 @@ it.each([
   );
   await expect(downloadArtifactFile("id", "token")).rejects.toThrow(String(message));
 });
-
-it.each(["pdf", "pptx"])(
-  "supports safe filenames for %s without accepting a different extension",
-  (format) => {
-    expect(downloadFilename(`attachment; filename="worksheet.${format}"`, format)).toBe(
-      `worksheet.${format}`,
-    );
-    expect(downloadFilename('attachment; filename="worksheet.exe"', format)).toBe(
-      `resource-document.${format}`,
-    );
-    expect(
-      downloadFilename(`attachment; filename="../../worksheet.${format}"`, format),
-    ).toBe(`resource-document.${format}`);
-  },
-);

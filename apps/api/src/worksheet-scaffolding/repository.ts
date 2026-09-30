@@ -12,6 +12,7 @@ import {
   type DatabaseClient,
   type Job,
 } from "@oaknational/resource-adapter-db";
+import { documentChangingJobKinds } from "@oaknational/resource-adapter-contracts/internal";
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import {
   and,
@@ -32,6 +33,8 @@ import {
 import { parseResourceDocument } from "@oaknational/resource-document/parse";
 
 import type { JobJsonValue } from "../jobs/domain";
+
+import { SUGGESTION_OPERATION_KIND } from "./capability";
 
 const PRIMARY_SOURCE = "primary_source";
 
@@ -151,6 +154,10 @@ export function asParams(value: unknown): Readonly<Record<string, JobJsonValue>>
 }
 
 export type StoredAdaptationHead = Readonly<{
+  completedAt: Date | null;
+  acceptedAt: Date | null;
+  producingAdaptationId: string | null;
+  busy: boolean;
   adaptation: typeof adaptations.$inferSelect;
   storedDocument: typeof resourceDocuments.$inferSelect;
 }>;
@@ -186,12 +193,40 @@ export async function getAdaptationHead(
   if (teacherId !== undefined) {
     predicates.push(eq(adaptations.clerkUserId, teacherId));
   }
-  const [row] = await getDatabaseClient()
-    .select({ adaptation: adaptations, storedDocument: resourceDocuments })
+  const database = getDatabaseClient();
+  // One statement gives ownership, head, review and pending work the same MVCC snapshot.
+  const [row] = await database
+    .select({
+      adaptation: adaptations,
+      storedDocument: resourceDocuments,
+      completedAt: transformationAttempts.completedAt,
+      acceptedAt: transformationAttempts.acceptedAt,
+      producingAdaptationId: transformations.adaptationId,
+      busy: exists(
+        database
+          .select({ id: jobs.id })
+          .from(jobs)
+          .where(
+            and(
+              inArray(jobs.kind, documentChangingJobKinds),
+              inArray(jobs.status, ["queued", "running"]),
+              sql`${jobs.input}->>'adaptationId' = ${adaptations.id}::text`,
+            ),
+          ),
+      ).mapWith(Boolean),
+    })
     .from(adaptations)
     .innerJoin(
       resourceDocuments,
       eq(resourceDocuments.id, adaptations.headResourceDocumentId),
+    )
+    .leftJoin(
+      transformationAttempts,
+      eq(transformationAttempts.id, resourceDocuments.transformationAttemptId),
+    )
+    .leftJoin(
+      transformations,
+      eq(transformations.id, transformationAttempts.transformationId),
     )
     .where(and(...predicates))
     .limit(1);
@@ -461,34 +496,52 @@ export async function getLatestJobForConcurrencyKey(
 export async function listOpenSuggestions(
   resourceDocumentId: string,
 ): Promise<readonly StoredSuggestion[]> {
-  return getDatabaseClient()
-    .select()
+  const [latestAttempt] = await getDatabaseClient()
+    .select({ id: transformationAttempts.id })
+    .from(transformationAttempts)
+    .innerJoin(
+      transformations,
+      eq(transformations.id, transformationAttempts.transformationId),
+    )
+    .innerJoin(
+      transformationInputs,
+      eq(transformationInputs.transformationId, transformations.id),
+    )
+    .where(
+      and(
+        eq(transformations.kind, SUGGESTION_OPERATION_KIND),
+        eq(transformationInputs.resourceDocumentId, resourceDocumentId),
+        isNotNull(transformationAttempts.completedAt),
+      ),
+    )
+    .orderBy(desc(transformationAttempts.attemptNumber))
+    .limit(1);
+
+  if (latestAttempt === undefined) {
+    return [];
+  }
+
+  const rows = await getDatabaseClient()
+    .select({ suggestion: suggestedTransformations })
     .from(suggestedTransformations)
     .where(
       and(
+        eq(suggestedTransformations.transformationAttemptId, latestAttempt.id),
         eq(suggestedTransformations.resourceDocumentId, resourceDocumentId),
         isNull(suggestedTransformations.acceptedTransformationId),
       ),
     )
     .orderBy(suggestedTransformations.position);
+
+  return rows.map(({ suggestion }) => suggestion);
 }
 
 export async function getOpenSuggestion(
   suggestionId: string,
   resourceDocumentId: string,
 ): Promise<StoredSuggestion | null> {
-  const [row] = await getDatabaseClient()
-    .select()
-    .from(suggestedTransformations)
-    .where(
-      and(
-        eq(suggestedTransformations.id, suggestionId),
-        eq(suggestedTransformations.resourceDocumentId, resourceDocumentId),
-        isNull(suggestedTransformations.acceptedTransformationId),
-      ),
-    )
-    .limit(1);
-  return row ?? null;
+  const open = await listOpenSuggestions(resourceDocumentId);
+  return open.find((suggestion) => suggestion.id === suggestionId) ?? null;
 }
 
 export type ResumableAdaptation = Readonly<{
@@ -724,6 +777,27 @@ export async function getAttemptForJob(jobId: string): Promise<StoredAttempt | n
     .where(eq(transformationAttempts.jobId, jobId))
     .limit(1);
   return row ?? null;
+}
+
+export async function findSuggestionGeneration(
+  resourceDocumentId: string,
+): Promise<StoredTransformation | null> {
+  const [row] = await getDatabaseClient()
+    .select({ transformation: transformations })
+    .from(transformations)
+    .innerJoin(
+      transformationInputs,
+      eq(transformationInputs.transformationId, transformations.id),
+    )
+    .where(
+      and(
+        eq(transformations.kind, SUGGESTION_OPERATION_KIND),
+        eq(transformationInputs.resourceDocumentId, resourceDocumentId),
+      ),
+    )
+    .limit(1);
+
+  return row?.transformation ?? null;
 }
 
 /** Records one internal operation and its single attempt against a document. */
