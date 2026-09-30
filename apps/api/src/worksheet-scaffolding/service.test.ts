@@ -471,7 +471,9 @@ describe("accepting a suggestion", () => {
 
     expect(dependencies.enqueue).toHaveBeenCalledWith(
       expect.objectContaining({
-        idempotencyKey: expect.stringMatching(new RegExp(`^apply:${SUGGESTION_ID}:1:`)),
+        idempotencyKey: expect.stringMatching(
+          new RegExp(`^apply:${SUGGESTION_ID}:1:[\\w-]{16}$`),
+        ),
       }),
     );
   });
@@ -488,7 +490,9 @@ describe("accepting a suggestion", () => {
     expect(dependencies.enqueue).toHaveBeenCalledWith(
       expect.objectContaining({
         concurrencyKey: `adaptation:${ADAPTATION_ID}:head:${DOCUMENT_ID}`,
-        idempotencyKey: expect.stringMatching(new RegExp(`^apply:${SUGGESTION_ID}:0:`)),
+        idempotencyKey: expect.stringMatching(
+          new RegExp(`^apply:${SUGGESTION_ID}:0:[\\w-]{16}$`),
+        ),
         input: expect.objectContaining({ resourceDocumentId: DOCUMENT_ID }),
       }),
     );
