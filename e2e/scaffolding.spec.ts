@@ -34,6 +34,8 @@ async function downloadWorksheetXml(page: Page, button: Locator) {
   return strFromU8(xml);
 }
 
+// Not @deployment-safe: opening the drawer creates an adaptation and queues a
+// suggestions job, and nothing can clean those up from a deployment.
 test("shows the API state, a capability-based trigger, and the adapter sidebar", async ({
   page,
 }) => {
@@ -78,6 +80,8 @@ test("shows the API state, a capability-based trigger, and the adapter sidebar",
   ).toBeVisible();
 });
 
+// Not @deployment-safe: expects the deterministic model's suggestion names, and
+// deployments call OpenAI.
 test("generates and lists named scaffolding suggestions when the drawer opens", async ({
   page,
 }) => {
@@ -102,6 +106,8 @@ test("generates and lists named scaffolding suggestions when the drawer opens", 
   await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(0);
 });
 
+// Not @deployment-safe: trackAdaptation cleans up through the local database only,
+// and the assertions expect the deterministic model's output.
 test("adapts, accepts, downloads, resumes and removes a scaffold without losing work", async ({
   page,
   trackAdaptation,
@@ -221,6 +227,8 @@ test("adapts, accepts, downloads, resumes and removes a scaffold without losing 
   expect(removedXml).not.toContain("Vocabulary you could include:");
 });
 
+// Not @deployment-safe: opening the drawer creates an adaptation and queues a
+// suggestions job, and nothing can clean those up from a deployment.
 test("shows the future multi-capability launcher shape", async ({ page }) => {
   await signIn(page);
   await page.goto("/?view=edge-cases&case=multiple-capabilities-ui");

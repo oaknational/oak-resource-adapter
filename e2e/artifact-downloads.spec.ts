@@ -16,7 +16,7 @@ const localOnly = () =>
     Boolean(
       process.env.E2E_BASE_URL || process.env.CI || process.env.E2E_BUILT_SERVERS,
     ),
-    "The real-storage lifecycle test runs only against local development.",
+    "Personal fixtures are off under built servers, and every Preview shares one per account, so concurrent runs would delete each other's file.",
   );
 
 // Read-only: the shared artifact is provisioned separately and never cleaned up here.
