@@ -11,7 +11,18 @@ import {
 import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
 import { dismissTransformationsAt } from "../transformations/dismissal";
 import { worksheetScaffoldingSuggestionFlow } from "./definitions/worksheet-scaffolding";
-import { generateSuggestions, prepareSuggestionFlow } from "./service";
+import {
+  generateSuggestions,
+  prepareSuggestionFlow,
+  suggestionMaterialRequirements,
+} from "./service";
+
+const material = {
+  "lesson.keyLearningPoints": {
+    kind: "text",
+    text: "- Every lesson teaches something.",
+  },
+} as const;
 
 let worksheet: ResourceDocument;
 let questionId: string;
@@ -87,6 +98,7 @@ describe("worksheet scaffolding suggestions", () => {
       worksheetScaffoldingSuggestionFlow,
       worksheet,
       [],
+      material,
       prepare,
     );
 
@@ -116,6 +128,7 @@ describe("worksheet scaffolding suggestions", () => {
           targetBlockId: questionId,
         },
       ],
+      material,
       prepare,
     );
 
@@ -133,6 +146,7 @@ describe("worksheet scaffolding suggestions", () => {
       worksheetScaffoldingSuggestionFlow,
       dismissTransformationsAt(worksheet, questionId),
       [],
+      material,
       prepare,
     );
 
@@ -148,6 +162,7 @@ describe("worksheet scaffolding suggestions", () => {
   it("returns validated parameters with a target and teacher-facing reason", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
+        material,
         createInvoker: () =>
           invokerWith({
             suggestions: [
@@ -175,6 +190,7 @@ describe("worksheet scaffolding suggestions", () => {
   it("drops a suggestion for a target the transformation cannot change", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
+        material,
         createInvoker: () =>
           invokerWith({
             suggestions: [
@@ -194,6 +210,7 @@ describe("worksheet scaffolding suggestions", () => {
   it("keeps the usable suggestions when one of them is unavailable", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
+        material,
         createInvoker: () =>
           invokerWith({
             suggestions: [
@@ -225,6 +242,7 @@ describe("worksheet scaffolding suggestions", () => {
 
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
+        material,
         createInvoker: () =>
           invokerWith({
             suggestions: [
@@ -261,6 +279,7 @@ describe("worksheet scaffolding suggestions", () => {
                 },
               ],
             }),
+          material,
           prepare,
         },
       ),
@@ -288,7 +307,7 @@ describe("worksheet scaffolding suggestions", () => {
         worksheetScaffoldingSuggestionFlow,
         worksheet,
         appliedTransformations,
-        { createInvoker, prepare },
+        { createInvoker, material, prepare },
       ),
     ).resolves.toEqual([]);
     expect(createInvoker).not.toHaveBeenCalled();
@@ -297,6 +316,7 @@ describe("worksheet scaffolding suggestions", () => {
   it("allows the agent to recommend no changes", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
+        material,
         createInvoker: () => invokerWith({ suggestions: [] }),
         prepare,
       }),
@@ -306,9 +326,75 @@ describe("worksheet scaffolding suggestions", () => {
   it("does not mistake an unsuccessful model response for no suggestions", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
+        material,
         createInvoker: () => invokerWithOutcome("OUTPUT_MISSING"),
         prepare,
       }),
     ).rejects.toThrow("Suggestion generation ended with OUTPUT_MISSING");
+  });
+
+  it("does not offer a kind whose required material the lesson lacks", async () => {
+    const result = await prepareSuggestionFlow(
+      worksheetScaffoldingSuggestionFlow,
+      worksheet,
+      [],
+      {},
+      prepare,
+    );
+
+    expect(result.candidates.map(({ kind }) => kind)).not.toContain(
+      "scaffold-add-prompt-questions",
+    );
+  });
+
+  it("resolves the flow's material and every candidate's required material", () => {
+    expect(suggestionMaterialRequirements(worksheetScaffoldingSuggestionFlow)).toEqual(
+      expect.arrayContaining([
+        { key: "lesson.keywords", required: false },
+        { key: "lesson.keyLearningPoints", required: true },
+      ]),
+    );
+  });
+
+  it("tells the model which kinds may not share a target", async () => {
+    const result = await prepareSuggestionFlow(
+      worksheetScaffoldingSuggestionFlow,
+      worksheet,
+      [],
+      material,
+      prepare,
+    );
+
+    expect(result.preparedPrompt.text).toContain(
+      "Never on the same target as: Add sentence frames",
+    );
+  });
+
+  it("keeps the earlier of two suggestions that exclude each other on one target", async () => {
+    const suggestion = (kind: string) => ({
+      kind,
+      params: {},
+      reason: "Give this response a shape.",
+      targetBlockId: questionId,
+    });
+
+    const result = await generateSuggestions(
+      worksheetScaffoldingSuggestionFlow,
+      worksheet,
+      [],
+      {
+        createInvoker: () =>
+          invokerWith({
+            suggestions: [
+              suggestion("scaffold-add-sentence-starters"),
+              suggestion("scaffold-add-sentence-frames"),
+            ],
+          }),
+        material,
+        prepare,
+      },
+    );
+
+    expect(result.map(({ kind }) => kind)).toEqual(["scaffold-add-sentence-starters"]);
   });
 });

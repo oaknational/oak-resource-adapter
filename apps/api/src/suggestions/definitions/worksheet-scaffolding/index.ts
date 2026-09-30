@@ -5,7 +5,12 @@ import { worksheetScaffoldingSuggestionPrompt } from "./prompt";
 export const worksheetScaffoldingSuggestionFlow = defineSuggestionFlow({
   capabilityId: worksheetScaffoldingCapability.id,
   id: worksheetScaffoldingCapability.suggestionFlowId,
-  maxSuggestions: 5,
+  materialRequirements: [
+    { key: "lesson.outcome", required: false },
+    { key: "lesson.keywords", required: false },
+    { key: "lesson.keyLearningPoints", required: false },
+  ],
+  maxSuggestions: 20,
   prompt: worksheetScaffoldingSuggestionPrompt,
   role: "worksheet-scaffolding-suggester",
   transformationKinds: worksheetScaffoldingCapability.transformationKinds,

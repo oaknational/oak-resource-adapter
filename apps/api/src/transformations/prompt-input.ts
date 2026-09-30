@@ -170,10 +170,10 @@ export function transformationPromptVariables(
         ? (metadata.keyStage?.label ?? metadata.keyStage?.id)
         : undefined,
     language: languagePart({
-      keyStage: "keyStage" in metadata ? metadata.keyStage?.label : undefined,
+      keyStage: "keyStage" in metadata ? metadata.keyStage : undefined,
       targetReadingAge:
         "targetReadingAge" in metadata ? metadata.targetReadingAge : undefined,
-      yearGroup: "yearGroup" in metadata ? metadata.yearGroup?.label : undefined,
+      yearGroup: "yearGroup" in metadata ? metadata.yearGroup : undefined,
     }),
     lessonMaterial:
       (definition.materialRequirements ?? []).length === 0

@@ -118,7 +118,14 @@ export function useSuggestionWorkbench(
     if (action === "run") setResult(null);
 
     try {
-      const command = { document: scenario.document, flowId: selectedFlowId };
+      const command = {
+        document: scenario.document,
+        flowId: selectedFlowId,
+        lesson: {
+          lessonSlug: scenario.lesson.lessonSlug,
+          programmeSlug: scenario.lesson.programmeSlug,
+        },
+      };
       const completed = await requestSuggestions(action, command, controller.signal);
       if (requestGeneration.current !== generation) {
         return;

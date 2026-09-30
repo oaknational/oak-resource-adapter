@@ -31,7 +31,10 @@ import { worksheetScaffoldingSuggestionFlow as flow } from "../suggestions/defin
 import { generateSuggestions, prepareSuggestionFlow } from "../suggestions/service";
 import { dismissTransformationsAt } from "../transformations/dismissal";
 import { executeTransformation, type PreparePrompt } from "../transformations/execute";
-import { transformationDefinitions } from "../transformations/registry";
+import {
+  transformationDefinitions,
+  type RegisteredTransformationKind,
+} from "../transformations/registry";
 import { definedTermsSchema } from "../transformations/contributions/definition-list";
 import { resolveDeterministicResponse } from "./deterministic-responses";
 import { rebindModelRoles } from "./model-roles";
@@ -82,7 +85,7 @@ function setup() {
       }),
     },
   });
-  return { createInvoker: () => invoker, recorder, prepare };
+  return { createInvoker: () => invoker, material, prepare, recorder };
 }
 
 function expectValidRecording(
@@ -134,6 +137,7 @@ describe("deterministic suggestion catalogue", () => {
         flow,
         document,
         [],
+        material,
         prepare,
       );
       expect(candidates.length).toBeGreaterThan(0);
@@ -142,12 +146,24 @@ describe("deterministic suggestion catalogue", () => {
         generateSuggestions(flow, document, [], config),
       ]);
       expect(first).toEqual(second);
+      const expected: { kind: string; targetBlockId: string | null }[] = [];
+      for (const { kind, eligibleTargets } of candidates) {
+        const targets =
+          eligibleTargets.scope === "document" ? [null] : eligibleTargets.blockIds;
+        const excludes =
+          transformationDefinitions[kind as RegisteredTransformationKind].excludes ??
+          [];
+        const targetBlockId = targets.find(
+          (target) =>
+            !expected.some(
+              (earlier) =>
+                earlier.targetBlockId === target && excludes.includes(earlier.kind),
+            ),
+        );
+        if (targetBlockId !== undefined) expected.push({ kind, targetBlockId });
+      }
       expect(first.map(({ kind, targetBlockId }) => ({ kind, targetBlockId }))).toEqual(
-        candidates.slice(0, flow.maxSuggestions).map(({ kind, eligibleTargets }) => ({
-          kind,
-          targetBlockId:
-            eligibleTargets.scope === "document" ? null : eligibleTargets.blockIds[0],
-        })),
+        expected.slice(0, flow.maxSuggestions),
       );
       expectValidRecording(config.recorder, "transformation_suggestions");
       expect(config.recorder.recordStarted).toHaveBeenCalledTimes(2);
@@ -187,6 +203,7 @@ describe("deterministic suggestion catalogue", () => {
         flow,
         document,
         applied,
+        material,
         prepare,
       );
       const wordBank = candidates.find(({ kind }) => kind === "scaffold-add-word-bank");
@@ -224,6 +241,7 @@ describe("deterministic suggestion catalogue", () => {
         singleKind,
         document,
         [],
+        material,
         prepare,
       );
       expect(candidates).toHaveLength(1);
@@ -286,7 +304,8 @@ describe("deterministic suggestion catalogue", () => {
     ];
     const config = setup();
     expect(
-      (await prepareSuggestionFlow(flow, document, applied, prepare)).candidates,
+      (await prepareSuggestionFlow(flow, document, applied, material, prepare))
+        .candidates,
     ).toEqual([]);
     await expect(generateSuggestions(flow, document, applied, config)).resolves.toEqual(
       [],

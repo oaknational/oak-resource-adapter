@@ -13,11 +13,12 @@ export const addSentenceStartersTransformation = defineTransformation({
     description:
       "Gives a pupil the opening clause of a written or spoken response, which they then complete.",
     useWhen:
-      "The response must be produced in continuous spoken or written prose, and the pupil has the content but stalls on getting into the right form.",
+      "The response is spoken or written prose that makes a single move, such as a short explanation, a description or a one-step reason.",
     avoidWhen:
-      "The response is a word, number or selection, or the barrier is missing knowledge rather than expression.",
+      "The response is a word, number, label, drawing or selection, or it makes several moves, where sentence frames fit instead.",
   },
   barriers: ["working-memory", "processing"],
+  excludes: ["scaffold-add-sentence-frames"],
   target: { scope: "node", nodeTypes: ["question"] },
   materialRequirements: [
     { key: "lesson.keyLearningPoints", required: false },
