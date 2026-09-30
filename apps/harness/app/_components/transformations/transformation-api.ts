@@ -68,6 +68,10 @@ export type TransformationCatalogueItem = z.infer<
   typeof transformationCatalogueItemSchema
 >;
 
+export function supportLevelInputOf(item: TransformationCatalogueItem | undefined) {
+  return item?.inputs?.find(({ id }) => id === "supportLevel");
+}
+
 const previewResponseSchema = z.strictObject({
   execution: z.enum(["deterministic", "structured-model", "text-model"]),
   kind: z.string(),
