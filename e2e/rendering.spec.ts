@@ -1,8 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-// @deployment-safe marks a spec as runnable against a deployed environment, which
-// means two things: it writes no rows another run could see, and it depends on no
-// local-only state. Untagged specs run only against CI's throwaway database.
+// @deployment-safe criteria: docs/DEVELOPMENT.md, "Testing a deployed candidate".
 
 /**
  * Every Oak lesson fixture reaches the navigation. Asserted exactly so a link
