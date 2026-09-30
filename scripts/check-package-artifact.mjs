@@ -179,6 +179,7 @@ try {
           "@oaknational/resource-adapter-contracts": `file:${contractsTarball}`,
           "@oaknational/resource-adapter": `file:${uiTarball}`,
           "@oaknational/resource-document": `file:${resourceDocumentTarball}`,
+          "@portabletext/react": await installedVersion("@portabletext/react"),
           next: await installedVersion("next"),
           "next-cloudinary": await installedVersion("next-cloudinary"),
           react: await installedVersion("react"),
@@ -193,12 +194,15 @@ try {
   );
 
   // The tarballs depend on workspace packages that are not published, so these
-  // overrides have to apply. pnpm 11 ignores the manifest's `pnpm` field.
+  // overrides have to apply. pnpm 11 ignores the manifest's `pnpm` field. The
+  // root workspace's release-age exclusion does not reach this directory.
   await writeFile(
     join(temporaryDirectory, "pnpm-workspace.yaml"),
     `overrides:
   "@oaknational/resource-adapter-contracts": "file:${contractsTarball}"
   "@oaknational/resource-document": "file:${resourceDocumentTarball}"
+minimumReleaseAgeExclude:
+  - "@oaknational/*"
 `,
   );
 

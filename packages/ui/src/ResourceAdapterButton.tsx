@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { OakButtonWithDropdown, OakSecondaryButton } from "@oaknational/oak-components";
+import {
+  OakButtonWithDropdown,
+  OakSecondaryButton,
+  useDropdownContext,
+} from "@oaknational/oak-components";
 
 import type { ResourceAdapterCapabilityId } from "./publicTypes.js";
 
@@ -24,8 +27,6 @@ export type ResourceAdapterButtonProps<
 export function ResourceAdapterButton<
   TCapability extends ResourceAdapterCapabilityOption,
 >({ capabilities, onSelectCapability }: ResourceAdapterButtonProps<TCapability>) {
-  const [menuInstance, setMenuInstance] = useState(0);
-
   if (capabilities.length === 0) {
     return null;
   }
@@ -43,30 +44,43 @@ export function ResourceAdapterButton<
     );
   }
 
-  // Remounting is the only way to close the menu: the dropdown owns `isOpen`
-  // and exposes no close callback, and its `closeOnChange` fires on mousedown
-  // and keydown, unmounting the item before its click handler runs.
   return (
     <OakButtonWithDropdown
       buttonComponent={OakSecondaryButton}
-      key={menuInstance}
       primaryActionIcon="ai"
       primaryActionText="Adapt with AI"
     >
       {capabilities.map((capability) => (
-        <OakSecondaryButton
-          element="button"
-          iconName="ai"
+        <CapabilityMenuItem
+          capability={capability}
           key={capability.id}
-          onClick={() => {
-            onSelectCapability(capability);
-            setMenuInstance((instance) => instance + 1);
-          }}
-          role="menuitem"
-        >
-          {capability.label}
-        </OakSecondaryButton>
+          onSelectCapability={onSelectCapability}
+        />
       ))}
     </OakButtonWithDropdown>
+  );
+}
+
+function CapabilityMenuItem<TCapability extends ResourceAdapterCapabilityOption>({
+  capability,
+  onSelectCapability,
+}: Readonly<{
+  capability: TCapability;
+  onSelectCapability: (capability: TCapability) => void;
+}>) {
+  const { onClose } = useDropdownContext();
+
+  return (
+    <OakSecondaryButton
+      element="button"
+      iconName="ai"
+      onClick={() => {
+        onSelectCapability(capability);
+        onClose();
+      }}
+      role="menuitem"
+    >
+      {capability.label}
+    </OakSecondaryButton>
   );
 }
