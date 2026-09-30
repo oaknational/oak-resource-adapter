@@ -6,6 +6,7 @@ export * from "./prompt-templates.js";
 export * from "./resource-artifacts.js";
 export * from "./resource-documents.js";
 export * from "./suggested-transformations.js";
+export * from "./transcript-summary-cache.js";
 export * from "./transformation-attempts.js";
 export * from "./transformation-inputs.js";
 export * from "./transformations.js";

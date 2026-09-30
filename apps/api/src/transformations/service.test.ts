@@ -82,6 +82,17 @@ describe("evaluateTransformations", () => {
     expect(transformation).not.toHaveProperty("execution");
     expect(transformation).not.toHaveProperty("params");
   });
+
+  it("withholds a kind from a target that already carries one it excludes", () => {
+    const exclusive = { ...offered, excludes: ["test-rival"] };
+    const applied = (targetBlockId: string | undefined) => ({
+      ...contextFor(),
+      appliedTransformations: [{ kind: "test-rival", params: {}, targetBlockId }],
+    });
+
+    expect(evaluateTransformations([exclusive], applied(undefined))).toEqual([]);
+    expect(evaluateTransformations([exclusive], applied("question-1"))).toHaveLength(1);
+  });
 });
 
 describe("transformationsForCapability", () => {
@@ -109,14 +120,7 @@ describe("listTransformationsForCapability", () => {
       kind: "scaffold-add-word-bank",
       label: "Add a word bank",
       outputs: ["revised-resource"],
-      suggestion: {
-        description:
-          "Adds the vocabulary a pupil needs for one question, with optional definitions.",
-        useWhen:
-          "A correct response has to use specific subject vocabulary, and the pupil knows the content but may not retrieve those words unprompted.",
-        avoidWhen:
-          "The task sets no specific vocabulary for the answer, already supplies the words, tests understanding of them, or is practical or divergent.",
-      },
+      suggestion: transformationDefinitions["scaffold-add-word-bank"].suggestion,
       supportLevels: [
         {
           level: "low",

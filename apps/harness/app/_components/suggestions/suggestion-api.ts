@@ -8,6 +8,7 @@ import {
   transformationOutputsSchema,
 } from "../shared/catalogue-schemas";
 import type { ResourceDocument } from "@oaknational/resource-document";
+import type { LessonScenario } from "../../scenario-types";
 
 const flowSchema = z.strictObject({
   capabilityId: z.string(),
@@ -67,6 +68,7 @@ export type SuggestionRunResponse = z.infer<typeof runResponseSchema>;
 export type SuggestionCommand = Readonly<{
   document: ResourceDocument;
   flowId: string;
+  lesson: Pick<LessonScenario["lesson"], "lessonSlug" | "programmeSlug">;
 }>;
 
 async function readError(response: Response): Promise<Error> {

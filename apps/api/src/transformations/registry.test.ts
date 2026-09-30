@@ -104,6 +104,15 @@ describe("transformationDefinitions", () => {
     expect(parseTransformationParams("identity", {})).toEqual({});
     expect(() => parseTransformationParams("identity", { unexpected: true })).toThrow();
   });
+
+  it.each(definitions)("declares %s's exclusions on both sides", (kind, definition) => {
+    for (const excluded of definition.excludes ?? []) {
+      expect(isRegisteredTransformationKind(excluded)).toBe(true);
+      if (isRegisteredTransformationKind(excluded)) {
+        expect(transformationDefinitions[excluded].excludes ?? []).toContain(kind);
+      }
+    }
+  });
 });
 
 describe("capability transformations", () => {

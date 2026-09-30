@@ -7,28 +7,41 @@ const KEY_STAGE_AGES: Readonly<Record<string, string>> = {
   ks5: "16 to 18",
 };
 
+type CurriculumLabel = Readonly<{ id: string; label?: string | undefined }>;
+
 export type LanguageContext = Readonly<{
-  keyStage?: string | undefined;
+  keyStage?: CurriculumLabel | undefined;
   targetReadingAge?: number | undefined;
-  yearGroup?: string | undefined;
+  yearGroup?: CurriculumLabel | undefined;
 }>;
 
-function audience({ keyStage, targetReadingAge, yearGroup }: LanguageContext): string {
+/** "Year 6, Key stage 2, aged 7 to 11", or undefined when the resource names neither. */
+export function describeCohort({
+  keyStage,
+  yearGroup,
+}: LanguageContext): string | undefined {
+  const cohort = [yearGroup?.label, keyStage?.label]
+    .filter((part) => part !== undefined)
+    .join(", ");
+  if (cohort === "") {
+    return undefined;
+  }
   const ages =
-    keyStage === undefined ? undefined : KEY_STAGE_AGES[keyStage.toLowerCase()];
-  const cohort = [yearGroup, keyStage].filter((part) => part !== undefined).join(", ");
+    keyStage === undefined ? undefined : KEY_STAGE_AGES[keyStage.id.toLowerCase()];
+  return ages === undefined ? cohort : `${cohort}, aged ${ages}`;
+}
 
-  const agedClause = ages === undefined ? "" : `, who are aged ${ages}`;
-  const cohortSentence =
-    cohort === ""
+function audience(context: LanguageContext): string {
+  const cohort = describeCohort(context);
+  const lines = [
+    cohort === undefined
       ? "You are writing for pupils in an English school; the resource does not say which year group."
-      : `You are writing for pupils in ${cohort}${agedClause}.`;
+      : `You are writing for pupils in ${cohort}.`,
+  ];
 
-  const lines = [cohortSentence];
-
-  if (targetReadingAge !== undefined) {
+  if (context.targetReadingAge !== undefined) {
     lines.push(
-      `Write for a reading age of ${targetReadingAge}, which is lower than the age of the class.`,
+      `Write for a reading age of ${context.targetReadingAge}, which is lower than the age of the class.`,
     );
   }
 

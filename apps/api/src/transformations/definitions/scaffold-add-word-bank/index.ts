@@ -13,9 +13,9 @@ export const addWordBankTransformation = defineTransformation({
     description:
       "Adds the vocabulary a pupil needs for one question, with optional definitions.",
     useWhen:
-      "A correct response has to use specific subject vocabulary, and the pupil knows the content but may not retrieve those words unprompted.",
+      "A correct response has to use specific subject vocabulary, such as the lesson keywords, that the task does not itself supply.",
     avoidWhen:
-      "The task sets no specific vocabulary for the answer, already supplies the words, tests understanding of them, or is practical or divergent.",
+      "The task sets no specific vocabulary for the answer, already supplies the words, asks pupils to define or recall the words themselves, or is practical or divergent.",
   },
   barriers: ["working-memory", "gaps-in-knowledge"],
   supportLevels: [

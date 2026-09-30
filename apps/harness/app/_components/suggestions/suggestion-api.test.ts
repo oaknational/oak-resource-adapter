@@ -25,7 +25,14 @@ afterEach(() => {
 });
 
 function command(): SuggestionCommand {
-  return { document: worksheet, flowId: "worksheet-scaffolding" };
+  return {
+    document: worksheet,
+    flowId: "worksheet-scaffolding",
+    lesson: {
+      lessonSlug: "adopting-different-perspectives",
+      programmeSlug: "english-primary-ks2",
+    },
+  };
 }
 
 function respond(body: unknown, status = 200) {

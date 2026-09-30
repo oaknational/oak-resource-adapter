@@ -105,6 +105,8 @@ export type TransformationDefinition<
   /** Absent for a transformation that addresses no particular barrier. */
   barriers?: readonly PupilBarrier[];
   execution: TExecution;
+  /** Kinds that may not share a target with this one. Declared on both sides. */
+  excludes?: readonly string[];
   isAvailable: (context: TransformationAvailabilityContext) => boolean;
   /** Keys `transformations.kind` and `suggested_transformations.kind`. */
   kind: TKind;

@@ -4,8 +4,8 @@ import { defineConfig, devices } from "@playwright/test";
  * E2E_BASE_URL points the suite at something already serving — a Vercel preview,
  * or a local `pnpm dev`. Unset, Playwright starts the apps itself.
  *
- * A run against a deployment adds `--grep @deployment-safe`; the tag's definition
- * in the specs says what qualifies.
+ * A run against a deployment adds `--grep @deployment-safe`; docs/DEVELOPMENT.md
+ * ("Testing a deployed candidate") says what qualifies.
  */
 const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 

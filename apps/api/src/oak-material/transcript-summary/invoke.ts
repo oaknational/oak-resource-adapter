@@ -4,7 +4,7 @@ import { raLogger } from "@oaknational/resource-adapter-logger";
 
 import type { SummariseTranscript } from "../material";
 import { transcriptSummaryPrompt } from "./prompt";
-import { transcriptSummarySchema } from "./schema";
+import { transcriptSummarySchema, type TranscriptSummary } from "./schema";
 
 const log = raLogger("ai");
 
@@ -20,15 +20,22 @@ export function summariseTranscriptOnce(
   };
 }
 
-export function createTranscriptSummariser(
+export const TRANSCRIPT_SUMMARY_ROLE = "lesson-transcript-summary";
+
+type GeneratedTranscriptSummary = Readonly<{
+  invocationId: string;
+  summary: TranscriptSummary;
+}>;
+
+export function createTranscriptSummaryGenerator(
   invoker: ResourceAdapterModelInvoker,
-): SummariseTranscript {
+): (transcript: string) => Promise<GeneratedTranscriptSummary | undefined> {
   return async (transcript) => {
     const result = await invoker.invokeStructured({
       request: {
         input: renderPromptTemplate(transcriptSummaryPrompt, { transcript }),
       },
-      role: "lesson-transcript-summary",
+      role: TRANSCRIPT_SUMMARY_ROLE,
       schema: transcriptSummarySchema,
       schemaName: "lesson-transcript-summary",
     });
@@ -43,6 +50,13 @@ export function createTranscriptSummariser(
       return undefined;
     }
 
-    return result.output;
+    return { invocationId: result.meta.invocationId, summary: result.output };
   };
+}
+
+export function createTranscriptSummariser(
+  invoker: ResourceAdapterModelInvoker,
+): SummariseTranscript {
+  const generate = createTranscriptSummaryGenerator(invoker);
+  return async (transcript) => (await generate(transcript))?.summary;
 }

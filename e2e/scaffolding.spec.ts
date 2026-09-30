@@ -14,9 +14,7 @@ import {
   waitForCapabilities,
 } from "./helpers.js";
 
-// @deployment-safe marks a spec as runnable against a deployed environment, which
-// means two things: it writes no rows another run could see, and it depends on no
-// local-only state. Untagged specs run only against CI's throwaway database.
+// @deployment-safe criteria: docs/DEVELOPMENT.md, "Testing a deployed candidate".
 
 async function downloadWorksheetXml(page: Page, button: Locator) {
   await expect(button).toBeEnabled();
@@ -34,6 +32,8 @@ async function downloadWorksheetXml(page: Page, button: Locator) {
   return strFromU8(xml);
 }
 
+// Not @deployment-safe: opening the drawer creates an adaptation and queues a
+// suggestions job, which this test never cleans up.
 test("shows the API state, a capability-based trigger, and the adapter sidebar", async ({
   page,
 }) => {
@@ -78,6 +78,9 @@ test("shows the API state, a capability-based trigger, and the adapter sidebar",
   ).toBeVisible();
 });
 
+// Not @deployment-safe: opening the drawer creates an adaptation and queues a
+// suggestions job, which this test never cleans up. It also expects the
+// deterministic model's suggestion names, and deployments call OpenAI.
 test("generates and lists named scaffolding suggestions when the drawer opens", async ({
   page,
 }) => {
@@ -102,6 +105,8 @@ test("generates and lists named scaffolding suggestions when the drawer opens", 
   await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(0);
 });
 
+// Not @deployment-safe: trackAdaptation needs a local database and servers, and
+// the assertions expect the deterministic model's output.
 test("adapts, accepts, downloads, resumes and removes a scaffold without losing work", async ({
   page,
   trackAdaptation,
@@ -221,6 +226,8 @@ test("adapts, accepts, downloads, resumes and removes a scaffold without losing 
   expect(removedXml).not.toContain("Vocabulary you could include:");
 });
 
+// Not @deployment-safe: opening the drawer creates an adaptation and queues a
+// suggestions job, which this test never cleans up.
 test("shows the future multi-capability launcher shape", async ({ page }) => {
   await signIn(page);
   await page.goto("/?view=edge-cases&case=multiple-capabilities-ui");
@@ -238,31 +245,33 @@ test("shows the future multi-capability launcher shape", async ({ page }) => {
   await expectRenderedWorksheet(drawer, "Adopting different perspectives");
 });
 
-test("keeps a retired transformation deep link consistent with the selector", async ({
-  page,
-}) => {
-  await page.goto("/?view=transformations&selection=scaffold-chunk-tasks");
-  const definition = page
-    .locator("label")
-    .filter({ has: page.getByText("Definition", { exact: true }) })
-    .getByRole("combobox");
+test(
+  "keeps a retired transformation deep link consistent with the selector",
+  { tag: "@deployment-safe" },
+  async ({ page }) => {
+    await page.goto("/?view=transformations&selection=scaffold-chunk-tasks");
+    const definition = page
+      .locator("label")
+      .filter({ has: page.getByText("Definition", { exact: true }) })
+      .getByRole("combobox");
 
-  await expect(definition).toHaveValue("scaffold-chunk-tasks");
-  await expect(
-    definition.locator('optgroup[label="Retired"] option:checked'),
-  ).toHaveText("📦 Break the task into ordered steps");
-  await expect(
-    page.getByRole("heading", {
-      name: "Break the task into ordered steps",
-      exact: true,
-    }),
-  ).toBeVisible();
+    await expect(definition).toHaveValue("scaffold-chunk-tasks");
+    await expect(
+      definition.locator('optgroup[label="Retired"] option:checked'),
+    ).toHaveText("📦 Break the task into ordered steps");
+    await expect(
+      page.getByRole("heading", {
+        name: "Break the task into ordered steps",
+        exact: true,
+      }),
+    ).toBeVisible();
 
-  await page.getByRole("button", { name: "Preview prompt", exact: true }).click();
-  await expect(page.getByRole("region", { name: "Rendered prompt" })).toContainText(
-    "YOUR SCAFFOLD:",
-  );
-});
+    await page.getByRole("button", { name: "Preview prompt", exact: true }).click();
+    await expect(page.getByRole("region", { name: "Rendered prompt" })).toContainText(
+      "YOUR SCAFFOLD:",
+    );
+  },
+);
 
 test(
   "previews a transformation prompt against a fixture",

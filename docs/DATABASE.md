@@ -115,6 +115,8 @@ adaptations                        a teacher's work on one resource
           ├─ suggested_transformations ──→ resource_documents   what it offered
           └─ resource_documents (via transformation_attempt_id) what it produced
                   └─ resource_artifacts                 PDF, Word
+
+transcript_summary_cache           standalone, until the extraction service
 ```
 
 The important cross-table relationships are:

@@ -17,17 +17,21 @@ describe("scaffoldPrinciplesPart", () => {
 });
 
 describe("languagePart", () => {
-  it("states the ages behind a key stage rather than implying them", () => {
-    const part = languagePart({ keyStage: "KS2", yearGroup: "Year 6" });
+  const ks2 = { id: "ks2", label: "Key stage 2" };
 
-    expect(part).toContain("Year 6, KS2");
-    expect(part).toContain("aged 7 to 11");
+  it("states the ages behind a key stage rather than implying them", () => {
+    const part = languagePart({
+      keyStage: ks2,
+      yearGroup: { id: "year-6", label: "Year 6" },
+    });
+
+    expect(part).toContain("Year 6, Key stage 2, aged 7 to 11");
   });
 
   it("names the cohort it has when the key stage is unrecognised", () => {
-    const part = languagePart({ keyStage: "Key stage 2" });
+    const part = languagePart({ keyStage: { id: "post-16", label: "Post-16" } });
 
-    expect(part).toContain("Key stage 2");
+    expect(part).toContain("Post-16");
     expect(part).not.toContain("aged");
   });
 
@@ -36,7 +40,7 @@ describe("languagePart", () => {
   });
 
   it("uses a target reading age where the resource sets one", () => {
-    expect(languagePart({ keyStage: "ks3", targetReadingAge: 9 })).toContain(
+    expect(languagePart({ keyStage: ks2, targetReadingAge: 9 })).toContain(
       "reading age of 9",
     );
   });

@@ -2,14 +2,21 @@ import { OAK_MATERIAL } from "../oak-material/catalogue";
 import { TransformationRequestError } from "./errors";
 import type { OakMaterial, OakMaterialRequirement } from "../oak-material/material";
 
+export function missingRequiredMaterial(
+  requirements: readonly OakMaterialRequirement[],
+  material: OakMaterial,
+): readonly OakMaterialRequirement[] {
+  return requirements.filter(
+    ({ key, required }) => required && material[key] === undefined,
+  );
+}
+
 export function assertRequiredMaterial(
   kind: string,
   requirements: readonly OakMaterialRequirement[],
   material: OakMaterial,
 ): void {
-  const missing = requirements.filter(
-    ({ key, required }) => required && material[key] === undefined,
-  );
+  const missing = missingRequiredMaterial(requirements, material);
 
   if (missing.length === 0) {
     return;

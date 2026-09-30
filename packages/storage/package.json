@@ -25,8 +25,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@google-cloud/storage": "^8.0.1",
-    "@vercel/oidc": "^3.8.2"
+    "@google-cloud/storage": "^8.2.0",
+    "@vercel/oidc": "^3.8.9"
   },
   "devDependencies": {
     "@types/node": "^24.13.6",

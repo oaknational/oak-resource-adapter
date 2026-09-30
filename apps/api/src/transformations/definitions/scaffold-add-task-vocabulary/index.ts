@@ -13,9 +13,9 @@ export const addTaskVocabularyTransformation = defineTransformation({
     description:
       "Defines the words in one task's wording that a pupil must understand before they can start.",
     useWhen:
-      "The task instruction or question contains up to three words a pupil must understand before they can start, and none of those meanings is what the task is assessing.",
+      "The task instruction or question uses up to three words, including command words such as explain, describe, compare or justify, that pupils of this age may not reliably understand, and knowing what they mean is needed to know what to do.",
     avoidWhen:
-      "The pupil understands what the task asks and the difficulty lies in producing the response, or the words in question are the thing being assessed.",
+      "The task asks pupils to define, translate or otherwise show they know those words, or the instruction uses only everyday words pupils of this age will know.",
   },
   barriers: ["gaps-in-knowledge", "working-memory"],
   target: { scope: "node", nodeTypes: ["question"] },

@@ -12,9 +12,15 @@ import { removeTransformationJob } from "../jobs/transformations/remove-definiti
 import { retryTransformationJob } from "../jobs/transformations/retry-definition";
 import { dismissTransformationsJob } from "../jobs/transformations/dismiss-definition";
 import { suggestionFlowDefinitions } from "../suggestions/registry";
-import { generateSuggestions } from "../suggestions/service";
+import {
+  generateSuggestions,
+  suggestionMaterialRequirements,
+} from "../suggestions/service";
 import { resolveApplicationMaterial } from "../transformations/application-material-resolver";
-import { executeRegisteredTransformation } from "../transformations/application-service";
+import {
+  executeRegisteredTransformation,
+  type ResolveTransformationMaterial,
+} from "../transformations/application-service";
 import {
   isRegisteredTransformationKind,
   transformationDefinitions,
@@ -48,6 +54,7 @@ export type WorksheetScaffoldingJobDependencies = {
   generate: typeof generateSuggestions;
   readJob: typeof getJob;
   repository: WorksheetScaffoldingExecutionRepository;
+  resolveMaterial: ResolveTransformationMaterial;
 };
 
 export type WorksheetScaffoldingExecutionRepository = Pick<
@@ -75,7 +82,16 @@ const defaultDependencies: WorksheetScaffoldingJobDependencies = {
   generate: generateSuggestions,
   readJob: getJob,
   repository: scaffoldingRepository,
+  resolveMaterial: resolveApplicationMaterial,
 };
+
+function lessonOf(
+  adaptation: Readonly<{ lessonSlug: string | null; programmeSlug: string | null }>,
+) {
+  return adaptation.lessonSlug === null || adaptation.programmeSlug === null
+    ? undefined
+    : { lessonSlug: adaptation.lessonSlug, programmeSlug: adaptation.programmeSlug };
+}
 
 export async function executeRemoveTransformation(
   jobId: string,
@@ -176,13 +192,21 @@ export async function executeGenerateSuggestions(
   }
 
   const document = head.storedDocument.document;
+  const flow = suggestionFlowDefinitions[input.flowId];
+  const createInvoker = () => dependencies.createInvoker(attempt.id);
+  const { material } = await dependencies.resolveMaterial(
+    suggestionMaterialRequirements(flow),
+    lessonOf(head.adaptation),
+    createInvoker,
+  );
   const suggestions = await dependencies.generate(
-    suggestionFlowDefinitions[input.flowId],
+    flow,
     document,
     await appliedTransformationHistory(input.adaptationId, document, repository),
     {
       correlationKey: jobId,
-      createInvoker: () => dependencies.createInvoker(attempt.id),
+      createInvoker,
+      material,
     },
   );
 
@@ -266,19 +290,13 @@ export async function executeApplySuggestion(
       contributionId: transformation.id,
       document: sourceDocument.document,
       kind: transformation.kind,
-      lesson:
-        adaptation.lessonSlug === null || adaptation.programmeSlug === null
-          ? undefined
-          : {
-              lessonSlug: adaptation.lessonSlug,
-              programmeSlug: adaptation.programmeSlug,
-            },
+      lesson: lessonOf(adaptation),
       params,
       targetBlockId: transformation.targetBlockId ?? undefined,
     },
     {
       createInvoker: () => dependencies.createInvoker(attempt.id),
-      resolveMaterial: resolveApplicationMaterial,
+      resolveMaterial: dependencies.resolveMaterial,
     },
   );
   if (run.outcome !== "APPLIED") {
@@ -347,19 +365,13 @@ export async function executeRetryTransformation(
       contributionId: pending.transformation.id,
       document: sourceDocument.document,
       kind: pending.transformation.kind,
-      lesson:
-        head.adaptation.lessonSlug === null || head.adaptation.programmeSlug === null
-          ? undefined
-          : {
-              lessonSlug: head.adaptation.lessonSlug,
-              programmeSlug: head.adaptation.programmeSlug,
-            },
+      lesson: lessonOf(head.adaptation),
       params,
       targetBlockId: pending.transformation.targetBlockId ?? undefined,
     },
     {
       createInvoker: () => dependencies.createInvoker(attempt.id),
-      resolveMaterial: resolveApplicationMaterial,
+      resolveMaterial: dependencies.resolveMaterial,
     },
   );
   if (run.outcome !== "APPLIED") {

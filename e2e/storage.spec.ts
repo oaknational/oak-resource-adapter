@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+// @deployment-safe criteria: docs/DEVELOPMENT.md, "Testing a deployed candidate".
+
 const roundTripPath = "**/adapter-proxy/dev/storage/roundtrip";
 const success = {
   bucket: "storage-test-bucket",
