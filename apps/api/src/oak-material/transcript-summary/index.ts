@@ -8,6 +8,7 @@ import {
 } from "./render";
 import type { TranscriptSummary } from "./schema";
 
+export { createCachedTranscriptSummariser } from "./cache";
 export { createTranscriptSummariser, summariseTranscriptOnce } from "./invoke";
 
 const deriveTranscriptSummary: NonNullable<OakMaterialPart["derive"]> = async (

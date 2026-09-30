@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import type { PoolClient } from "pg";
 
 import { getDatabaseClient, type DatabaseClient } from "./client.js";
+import { readDatabaseErrorCode } from "./error-code.js";
 
 export type DatabaseProbeFailure =
   "not-configured" | "certificate-rejected" | "refused" | "unavailable";
@@ -25,27 +26,12 @@ const certificateCodes = new Set([
 // PostgreSQL authorization, password, database-name and privilege failures.
 const refusalCodes = new Set(["28000", "28P01", "3D000", "42501"]);
 
-function readErrorCode(error: unknown): string | undefined {
-  const visited = new Set<object>();
-
-  // DrizzleQueryError keeps the driver's code on its cause, not on itself.
-  while (typeof error === "object" && error !== null && !visited.has(error)) {
-    visited.add(error);
-    if ("code" in error && typeof error.code === "string") {
-      return error.code;
-    }
-    error = "cause" in error ? error.cause : undefined;
-  }
-
-  return undefined;
-}
-
 function classify(error: unknown): DatabaseProbeFailure {
   if (error instanceof ProbeTimeout) {
     return "unavailable";
   }
 
-  const code = readErrorCode(error);
+  const code = readDatabaseErrorCode(error);
 
   if (code && certificateCodes.has(code)) {
     return "certificate-rejected";

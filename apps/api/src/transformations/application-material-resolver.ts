@@ -11,7 +11,7 @@ import type {
   OakMaterialRequirement,
 } from "../oak-material/material";
 import {
-  createTranscriptSummariser,
+  createCachedTranscriptSummariser,
   summariseTranscriptOnce,
 } from "../oak-material/transcript-summary";
 import type { ResolveTransformationMaterial } from "./application-service";
@@ -19,6 +19,7 @@ import { TransformationDependencyError } from "./errors";
 
 function createDerivationDependencies(
   requirements: readonly OakMaterialRequirement[],
+  lessonSlug: string,
   createInvoker: (() => ResourceAdapterModelInvoker) | undefined,
 ): OakMaterialDerivationDependencies {
   const needsTranscriptSummariser = requirements.some(({ key }) =>
@@ -31,7 +32,7 @@ function createDerivationDependencies(
 
   return {
     summariseTranscript: summariseTranscriptOnce(
-      createTranscriptSummariser(createInvoker()),
+      createCachedTranscriptSummariser(createInvoker(), lessonSlug),
     ),
   };
 }
@@ -54,15 +55,13 @@ export const resolveApplicationMaterial: ResolveTransformationMaterial = async (
       return `${part.label} is not available: ${part.unavailableBecause ?? "no source exists yet."}`;
     });
 
-  if (resolvable.length === 0 || lesson === undefined) {
+  if (resolvable.length === 0) {
+    return { material: {}, warnings: unavailable };
+  }
+  if (lesson === undefined) {
     return {
       material: {},
-      warnings: [
-        ...unavailable,
-        ...(resolvable.length > 0 && lesson === undefined
-          ? ["No lesson was supplied, so its material is absent."]
-          : []),
-      ],
+      warnings: [...unavailable, "No lesson was supplied, so its material is absent."],
     };
   }
 
@@ -72,6 +71,7 @@ export const resolveApplicationMaterial: ResolveTransformationMaterial = async (
     );
     const derivationDependencies = createDerivationDependencies(
       resolvable,
+      lesson.lessonSlug,
       createInvoker,
     );
     const resolution = await resolveLessonMaterial(

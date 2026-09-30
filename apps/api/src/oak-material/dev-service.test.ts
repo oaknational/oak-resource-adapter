@@ -74,7 +74,11 @@ describe("development lesson material", () => {
       }),
     );
     model.createInvoker.mockReturnValue({ invokeStructured: model.invokeStructured });
-    model.invokeStructured.mockResolvedValue({ outcome: "SUCCESS", output: summary });
+    model.invokeStructured.mockResolvedValue({
+      meta: { invocationId: "11111111-1111-1111-1111-111111111111" },
+      outcome: "SUCCESS",
+      output: summary,
+    });
   });
 
   it("renders every catalogue part as the text it contributes", async () => {
