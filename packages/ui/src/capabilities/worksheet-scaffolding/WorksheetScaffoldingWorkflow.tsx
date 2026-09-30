@@ -651,7 +651,9 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   };
 
   const choicesFor = (suggestion: ScaffoldSuggestion) =>
-    suggestion.inputs?.filter(({ options }) => options.length > 1) ?? [];
+    suggestion.inputs?.filter(
+      ({ kind, options }) => kind === "choice" && options.length > 1,
+    ) ?? [];
 
   const renderSuggestionItem = (suggestion: ScaffoldSuggestion) => {
     const choices = choicesFor(suggestion);
