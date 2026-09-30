@@ -75,10 +75,12 @@ const SuggestionGroup = styled.div`
   }
 `;
 
+/* Stacked so the service's usefulness order reads top to bottom. */
 const SuggestionList = styled.ul`
+  align-items: flex-start;
   display: flex;
+  flex-direction: column;
   gap: 0.75rem;
-  flex-wrap: wrap;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -132,10 +134,10 @@ const SuggestionItem = styled.li`
 `;
 
 const SuggestionCard = styled(SuggestionItem)`
+  align-self: stretch;
   background: ${parseColor("bg-primary")};
   border: 1px solid ${parseColor("border-neutral-lighter")};
   border-radius: 0.5rem;
-  flex-basis: 100%;
   gap: 0.75rem;
   padding: 0.75rem;
 `;
@@ -708,10 +710,6 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     }
 
     const headingId = `${groupIdPrefix}-${targetBlockId ?? "document"}`;
-    const ordered = [
-      ...suggestions.filter((suggestion) => choicesFor(suggestion).length > 0),
-      ...suggestions.filter((suggestion) => choicesFor(suggestion).length === 0),
-    ];
 
     return (
       <SuggestionGroup aria-labelledby={headingId} role="group">
@@ -719,7 +717,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           Suggested scaffolds
         </OakP>
         <SuggestionList>
-          {ordered.map((suggestion) =>
+          {suggestions.map((suggestion) =>
             suggestion.id === applyingSuggestion?.id
               ? renderWorkingItem(suggestion.id)
               : renderSuggestionItem(suggestion),
