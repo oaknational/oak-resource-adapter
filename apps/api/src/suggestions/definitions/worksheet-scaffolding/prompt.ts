@@ -9,6 +9,9 @@ Review the current worksheet and return only changes that would help pupils acce
 PEDAGOGY
 {{pedagogy}}
 
+LESSON
+{{lesson}}
+
 AVAILABLE TRANSFORMATIONS
 {{transformations}}
 

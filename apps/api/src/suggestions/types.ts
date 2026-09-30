@@ -1,11 +1,13 @@
 import type { PromptTemplate } from "@oaknational/resource-adapter-ai";
 
 import type { SuggestionModelRole } from "../ai/model-roles";
+import type { OakMaterialRequirement } from "../oak-material/material";
 import type { RegisteredTransformationKind } from "../transformations/registry";
 
 export type SuggestionFlowDefinition = Readonly<{
   capabilityId: string;
   id: string;
+  materialRequirements: readonly OakMaterialRequirement[];
   maxSuggestions: number;
   prompt: PromptTemplate;
   role: SuggestionModelRole;

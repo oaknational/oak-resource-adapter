@@ -21,6 +21,7 @@ import {
   acceptedSuggestion,
   generateJob,
   head,
+  lessonReference,
   loadWorksheet,
   pendingReview,
   repositoryDefaults,
@@ -63,6 +64,7 @@ function stubDependencies(
     generate: vi.fn().mockResolvedValue([]),
     readJob: vi.fn(),
     repository: stubRepository(),
+    resolveMaterial: vi.fn().mockResolvedValue({ material: {}, warnings: [] }),
     ...overrides,
   } as unknown as WorksheetScaffoldingJobDependencies;
 }
@@ -180,6 +182,33 @@ describe("generating suggestions", () => {
       resourceDocumentId: DOCUMENT_ID,
       suggestions: [],
     });
+  });
+
+  it("gives the flow the material of the adaptation's lesson", async () => {
+    const material = {
+      "lesson.keywords": {
+        keywords: [{ description: "a point of view", keyword: "perspective" }],
+        kind: "keywords",
+      },
+    } as const;
+    const dependencies = stubDependencies({
+      readJob: vi.fn().mockResolvedValue(generateJob()),
+      resolveMaterial: vi.fn().mockResolvedValue({ material, warnings: [] }),
+    });
+
+    await executeGenerateSuggestions(JOB_ID, dependencies);
+
+    expect(dependencies.resolveMaterial).toHaveBeenCalledWith(
+      expect.arrayContaining([{ key: "lesson.keywords", required: false }]),
+      lessonReference,
+      expect.any(Function),
+    );
+    expect(dependencies.generate).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ material }),
+    );
   });
 });
 

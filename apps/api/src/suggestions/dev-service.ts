@@ -1,4 +1,5 @@
 import { renderPromptTemplate } from "@oaknational/resource-adapter-ai";
+import type { LessonIdentity } from "@oaknational/resource-adapter-curriculum";
 import type { ResourceDocument } from "@oaknational/resource-document";
 
 import { createDevModelInvoker } from "../ai/dev-invoker";
@@ -7,14 +8,17 @@ import { suggestionFlowDefinitions } from "./registry";
 import {
   generateSuggestions,
   prepareSuggestionFlow,
+  suggestionMaterialRequirements,
   type PrepareSuggestionPrompt,
 } from "./service";
+import { resolveApplicationMaterial } from "../transformations/application-material-resolver";
 import type { AppliedTransformationSummary } from "../transformations/types";
 
 export type DevSuggestionCommand = Readonly<{
   appliedTransformations: readonly AppliedTransformationSummary[];
   document: ResourceDocument;
   flowId: string;
+  lesson?: LessonIdentity | undefined;
 }>;
 
 export class SuggestionRequestError extends Error {
@@ -54,12 +58,25 @@ export function getDevSuggestionCatalogue() {
   };
 }
 
+async function materialFor(
+  flow: ReturnType<typeof resolveFlow>,
+  command: DevSuggestionCommand,
+) {
+  const { material } = await resolveApplicationMaterial(
+    suggestionMaterialRequirements(flow),
+    command.lesson,
+    createDevModelInvoker,
+  );
+  return material;
+}
+
 export async function previewDevSuggestionFlow(command: DevSuggestionCommand) {
   const flow = resolveFlow(command.flowId);
   const { candidates, preparedPrompt } = await prepareSuggestionFlow(
     flow,
     command.document,
     command.appliedTransformations,
+    await materialFor(flow, command),
     prepareWithoutPersistence,
   );
 
@@ -82,6 +99,7 @@ export async function runDevSuggestionFlow(command: DevSuggestionCommand) {
     {
       correlationKey: `dev-suggestions-${flow.id}`,
       createInvoker: createDevModelInvoker,
+      material: await materialFor(flow, command),
       prepare: prepareWithoutPersistence,
     },
   );

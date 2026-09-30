@@ -13,11 +13,12 @@ export const addSentenceFramesTransformation = defineTransformation({
     description:
       "Gives a pupil the shape of a response that has several moves, which they then complete.",
     useWhen:
-      "The response has more than one required move and the pupil can make each move but loses the shape or order of the answer across them.",
+      "The response makes more than one required move, such as explaining and then giving a reason, drawing a conclusion from evidence, or an extended piece of writing with an expected structure.",
     avoidWhen:
-      "The response is a single move and the pupil can make it once the syntax is opened for them.",
+      "The response makes a single move, where sentence starters fit instead, or is a word, number, label, drawing or selection.",
   },
   barriers: ["working-memory", "processing"],
+  excludes: ["scaffold-add-sentence-starters"],
   target: { scope: "node", nodeTypes: ["question"] },
   materialRequirements: [
     { key: "lesson.keyLearningPoints", required: false },
