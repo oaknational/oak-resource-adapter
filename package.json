@@ -53,7 +53,7 @@
   },
   "devDependencies": {
     "@changesets/cli": "3.0.3",
-    "@clerk/testing": "^2.2.31",
+    "@clerk/testing": "^2.2.37",
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
     "@eslint/js": "^10.0.1",
@@ -62,7 +62,7 @@
     "@types/node": "^24.13.6",
     "@typescript/native": "npm:typescript@^7.0.2",
     "dependency-cruiser": "18.4.0",
-    "drizzle-orm": "^0.45.2",
+    "drizzle-orm": "^0.45.3",
     "eslint": "^10.11.0",
     "fflate": "^0.8.3",
     "globals": "^17.12.0",
