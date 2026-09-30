@@ -2,6 +2,8 @@ import { buffer } from "node:stream/consumers";
 
 import { expect, test, type Page } from "@playwright/test";
 
+// @deployment-safe criteria: docs/DEVELOPMENT.md, "Testing a deployed candidate".
+
 const exportsUrl = "/?view=exports&fixture=linear-equations-smoke";
 const docxRoute = "**/adapter-proxy/dev/exports/docx";
 

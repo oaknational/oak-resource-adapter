@@ -2,6 +2,8 @@ import { buffer } from "node:stream/consumers";
 import { expect, test } from "@playwright/test";
 import { signIn } from "./helpers.js";
 
+// @deployment-safe criteria: docs/DEVELOPMENT.md, "Testing a deployed candidate".
+
 const view = "/?view=exports&mode=stored-downloads";
 // The mocked tests name their own artifact, so they need no provisioned fixture.
 const mocked = `${view}&artifact=22222222-2222-4222-8222-222222222222`;
