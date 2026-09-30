@@ -32,6 +32,7 @@ import {
   teacher,
 } from "./test-doubles";
 import { ConcurrencyConflictError } from "../jobs/job-repository";
+import { transformationDefinitions } from "../transformations/registry";
 import {
   CONTRIBUTION_EXTENSION_KEY,
   type ResourceDocument,
@@ -229,17 +230,7 @@ describe("reading worksheet scaffolding state", () => {
       suggestions: [
         {
           id: SUGGESTION_ID,
-          inputs: [
-            {
-              id: "supportLevel",
-              kind: "choice",
-              label: "Support level",
-              options: [
-                expect.objectContaining({ label: "Low", value: "low" }),
-                expect.objectContaining({ label: "Mid", value: "mid" }),
-              ],
-            },
-          ],
+          inputs: transformationDefinitions["scaffold-add-word-bank"].inputs,
           label: "Add a word bank",
         },
       ],
