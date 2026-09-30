@@ -136,7 +136,7 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
     const { adaptationId, resourceDocumentId, suggestionId, teacher } =
       await newOpenSuggestion();
 
-    for (const supportLevel of ["high", "mid"]) {
+    for (const supportLevel of ["mid", "low"]) {
       await expect(
         enqueueSuggestionApplication(
           { adaptationId, params: { supportLevel }, suggestionId },
@@ -148,7 +148,7 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
 
     const queued = await applicationJobs(adaptationId, resourceDocumentId);
     expect(queued.map(({ input }) => input)).toEqual([
-      expect.objectContaining({ params: { supportLevel: "high" } }),
+      expect.objectContaining({ params: { supportLevel: "mid" } }),
     ]);
   });
 
@@ -158,7 +158,7 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
 
     await expect(
       enqueueSuggestionApplication(
-        { adaptationId, params: { supportLevel: "high" }, suggestionId },
+        { adaptationId, params: { supportLevel: "mid" }, suggestionId },
         teacher,
         dependencies(async () => {
           throw new Error("The workflow runtime is unavailable.");
@@ -168,7 +168,7 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
 
     await expect(
       enqueueSuggestionApplication(
-        { adaptationId, params: { supportLevel: "mid" }, suggestionId },
+        { adaptationId, params: { supportLevel: "low" }, suggestionId },
         teacher,
         dependencies(dispatches),
       ),
@@ -177,11 +177,11 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
     const queued = await applicationJobs(adaptationId, resourceDocumentId);
     expect(queued.map(({ input, status }) => ({ input, status }))).toEqual([
       {
-        input: expect.objectContaining({ params: { supportLevel: "high" } }),
+        input: expect.objectContaining({ params: { supportLevel: "mid" } }),
         status: JobStatus.FAILED,
       },
       {
-        input: expect.objectContaining({ params: { supportLevel: "mid" } }),
+        input: expect.objectContaining({ params: { supportLevel: "low" } }),
         status: JobStatus.QUEUED,
       },
     ]);
