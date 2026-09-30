@@ -403,6 +403,8 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
   ];
   const serverSafeModules = [
     "index.js",
+    "analytics.js",
+    "capabilities/worksheet-scaffolding/worksheetAnalytics.js",
     "client.js",
     "downloads.js",
     "errors.js",
@@ -458,6 +460,25 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     throw new Error(
       "Published package is missing a callable getResourceAdapterCapabilities.",
     );
+  }
+
+  // Server code and unbundled test runners load these without a bundler.
+  for (const file of serverSafeModules) {
+    try {
+      await import(
+        pathToFileURL(
+          join(
+            temporaryDirectory,
+            "node_modules/@oaknational/resource-adapter/dist",
+            file,
+          ),
+        ).href
+      );
+    } catch (error) {
+      throw new Error(`Published ${file} does not load in plain Node.`, {
+        cause: error,
+      });
+    }
   }
 
   console.log(`Verified package artifact: ${basename(uiTarball)}`);

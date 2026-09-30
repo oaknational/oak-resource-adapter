@@ -118,6 +118,7 @@ const worksheetScaffoldingStateSchema = z.object({
     z.object({
       attemptId: z.string(),
       contributionId: z.string(),
+      kind: z.string(),
       label: z.string(),
       reason: z.string(),
       targetBlockId: z.nullable(z.string()),

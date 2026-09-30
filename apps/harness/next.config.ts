@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
   // The browser can't read `process.env` at runtime, so mirror the server-side
   // DEBUG value into the client bundle at build time.
   env: {
+    ANALYTICS_ENVIRONMENT: process.env.VERCEL_TARGET_ENV ?? "local",
+    ANALYTICS_RELEASE: process.env.VERCEL_GIT_COMMIT_SHA ?? "local",
     NEXT_PUBLIC_DEBUG: process.env.DEBUG,
     // oak-components resolves its icons against these; without them controls
     // such as the modal close button render blank.

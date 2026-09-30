@@ -6,7 +6,10 @@ import { OakPrimaryButton, OakSecondaryButton } from "@oaknational/oak-component
 
 import styles from "../../page.module.css";
 import type { CapabilitiesState } from "../../_hooks/useCapabilities";
-import type { ResourceAdapterCapabilityOption } from "@oaknational/resource-adapter";
+import type {
+  ResourceAdapterButtonProps,
+  ResourceAdapterCapabilityOption,
+} from "@oaknational/resource-adapter";
 
 export function CreateMorePanel<TCapability extends ResourceAdapterCapabilityOption>({
   capabilities,
@@ -17,7 +20,7 @@ export function CreateMorePanel<TCapability extends ResourceAdapterCapabilityOpt
 }: Readonly<{
   capabilities: readonly TCapability[];
   hasAvailableCapabilities: boolean;
-  onSelectCapability: (capability: TCapability) => void;
+  onSelectCapability: ResourceAdapterButtonProps<TCapability>["onSelectCapability"];
   onRetry: () => void;
   state: CapabilitiesState;
 }>) {

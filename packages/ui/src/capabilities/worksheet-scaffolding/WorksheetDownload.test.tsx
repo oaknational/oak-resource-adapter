@@ -34,6 +34,7 @@ function props() {
     availability: "available" as WorksheetDownloadAvailability,
     onRefresh: vi.fn().mockResolvedValue(undefined),
     onError: vi.fn(),
+    track: vi.fn(),
   };
 }
 function component(options = props()) {
@@ -83,6 +84,27 @@ it("prepares the displayed document and downloads with authentication and a safe
   expect(screen.getByRole("status")).toHaveTextContent("Your worksheet is ready.");
   expect(screen.getByRole("status")).toHaveTextContent("browser’s downloads");
   expect(screen.getByRole("button", { name: "Download again" })).toBeEnabled();
+});
+
+it("reports each completed download, not a failed attempt", async () => {
+  fetchMock.mockRejectedValueOnce(new ResourceAdapterApiError("unavailable", 503));
+  const options = props();
+  render(component(options));
+  await userEvent.click(screen.getByRole("button"));
+  await userEvent.click(await screen.findByRole("button", { name: "Retry download" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Download again" }));
+  await waitFor(() => expect(downloadBlob).toHaveBeenCalledTimes(2));
+  expect(options.track.mock.calls.map(([event]) => event.name)).toEqual([
+    "Adaptation Request Failed",
+    "Adapted Resource Downloaded",
+    "Adapted Resource Downloaded",
+  ]);
+  expect(options.track).toHaveBeenCalledWith({
+    adaptationId: documentIdentity.adaptationId,
+    componentType: "adapted_resource_download_button",
+    format: "docx",
+    name: "Adapted Resource Downloaded",
+  });
 });
 
 it("retries delivery using the same artifact", async () => {

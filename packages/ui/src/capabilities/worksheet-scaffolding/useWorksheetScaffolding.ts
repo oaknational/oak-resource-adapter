@@ -8,6 +8,7 @@ import {
   type WorksheetScaffoldingState,
 } from "@oaknational/resource-adapter-contracts/internal";
 
+import type { CapabilityAnalyticsEvent, TrackAnalyticsEvent } from "../../analytics.js";
 import { reportToHost } from "../../errors.js";
 import type {
   GetToken,
@@ -27,7 +28,23 @@ import {
   retryWorksheetScaffoldingSuggestions,
 } from "../../worksheetScaffolding.js";
 
-type ScaffoldingAction = "accept" | "dismiss" | "remove" | "retry" | "undo";
+import {
+  createWorksheetAnalyticsTracker,
+  transformationKinds,
+} from "./worksheetAnalytics.js";
+
+type ScaffoldingAction =
+  "accept" | "dismiss" | "remove" | "retrySuggestions" | "retryTransformation" | "undo";
+
+function failedRequest(action: ScaffoldingAction) {
+  if (action === "retrySuggestions") {
+    return { requestAction: "retry", retryTarget: "suggestions" } as const;
+  }
+  if (action === "retryTransformation") {
+    return { requestAction: "retry", retryTarget: "transformation" } as const;
+  }
+  return { requestAction: action };
+}
 
 export type WorkflowState =
   | Readonly<{ status: "idle" }>
@@ -55,6 +72,11 @@ type OpenRequest = Readonly<{
 }>;
 
 type ReplacementRequest = Readonly<{ adaptationId: string; requestId: string }>;
+
+type ComponentTypeFor<Name extends CapabilityAnalyticsEvent["name"]> = Extract<
+  CapabilityAnalyticsEvent,
+  { name: Name; componentType: string }
+>["componentType"];
 
 const FIRST_POLL_DELAY_MS = 100;
 const MAX_POLL_DELAY_MS = 750;
@@ -95,6 +117,42 @@ function suggestionApplicationIsBusy(state: WorksheetScaffoldingState): boolean 
   return state.job?.kind === "suggestions.apply" && jobIsBusy(state);
 }
 
+const REVIEW_CONTROLS = {
+  accept: "accept_button",
+  retry: "retry_button",
+  undo: "undo_button",
+} as const;
+
+function reviewDetails<Action extends keyof typeof REVIEW_CONTROLS>(
+  { adaptationId, pendingReview }: WorksheetScaffoldingState,
+  reviewAction: Action,
+) {
+  return pendingReview === null
+    ? null
+    : {
+        adaptationId,
+        componentType: REVIEW_CONTROLS[reviewAction],
+        reviewAction,
+        transformationKind: pendingReview.kind,
+      };
+}
+
+function reviewRequestedEvent(
+  ready: WorksheetScaffoldingState,
+  reviewAction: keyof typeof REVIEW_CONTROLS,
+): CapabilityAnalyticsEvent | null {
+  const details = reviewDetails(ready, reviewAction);
+  return details && { name: "Transformation Review Requested", ...details };
+}
+
+function reviewedEvent(
+  ready: WorksheetScaffoldingState,
+  reviewAction: "accept" | "undo",
+): CapabilityAnalyticsEvent | null {
+  const details = reviewDetails(ready, reviewAction);
+  return details && { name: "Transformation Reviewed", ...details };
+}
+
 function useLatestRef<T>(value: T) {
   const ref = useRef(value);
   useEffect(() => {
@@ -109,12 +167,14 @@ export function useWorksheetScaffolding({
   isOpen,
   lesson,
   onError,
+  track,
 }: Readonly<{
   apiBaseUrl: string;
   getToken: GetToken;
   isOpen: boolean;
   lesson: LessonContext;
   onError?: ResourceAdapterErrorHandler;
+  track: TrackAnalyticsEvent;
 }>) {
   const [state, setState] = useState<WorkflowState>({ status: "idle" });
   const [applyingSuggestion, setApplyingSuggestion] =
@@ -139,6 +199,10 @@ export function useWorksheetScaffolding({
   const getTokenRef = useLatestRef(getToken);
   const lessonRef = useLatestRef(lesson);
   const onErrorRef = useLatestRef(onError);
+  const trackRef = useLatestRef(track);
+  const [analytics] = useState(() =>
+    createWorksheetAnalyticsTracker((event) => trackRef.current(event)),
+  );
   const lessonKey = JSON.stringify(lesson);
 
   const hideWorkflowDocument = useCallback(() => {
@@ -161,6 +225,7 @@ export function useWorksheetScaffolding({
     let cancelled = false;
     workflowGenerationRef.current += 1;
     if (!isOpen) {
+      analytics.resetDisplays();
       openRequestRef.current = null;
       replacingRef.current = null;
       hideWorkflowDocument();
@@ -193,12 +258,22 @@ export function useWorksheetScaffolding({
         if (!cancelled) {
           if (entry.outcome === "opened") {
             setDocumentIsVisible(!suggestionGenerationIsBusy(entry.state));
+            trackRef.current({
+              name: "Adaptation Started",
+              adaptationId: entry.state.adaptationId,
+              startMode: "new",
+            });
           }
           setState(stateFromEntry(entry));
         }
       })
       .catch((error: unknown) => {
         if (!cancelled) {
+          trackRef.current({
+            name: "Adaptation Request Failed",
+            requestAction: "open",
+            ...(replacing ? { adaptationId: replacing.adaptationId } : {}),
+          });
           failWith(error);
         }
       });
@@ -208,6 +283,7 @@ export function useWorksheetScaffolding({
     };
   }, [
     apiBaseUrl,
+    analytics,
     failWith,
     getTokenRef,
     hideWorkflowDocument,
@@ -215,7 +291,16 @@ export function useWorksheetScaffolding({
     lessonKey,
     lessonRef,
     retryCount,
+    trackRef,
   ]);
+
+  const readyValue = state.status === "ready" ? state.value : null;
+
+  useEffect(() => {
+    if (!isOpen || readyValue === null) return;
+    analytics.observeJob(readyValue);
+    if (documentIsVisible) analytics.observeDisplay(readyValue);
+  }, [analytics, documentIsVisible, isOpen, readyValue]);
 
   const applyFetchedState = useCallback((value: WorksheetScaffoldingState) => {
     if (!suggestionGenerationIsBusy(value)) setDocumentIsVisible(true);
@@ -255,6 +340,11 @@ export function useWorksheetScaffolding({
         })
         .catch((error: unknown) => {
           if (!cancelled) {
+            trackRef.current({
+              name: "Adaptation Request Failed",
+              requestAction: "poll",
+              adaptationId,
+            });
             failWith(error);
           }
         });
@@ -269,6 +359,7 @@ export function useWorksheetScaffolding({
     apiBaseUrl,
     shouldPoll,
     busyJobId,
+    trackRef,
     failWith,
     getTokenRef,
     isOpen,
@@ -298,6 +389,12 @@ export function useWorksheetScaffolding({
       if (suggestion === undefined) {
         return;
       }
+      trackRef.current({
+        name: "Transformation Requested",
+        adaptationId: state.value.adaptationId,
+        componentType: "suggestion_button",
+        transformationKind: suggestion.kind,
+      });
       setRefreshedState(null);
       refreshGenerationRef.current += 1;
       setApplyingSuggestion({
@@ -327,10 +424,15 @@ export function useWorksheetScaffolding({
             return;
           }
           setApplyingSuggestion(null);
+          trackRef.current({
+            name: "Adaptation Request Failed",
+            requestAction: "apply",
+            adaptationId: state.value.adaptationId,
+          });
           failWith(error);
         });
     },
-    [apiBaseUrl, applyingSuggestion, failWith, getTokenRef, state],
+    [apiBaseUrl, applyingSuggestion, failWith, getTokenRef, state, trackRef],
   );
 
   const resume = useCallback(
@@ -345,17 +447,28 @@ export function useWorksheetScaffolding({
       })
         .then((value) => {
           if (workflowGenerationRef.current === workflowGeneration) {
+            analytics.ignoreHistoricalJob(value);
             refreshGenerationRef.current += 1;
             setState({ status: "ready", value });
+            trackRef.current({
+              name: "Adaptation Started",
+              adaptationId: value.adaptationId,
+              startMode: "resumed",
+            });
           }
         })
         .catch((error: unknown) => {
           if (workflowGenerationRef.current === workflowGeneration) {
+            trackRef.current({
+              name: "Adaptation Request Failed",
+              requestAction: "resume",
+              adaptationId: adaptationId_,
+            });
             failWith(error);
           }
         });
     },
-    [apiBaseUrl, failWith, getTokenRef],
+    [analytics, apiBaseUrl, failWith, getTokenRef, trackRef],
   );
 
   /**
@@ -369,6 +482,12 @@ export function useWorksheetScaffolding({
       request: (
         options: TRequest & { apiBaseUrl: string; getToken: GetToken },
       ) => Promise<WorksheetScaffoldingState>,
+      requestedEvent: (
+        ready: WorksheetScaffoldingState,
+      ) => CapabilityAnalyticsEvent | null,
+      succeededEvent?: (
+        ready: WorksheetScaffoldingState,
+      ) => CapabilityAnalyticsEvent | null,
     ) => {
       if (
         state.status !== "ready" ||
@@ -381,6 +500,10 @@ export function useWorksheetScaffolding({
       if (selected === null) {
         return;
       }
+      const requested = requestedEvent(state.value);
+      if (requested !== null) trackRef.current(requested);
+      // Built before the request, because the response clears the review it describes.
+      const succeeded = succeededEvent?.(state.value) ?? null;
       setRefreshedState(null);
       refreshGenerationRef.current += 1;
       setActionInFlight(action);
@@ -397,17 +520,23 @@ export function useWorksheetScaffolding({
           if (!documentUpdateIsBusy(value)) {
             setActionInFlight(null);
           }
+          if (succeeded !== null) trackRef.current(succeeded);
           refreshGenerationRef.current += 1;
           setState({ status: "ready", value });
         })
         .catch((error: unknown) => {
           if (workflowGenerationRef.current === workflowGeneration) {
             setActionInFlight(null);
+            trackRef.current({
+              name: "Adaptation Request Failed",
+              ...failedRequest(action),
+              adaptationId: state.value.adaptationId,
+            });
             failWith(error);
           }
         });
     },
-    [actionInFlight, apiBaseUrl, failWith, getTokenRef, state],
+    [actionInFlight, apiBaseUrl, failWith, getTokenRef, state, trackRef],
   );
 
   const runReviewAction = useCallback(
@@ -419,6 +548,8 @@ export function useWorksheetScaffolding({
             ? null
             : { adaptationId, attemptId: pendingReview.attemptId },
         request,
+        (ready) => reviewRequestedEvent(ready, action),
+        (ready) => reviewedEvent(ready, action),
       ),
     [runAction],
   );
@@ -429,14 +560,19 @@ export function useWorksheetScaffolding({
   );
 
   const retrySuggestions = useCallback(
-    () =>
+    (componentType: ComponentTypeFor<"New Suggestions Requested">) =>
       runAction(
-        "retry",
+        "retrySuggestions",
         ({ adaptationId }) => ({
           adaptationId,
           requestId: newRequestId(),
         }),
         retryWorksheetScaffoldingSuggestions,
+        ({ adaptationId }) => ({
+          name: "New Suggestions Requested",
+          adaptationId,
+          componentType,
+        }),
       ),
     [runAction],
   );
@@ -444,7 +580,7 @@ export function useWorksheetScaffolding({
   const retryTransformationReview = useCallback(
     () =>
       runAction(
-        "retry",
+        "retryTransformation",
         ({ adaptationId, pendingReview }) =>
           pendingReview === null
             ? null
@@ -454,6 +590,7 @@ export function useWorksheetScaffolding({
                 requestId: newRequestId(),
               },
         retryWorksheetScaffoldingTransformation,
+        (ready) => reviewRequestedEvent(ready, "retry"),
       ),
     [runAction],
   );
@@ -469,6 +606,16 @@ export function useWorksheetScaffolding({
         "dismiss",
         ({ adaptationId }) => ({ adaptationId, targetBlockId }),
         enqueueWorksheetScaffoldingDismissal,
+        ({ adaptationId, suggestions }) => ({
+          name: "Suggestion Dismissal Requested",
+          adaptationId,
+          componentType: "no_scaffold_required_button",
+          transformationKinds: transformationKinds(
+            suggestions.filter(
+              (suggestion) => suggestion.targetBlockId === targetBlockId,
+            ),
+          ),
+        }),
       ),
     [runAction],
   );
@@ -480,6 +627,11 @@ export function useWorksheetScaffolding({
         ({ adaptationId, pendingReview }) =>
           pendingReview === null ? { adaptationId, contributionId } : null,
         enqueueWorksheetScaffoldingRemoval,
+        ({ adaptationId }) => ({
+          name: "Transformation Removal Requested",
+          adaptationId,
+          componentType: "remove_scaffold_button",
+        }),
       ),
     [runAction],
   );
@@ -505,12 +657,27 @@ export function useWorksheetScaffolding({
         });
       }
     } catch (error) {
-      if (isCurrent()) throw error;
+      if (isCurrent()) {
+        trackRef.current({
+          name: "Adaptation Request Failed",
+          requestAction: "refresh",
+          adaptationId,
+        });
+        throw error;
+      }
     }
-  }, [adaptationId, apiBaseUrl, getTokenRef, applyFetchedState]);
+  }, [adaptationId, apiBaseUrl, getTokenRef, applyFetchedState, trackRef]);
 
   const startFresh = useCallback(
-    (adaptationId_: string) => {
+    (
+      adaptationId_: string,
+      componentType: ComponentTypeFor<"Adaptation Restart Requested">,
+    ) => {
+      trackRef.current({
+        name: "Adaptation Restart Requested",
+        adaptationId: adaptationId_,
+        componentType,
+      });
       replacingRef.current = {
         adaptationId: adaptationId_,
         requestId: newRequestId(),
@@ -518,19 +685,17 @@ export function useWorksheetScaffolding({
       hideWorkflowDocument();
       setRetryCount((count) => count + 1);
     },
-    [hideWorkflowDocument],
+    [hideWorkflowDocument, trackRef],
   );
 
   const tryAgain = useCallback(() => {
     if (state.status === "ready" && state.value.job?.status === "failed") {
-      replacingRef.current = {
-        adaptationId: state.value.adaptationId,
-        requestId: newRequestId(),
-      };
+      startFresh(state.value.adaptationId, "start_again_button");
+      return;
     }
     hideWorkflowDocument();
     setRetryCount((count) => count + 1);
-  }, [hideWorkflowDocument, state]);
+  }, [hideWorkflowDocument, startFresh, state]);
 
   return {
     acceptReview,

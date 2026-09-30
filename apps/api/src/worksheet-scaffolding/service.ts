@@ -206,6 +206,7 @@ async function readAdaptation(
           : {
               attemptId: pending.attempt.id,
               contributionId: pending.transformation.id,
+              kind: pending.transformation.kind,
               label: transformationDefinitions[pending.transformation.kind].label,
               reason: pending.suggestion.reason,
               targetBlockId: pending.transformation.targetBlockId,
