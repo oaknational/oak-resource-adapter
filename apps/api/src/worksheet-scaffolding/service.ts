@@ -20,7 +20,10 @@ import {
 import { z } from "zod";
 
 import { enqueueJob } from "../jobs/enqueue-job";
-import { ConcurrencyConflictError } from "../jobs/job-repository";
+import {
+  ConcurrencyConflictError,
+  getLatestJobForConcurrencyKey,
+} from "../jobs/job-repository";
 import type { JobJsonValue } from "../jobs/domain";
 import { applySuggestionJob } from "../jobs/suggestions/apply-definition";
 import { generateSuggestionsJob } from "../jobs/suggestions/generate-definition";
@@ -51,6 +54,7 @@ const RESUMABLE_WINDOW_DAYS = 30;
 
 export type WorksheetScaffoldingDependencies = {
   enqueue: typeof enqueueJob;
+  getLatestJob: typeof getLatestJobForConcurrencyKey;
   resumableCutoff: (windowDays: number) => Date;
   readSourceDocument: typeof getSourceDocument;
   repository: WorksheetScaffoldingServiceRepository;
@@ -62,7 +66,6 @@ export type WorksheetScaffoldingServiceRepository = Pick<
   | "acceptPendingReview"
   | "findResumableAdaptation"
   | "getAdaptationHead"
-  | "getLatestJobForConcurrencyKey"
   | "getOpenSuggestion"
   | "getPendingReview"
   | "getPrimaryTransformationInput"
@@ -74,6 +77,7 @@ export type WorksheetScaffoldingServiceRepository = Pick<
 
 const defaultDependencies: WorksheetScaffoldingDependencies = {
   enqueue: enqueueJob,
+  getLatestJob: getLatestJobForConcurrencyKey,
   resumableCutoff: (windowDays) =>
     new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000),
   readSourceDocument: getSourceDocument,
@@ -156,7 +160,10 @@ type LoadedAdaptation = Readonly<{
 async function readAdaptation(
   adaptationId: string,
   teacherId: string | undefined,
-  repository: WorksheetScaffoldingDependencies["repository"],
+  {
+    getLatestJob,
+    repository,
+  }: Pick<WorksheetScaffoldingDependencies, "getLatestJob" | "repository">,
 ): Promise<LoadedAdaptation | null> {
   const head = await repository.getAdaptationHead(adaptationId, teacherId);
   if (head === null) {
@@ -169,13 +176,8 @@ async function readAdaptation(
   );
   const [rows, latestJob, latestGeneration, pending] = await Promise.all([
     repository.listOpenSuggestions(head.storedDocument.id),
-    repository.getLatestJobForConcurrencyKey(
-      concurrencyKey,
-      worksheetScaffoldingJobKinds,
-    ),
-    repository.getLatestJobForConcurrencyKey(concurrencyKey, [
-      generateSuggestionsJob.kind,
-    ]),
+    getLatestJob(concurrencyKey, worksheetScaffoldingJobKinds),
+    getLatestJob(concurrencyKey, [generateSuggestionsJob.kind]),
     repository.getPendingReview(head.storedDocument.id),
   ]);
   const job =
@@ -249,8 +251,7 @@ async function readAndRequestSuggestions(
   teacherId: string | undefined,
   dependencies: WorksheetScaffoldingDependencies,
 ): Promise<WorksheetScaffoldingState | null> {
-  const { repository } = dependencies;
-  const read = await readAdaptation(adaptationId, teacherId, repository);
+  const read = await readAdaptation(adaptationId, teacherId, dependencies);
   if (read === null || !needsSuggestions(read.state)) {
     return read?.state ?? null;
   }
@@ -259,7 +260,7 @@ async function readAndRequestSuggestions(
     dependencies.enqueue,
     generationRequest(adaptationId, read.headResourceDocumentId),
   );
-  const refreshed = await readAdaptation(adaptationId, teacherId, repository);
+  const refreshed = await readAdaptation(adaptationId, teacherId, dependencies);
   return refreshed?.state ?? read.state;
 }
 
@@ -367,7 +368,7 @@ export async function enqueueSuggestionApplication(
     kind: applySuggestionJob.kind,
   });
 
-  const read = await readAdaptation(input.adaptationId, target.teacherId, repository);
+  const read = await readAdaptation(input.adaptationId, target.teacherId, dependencies);
   return read?.state ?? null;
 }
 
@@ -456,7 +457,7 @@ export async function enqueueWorksheetScaffoldingRetryTransformation(
     },
     kind: retryTransformationJob.kind,
   });
-  const read = await readAdaptation(input.adaptationId, target.teacherId, repository);
+  const read = await readAdaptation(input.adaptationId, target.teacherId, dependencies);
   return read?.state ?? null;
 }
 
@@ -488,7 +489,7 @@ export async function enqueueWorksheetScaffoldingRetrySuggestions(
     },
     kind: generateSuggestionsJob.kind,
   });
-  const read = await readAdaptation(input.adaptationId, target.teacherId, repository);
+  const read = await readAdaptation(input.adaptationId, target.teacherId, dependencies);
   return read?.state ?? null;
 }
 
@@ -526,7 +527,7 @@ export async function enqueueWorksheetScaffoldingRemoval(
     },
     kind: removeTransformationJob.kind,
   });
-  const read = await readAdaptation(input.adaptationId, target.teacherId, repository);
+  const read = await readAdaptation(input.adaptationId, target.teacherId, dependencies);
   return read?.state ?? null;
 }
 
@@ -564,6 +565,6 @@ export async function enqueueWorksheetScaffoldingDismissal(
     },
     kind: dismissTransformationsJob.kind,
   });
-  const read = await readAdaptation(input.adaptationId, target.teacherId, repository);
+  const read = await readAdaptation(input.adaptationId, target.teacherId, dependencies);
   return read?.state ?? null;
 }
