@@ -401,6 +401,11 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "useResourceDownload.js",
     "capabilities/worksheet-scaffolding/useWorksheetScaffolding.js",
     "capabilities/worksheet-scaffolding/useWorksheetScaffoldingPolling.js",
+    "capabilities/worksheet-scaffolding/PendingReviewControls.js",
+    "capabilities/worksheet-scaffolding/ResumeChoice.js",
+    "capabilities/worksheet-scaffolding/SuggestionGroup.js",
+    "capabilities/worksheet-scaffolding/WorkflowStatusBanner.js",
+    "capabilities/worksheet-scaffolding/styles.js",
   ];
   const serverSafeModules = [
     "index.js",
@@ -417,6 +422,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "resource-document/InlineContentRenderer.js",
     "resource-document/ResourceNodeRenderer.js",
     "capabilities/worksheet-scaffolding/workflowState.js",
+    "capabilities/worksheet-scaffolding/workflowStatus.js",
   ];
 
   for (const file of clientModules) {
