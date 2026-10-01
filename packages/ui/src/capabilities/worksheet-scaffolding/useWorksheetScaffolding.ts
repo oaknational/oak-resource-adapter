@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { documentChangingJobKinds } from "@oaknational/resource-adapter-contracts/internal";
-import type {
-  WorksheetScaffoldingApplyRequest,
-  WorksheetScaffoldingEntry,
-  WorksheetScaffoldingResumable,
-  WorksheetScaffoldingState,
+import {
+  documentChangingJobKinds,
+  type WorksheetScaffoldingApplyRequest,
+  type WorksheetScaffoldingEntry,
+  type WorksheetScaffoldingResumable,
+  type WorksheetScaffoldingState,
 } from "@oaknational/resource-adapter-contracts/internal";
 
 import { reportToHost } from "../../errors.js";

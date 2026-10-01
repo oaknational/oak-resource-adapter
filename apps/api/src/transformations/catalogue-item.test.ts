@@ -113,8 +113,8 @@ describe("toCatalogueItem", () => {
         isAvailable: always,
         execution: { strategy: "deterministic", apply: (document) => [document] },
         supportLevels: [
-          { description: "A little help.", level: "low" },
-          { description: "More help.", level: "mid" },
+          { description: "A little help.", label: "Add a little help", level: "low" },
+          { description: "More help.", label: "Add more help", level: "mid" },
         ],
       }),
     );
@@ -125,8 +125,8 @@ describe("toCatalogueItem", () => {
         kind: "choice",
         label: "Support level",
         options: [
-          { description: "A little help.", label: "Low", value: "low" },
-          { description: "More help.", label: "Mid", value: "mid" },
+          { description: "A little help.", label: "Add a little help", value: "low" },
+          { description: "More help.", label: "Add more help", value: "mid" },
         ],
       },
     ]);

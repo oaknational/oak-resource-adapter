@@ -54,10 +54,11 @@ A definition carries:
 | `execution`            | `deterministic` with an `apply`, or `model` with a prompt.                                            |
 
 `supportLevels` and `barriers` are optional: a kind that offers no support dial,
-or addresses no particular barrier, declares neither. A level is declared with the
-teacher-facing description of what it adds, because "mid" alone tells a teacher
-nothing, and a kind's `params` schema is derived from the levels it declares, so
-the control a teacher sees and the arguments the database accepts cannot disagree.
+or addresses no particular barrier, declares neither. A level declares the `label`
+on the teacher's button and a `description` that suggestion generation reads when
+choosing a level. A kind's `params` schema is derived from the levels it declares,
+so the control a teacher sees and the arguments the database accepts cannot
+disagree.
 
 Clients see a kind's levels as a `choice` input with the id `supportLevel`, one
 option per level, rather than as `supportLevels`. A client sends the chosen
@@ -235,12 +236,11 @@ generic to transformations rather than tied to scaffolding, and remains internal
 metadata that a future export path can omit.
 
 Suggestion parameters are stored with the offer, and each offer carries its
-kind's `inputs` so the teacher can change the level before accepting. Accepting
-uses the stored parameters unless the application request supplies its own,
-which are validated against the kind's `params` schema. Acceptance is keyed on
-the offer and its parameters, so repeating a request is the same work rather
-than a second application, and a request at a different level is not treated as
-a repeat.
+kind's `inputs`, so every level of the kind can be offered. Accepting uses the
+stored parameters unless the application request supplies its own, which are
+validated against the kind's `params` schema. Acceptance is keyed on the offer and
+its parameters, so repeating a request is the same work rather than a second
+application, and a request at a different level is not treated as a repeat.
 
 ## Development harness
 

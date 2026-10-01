@@ -1,7 +1,10 @@
 import { getResourceNodeById } from "@oaknational/resource-document";
 
 import type { SuggestionWorkbench } from "./useSuggestionWorkbench";
-import type { SuggestionPreviewResponse } from "./suggestion-api";
+import type {
+  SuggestionPreviewResponse,
+  SuggestionRunResponse,
+} from "./suggestion-api";
 import { readableIdentifier } from "../shared/readable-identifier";
 import { resourceNodeLabel } from "../shared/resource-node-label";
 import styles from "../../page.module.css";
@@ -35,6 +38,26 @@ function resultTarget(
   return targetBlockId === null
     ? "Whole worksheet"
     : nodeLabel(document, targetBlockId);
+}
+
+function paramDetails(
+  params: SuggestionRunResponse["suggestions"][number]["params"],
+  candidate: SuggestionCandidate | undefined,
+): readonly Readonly<{ id: string; label: string; value: string }>[] {
+  return Object.entries(params).flatMap(([id, chosen]) => {
+    if (typeof chosen !== "string") {
+      return [];
+    }
+    const input = candidate?.inputs?.find((candidateInput) => candidateInput.id === id);
+    const option = input?.options.find(({ value }) => value === chosen);
+    return [
+      {
+        id,
+        label: input?.label ?? readableIdentifier(id),
+        value: option?.label ?? readableIdentifier(chosen),
+      },
+    ];
+  });
 }
 
 export function SuggestionResults({
@@ -91,21 +114,19 @@ export function SuggestionResults({
                       ))}
                     </ul>
                   </div>
-                  {candidate.inputs !== undefined && (
-                    <div className={styles.candidateLevels}>
-                      <h4>Support options</h4>
+                  {candidate.inputs?.map((input) => (
+                    <div className={styles.candidateLevels} key={input.id}>
+                      <h4>{input.label}</h4>
                       <ul>
-                        {candidate.inputs.flatMap((input) =>
-                          input.options.map(({ description, label, value }) => (
-                            <li key={`${input.id}:${value}`}>
-                              <strong>{label}</strong>
-                              <span>{description}</span>
-                            </li>
-                          )),
-                        )}
+                        {input.options.map(({ description, label, value }) => (
+                          <li key={value}>
+                            <strong>{label}</strong>
+                            <span>{description}</span>
+                          </li>
+                        ))}
                       </ul>
                     </div>
-                  )}
+                  ))}
                   {candidate.barriers !== undefined && (
                     <ul aria-label="Barriers addressed" className={styles.tagList}>
                       {candidate.barriers.map((barrier) => (
@@ -151,12 +172,15 @@ export function SuggestionResults({
                       <dt>Where it would be added</dt>
                       <dd>{resultTarget(document, suggestion.targetBlockId)}</dd>
                     </div>
-                    {typeof suggestion.params.supportLevel === "string" && (
-                      <div>
-                        <dt>Support level</dt>
-                        <dd>{readableIdentifier(suggestion.params.supportLevel)}</dd>
+                    {paramDetails(
+                      suggestion.params,
+                      preview?.candidates.find(({ kind }) => kind === suggestion.kind),
+                    ).map((detail) => (
+                      <div key={detail.id}>
+                        <dt>{detail.label}</dt>
+                        <dd>{detail.value}</dd>
                       </div>
-                    )}
+                    ))}
                   </dl>
                   <details className={styles.markupDetails}>
                     <summary>Technical details</summary>
