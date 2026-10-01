@@ -19,6 +19,20 @@ const genericFrontmatter = [
 ].join("\n");
 
 describe("resource markup", () => {
+  it.each([String.raw`bad\q`, String.raw`bad\u12G4`, "bad\tvalue"])(
+    "fails safely with a source line for invalid JSON attribute %j",
+    (value) => {
+      const result = safeParseResourceMarkup(
+        `${genericFrontmatter}\n:::oak-paragraph {id="${value}"}\nText\n:::`,
+      );
+
+      expect(result).toMatchObject({
+        success: false,
+        error: { code: "invalid_markup", context: { line: 12 } },
+      });
+    },
+  );
+
   it("fails safely when directive attributes are malformed", () => {
     const result = safeParseResourceMarkup(
       `---\nmarkup-version: "0.1"\nschema-version: "0.1"\nprofile: "generic.v0"\ndocument-id: "bad"\nlanguage: "en-GB"\nsource-system: "test"\nsource-id: "bad"\nproducer: "test"\nproducer-version: "1"\n---\n\n:::oak-paragraph {id=no-quotes}\nBad\n:::\n`,

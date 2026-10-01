@@ -31,13 +31,7 @@ const StatusAnnouncement = styled.span`
   white-space: nowrap;
 `;
 
-/**
- * A region mounted alongside its own text is announced unreliably, whereas changing
- * the text of a mounted region is not, so every workflow state renders this region.
- */
-export function WorkflowAnnouncement({
-  status,
-}: Readonly<{ status: WorkflowStatus | null }>) {
+function WorkflowAnnouncement({ status }: Readonly<{ status: WorkflowStatus | null }>) {
   return (
     <StatusAnnouncement
       aria-label="Worksheet status"
@@ -51,6 +45,23 @@ export function WorkflowAnnouncement({
             .filter((part) => part !== undefined)
             .join(". ")}
     </StatusAnnouncement>
+  );
+}
+
+/**
+ * A region mounted alongside its own text is announced unreliably, whereas changing
+ * the text of a mounted region is not. Every workflow state renders through this
+ * frame, so the region keeps its place in the tree as the state changes.
+ */
+export function WorkflowFrame({
+  children,
+  status,
+}: Readonly<{ children: ReactNode; status: WorkflowStatus | null }>) {
+  return (
+    <OakFlex $flexDirection="column" $gap="spacing-16">
+      <WorkflowAnnouncement status={status} />
+      {children}
+    </OakFlex>
   );
 }
 

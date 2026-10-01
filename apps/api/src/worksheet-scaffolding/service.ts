@@ -107,10 +107,6 @@ function generationRequest(adaptationId: string, resourceDocumentId: string) {
 }
 
 /**
- * Undoing reopens the same offer, so keying on the offer alone would make a second
- * acceptance replay the first job and silently do nothing.
- */
-/**
  * An operation the teacher asked for is finished business once it succeeds. Reporting
  * it as the current job would hide the suggestion run that decides what happens next.
  */

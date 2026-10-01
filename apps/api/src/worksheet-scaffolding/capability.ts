@@ -23,6 +23,10 @@ export function suggestionRetryJobKey(
   return `retrySuggestions:${resourceDocumentId}:${requestId}`;
 }
 
+/**
+ * Undoing reopens the same offer, so keying on the offer alone would make a second
+ * acceptance replay the first job and silently do nothing.
+ */
 export function applicationJobKey(suggestion: {
   id: string;
   undoCount: number;

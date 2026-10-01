@@ -25,7 +25,13 @@ export function parseAttributes(source: string | undefined): Record<string, stri
     if (!key || attributes[key] !== undefined) {
       throw invalidMarkup(`Duplicate or invalid directive attribute in: ${source}`);
     }
-    attributes[key] = JSON.parse(match[2] ?? "") as string;
+    try {
+      attributes[key] = JSON.parse(match[2] ?? "") as string;
+    } catch {
+      throw invalidMarkup(
+        `Directive attribute ${JSON.stringify(key)} must be a valid JSON string.`,
+      );
+    }
     cursor = pattern.lastIndex;
   }
 

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  OakFlex,
   OakInlineBanner,
   OakSecondaryButton,
   OakTertiaryButton,
@@ -27,7 +26,7 @@ import { WorksheetDownload } from "./WorksheetDownload.js";
 import {
   LoadingStatusBanner,
   StickyWorkflowStatus,
-  WorkflowAnnouncement,
+  WorkflowFrame,
   WorkflowStatusBanner,
 } from "./WorkflowStatusBanner.js";
 import {
@@ -73,39 +72,36 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
 
   if (state.status === "loading") {
     return (
-      <>
-        <WorkflowAnnouncement status={LOADING_STATUS} />
+      <WorkflowFrame status={LOADING_STATUS}>
         <StickyWorkflowStatus>
           <LoadingStatusBanner
             message={LOADING_STATUS.message}
             title={LOADING_STATUS.title}
           />
         </StickyWorkflowStatus>
-      </>
+      </WorkflowFrame>
     );
   }
   if (state.status === "choosing") {
     return (
-      <>
-        <WorkflowAnnouncement status={null} />
+      <WorkflowFrame status={null}>
         <ResumeChoice
           onResume={() => resume(state.resumable.adaptationId)}
           onStartFresh={() => startFresh(state.resumable.adaptationId)}
           resumable={state.resumable}
         />
-      </>
+      </WorkflowFrame>
     );
   }
   if (state.status === "error") {
     return (
-      <>
-        <WorkflowAnnouncement status={null} />
+      <WorkflowFrame status={null}>
         <ResourceAdapterUnavailableMessage
           message="Worksheet scaffolding could not be loaded."
           onTryAgain={tryAgain}
           testId="resource-adapter-worksheet-scaffolding-error"
         />
-      </>
+      </WorkflowFrame>
     );
   }
 
@@ -184,8 +180,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     pendingReview === null;
 
   return (
-    <OakFlex $flexDirection="column" $gap="spacing-16">
-      <WorkflowAnnouncement status={status} />
+    <WorkflowFrame status={status}>
       {status !== null && (
         <StickyWorkflowStatus data-testid="worksheet-scaffolding-status">
           <WorkflowStatusBanner
@@ -258,6 +253,6 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           />
         </>
       )}
-    </OakFlex>
+    </WorkflowFrame>
   );
 }
