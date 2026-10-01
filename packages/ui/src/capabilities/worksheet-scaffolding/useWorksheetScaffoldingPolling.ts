@@ -16,7 +16,7 @@ function pollDelay(attempt: number): number {
   return Math.min(FIRST_POLL_DELAY_MS * 2 ** attempt, MAX_POLL_DELAY_MS);
 }
 
-/** Polls `adaptationId` until it is null. Callbacks must be stable. */
+/** Callbacks must be stable: a new one restarts the timer. */
 export function useWorksheetScaffoldingPolling({
   adaptationId,
   jobId,

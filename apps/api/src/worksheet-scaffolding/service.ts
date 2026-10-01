@@ -261,7 +261,6 @@ type AdaptationHead = NonNullable<
   Awaited<ReturnType<WorksheetScaffoldingServiceRepository["getAdaptationHead"]>>
 >;
 
-/** Most changes wait until a pending scaffold has been accepted or undone. */
 async function headWithoutPendingReview(
   { adaptationId }: Readonly<{ adaptationId: string }>,
   target: ResourceAdapterAuthenticatedTeacher,
@@ -276,7 +275,6 @@ async function headWithoutPendingReview(
     : null;
 }
 
-/** The pending review, only while it is still the attempt the teacher acted on. */
 async function headUnderReview(
   { adaptationId, attemptId }: Readonly<{ adaptationId: string; attemptId: string }>,
   target: ResourceAdapterAuthenticatedTeacher,
@@ -290,7 +288,6 @@ async function headUnderReview(
   return pending?.attempt.id === attemptId ? { head, pending } : null;
 }
 
-/** Queues work against the head the request was checked on, then reads back the state. */
 async function enqueueOnHead(
   head: AdaptationHead,
   { adaptationId }: Readonly<{ adaptationId: string }>,

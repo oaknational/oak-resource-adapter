@@ -62,7 +62,7 @@ const modelInvocationResponseSchema = z.object({
 
 export type ModelInvocationResponse = z.infer<typeof modelInvocationResponseSchema>;
 
-export async function readApiJson<TSchema extends z.ZodType>(
+async function readApiJson<TSchema extends z.ZodType>(
   response: Response,
   schema: TSchema,
   what: string,

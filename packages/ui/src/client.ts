@@ -119,7 +119,6 @@ export function createResourceAdapterInternalClient({
   });
 }
 
-/** Reports a failed call as a `ResourceAdapterApiError`, keeping one already raised. */
 export async function callApi<T>(
   message: string,
   request: () => Promise<T>,

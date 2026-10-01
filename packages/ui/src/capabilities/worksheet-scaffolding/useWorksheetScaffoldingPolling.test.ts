@@ -54,6 +54,19 @@ describe("useWorksheetScaffoldingPolling", () => {
     expect(fetchState).toHaveBeenCalledTimes(3);
   });
 
+  it("caps the delay while a long job runs", async () => {
+    const { fetchState } = renderPolling();
+
+    for (const delay of [100, 200, 400]) await advance(delay);
+    expect(fetchState).toHaveBeenCalledTimes(3);
+    await advance(749);
+    expect(fetchState).toHaveBeenCalledTimes(3);
+    await advance(1);
+    expect(fetchState).toHaveBeenCalledTimes(4);
+    await advance(750);
+    expect(fetchState).toHaveBeenCalledTimes(5);
+  });
+
   it("drops a response that lands after polling stops", async () => {
     const pending = Promise.withResolvers<WorksheetScaffoldingState>();
     const { onFetched, rerender } = renderPolling(vi.fn(() => pending.promise));
