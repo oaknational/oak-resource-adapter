@@ -4,8 +4,8 @@ import { z } from "zod";
 import { adapterProxyPath } from "../../harness-api";
 import {
   suggestionGuidanceSchema,
-  supportLevelSchema,
   targetSchema,
+  transformationInputSchema,
   transformationOutputsSchema,
 } from "../shared/catalogue-schemas";
 import type { LessonScenario } from "../../scenario-types";
@@ -26,13 +26,13 @@ export type TransformationStatus = z.infer<typeof transformationStatusSchema>;
 const transformationCatalogueItemSchema = z.strictObject({
   barriers: z.array(z.string()).optional(),
   execution: z.enum(["deterministic", "structured-model", "text-model"]),
+  inputs: z.array(transformationInputSchema).optional(),
   kind: z.string(),
   label: z.string(),
   materialRequirements: z.array(materialRequirementSchema),
   outputs: transformationOutputsSchema,
   status: transformationStatusSchema,
   suggestion: suggestionGuidanceSchema,
-  supportLevels: z.array(supportLevelSchema).min(1).optional(),
   target: targetSchema,
 });
 
@@ -67,6 +67,10 @@ export type TransformationCatalogue = z.infer<typeof catalogueResponseSchema>;
 export type TransformationCatalogueItem = z.infer<
   typeof transformationCatalogueItemSchema
 >;
+
+export function supportLevelInputOf(item: TransformationCatalogueItem | undefined) {
+  return item?.inputs?.find(({ id }) => id === "supportLevel");
+}
 
 const previewResponseSchema = z.strictObject({
   execution: z.enum(["deterministic", "structured-model", "text-model"]),

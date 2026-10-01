@@ -36,6 +36,8 @@ import {
 } from "@oaknational/resource-document/parse";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 
+import type { JobJsonValue } from "../jobs/domain";
+
 import { SUGGESTION_OPERATION_KIND } from "./capability";
 
 const PRIMARY_SOURCE = "primary_source";
@@ -150,11 +152,11 @@ function attemptBelongsToAdaptation(
 class PendingReviewConflictError extends Error {}
 
 /** Stored parameters are jsonb, so their shape is only known once read. */
-export function asParams(value: unknown): Readonly<Record<string, unknown>> {
+export function asParams(value: unknown): Readonly<Record<string, JobJsonValue>> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new Error("Stored transformation parameters are not an object.");
   }
-  return value as Readonly<Record<string, unknown>>;
+  return value as Readonly<Record<string, JobJsonValue>>;
 }
 
 export type ParsedStoredDocument = Omit<

@@ -1,5 +1,8 @@
 import { resourceNodeLabel } from "../shared/resource-node-label";
-import type { TransformationCatalogueItem } from "./transformation-api";
+import {
+  supportLevelInputOf,
+  type TransformationCatalogueItem,
+} from "./transformation-api";
 import type { TransformationWorkbench } from "./useTransformationWorkbench";
 import { readableIdentifier } from "../shared/readable-identifier";
 import { statusBadgeClass } from "../shared/status-badge";
@@ -75,10 +78,12 @@ export function TransformationControls({
 }: TransformationControlsProps) {
   const drafts = catalogue.filter(({ status }) => status === "draft");
   const active = catalogue.filter(({ status }) => status === "active");
-  const retired = catalogue.filter(({ status }) => status === "retired");
-  const selectedLevel = selected?.supportLevels?.find(
-    ({ level }) => level === supportLevel,
+  const supportLevelInput = supportLevelInputOf(selected);
+  const selectedLevel = supportLevelInput?.options.find(
+    ({ value }) => value === supportLevel,
   );
+  const retired = catalogue.filter(({ status }) => status === "retired");
+
   return (
     <section aria-labelledby="transformation-controls" className={styles.controls}>
       <div className={styles.controlHeader}>
@@ -113,16 +118,16 @@ export function TransformationControls({
           </select>
         </label>
 
-        {selected?.supportLevels !== undefined && (
+        {supportLevelInput !== undefined && (
           <label>
-            <span>Support level</span>
+            <span>{supportLevelInput.label}</span>
             <select
               onChange={(event) => setSupportLevel(event.target.value)}
               value={supportLevel}
             >
-              {selected.supportLevels.map(({ level }) => (
-                <option key={level} value={level}>
-                  {level}
+              {supportLevelInput.options.map(({ label, value }) => (
+                <option key={value} value={value}>
+                  {label}
                 </option>
               ))}
             </select>
@@ -182,7 +187,7 @@ export function TransformationControls({
               <h4>
                 {selectedLevel === undefined
                   ? selected.label
-                  : `${readableIdentifier(selectedLevel.level)} support`}
+                  : `${selectedLevel.label} support`}
               </h4>
               <p>{selectedLevel?.description ?? selected.suggestion.description}</p>
             </div>

@@ -54,10 +54,15 @@ A definition carries:
 | `execution`            | `deterministic` with an `apply`, or `model` with a prompt.                                            |
 
 `supportLevels` and `barriers` are optional: a kind that offers no support dial,
-or addresses no particular barrier, declares neither. A level is declared with the
-teacher-facing description of what it adds, because "mid" alone tells a teacher
-nothing, and a kind's `params` schema is derived from the levels it declares, so
-the control a teacher sees and the arguments the database accepts cannot disagree.
+or addresses no particular barrier, declares neither. A level declares the `label`
+on the teacher's button and a `description` that suggestion generation reads when
+choosing a level. A kind's `params` schema is derived from the levels it declares,
+so the control a teacher sees and the arguments the database accepts cannot
+disagree.
+
+Clients see a kind's levels as a `choice` input with the id `supportLevel`, one
+option per level, rather than as `supportLevels`. A client sends the chosen
+option's `value`, such as `"mid"`, back in `params` under the input's `id`.
 
 `outputs` declares what a run produces and in what order. Execution is checked
 against it, so a kind cannot quietly return a revision where a companion document
@@ -219,7 +224,7 @@ that are available for the current document. Activating an already-listed kind
 therefore makes it eligible everywhere the capability uses its catalogue.
 
 The model receives each candidate's `suggestion` guidance, targets, barriers and
-support-level descriptions. Its structured response is validated again through
+the options of its `inputs`. Its structured response is validated again through
 the transformation's params, target and availability rules. An offer that fails
 that second pass, or repeats a change already offered for the same target, is
 dropped rather than failing the batch. Returning no suggestions is valid.
@@ -230,11 +235,12 @@ or on the document. Suggestion preparation excludes only that scope. The marker 
 generic to transformations rather than tied to scaffolding, and remains internal
 metadata that a future export path can omit.
 
-Suggestion parameters are stored with the offer. Accepting an offer uses those
-parameters by default, while the application request can supply a validated
-override for a future support-level chooser. Acceptance is keyed on the offer,
-which can only be accepted once, so repeating the request is the same work
-rather than a second application.
+Suggestion parameters are stored with the offer, and each offer carries its
+kind's `inputs`, so every level of the kind can be offered. Accepting uses the
+stored parameters unless the application request supplies its own, which are
+validated against the kind's `params` schema. Acceptance is keyed on the offer and
+its parameters, so repeating a request is the same work rather than a second
+application, and a request at a different level is not treated as a repeat.
 
 ## Development harness
 

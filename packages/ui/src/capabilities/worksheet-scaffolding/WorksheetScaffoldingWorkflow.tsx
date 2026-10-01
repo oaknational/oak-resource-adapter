@@ -76,9 +76,10 @@ const SuggestionGroup = styled.div`
 `;
 
 const SuggestionList = styled.ul`
+  align-items: flex-start;
   display: flex;
-  gap: 0.75rem;
   flex-wrap: wrap;
+  gap: 0.75rem;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -122,12 +123,6 @@ const ReviewChevron = styled(OakIcon)<{ $isOpen: boolean }>`
 const ActionRow = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-`;
-
-const SuggestionItem = styled.li`
-  display: flex;
-  flex-direction: column;
   gap: 0.5rem;
 `;
 
@@ -458,6 +453,36 @@ function groupSuggestionsByTarget(
   return grouped;
 }
 
+type ScaffoldOption = Readonly<{
+  key: string;
+  label: string;
+  params: ScaffoldSuggestion["params"] | undefined;
+  suggestionId: string;
+}>;
+
+function scaffoldOptionsFor(suggestion: ScaffoldSuggestion): ScaffoldOption[] {
+  const choices = suggestion.inputs?.filter(({ kind }) => kind === "choice") ?? [];
+  const [choice] = choices;
+
+  if (choice === undefined || choices.length > 1) {
+    return [
+      {
+        key: suggestion.id,
+        label: suggestion.label,
+        params: suggestion.inputs === undefined ? undefined : suggestion.params,
+        suggestionId: suggestion.id,
+      },
+    ];
+  }
+
+  return choice.options.map((option) => ({
+    key: `${suggestion.id}:${option.value}`,
+    label: option.label,
+    params: { ...suggestion.params, [choice.id]: option.value },
+    suggestionId: suggestion.id,
+  }));
+}
+
 function ResumeChoice({
   onResume,
   onStartFresh,
@@ -608,31 +633,14 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   );
   const suggestionsByTarget = groupSuggestionsByTarget(listedSuggestions);
 
-  const renderSuggestionItem = (suggestion: ScaffoldSuggestion) => {
-    return (
-      <SuggestionItem key={suggestion.id}>
-        <div>
-          <OakSecondaryButton
-            disabled={isWorking}
-            onClick={() => applySuggestion(suggestion.id)}
-          >
-            {suggestion.label}
-          </OakSecondaryButton>
-        </div>
-      </SuggestionItem>
-    );
-  };
-
-  const renderWorkingItem = (suggestionId: string) => (
-    <SuggestionItem key={suggestionId}>
-      <LocalWorking aria-live="polite" ref={applicationStatusRef} tabIndex={-1}>
-        <VisibleLoadingSpinner
-          aria-hidden="true"
-          data-testid="worksheet-scaffolding-local-spinner"
-        />
-        <OakP $font="body-2">Working on it&hellip;</OakP>
-      </LocalWorking>
-    </SuggestionItem>
+  const renderWorkingItem = () => (
+    <LocalWorking aria-live="polite" ref={applicationStatusRef} tabIndex={-1}>
+      <VisibleLoadingSpinner
+        aria-hidden="true"
+        data-testid="worksheet-scaffolding-local-spinner"
+      />
+      <OakP $font="body-2">Working on it&hellip;</OakP>
+    </LocalWorking>
   );
 
   const renderSuggestionGroup = (
@@ -645,19 +653,29 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     }
 
     const headingId = `${groupIdPrefix}-${targetBlockId ?? "document"}`;
+    const isApplyingHere = suggestions.some(({ id }) => id === applyingSuggestion?.id);
+    const options = suggestions
+      .filter(({ id }) => id !== applyingSuggestion?.id)
+      .flatMap(scaffoldOptionsFor);
 
     return (
       <SuggestionGroup aria-labelledby={headingId} role="group">
         <OakP $font="heading-7" id={headingId}>
           Suggested scaffolds
         </OakP>
+        {isApplyingHere && renderWorkingItem()}
         <SuggestionList>
-          {suggestions.map((suggestion) =>
-            suggestion.id === applyingSuggestion?.id
-              ? renderWorkingItem(suggestion.id)
-              : renderSuggestionItem(suggestion),
-          )}
-          <SuggestionItem>
+          {options.map((option) => (
+            <li key={option.key}>
+              <OakSecondaryButton
+                disabled={isWorking}
+                onClick={() => applySuggestion(option.suggestionId, option.params)}
+              >
+                {option.label}
+              </OakSecondaryButton>
+            </li>
+          ))}
+          <li>
             <OakSecondaryButton
               disabled={isWorking}
               iconName="cross"
@@ -665,7 +683,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
             >
               No scaffold required
             </OakSecondaryButton>
-          </SuggestionItem>
+          </li>
         </SuggestionList>
       </SuggestionGroup>
     );
