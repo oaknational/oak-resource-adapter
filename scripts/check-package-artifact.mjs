@@ -400,6 +400,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "capabilities/worksheet-scaffolding/WorksheetDownload.js",
     "useResourceDownload.js",
     "capabilities/worksheet-scaffolding/useWorksheetScaffolding.js",
+    "capabilities/worksheet-scaffolding/useWorksheetScaffoldingPolling.js",
   ];
   const serverSafeModules = [
     "index.js",
@@ -415,6 +416,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "requestId.js",
     "resource-document/InlineContentRenderer.js",
     "resource-document/ResourceNodeRenderer.js",
+    "capabilities/worksheet-scaffolding/workflowState.js",
   ];
 
   for (const file of clientModules) {

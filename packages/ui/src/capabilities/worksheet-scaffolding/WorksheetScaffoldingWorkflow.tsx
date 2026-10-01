@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   OakFlex,
   OakHeading,
@@ -31,13 +31,14 @@ import type {
   ResourceAdapterErrorHandler,
 } from "../../publicTypes.js";
 import { WorksheetDownload } from "./WorksheetDownload.js";
+import { useWorksheetScaffolding } from "./useWorksheetScaffolding.js";
 import {
-  jobIsBusy,
   documentUpdateIsBusy,
-  useWorksheetScaffolding,
+  jobIsBusy,
+  worksheetWasRefreshed,
   type ApplyingSuggestion,
   type WorkflowState,
-} from "./useWorksheetScaffolding.js";
+} from "./workflowState.js";
 
 export type WorksheetScaffoldingWorkflowProps = Readonly<{
   apiBaseUrl: string;
@@ -508,11 +509,7 @@ function ResumeChoice({
 export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflowProps) {
   const {
     acceptReview,
-    actionInFlight,
-    applicationStatusRef,
     applySuggestion,
-    applyingSuggestion,
-    documentIsVisible,
     removeContribution,
     refresh,
     resume,
@@ -523,9 +520,17 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     dismissTarget,
     tryAgain,
     undoReview,
-    worksheetWasRefreshed,
   } = useWorksheetScaffolding(props);
   const groupIdPrefix = useId();
+  const applicationStatusRef = useRef<HTMLDivElement | null>(null);
+  const applyingSuggestion = state.status === "ready" ? state.applyingSuggestion : null;
+
+  // Applying removes the chosen button, so focus follows its local progress marker.
+  useEffect(() => {
+    if (applyingSuggestion !== null) {
+      applicationStatusRef.current?.focus();
+    }
+  }, [applyingSuggestion]);
 
   if (state.status === "idle") {
     return null;
@@ -587,11 +592,11 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   }
 
   const isWorking =
-    applyingSuggestion !== null || actionInFlight !== null || jobIsBusy(state.value);
+    applyingSuggestion !== null || state.actionIsPending || jobIsBusy(state.value);
   const downloadAvailability =
     state.value.downloadAvailability === "available" &&
     (applyingSuggestion !== null ||
-      actionInFlight !== null ||
+      state.actionIsPending ||
       documentUpdateIsBusy(state.value))
       ? "busy"
       : state.value.downloadAvailability;
@@ -765,7 +770,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           />
         </StickyWorkflowStatus>
       )}
-      {documentIsVisible && (
+      {state.documentIsVisible && (
         <>
           <WorksheetDownload
             apiBaseUrl={props.apiBaseUrl}
@@ -774,7 +779,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
             resourceDocumentId={state.value.resourceDocumentId}
             availability={downloadAvailability}
             onRefresh={refresh}
-            worksheetWasRefreshed={worksheetWasRefreshed}
+            worksheetWasRefreshed={worksheetWasRefreshed(state)}
             onError={props.onError}
           />
           {renderSuggestionGroup(null)}
