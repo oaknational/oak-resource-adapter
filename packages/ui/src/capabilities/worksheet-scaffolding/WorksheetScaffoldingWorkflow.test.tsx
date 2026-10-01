@@ -176,12 +176,12 @@ const wordBankSuggestion = {
       options: [
         {
           description: "Lists the words a pupil needs, without definitions.",
-          label: "Low",
+          label: "Add a word bank",
           value: "low",
         },
         {
           description: "Lists the words with a short definition of each.",
-          label: "Mid",
+          label: "Add a word bank with definitions",
           value: "mid",
         },
       ],
@@ -382,7 +382,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
     });
   });
 
-  it("shows a suggestion beside its question and applies its stored parameters", async () => {
+  it("shows a suggestion beside its question and applies the chosen level", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
     renderDialog();
 
@@ -395,15 +395,9 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(screen.getByRole("status", { name: "Worksheet status" })).toHaveTextContent(
       "There is one suggested scaffold for this worksheet.",
     );
-    expect(
-      screen.queryByText("This question depends on recalling several topic words."),
-    ).not.toBeInTheDocument();
-    const lowSupport = screen.getByRole("radio", { name: "Low" });
-    expect(lowSupport).toBeChecked();
-    expect(lowSupport).toHaveAccessibleDescription(
-      "Lists the words a pupil needs, without definitions.",
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Add a word bank" }),
     );
-    await userEvent.click(screen.getByRole("button", { name: "Add a word bank" }));
 
     expect(screen.getByTestId("worksheet-scaffolding-local-spinner")).toBeVisible();
     expect(screen.getByText("Working on it…")).toBeVisible();
@@ -420,28 +414,37 @@ describe("WorksheetScaffoldingWorkflow", () => {
     });
   });
 
-  it("changes a choice with the keyboard without applying until requested", async () => {
+  it("applies the support level named on the button", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
     renderDialog();
-    const user = userEvent.setup();
 
-    const lowSupport = await screen.findByRole("radio", { name: "Low" });
-    lowSupport.focus();
-    await user.keyboard("{ArrowRight}");
-
-    const midSupport = screen.getByRole("radio", { name: "Mid" });
-    expect(midSupport).toBeChecked();
-    expect(midSupport).toHaveFocus();
-    expect(applySuggestionMock).not.toHaveBeenCalled();
-
-    await user.click(screen.getByRole("button", { name: "Add a word bank" }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Add a word bank with definitions" }),
+    );
 
     expect(applySuggestionMock).toHaveBeenCalledWith(
       expect.objectContaining({ params: { supportLevel: "mid" } }),
     );
   });
 
-  it("offers no choice when a suggestion has only one option", async () => {
+  it("offers each support level as its own button", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    renderDialog();
+
+    const group = await screen.findByRole("group", { name: "Suggested scaffolds" });
+
+    expect(
+      within(group)
+        .getAllByRole("button")
+        .map((button) => button.textContent),
+    ).toEqual([
+      "Add a word bank",
+      "Add a word bank with definitions",
+      "No scaffold required",
+    ]);
+  });
+
+  it("offers one button when a suggestion has only one option", async () => {
     const [supportLevel] = wordBankSuggestion.inputs;
     openWorksheetScaffoldingMock.mockResolvedValueOnce(
       opened(
@@ -462,7 +465,6 @@ describe("WorksheetScaffoldingWorkflow", () => {
       await screen.findByRole("button", { name: "Add a word bank" }),
     );
 
-    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
     expect(applySuggestionMock).toHaveBeenCalledWith(
       expect.objectContaining({ params: { supportLevel: "low" } }),
     );
@@ -502,32 +504,23 @@ describe("WorksheetScaffoldingWorkflow", () => {
 
     const group = await screen.findByRole("group", { name: "Suggested scaffolds" });
 
-    expect(within(group).getAllByRole("button")).toHaveLength(3);
     expect(
-      within(group).getByRole("button", { name: "Add a word bank" }),
-    ).toBeVisible();
-    expect(
-      within(group).getByRole("button", { name: "Add recall questions" }),
-    ).toBeVisible();
-    const rejection = within(group).getByRole("button", {
-      name: "No scaffold required",
-    });
-    expect(rejection).toBeVisible();
-    const [buttonRow, choiceColumn] = within(group).getAllByRole("list");
-    expect(buttonRow).toContainElement(rejection);
-    expect(buttonRow).toContainElement(
-      within(group).getByRole("button", { name: "Add recall questions" }),
-    );
-    expect(choiceColumn).toContainElement(
-      within(group).getByRole("button", { name: "Add a word bank" }),
-    );
+      within(group)
+        .getAllByRole("button")
+        .map((button) => button.textContent),
+    ).toEqual([
+      "Add a word bank",
+      "Add a word bank with definitions",
+      "Add recall questions",
+      "No scaffold required",
+    ]);
 
     await userEvent.click(
       within(group).getByRole("button", { name: "Add a word bank" }),
     );
 
     expect(
-      within(group).queryByRole("button", { name: "Add a word bank" }),
+      within(group).queryByRole("button", { name: /^Add a word bank/ }),
     ).not.toBeInTheDocument();
     expect(within(group).getByText("Working on it…")).toBeVisible();
     expect(

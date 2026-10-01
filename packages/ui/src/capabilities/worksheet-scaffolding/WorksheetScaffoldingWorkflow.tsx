@@ -8,8 +8,6 @@ import {
   OakInlineBanner,
   OakP,
   OakPrimaryButton,
-  OakRadioButton,
-  OakRadioGroup,
   OakSecondaryButton,
   OakTertiaryButton,
   parseColor,
@@ -91,11 +89,6 @@ const SuggestionList = styled.ul`
   }
 `;
 
-const SuggestionCardList = styled(SuggestionList)`
-  align-items: stretch;
-  flex-direction: column;
-`;
-
 const ReviewDisclosure = styled.button`
   align-items: center;
   background: none;
@@ -131,31 +124,6 @@ const ActionRow = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-`;
-
-const SuggestionItem = styled.li`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-`;
-
-const SuggestionCard = styled(SuggestionItem)`
-  background: ${parseColor("bg-primary")};
-  border: 1px solid ${parseColor("border-neutral-lighter")};
-  border-radius: 0.5rem;
-  gap: 0.75rem;
-  padding: 0.75rem;
-`;
-
-const ChoiceOption = styled.div`
-  align-items: center;
-  display: flex;
-  gap: 0.5rem;
-`;
-
-const ChoiceDescription = styled(OakP)`
-  flex: 1;
-  min-width: 0;
 `;
 
 const LocalWorking = styled.div`
@@ -485,6 +453,36 @@ function groupSuggestionsByTarget(
   return grouped;
 }
 
+type ScaffoldOption = Readonly<{
+  key: string;
+  label: string;
+  params: ScaffoldSuggestion["params"] | undefined;
+  suggestionId: string;
+}>;
+
+function scaffoldOptionsFor(suggestion: ScaffoldSuggestion): ScaffoldOption[] {
+  const choices = suggestion.inputs?.filter(({ kind }) => kind === "choice") ?? [];
+  const [choice] = choices;
+
+  if (choice === undefined || choices.length > 1) {
+    return [
+      {
+        key: suggestion.id,
+        label: suggestion.label,
+        params: suggestion.inputs === undefined ? undefined : suggestion.params,
+        suggestionId: suggestion.id,
+      },
+    ];
+  }
+
+  return choice.options.map((option) => ({
+    key: `${suggestion.id}:${option.value}`,
+    label: option.label,
+    params: { ...suggestion.params, [choice.id]: option.value },
+    suggestionId: suggestion.id,
+  }));
+}
+
 function ResumeChoice({
   onResume,
   onStartFresh,
@@ -553,9 +551,6 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     worksheetWasRefreshed,
   } = useWorksheetScaffolding(props);
   const groupIdPrefix = useId();
-  const [selectedInputValues, setSelectedInputValues] = useState<
-    Readonly<Record<string, Readonly<Record<string, string>>>>
-  >({});
 
   if (state.status === "idle") {
     return null;
@@ -638,100 +633,14 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   );
   const suggestionsByTarget = groupSuggestionsByTarget(listedSuggestions);
 
-  const selectedParams = (suggestion: ScaffoldSuggestion) => ({
-    ...suggestion.params,
-    ...selectedInputValues[suggestion.id],
-  });
-
-  const selectInput = (suggestionId: string, inputId: string, value: string) => {
-    setSelectedInputValues((current) => ({
-      ...current,
-      [suggestionId]: { ...current[suggestionId], [inputId]: value },
-    }));
-  };
-
-  const choicesFor = (suggestion: ScaffoldSuggestion) =>
-    suggestion.inputs?.filter(
-      ({ kind, options }) => kind === "choice" && options.length > 1,
-    ) ?? [];
-
-  const choiceValue = (value: unknown) => (typeof value === "string" ? value : "");
-
-  const renderSuggestionItem = (suggestion: ScaffoldSuggestion) => {
-    const choices = choicesFor(suggestion);
-    const params = selectedParams(suggestion);
-    const applyButton = (
-      <div>
-        <OakSecondaryButton
-          disabled={isWorking}
-          onClick={() =>
-            applySuggestion(
-              suggestion.id,
-              suggestion.inputs === undefined ? undefined : params,
-            )
-          }
-        >
-          {suggestion.label}
-        </OakSecondaryButton>
-      </div>
-    );
-
-    if (choices.length === 0) {
-      return <SuggestionItem key={suggestion.id}>{applyButton}</SuggestionItem>;
-    }
-
-    return (
-      <SuggestionCard key={suggestion.id}>
-        <OakP $font="body-2-bold">{suggestion.label}</OakP>
-        {choices.map((input) => (
-          <OakRadioGroup
-            key={input.id}
-            $font="body-3-bold"
-            $gap="spacing-8"
-            disabled={isWorking}
-            label={input.label}
-            name={`${suggestion.id}-${input.id}`}
-            onChange={(event) =>
-              selectInput(suggestion.id, input.id, event.target.value)
-            }
-            value={choiceValue(params[input.id])}
-          >
-            {input.options.map((option) => {
-              const optionId = `${groupIdPrefix}-${suggestion.id}-${input.id}-${option.value}`;
-              const descriptionId = `${optionId}-description`;
-              return (
-                <ChoiceOption key={option.value}>
-                  <OakRadioButton
-                    aria-describedby={descriptionId}
-                    id={optionId}
-                    $font="body-3-bold"
-                    label={option.label}
-                    value={option.value}
-                  />
-                  <ChoiceDescription $font="body-3">
-                    <span aria-hidden="true">&ndash; </span>
-                    <span id={descriptionId}>{option.description}</span>
-                  </ChoiceDescription>
-                </ChoiceOption>
-              );
-            })}
-          </OakRadioGroup>
-        ))}
-        {applyButton}
-      </SuggestionCard>
-    );
-  };
-
-  const renderWorkingItem = (suggestionId: string) => (
-    <SuggestionItem key={suggestionId}>
-      <LocalWorking aria-live="polite" ref={applicationStatusRef} tabIndex={-1}>
-        <VisibleLoadingSpinner
-          aria-hidden="true"
-          data-testid="worksheet-scaffolding-local-spinner"
-        />
-        <OakP $font="body-2">Working on it&hellip;</OakP>
-      </LocalWorking>
-    </SuggestionItem>
+  const renderWorkingItem = () => (
+    <LocalWorking aria-live="polite" ref={applicationStatusRef} tabIndex={-1}>
+      <VisibleLoadingSpinner
+        aria-hidden="true"
+        data-testid="worksheet-scaffolding-local-spinner"
+      />
+      <OakP $font="body-2">Working on it&hellip;</OakP>
+    </LocalWorking>
   );
 
   const renderSuggestionGroup = (
@@ -744,25 +653,29 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     }
 
     const headingId = `${groupIdPrefix}-${targetBlockId ?? "document"}`;
-    const renderEntry = (suggestion: ScaffoldSuggestion) =>
-      suggestion.id === applyingSuggestion?.id
-        ? renderWorkingItem(suggestion.id)
-        : renderSuggestionItem(suggestion);
-    const withChoices = suggestions.filter(
-      (suggestion) => choicesFor(suggestion).length > 0,
-    );
-    const withoutChoices = suggestions.filter(
-      (suggestion) => choicesFor(suggestion).length === 0,
-    );
+    const isApplyingHere = suggestions.some(({ id }) => id === applyingSuggestion?.id);
+    const options = suggestions
+      .filter(({ id }) => id !== applyingSuggestion?.id)
+      .flatMap(scaffoldOptionsFor);
 
     return (
       <SuggestionGroup aria-labelledby={headingId} role="group">
         <OakP $font="heading-7" id={headingId}>
           Suggested scaffolds
         </OakP>
+        {isApplyingHere && renderWorkingItem()}
         <SuggestionList>
-          {withoutChoices.map(renderEntry)}
-          <SuggestionItem>
+          {options.map((option) => (
+            <li key={option.key}>
+              <OakSecondaryButton
+                disabled={isWorking}
+                onClick={() => applySuggestion(option.suggestionId, option.params)}
+              >
+                {option.label}
+              </OakSecondaryButton>
+            </li>
+          ))}
+          <li>
             <OakSecondaryButton
               disabled={isWorking}
               iconName="cross"
@@ -770,11 +683,8 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
             >
               No scaffold required
             </OakSecondaryButton>
-          </SuggestionItem>
+          </li>
         </SuggestionList>
-        {withChoices.length > 0 && (
-          <SuggestionCardList>{withChoices.map(renderEntry)}</SuggestionCardList>
-        )}
       </SuggestionGroup>
     );
   };

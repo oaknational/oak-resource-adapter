@@ -21,12 +21,6 @@ import type {
 
 type ParamsObject = z.ZodObject;
 
-const SUPPORT_LEVEL_LABELS = {
-  high: "High",
-  low: "Low",
-  mid: "Mid",
-} as const satisfies Record<SupportLevel, string>;
-
 export type TransformationDeclaration = Readonly<{
   barriers?: readonly PupilBarrier[];
   execution: TransformationExecution;
@@ -78,9 +72,9 @@ function inputsFromSupportLevels(
       id: "supportLevel",
       kind: "choice",
       label: "Support level",
-      options: supportLevels.map(({ description, level }) => ({
+      options: supportLevels.map(({ description, label, level }) => ({
         description,
-        label: SUPPORT_LEVEL_LABELS[level],
+        label,
         value: level,
       })),
     },
