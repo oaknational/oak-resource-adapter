@@ -1,7 +1,6 @@
 import { downloadFilename } from "@oaknational/resource-adapter/internal/downloads";
-import { z } from "zod";
 
-import { adapterProxyPath } from "../../harness-api";
+import { adapterProxyPath, readApiError } from "../../harness-api";
 import type { ResourceDocument } from "@oaknational/resource-document";
 
 export type DocxExportCommand = Readonly<{
@@ -26,12 +25,7 @@ export async function exportDocx(
     );
   }
   if (!response.ok) {
-    const parsed = z
-      .object({ error: z.string() })
-      .safeParse(await response.json().catch(() => null));
-    throw new Error(
-      parsed.success ? parsed.data.error : `The API returned HTTP ${response.status}.`,
-    );
+    throw await readApiError(response);
   }
 
   return {

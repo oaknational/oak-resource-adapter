@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { getDatabaseClient, JobStatus, jobs } from "@oaknational/resource-adapter-db";
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -11,6 +11,7 @@ import {
   ConcurrencyConflictError,
   failJob,
   getJob,
+  getLatestJobForConcurrencyKey,
   IdempotencyConflictError,
   recordWorkflowRun,
 } from "./job-repository";
@@ -189,5 +190,40 @@ describeWithDatabase("job repository integration", () => {
       status: JobStatus.FAILED,
       workflowRunId: "wrun_owner",
     });
+  });
+
+  it("prefers a job still in flight over a newer finished one", async () => {
+    const concurrencyKey = `integration-${randomUUID()}`;
+    const create = async (key: string) => {
+      const { job } = await createOrGetJob({
+        concurrencyKey: key,
+        idempotencyKey: `integration-${randomUUID()}`,
+        input: { message: "hello" },
+        kind: "test.echo",
+      });
+      createdJobIds.push(job.id);
+      return job;
+    };
+    const fail = (id: string) =>
+      failJob(id, null, { code: "test_failure", message: "The job finished." });
+
+    const finished = await create(concurrencyKey);
+    await fail(finished.id);
+    const queued = await create(concurrencyKey);
+    // Only one job per key can be in flight, so the finished one is made newer afterwards.
+    await getDatabaseClient()
+      .update(jobs)
+      .set({ createdAt: new Date(finished.createdAt.getTime() - 60_000) })
+      .where(eq(jobs.id, queued.id));
+    await create(`integration-${randomUUID()}`);
+
+    await expect(
+      getLatestJobForConcurrencyKey(concurrencyKey, ["test.echo"]),
+    ).resolves.toMatchObject({ id: queued.id });
+
+    await fail(queued.id);
+    await expect(
+      getLatestJobForConcurrencyKey(concurrencyKey, ["test.echo"]),
+    ).resolves.toMatchObject({ id: finished.id });
   });
 });

@@ -23,6 +23,38 @@ export function suggestionRetryJobKey(
   return `retrySuggestions:${resourceDocumentId}:${requestId}`;
 }
 
+/**
+ * Undoing reopens the same offer, so keying on the offer alone would make a second
+ * acceptance replay the first job and silently do nothing.
+ */
+export function applicationJobKey(suggestion: {
+  id: string;
+  undoCount: number;
+}): string {
+  return `apply:${suggestion.id}:${suggestion.undoCount}`;
+}
+
+export function transformationRetryJobKey(
+  attemptId: string,
+  requestId: string,
+): string {
+  return `retry:${attemptId}:${requestId}`;
+}
+
+export function removalJobKey(
+  resourceDocumentId: string,
+  contributionId: string,
+): string {
+  return `remove:${resourceDocumentId}:${contributionId}`;
+}
+
+export function dismissalJobKey(
+  resourceDocumentId: string,
+  targetBlockId: string | null,
+): string {
+  return `dismiss:${resourceDocumentId}:${targetBlockId ?? "document"}`;
+}
+
 /** Coordinates work that reads or replaces one version of an adaptation head. */
 export function adaptationHeadConcurrencyKey(
   adaptationId: string,

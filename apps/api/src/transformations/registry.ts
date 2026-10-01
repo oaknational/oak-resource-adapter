@@ -36,12 +36,3 @@ export function isRegisteredTransformationKind(
 ): kind is RegisteredTransformationKind {
   return Object.hasOwn(transformationDefinitions, kind);
 }
-
-export function parseTransformationParams<TKind extends RegisteredTransformationKind>(
-  kind: TKind,
-  params: unknown,
-): import("zod").z.output<(typeof transformationDefinitions)[TKind]["params"]> {
-  return transformationDefinitions[kind].params.parse(params) as import("zod").z.output<
-    (typeof transformationDefinitions)[TKind]["params"]
-  >;
-}

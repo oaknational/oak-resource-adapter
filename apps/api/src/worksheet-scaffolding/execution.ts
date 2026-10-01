@@ -37,7 +37,7 @@ import {
   suggestionOperationKey,
 } from "./capability";
 import * as scaffoldingRepository from "./repository";
-import { asParams } from "./repository";
+import { asParams } from "./stored-params";
 
 const REVISED_RESOURCE = "revised-resource";
 
