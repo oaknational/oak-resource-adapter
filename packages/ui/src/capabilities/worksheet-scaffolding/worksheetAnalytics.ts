@@ -5,7 +5,9 @@ import type { TrackAnalyticsEvent } from "../../analytics.js";
 export function transformationKinds(
   suggestions: WorksheetScaffoldingState["suggestions"],
 ): string[] {
-  return [...new Set(suggestions.map((suggestion) => suggestion.kind))].sort();
+  return [...new Set(suggestions.map((suggestion) => suggestion.kind))].sort((a, b) =>
+    a.localeCompare(b),
+  );
 }
 
 export function createWorksheetAnalyticsTracker(track: TrackAnalyticsEvent) {
