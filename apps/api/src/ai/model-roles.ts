@@ -62,14 +62,6 @@ export type TransformationModelRole = (typeof TRANSFORMATION_ROLES)[number];
 export const DEFAULT_TRANSFORMATION_ROLE: TransformationModelRole =
   "worksheet-scaffold";
 
-export const MATERIAL_ROLES = [
-  "lesson-transcript-summary",
-] as const satisfies readonly ModelRoleName[];
-
-export type MaterialModelRole = (typeof MATERIAL_ROLES)[number];
-
-export const DEFAULT_MATERIAL_ROLE: MaterialModelRole = "lesson-transcript-summary";
-
 export const SUGGESTION_ROLES = [
   "worksheet-scaffolding-suggester",
 ] as const satisfies readonly ModelRoleName[];

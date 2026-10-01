@@ -24,7 +24,7 @@ import {
   ConcurrencyConflictError,
   getLatestJobForConcurrencyKey,
 } from "../jobs/job-repository";
-import type { JobJsonValue } from "../jobs/domain";
+import { jobJsonSchema, type JobJsonValue } from "../jobs/domain";
 import { applySuggestionJob } from "../jobs/suggestions/apply-definition";
 import { generateSuggestionsJob } from "../jobs/suggestions/generate-definition";
 import { removeTransformationJob } from "../jobs/transformations/remove-definition";
@@ -43,7 +43,7 @@ import {
   suggestionRetryJobKey,
 } from "./capability";
 import * as scaffoldingRepository from "./repository";
-import { asParams } from "./repository";
+import { asParams } from "./stored-params";
 
 /**
  * How long unfinished work stays on offer. Long enough to cover a teacher
@@ -86,7 +86,7 @@ const defaultDependencies: WorksheetScaffoldingDependencies = {
 
 /** The job input is stored as JSON, so validated params are narrowed to it. */
 function asJobParams(value: unknown): Record<string, JobJsonValue> {
-  return z.record(z.string(), z.json()).parse(value);
+  return z.record(z.string(), jobJsonSchema).parse(value);
 }
 
 function isSuggestionJobKind(kind: string): kind is WorksheetScaffoldingJobKind {
