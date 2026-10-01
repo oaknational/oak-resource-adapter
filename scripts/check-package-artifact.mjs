@@ -462,8 +462,22 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     );
   }
 
+  // oak-components imports `next/image` without an extension, which only a
+  // bundler resolves, so a module that reaches it is left to the Next build.
+  function reachesOakComponents(file, seen = new Set()) {
+    if (seen.has(file)) return false;
+    seen.add(file);
+    const source = readPackedFile(uiTarball, `package/dist/${file}`);
+    if (/from "@oaknational\/oak-components"/.test(source)) return true;
+    return [...source.matchAll(/from "(\.[^"]*\.js)"/g)].some(([, specifier]) =>
+      reachesOakComponents(join(dirname(file), specifier).replaceAll("\\", "/"), seen),
+    );
+  }
+
   // Server code and unbundled test runners load these without a bundler.
-  for (const file of serverSafeModules) {
+  for (const file of serverSafeModules.filter(
+    (module) => !reachesOakComponents(module),
+  )) {
     try {
       await import(
         pathToFileURL(
