@@ -39,8 +39,12 @@ import {
   adaptationHeadConcurrencyKey,
   CAPABILITY,
   SUGGESTION_FLOW_ID,
+  applicationJobKey,
+  dismissalJobKey,
+  removalJobKey,
   suggestionOperationKey,
   suggestionRetryJobKey,
+  transformationRetryJobKey,
 } from "./capability";
 import * as scaffoldingRepository from "./repository";
 import { asParams } from "./stored-params";
@@ -106,13 +110,6 @@ function generationRequest(adaptationId: string, resourceDocumentId: string) {
  * Undoing reopens the same offer, so keying on the offer alone would make a second
  * acceptance replay the first job and silently do nothing.
  */
-function applicationIdempotencyKey(suggestion: {
-  id: string;
-  undoCount: number;
-}): string {
-  return `apply:${suggestion.id}:${suggestion.undoCount}`;
-}
-
 /**
  * An operation the teacher asked for is finished business once it succeeds. Reporting
  * it as the current job would hide the suggestion run that decides what happens next.
@@ -264,6 +261,55 @@ async function readAndRequestSuggestions(
   return refreshed?.state ?? read.state;
 }
 
+type AdaptationHead = NonNullable<
+  Awaited<ReturnType<WorksheetScaffoldingServiceRepository["getAdaptationHead"]>>
+>;
+
+/** Most changes wait until a pending scaffold has been accepted or undone. */
+async function headWithoutPendingReview(
+  { adaptationId }: Readonly<{ adaptationId: string }>,
+  target: ResourceAdapterAuthenticatedTeacher,
+  { repository }: Pick<WorksheetScaffoldingDependencies, "repository">,
+): Promise<AdaptationHead | null> {
+  const head = await repository.getAdaptationHead(adaptationId, target.teacherId);
+  if (head === null) {
+    return null;
+  }
+  return (await repository.getPendingReview(head.storedDocument.id)) === null
+    ? head
+    : null;
+}
+
+/** The pending review, only while it is still the attempt the teacher acted on. */
+async function headUnderReview(
+  { adaptationId, attemptId }: Readonly<{ adaptationId: string; attemptId: string }>,
+  target: ResourceAdapterAuthenticatedTeacher,
+  { repository }: Pick<WorksheetScaffoldingDependencies, "repository">,
+) {
+  const head = await repository.getAdaptationHead(adaptationId, target.teacherId);
+  if (head === null) {
+    return null;
+  }
+  const pending = await repository.getPendingReview(head.storedDocument.id);
+  return pending?.attempt.id === attemptId ? { head, pending } : null;
+}
+
+/** Queues work against the head the request was checked on, then reads back the state. */
+async function enqueueOnHead(
+  head: AdaptationHead,
+  { adaptationId }: Readonly<{ adaptationId: string }>,
+  target: ResourceAdapterAuthenticatedTeacher,
+  dependencies: WorksheetScaffoldingDependencies,
+  request: Parameters<WorksheetScaffoldingDependencies["enqueue"]>[0],
+): Promise<WorksheetScaffoldingState | null> {
+  await enqueueUnlessAlreadyRunning(dependencies.enqueue, {
+    ...request,
+    concurrencyKey: adaptationHeadConcurrencyKey(adaptationId, head.storedDocument.id),
+  });
+  const read = await readAdaptation(adaptationId, target.teacherId, dependencies);
+  return read?.state ?? null;
+}
+
 export async function getWorksheetScaffoldingState(
   adaptationId: string,
   target: ResourceAdapterAuthenticatedTeacher,
@@ -353,12 +399,8 @@ export async function enqueueSuggestionApplication(
     input.params ?? suggestion.params,
   );
 
-  await enqueueUnlessAlreadyRunning(dependencies.enqueue, {
-    concurrencyKey: adaptationHeadConcurrencyKey(
-      input.adaptationId,
-      head.storedDocument.id,
-    ),
-    idempotencyKey: applicationIdempotencyKey(suggestion),
+  return enqueueOnHead(head, input, target, dependencies, {
+    idempotencyKey: applicationJobKey(suggestion),
     input: {
       adaptationId: input.adaptationId,
       params: asJobParams(params),
@@ -367,9 +409,6 @@ export async function enqueueSuggestionApplication(
     },
     kind: applySuggestionJob.kind,
   });
-
-  const read = await readAdaptation(input.adaptationId, target.teacherId, dependencies);
-  return read?.state ?? null;
 }
 
 export async function acceptWorksheetScaffoldingReview(
@@ -377,19 +416,14 @@ export async function acceptWorksheetScaffoldingReview(
   target: ResourceAdapterAuthenticatedTeacher,
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingState | null> {
-  const { repository } = dependencies;
-  const head = await repository.getAdaptationHead(input.adaptationId, target.teacherId);
-  if (head === null) {
+  const review = await headUnderReview(input, target, dependencies);
+  if (review === null) {
     return null;
   }
-  const pending = await repository.getPendingReview(head.storedDocument.id);
-  if (pending?.attempt.id !== input.attemptId) {
-    return null;
-  }
-  const accepted = await repository.acceptPendingReview({
+  const accepted = await dependencies.repository.acceptPendingReview({
     adaptationId: input.adaptationId,
     attemptId: input.attemptId,
-    expectedHeadId: head.storedDocument.id,
+    expectedHeadId: review.head.storedDocument.id,
   });
   if (!accepted) {
     return null;
@@ -402,15 +436,12 @@ export async function undoWorksheetScaffoldingReview(
   target: ResourceAdapterAuthenticatedTeacher,
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingState | null> {
+  const review = await headUnderReview(input, target, dependencies);
+  if (review === null) {
+    return null;
+  }
+  const { head, pending } = review;
   const { repository } = dependencies;
-  const head = await repository.getAdaptationHead(input.adaptationId, target.teacherId);
-  if (head === null) {
-    return null;
-  }
-  const pending = await repository.getPendingReview(head.storedDocument.id);
-  if (pending?.attempt.id !== input.attemptId) {
-    return null;
-  }
   const previous = await repository.getPrimaryTransformationInput(
     pending.transformation.id,
   );
@@ -434,21 +465,13 @@ export async function enqueueWorksheetScaffoldingRetryTransformation(
   target: ResourceAdapterAuthenticatedTeacher,
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingState | null> {
-  const { repository } = dependencies;
-  const head = await repository.getAdaptationHead(input.adaptationId, target.teacherId);
-  if (head === null) {
+  const review = await headUnderReview(input, target, dependencies);
+  if (review === null) {
     return null;
   }
-  const pending = await repository.getPendingReview(head.storedDocument.id);
-  if (pending?.attempt.id !== input.attemptId) {
-    return null;
-  }
-  await enqueueUnlessAlreadyRunning(dependencies.enqueue, {
-    concurrencyKey: adaptationHeadConcurrencyKey(
-      input.adaptationId,
-      head.storedDocument.id,
-    ),
-    idempotencyKey: `retry:${input.attemptId}:${input.requestId}`,
+  const { head } = review;
+  return enqueueOnHead(head, input, target, dependencies, {
+    idempotencyKey: transformationRetryJobKey(input.attemptId, input.requestId),
     input: {
       adaptationId: input.adaptationId,
       attemptId: input.attemptId,
@@ -457,8 +480,6 @@ export async function enqueueWorksheetScaffoldingRetryTransformation(
     },
     kind: retryTransformationJob.kind,
   });
-  const read = await readAdaptation(input.adaptationId, target.teacherId, dependencies);
-  return read?.state ?? null;
 }
 
 export async function enqueueWorksheetScaffoldingRetrySuggestions(
@@ -466,21 +487,11 @@ export async function enqueueWorksheetScaffoldingRetrySuggestions(
   target: ResourceAdapterAuthenticatedTeacher,
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingState | null> {
-  const { repository } = dependencies;
-  const head = await repository.getAdaptationHead(input.adaptationId, target.teacherId);
+  const head = await headWithoutPendingReview(input, target, dependencies);
   if (head === null) {
     return null;
   }
-
-  if ((await repository.getPendingReview(head.storedDocument.id)) !== null) {
-    return null;
-  }
-
-  await enqueueUnlessAlreadyRunning(dependencies.enqueue, {
-    concurrencyKey: adaptationHeadConcurrencyKey(
-      input.adaptationId,
-      head.storedDocument.id,
-    ),
+  return enqueueOnHead(head, input, target, dependencies, {
     idempotencyKey: suggestionRetryJobKey(head.storedDocument.id, input.requestId),
     input: {
       adaptationId: input.adaptationId,
@@ -489,8 +500,6 @@ export async function enqueueWorksheetScaffoldingRetrySuggestions(
     },
     kind: generateSuggestionsJob.kind,
   });
-  const read = await readAdaptation(input.adaptationId, target.teacherId, dependencies);
-  return read?.state ?? null;
 }
 
 export async function enqueueWorksheetScaffoldingRemoval(
@@ -498,28 +507,23 @@ export async function enqueueWorksheetScaffoldingRemoval(
   target: ResourceAdapterAuthenticatedTeacher,
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingState | null> {
-  const { repository } = dependencies;
-  const head = await repository.getAdaptationHead(input.adaptationId, target.teacherId);
+  const head = await headWithoutPendingReview(input, target, dependencies);
   if (head === null) {
     return null;
   }
-  if ((await repository.getPendingReview(head.storedDocument.id)) !== null) {
-    return null;
-  }
-  const document = head.storedDocument.document;
-  if (
-    !contributionIdsInDocument(document).includes(input.contributionId) ||
-    !(await repository.isAcceptedContribution(input.adaptationId, input.contributionId))
-  ) {
-    return null;
-  }
-
-  await enqueueUnlessAlreadyRunning(dependencies.enqueue, {
-    concurrencyKey: adaptationHeadConcurrencyKey(
+  const isRemovable =
+    contributionIdsInDocument(head.storedDocument.document).includes(
+      input.contributionId,
+    ) &&
+    (await dependencies.repository.isAcceptedContribution(
       input.adaptationId,
-      head.storedDocument.id,
-    ),
-    idempotencyKey: `remove:${head.storedDocument.id}:${input.contributionId}`,
+      input.contributionId,
+    ));
+  if (!isRemovable) {
+    return null;
+  }
+  return enqueueOnHead(head, input, target, dependencies, {
+    idempotencyKey: removalJobKey(head.storedDocument.id, input.contributionId),
     input: {
       adaptationId: input.adaptationId,
       contributionId: input.contributionId,
@@ -527,8 +531,6 @@ export async function enqueueWorksheetScaffoldingRemoval(
     },
     kind: removeTransformationJob.kind,
   });
-  const read = await readAdaptation(input.adaptationId, target.teacherId, dependencies);
-  return read?.state ?? null;
 }
 
 export async function enqueueWorksheetScaffoldingDismissal(
@@ -536,28 +538,18 @@ export async function enqueueWorksheetScaffoldingDismissal(
   target: ResourceAdapterAuthenticatedTeacher,
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingState | null> {
-  const { repository } = dependencies;
-  const head = await repository.getAdaptationHead(input.adaptationId, target.teacherId);
+  const head = await headWithoutPendingReview(input, target, dependencies);
   if (head === null) {
     return null;
   }
-  if ((await repository.getPendingReview(head.storedDocument.id)) !== null) {
-    return null;
-  }
-  const document = head.storedDocument.document;
   if (
     input.targetBlockId !== null &&
-    getResourceNodeById(document, input.targetBlockId) === undefined
+    getResourceNodeById(head.storedDocument.document, input.targetBlockId) === undefined
   ) {
     return null;
   }
-
-  await enqueueUnlessAlreadyRunning(dependencies.enqueue, {
-    concurrencyKey: adaptationHeadConcurrencyKey(
-      input.adaptationId,
-      head.storedDocument.id,
-    ),
-    idempotencyKey: `dismiss:${head.storedDocument.id}:${input.targetBlockId ?? "document"}`,
+  return enqueueOnHead(head, input, target, dependencies, {
+    idempotencyKey: dismissalJobKey(head.storedDocument.id, input.targetBlockId),
     input: {
       adaptationId: input.adaptationId,
       resourceDocumentId: head.storedDocument.id,
@@ -565,6 +557,4 @@ export async function enqueueWorksheetScaffoldingDismissal(
     },
     kind: dismissTransformationsJob.kind,
   });
-  const read = await readAdaptation(input.adaptationId, target.teacherId, dependencies);
-  return read?.state ?? null;
 }
