@@ -26,8 +26,11 @@ locals {
       POSTHOG_API_KEY                                    = var.posthog_api_key_staging
     }
 
-    api_staging     = {}
-    harness_preview = { CLERK_SECRET_KEY = var.clerk_secret_key_test }
+    api_staging = {}
+    harness_preview = {
+      CLERK_SECRET_KEY            = var.clerk_secret_key_test
+      NEXT_PUBLIC_POSTHOG_API_KEY = var.posthog_api_key_staging
+    }
     harness_staging = {}
 
     # E2E_CLERK_USER_EMAIL is read by `pnpm test:e2e` locally, not by any

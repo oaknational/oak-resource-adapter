@@ -25,6 +25,7 @@ import { keyframes, styled } from "styled-components";
 
 import { ResourceAdapterUnavailableMessage } from "../../ResourceAdapterErrorBoundary.js";
 import { ResourceDocumentRenderer } from "../../resource-document/ResourceDocumentRenderer.js";
+import type { TrackAnalyticsEvent } from "../../analytics.js";
 import type {
   GetToken,
   LessonContext,
@@ -45,6 +46,7 @@ export type WorksheetScaffoldingWorkflowProps = Readonly<{
   isOpen: boolean;
   lesson: LessonContext;
   onError?: ResourceAdapterErrorHandler;
+  track: TrackAnalyticsEvent;
 }>;
 
 type WorkflowStatus = Readonly<{
@@ -567,7 +569,9 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
         {announcement(null)}
         <ResumeChoice
           onResume={() => resume(state.resumable.adaptationId)}
-          onStartFresh={() => startFresh(state.resumable.adaptationId)}
+          onStartFresh={() =>
+            startFresh(state.resumable.adaptationId, "start_from_original_button")
+          }
           resumable={state.resumable}
         />
       </>
@@ -722,7 +726,9 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
                     <OakTertiaryButton
                       disabled={isWorking}
                       iconName="ai"
-                      onClick={retrySuggestions}
+                      onClick={() =>
+                        retrySuggestions("generate_new_suggestions_button")
+                      }
                     >
                       Generate new suggestions
                     </OakTertiaryButton>
@@ -731,7 +737,12 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
                     <OakTertiaryButton
                       disabled={isWorking}
                       iconName="trash"
-                      onClick={() => startFresh(state.value.adaptationId)}
+                      onClick={() =>
+                        startFresh(
+                          state.value.adaptationId,
+                          "remove_all_scaffolds_button",
+                        )
+                      }
                     >
                       Remove all scaffolds
                     </OakTertiaryButton>
@@ -750,7 +761,10 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
             cta={
               <ActionRow>
                 {canRetryFailedSuggestions && (
-                  <OakSecondaryButton disabled={isWorking} onClick={retrySuggestions}>
+                  <OakSecondaryButton
+                    disabled={isWorking}
+                    onClick={() => retrySuggestions("try_again_button")}
+                  >
                     Try again
                   </OakSecondaryButton>
                 )}
@@ -776,6 +790,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
             onRefresh={refresh}
             worksheetWasRefreshed={worksheetWasRefreshed}
             onError={props.onError}
+            track={props.track}
           />
           {renderSuggestionGroup(null)}
           <ResourceDocumentRenderer

@@ -5,6 +5,7 @@ import { OakIcon, OakP, OakPrimaryButton } from "@oaknational/oak-components";
 import { keyframes, styled } from "styled-components";
 import type { WorksheetDownloadAvailability } from "@oaknational/resource-adapter-contracts/internal";
 
+import type { TrackAnalyticsEvent } from "../../analytics.js";
 import { ResourceAdapterApiError } from "../../errors.js";
 import type { GetToken, ResourceAdapterErrorHandler } from "../../publicTypes.js";
 import {
@@ -124,6 +125,7 @@ export function WorksheetDownload({
   onRefresh,
   worksheetWasRefreshed = false,
   onError,
+  track,
 }: Readonly<{
   apiBaseUrl: string;
   getToken: GetToken;
@@ -133,6 +135,7 @@ export function WorksheetDownload({
   onRefresh: () => Promise<void>;
   worksheetWasRefreshed?: boolean;
   onError?: ResourceAdapterErrorHandler | undefined;
+  track: TrackAnalyticsEvent;
 }>) {
   const descriptionId = useId();
   const { state, download } = useResourceDownload({
@@ -151,6 +154,20 @@ export function WorksheetDownload({
         signal,
       }),
     onStale: onRefresh,
+    onDownloaded: () =>
+      track({
+        name: "Adapted Resource Downloaded",
+        adaptationId,
+        componentType: "download_button",
+        format: "docx",
+      }),
+    onFailed: () =>
+      track({
+        name: "Adaptation Request Failed",
+        componentType: "resource_adapter_dialog",
+        adaptationId,
+        requestAction: "download",
+      }),
     onError,
   });
   const { phase } = state;

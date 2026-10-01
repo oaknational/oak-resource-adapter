@@ -167,6 +167,7 @@ export type WorksheetScaffoldingState = Readonly<{
   pendingReview: null | Readonly<{
     attemptId: string;
     contributionId: string;
+    kind: string;
     label: string;
     reason: string;
     targetBlockId: string | null;

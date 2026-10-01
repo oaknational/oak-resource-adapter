@@ -23,6 +23,7 @@
     "@portabletext/react": "^4.0.3",
     "next": "^16.3.6",
     "next-cloudinary": "^6.19.3",
+    "posthog-js": "^1.434.10",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "styled-components": "^6.5.3",

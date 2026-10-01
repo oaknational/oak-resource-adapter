@@ -4,6 +4,7 @@ import {
   ResourceAdapterDialog,
   type ResourceAdapterCapability,
   type ResourceAdapterCapabilityOption,
+  type ResourceAdapterOpeningControl,
 } from "@oaknational/resource-adapter";
 import { useAuth } from "@clerk/nextjs";
 import { raLogger } from "@oaknational/resource-adapter-logger";
@@ -14,6 +15,7 @@ import { ExtractionNotes } from "../shared/ExtractionNotes";
 import { ScenarioNavigation } from "../shared/ScenarioNavigation";
 import styles from "../../page.module.css";
 import { useCapabilities } from "../../_hooks/useCapabilities";
+import { useHarnessAnalytics } from "../../_hooks/useHarnessAnalytics";
 import type { EdgeCase, EdgeCaseNavigationItem } from "../../scenario-types";
 
 const log = raLogger("harness");
@@ -29,6 +31,7 @@ export function EdgeCaseView({
 }>) {
   const lesson = edgeCase.lesson;
   const { getToken } = useAuth();
+  const { trackAnalyticsEvent, trackAdapterOpened } = useHarnessAnalytics();
   const { capabilities, hasAvailableCapabilities, reload, state } = useCapabilities({
     apiBaseUrl: edgeCase.brokenApiPath ? `${apiBaseUrl}-unreachable` : apiBaseUrl,
     lesson,
@@ -43,19 +46,25 @@ export function EdgeCaseView({
     setSelectedCapability(undefined);
   }, [edgeCase.id]);
 
-  function selectCapability(capability: ResourceAdapterCapability) {
+  function selectCapability(
+    capability: ResourceAdapterCapability,
+    control: ResourceAdapterOpeningControl,
+  ) {
     setSelectedCapability(capability);
     setIsDialogOpen(true);
+    trackAdapterOpened(capability.id, control);
   }
 
   // The fixture offers a choice the service does not implement, so whichever
   // one is picked opens the worksheet workflow.
-  function selectFixtureCapability(option: ResourceAdapterCapabilityOption) {
-    selectCapability({
-      id: "worksheetScaffolding",
-      label: option.label,
-      resourceType: "worksheet",
-    });
+  function selectFixtureCapability(
+    option: ResourceAdapterCapabilityOption,
+    control: ResourceAdapterOpeningControl,
+  ) {
+    selectCapability(
+      { id: "worksheetScaffolding", label: option.label, resourceType: "worksheet" },
+      control,
+    );
   }
 
   const fixtureCapabilities = edgeCase.uiCapabilities;
@@ -140,6 +149,7 @@ export function EdgeCaseView({
           getToken={getToken}
           isOpen={isDialogOpen}
           lesson={lesson}
+          onAnalyticsEvent={trackAnalyticsEvent}
           onClose={() => setIsDialogOpen(false)}
           onError={(error) => log.error(error)}
         />

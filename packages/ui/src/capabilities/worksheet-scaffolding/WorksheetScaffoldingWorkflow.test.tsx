@@ -235,6 +235,7 @@ const readyWithPendingReview = readyState({
   pendingReview: {
     attemptId: "attempt-1",
     contributionId: "contribution-1",
+    kind: "scaffold-add-word-bank",
     label: "Add a word bank",
     reason: "This question depends on recalling several topic words.",
     targetBlockId: "question-1",
@@ -1367,3 +1368,578 @@ it.each(["resolve", "reject"] as const)(
     expect(onError).not.toHaveBeenCalled();
   },
 );
+
+describe("analytics", () => {
+  const generatingJob = {
+    failureMessage: null,
+    id: "job-1",
+    kind: "suggestions.generate",
+    status: "running",
+  } as const;
+
+  function renderTracked() {
+    const onAnalyticsEvent = vi.fn();
+    renderDialog({ onAnalyticsEvent });
+    return onAnalyticsEvent;
+  }
+
+  function lastEvent(onAnalyticsEvent: ReturnType<typeof vi.fn>) {
+    return onAnalyticsEvent.mock.lastCall?.[0];
+  }
+
+  it("reports a new adaptation, then the suggestions its generation offered", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(readyState({ job: generatingJob })),
+    );
+    getWorksheetScaffoldingMock.mockResolvedValue(readyWithGroupedSuggestions);
+    const onAnalyticsEvent = renderTracked();
+
+    await screen.findByRole("group", { name: "Suggested scaffolds" });
+
+    expect(onAnalyticsEvent.mock.calls.map(([event]) => event)).toEqual([
+      {
+        adaptationId: "adaptation-1",
+        capabilityId: "worksheetScaffolding",
+        packageVersion: expect.any(String),
+        name: "Adaptation Started",
+        componentType: "resource_adapter_dialog",
+        startMode: "new",
+      },
+      {
+        name: "Suggestions Displayed",
+        componentType: "resource_adapter_dialog",
+        adaptationId: "adaptation-1",
+        capabilityId: "worksheetScaffolding",
+        packageVersion: expect.any(String),
+        jobId: "job-1",
+        suggestionCount: 2,
+        transformationKinds: [
+          "scaffold-add-recall-questions",
+          "scaffold-add-word-bank",
+        ],
+      },
+    ]);
+  });
+
+  it("reports a generation that offered nothing", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(readyState({ job: generatingJob })),
+    );
+    getWorksheetScaffoldingMock.mockResolvedValue(readyState({ job: generatedJob }));
+    const onAnalyticsEvent = renderTracked();
+
+    await screen.findByText("No scaffolds suggested");
+
+    expect(lastEvent(onAnalyticsEvent)).toMatchObject({
+      name: "Suggestions Displayed",
+      componentType: "resource_adapter_dialog",
+      suggestionCount: 0,
+      transformationKinds: [],
+    });
+  });
+
+  it("reports suggestions already generated in the opening response", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    const onAnalyticsEvent = renderTracked();
+
+    await screen.findByRole("group", { name: "Suggested scaffolds" });
+
+    expect(onAnalyticsEvent.mock.calls.map(([event]) => event.name)).toEqual([
+      "Adaptation Started",
+      "Suggestions Displayed",
+    ]);
+  });
+
+  it("says what a failed regeneration was retrying", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    retrySuggestionsMock.mockRejectedValueOnce(new Error("regeneration failed"));
+    const onAnalyticsEvent = renderTracked();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Generate new suggestions" }),
+    );
+
+    await waitFor(() =>
+      expect(onAnalyticsEvent).toHaveBeenCalledWith({
+        adaptationId: "adaptation-1",
+        capabilityId: "worksheetScaffolding",
+        name: "Adaptation Request Failed",
+        componentType: "resource_adapter_dialog",
+        packageVersion: expect.any(String),
+        requestAction: "retry",
+        retryTarget: "suggestions",
+      }),
+    );
+  });
+
+  it("says what a failed transformation retry was retrying", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithPendingReview));
+    retryTransformationMock.mockRejectedValueOnce(new Error("retry failed"));
+    const onAnalyticsEvent = renderTracked();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Retry" }));
+
+    await waitFor(() =>
+      expect(onAnalyticsEvent).toHaveBeenCalledWith({
+        adaptationId: "adaptation-1",
+        capabilityId: "worksheetScaffolding",
+        name: "Adaptation Request Failed",
+        componentType: "resource_adapter_dialog",
+        packageVersion: expect.any(String),
+        requestAction: "retry",
+        retryTarget: "transformation",
+      }),
+    );
+  });
+
+  it("reports a failed poll as its own request action", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(readyState({ job: generatingJob })),
+    );
+    getWorksheetScaffoldingMock.mockRejectedValue(new Error("poll failed"));
+    const onAnalyticsEvent = renderTracked();
+
+    await screen.findByTestId("resource-adapter-worksheet-scaffolding-error");
+
+    expect(lastEvent(onAnalyticsEvent)).toEqual({
+      adaptationId: "adaptation-1",
+      capabilityId: "worksheetScaffolding",
+      name: "Adaptation Request Failed",
+      componentType: "resource_adapter_dialog",
+      packageVersion: expect.any(String),
+      requestAction: "poll",
+    });
+  });
+
+  it("reports a step it watched fail", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(readyState({ job: generatingJob })),
+    );
+    getWorksheetScaffoldingMock.mockResolvedValue(
+      readyState({
+        job: {
+          ...generatingJob,
+          failureMessage: "The model timed out.",
+          status: "failed",
+        },
+      }),
+    );
+    const onAnalyticsEvent = renderTracked();
+
+    await screen.findByRole("alert");
+
+    expect(lastEvent(onAnalyticsEvent)).toEqual({
+      adaptationId: "adaptation-1",
+      capabilityId: "worksheetScaffolding",
+      packageVersion: expect.any(String),
+      jobKind: "suggestions.generate",
+      jobId: "job-1",
+      name: "Adaptation Step Failed",
+      componentType: "resource_adapter_dialog",
+    });
+  });
+
+  it("reports the transformation a teacher runs", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    const onAnalyticsEvent = renderTracked();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Add a word bank" }),
+    );
+
+    expect(onAnalyticsEvent).toHaveBeenCalledWith({
+      adaptationId: "adaptation-1",
+      capabilityId: "worksheetScaffolding",
+      packageVersion: expect.any(String),
+      componentType: "suggestion_button",
+      name: "Transformation Requested",
+      transformationKind: "scaffold-add-word-bank",
+    });
+  });
+
+  it.each([
+    ["Accept", "accept_button", "accept"],
+    ["Retry", "retry_button", "retry"],
+    ["Undo", "undo_button", "undo"],
+  ] as const)(
+    "reports %s on a pending scaffold",
+    async (button, componentType, reviewAction) => {
+      openWorksheetScaffoldingMock.mockResolvedValueOnce(
+        opened(readyWithPendingReview),
+      );
+      const onAnalyticsEvent = renderTracked();
+
+      await userEvent.click(await screen.findByRole("button", { name: button }));
+
+      expect(onAnalyticsEvent).toHaveBeenCalledWith({
+        adaptationId: "adaptation-1",
+        capabilityId: "worksheetScaffolding",
+        packageVersion: expect.any(String),
+        componentType,
+        name: "Transformation Review Requested",
+        reviewAction,
+        transformationKind: "scaffold-add-word-bank",
+      });
+    },
+  );
+
+  it("reports the suggestions a teacher dismisses", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(readyWithGroupedSuggestions),
+    );
+    const onAnalyticsEvent = renderTracked();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "No scaffold required" }),
+    );
+
+    expect(onAnalyticsEvent).toHaveBeenCalledWith({
+      adaptationId: "adaptation-1",
+      capabilityId: "worksheetScaffolding",
+      packageVersion: expect.any(String),
+      componentType: "no_scaffold_required_button",
+      name: "Suggestion Dismissal Requested",
+      transformationKinds: ["scaffold-add-recall-questions", "scaffold-add-word-bank"],
+    });
+  });
+
+  it("reports a removed scaffold", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(readyWithAcceptedScaffold),
+    );
+    const onAnalyticsEvent = renderTracked();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Remove" }));
+
+    expect(onAnalyticsEvent).toHaveBeenCalledWith({
+      adaptationId: "adaptation-1",
+      capabilityId: "worksheetScaffolding",
+      packageVersion: expect.any(String),
+      componentType: "remove_scaffold_button",
+      name: "Transformation Removal Requested",
+    });
+  });
+
+  it("reports removing every scaffold as a restart", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(readyWithAcceptedScaffold),
+    );
+    const onAnalyticsEvent = renderTracked();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Remove all scaffolds" }),
+    );
+
+    expect(onAnalyticsEvent).toHaveBeenCalledWith({
+      adaptationId: "adaptation-1",
+      capabilityId: "worksheetScaffolding",
+      packageVersion: expect.any(String),
+      componentType: "remove_all_scaffolds_button",
+      name: "Adaptation Restart Requested",
+    });
+  });
+
+  it("reports restarting after a failed step", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(readyState({ job: { ...generatedJob, status: "failed" } })),
+    );
+    const onAnalyticsEvent = renderTracked();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Start again" }));
+
+    expect(onAnalyticsEvent).toHaveBeenCalledWith({
+      adaptationId: "adaptation-1",
+      capabilityId: "worksheetScaffolding",
+      packageVersion: expect.any(String),
+      componentType: "start_again_button",
+      name: "Adaptation Restart Requested",
+    });
+  });
+
+  it("reports asking for new suggestions, then what they offered", async () => {
+    const retryJob = { ...generatingJob, id: "job-2", status: "queued" } as const;
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    retrySuggestionsMock.mockResolvedValueOnce(readyState({ job: retryJob }));
+    getWorksheetScaffoldingMock.mockResolvedValue(
+      readyState({
+        job: { ...retryJob, status: "succeeded" },
+        suggestions: [wordBankSuggestion],
+      }),
+    );
+    const onAnalyticsEvent = renderTracked();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Generate new suggestions" }),
+    );
+    await waitFor(() =>
+      expect(onAnalyticsEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ name: "Suggestions Displayed", jobId: "job-2" }),
+      ),
+    );
+
+    expect(onAnalyticsEvent).toHaveBeenCalledWith({
+      adaptationId: "adaptation-1",
+      capabilityId: "worksheetScaffolding",
+      packageVersion: expect.any(String),
+      componentType: "generate_new_suggestions_button",
+      name: "New Suggestions Requested",
+    });
+  });
+
+  it("reports trying a failed suggestion run again", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened({
+        ...readyWithAcceptedScaffold,
+        job: { ...generatedJob, status: "failed" },
+      }),
+    );
+    const onAnalyticsEvent = renderTracked();
+
+    const alert = await screen.findByRole("alert");
+    await userEvent.click(within(alert).getByRole("button", { name: "Try again" }));
+
+    expect(onAnalyticsEvent).toHaveBeenCalledWith({
+      adaptationId: "adaptation-1",
+      capabilityId: "worksheetScaffolding",
+      packageVersion: expect.any(String),
+      componentType: "try_again_button",
+      name: "New Suggestions Requested",
+    });
+  });
+
+  it("reports a failed request without claiming the review succeeded", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithPendingReview));
+    acceptReviewMock.mockRejectedValueOnce(new Error("request refused"));
+    const onAnalyticsEvent = renderTracked();
+    await userEvent.click(await screen.findByRole("button", { name: "Accept" }));
+    await screen.findByTestId("resource-adapter-worksheet-scaffolding-error");
+    expect(onAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "Transformation Review Requested",
+        reviewAction: "accept",
+      }),
+    );
+    expect(onAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "Adaptation Request Failed",
+        componentType: "resource_adapter_dialog",
+        requestAction: "accept",
+        adaptationId: "adaptation-1",
+      }),
+    );
+    expect(onAnalyticsEvent).not.toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Transformation Reviewed" }),
+    );
+  });
+
+  it("reports regeneration completed in the request response, once", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    retrySuggestionsMock.mockResolvedValueOnce({
+      ...readyWithSuggestion,
+      job: { ...generatedJob, id: "fast-job" },
+    });
+    const onAnalyticsEvent = renderTracked();
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Generate new suggestions" }),
+    );
+    await waitFor(() =>
+      expect(onAnalyticsEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: "Suggestions Displayed",
+          componentType: "resource_adapter_dialog",
+          jobId: "fast-job",
+        }),
+      ),
+    );
+    expect(
+      onAnalyticsEvent.mock.calls.filter(
+        ([event]) =>
+          event.name === "Suggestions Displayed" && event.jobId === "fast-job",
+      ),
+    ).toHaveLength(1);
+  });
+
+  it("reports failure already present in the first response", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(readyState({ job: { ...generatedJob, status: "failed" } })),
+    );
+    const onAnalyticsEvent = renderTracked();
+    await screen.findByRole("alert");
+    expect(onAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Adaptation Step Failed", jobId: "job-1" }),
+    );
+  });
+
+  describe("with unfinished work", () => {
+    beforeEach(() => {
+      openWorksheetScaffoldingMock.mockResolvedValueOnce({
+        outcome: "resumable",
+        resumable: {
+          adaptationId: "adaptation-9",
+          pendingScaffoldCount: 0,
+          scaffoldCount: 1,
+          updatedAt: "2026-02-03T09:00:00.000Z",
+        },
+      });
+    });
+
+    it("reports carrying on as a resumed start", async () => {
+      getWorksheetScaffoldingMock.mockResolvedValue(
+        readyState({ adaptationId: "adaptation-9" }),
+      );
+      const onAnalyticsEvent = renderTracked();
+
+      await userEvent.click(await screen.findByRole("button", { name: "Carry on" }));
+      await screen.findByRole("article", { name: "Adding fractions worksheet" });
+
+      expect(onAnalyticsEvent.mock.calls.map(([event]) => event)).toEqual([
+        {
+          adaptationId: "adaptation-9",
+          capabilityId: "worksheetScaffolding",
+          packageVersion: expect.any(String),
+          name: "Adaptation Started",
+          componentType: "resource_adapter_dialog",
+          startMode: "resumed",
+        },
+      ]);
+    });
+
+    it("reports viewing resumed suggestions without replaying their generation", async () => {
+      getWorksheetScaffoldingMock.mockResolvedValue({
+        ...readyWithSuggestion,
+        adaptationId: "adaptation-9",
+      });
+      const onAnalyticsEvent = renderTracked();
+      await userEvent.click(await screen.findByRole("button", { name: "Carry on" }));
+      await screen.findByRole("group", { name: "Suggested scaffolds" });
+      expect(onAnalyticsEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: "Suggestions Displayed",
+          componentType: "resource_adapter_dialog",
+          adaptationId: "adaptation-9",
+        }),
+      );
+    });
+
+    it("reports starting from the original as a restart", async () => {
+      const onAnalyticsEvent = renderTracked();
+
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Start from the original" }),
+      );
+      await screen.findByRole("article", { name: "Adding fractions worksheet" });
+
+      expect(onAnalyticsEvent.mock.calls.map(([event]) => event)).toEqual([
+        {
+          adaptationId: "adaptation-9",
+          capabilityId: "worksheetScaffolding",
+          packageVersion: expect.any(String),
+          componentType: "start_from_original_button",
+          name: "Adaptation Restart Requested",
+        },
+        {
+          adaptationId: "adaptation-1",
+          capabilityId: "worksheetScaffolding",
+          packageVersion: expect.any(String),
+          name: "Adaptation Started",
+          componentType: "resource_adapter_dialog",
+          startMode: "new",
+        },
+      ]);
+    });
+  });
+
+  it("keeps the workflow working when the host's handler throws", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    const handlerError = new Error("analytics down");
+    const onError = vi.fn();
+    renderDialog({
+      onAnalyticsEvent: () => {
+        throw handlerError;
+      },
+      onError,
+    });
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Add a word bank" }),
+    );
+
+    expect(applySuggestionMock).toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledWith(handlerError, { componentStack: null });
+  });
+});
+
+describe("analytics privacy", () => {
+  const TEACHER_TEXT = "Private teacher text";
+
+  const privateDocument: ResourceDocument = {
+    ...documentWithPendingScaffold,
+    metadata: { title: `${TEACHER_TEXT} title` },
+  };
+
+  const privateSuggestion = {
+    ...wordBankSuggestion,
+    label: `${TEACHER_TEXT} label`,
+    params: { note: `${TEACHER_TEXT} param` },
+    reason: `${TEACHER_TEXT} reason`,
+  };
+
+  it("sends no free text or document content in any event", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(
+        readyState({
+          document: privateDocument,
+          job: {
+            failureMessage: null,
+            id: "job-1",
+            kind: "suggestions.generate",
+            status: "running",
+          },
+        }),
+      ),
+    );
+    getWorksheetScaffoldingMock.mockResolvedValue(
+      readyState({
+        document: privateDocument,
+        job: generatedJob,
+        suggestions: [privateSuggestion],
+      }),
+    );
+    applySuggestionMock.mockResolvedValueOnce(
+      readyState({
+        document: privateDocument,
+        pendingReview: {
+          attemptId: "attempt-1",
+          contributionId: "contribution-1",
+          kind: "scaffold-add-word-bank",
+          label: `${TEACHER_TEXT} review label`,
+          reason: `${TEACHER_TEXT} review reason`,
+          targetBlockId: "question-1",
+        },
+      }),
+    );
+    const onAnalyticsEvent = vi.fn();
+    renderDialog({
+      lesson: { ...lesson, title: `${TEACHER_TEXT} lesson` },
+      onAnalyticsEvent,
+    });
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: `${TEACHER_TEXT} label` }),
+    );
+    await userEvent.click(await screen.findByRole("button", { name: "Accept" }));
+    await userEvent.click(screen.getByRole("button", { name: "Close Modal" }));
+
+    const events = onAnalyticsEvent.mock.calls.map(([event]) => event);
+    expect(events.map(({ name }) => name)).toEqual([
+      "Adaptation Started",
+      "Suggestions Displayed",
+      "Transformation Requested",
+      "Transformation Preview Displayed",
+      "Transformation Review Requested",
+      "Transformation Reviewed",
+      "Resource Adapter Closed",
+    ]);
+    expect(JSON.stringify(events)).not.toContain(TEACHER_TEXT);
+  });
+});

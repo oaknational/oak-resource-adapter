@@ -3,6 +3,7 @@
 import {
   ResourceAdapterDialog,
   type ResourceAdapterCapability,
+  type ResourceAdapterOpeningControl,
 } from "@oaknational/resource-adapter";
 import { useAuth } from "@clerk/nextjs";
 import { raLogger } from "@oaknational/resource-adapter-logger";
@@ -15,6 +16,7 @@ import { ScenarioNavigation } from "../shared/ScenarioNavigation";
 import { WorksheetPanel } from "./WorksheetPanel";
 import styles from "../../page.module.css";
 import { useCapabilities } from "../../_hooks/useCapabilities";
+import { useHarnessAnalytics } from "../../_hooks/useHarnessAnalytics";
 import type {
   LessonScenario,
   LessonScenarioNavigationItem,
@@ -33,6 +35,7 @@ export function LessonScenarioView({
 }>) {
   const lesson = scenario.lesson;
   const { getToken } = useAuth();
+  const { trackAnalyticsEvent, trackAdapterOpened } = useHarnessAnalytics();
   const { capabilities, hasAvailableCapabilities, reload, state } = useCapabilities({
     apiBaseUrl,
     lesson,
@@ -47,9 +50,13 @@ export function LessonScenarioView({
     setSelectedCapability(undefined);
   }, [lesson.lessonSlug]);
 
-  function selectCapability(capability: ResourceAdapterCapability) {
+  function selectCapability(
+    capability: ResourceAdapterCapability,
+    control: ResourceAdapterOpeningControl,
+  ) {
     setSelectedCapability(capability);
     setIsDialogOpen(true);
+    trackAdapterOpened(capability.id, control);
   }
 
   return (
@@ -94,6 +101,7 @@ export function LessonScenarioView({
           getToken={getToken}
           isOpen={isDialogOpen}
           lesson={lesson}
+          onAnalyticsEvent={trackAnalyticsEvent}
           onClose={() => setIsDialogOpen(false)}
           onError={(error) => log.error(error)}
         />

@@ -47,7 +47,10 @@ describe("ResourceAdapterButton", () => {
   it("renders a direct capability action when exactly one is available", () => {
     const onSelectCapability = renderButton([worksheet]);
     fireEvent.click(screen.getByRole("button", { name: "Add extra scaffolding" }));
-    expect(onSelectCapability).toHaveBeenCalledWith(worksheet);
+    expect(onSelectCapability).toHaveBeenCalledWith(
+      worksheet,
+      "resource_adapter_button",
+    );
   });
 
   it("renders a capability menu when more than one is available", async () => {
@@ -62,7 +65,10 @@ describe("ResourceAdapterButton", () => {
     await userEvent.click(
       within(menu).getByRole("menuitem", { name: "Add extra scaffolding" }),
     );
-    expect(onSelectCapability).toHaveBeenCalledWith(worksheet);
+    expect(onSelectCapability).toHaveBeenCalledWith(
+      worksheet,
+      "resource_adapter_menu_item",
+    );
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 
@@ -105,7 +111,10 @@ describe("ResourceAdapterButton", () => {
     expect(firstCapability).toHaveFocus();
     await user.keyboard("{Enter}");
 
-    expect(onSelectCapability).toHaveBeenCalledWith(worksheet);
+    expect(onSelectCapability).toHaveBeenCalledWith(
+      worksheet,
+      "resource_adapter_menu_item",
+    );
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 });

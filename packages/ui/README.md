@@ -88,6 +88,17 @@ const canOfferAdaptation = await getResourceAdapterCapabilityAvailability({
 It answers whether _this package version_ could render anything for the lesson,
 so a sign-in prompt gated on it never leads a teacher to an empty dialog.
 
+### Analytics
+
+Pass `onAnalyticsEvent` to `ResourceAdapterDialog` to receive a
+`ResourceAdapterAnalyticsEvent` for each teacher action and observed outcome.
+Payloads hold identifiers, enums and counts only. A handler that throws or
+rejects is reported through `onError` and never blocks the workflow.
+
+Opening the dialog is the host's event to fire: `onSelectCapability` receives
+the control the teacher used as its second argument. See
+[Analytics](../../docs/ANALYTICS.md) for when each event fires.
+
 ## Testing local changes inside a host app like OWA
 
 Sometimes it isn't enough to develop against the local harness and you need to
