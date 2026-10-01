@@ -50,6 +50,7 @@ describe("worksheet analytics observation", () => {
     expect(track).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "Suggestions Displayed",
+        componentType: "resource_adapter_dialog",
         suggestionCount: 0,
         transformationKinds: [],
       }),

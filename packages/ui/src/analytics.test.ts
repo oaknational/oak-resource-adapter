@@ -44,12 +44,16 @@ describe("createAnalyticsTracker", () => {
       undefined,
     );
 
-    track({ name: "Resource Adapter Closed" });
+    track({
+      name: "Resource Adapter Closed",
+      componentType: "resource_adapter_dialog",
+    });
 
     expect(onAnalyticsEvent).toHaveBeenCalledWith({
       capabilityId: "worksheetScaffolding",
       packageVersion: expect.any(String),
       name: "Resource Adapter Closed",
+      componentType: "resource_adapter_dialog",
     });
   });
 
@@ -64,7 +68,12 @@ describe("createAnalyticsTracker", () => {
       onError,
     );
 
-    expect(() => track({ name: "Resource Adapter Closed" })).not.toThrow();
+    expect(() =>
+      track({
+        name: "Resource Adapter Closed",
+        componentType: "resource_adapter_dialog",
+      }),
+    ).not.toThrow();
     expect(onError).toHaveBeenCalledWith(error, { componentStack: null });
   });
 });
@@ -79,7 +88,12 @@ it("reports rejected async handlers without an unhandled rejection", async () =>
     },
     onError,
   );
-  expect(() => track({ name: "Resource Adapter Closed" })).not.toThrow();
+  expect(() =>
+    track({
+      name: "Resource Adapter Closed",
+      componentType: "resource_adapter_dialog",
+    }),
+  ).not.toThrow();
   await Promise.resolve();
   expect(onError).toHaveBeenCalledWith(error, { componentStack: null });
 });

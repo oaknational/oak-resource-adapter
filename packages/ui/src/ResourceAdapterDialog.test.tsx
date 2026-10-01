@@ -104,6 +104,7 @@ describe("ResourceAdapterDialog", () => {
       capabilityId: "worksheetScaffolding",
       packageVersion: expect.any(String),
       name: "Resource Adapter Closed",
+      componentType: "resource_adapter_dialog",
     });
   });
 

@@ -55,7 +55,10 @@ export function ResourceAdapterDialog(props: ResourceAdapterDialogProps) {
     [capability.id],
   );
   const closeDialog = () => {
-    track({ name: "Resource Adapter Closed" });
+    track({
+      name: "Resource Adapter Closed",
+      componentType: "resource_adapter_dialog",
+    });
     onClose();
   };
 

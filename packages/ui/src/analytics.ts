@@ -14,6 +14,7 @@ declare const __RESOURCE_ADAPTER_VERSION__: string;
 export type CapabilityAnalyticsEvent =
   | Readonly<{
       name: "Adaptation Started";
+      componentType: "resource_adapter_dialog";
       adaptationId: string;
       startMode: "new" | "resumed";
     }>
@@ -27,6 +28,7 @@ export type CapabilityAnalyticsEvent =
     }>
   | Readonly<{
       name: "Suggestions Displayed";
+      componentType: "resource_adapter_dialog";
       adaptationId: string;
       jobId: string;
       suggestionCount: number;
@@ -70,6 +72,7 @@ export type CapabilityAnalyticsEvent =
     }>
   | Readonly<{
       name: "Adaptation Step Failed";
+      componentType: "resource_adapter_dialog";
       adaptationId: string;
       jobId: string;
       jobKind: WorksheetScaffoldingJobKind;
@@ -77,17 +80,19 @@ export type CapabilityAnalyticsEvent =
   | Readonly<{
       name: "Adapted Resource Downloaded";
       adaptationId: string;
-      componentType: "adapted_resource_download_button";
+      componentType: "download_button";
       format: "docx";
     }>
   | Readonly<{
       name: "Transformation Preview Displayed";
+      componentType: "resource_adapter_dialog";
       adaptationId: string;
       attemptId: string;
       transformationKind: string;
     }>
   | Readonly<{
       name: "Adaptation Request Failed";
+      componentType: "resource_adapter_dialog";
       adaptationId?: string;
       requestAction:
         | "open"
@@ -103,11 +108,15 @@ export type CapabilityAnalyticsEvent =
     }>
   | Readonly<{
       name: "Adaptation Request Failed";
+      componentType: "resource_adapter_dialog";
       adaptationId?: string;
       requestAction: "retry";
       retryTarget: "suggestions" | "transformation";
     }>
-  | Readonly<{ name: "Resource Adapter Closed" }>;
+  | Readonly<{
+      name: "Resource Adapter Closed";
+      componentType: "resource_adapter_dialog";
+    }>;
 
 export type ResourceAdapterAnalyticsEvent = CapabilityAnalyticsEvent &
   Readonly<{ capabilityId: ResourceAdapterCapabilityId; packageVersion: string }>;

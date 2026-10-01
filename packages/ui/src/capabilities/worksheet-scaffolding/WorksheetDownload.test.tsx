@@ -101,7 +101,7 @@ it("reports each completed download, not a failed attempt", async () => {
   ]);
   expect(options.track).toHaveBeenCalledWith({
     adaptationId: documentIdentity.adaptationId,
-    componentType: "adapted_resource_download_button",
+    componentType: "download_button",
     format: "docx",
     name: "Adapted Resource Downloaded",
   });

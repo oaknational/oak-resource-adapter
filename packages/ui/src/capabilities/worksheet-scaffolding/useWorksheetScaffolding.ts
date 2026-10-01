@@ -260,6 +260,7 @@ export function useWorksheetScaffolding({
             setDocumentIsVisible(!suggestionGenerationIsBusy(entry.state));
             trackRef.current({
               name: "Adaptation Started",
+              componentType: "resource_adapter_dialog",
               adaptationId: entry.state.adaptationId,
               startMode: "new",
             });
@@ -271,6 +272,7 @@ export function useWorksheetScaffolding({
         if (!cancelled) {
           trackRef.current({
             name: "Adaptation Request Failed",
+            componentType: "resource_adapter_dialog",
             requestAction: "open",
             ...(replacing ? { adaptationId: replacing.adaptationId } : {}),
           });
@@ -342,6 +344,7 @@ export function useWorksheetScaffolding({
           if (!cancelled) {
             trackRef.current({
               name: "Adaptation Request Failed",
+              componentType: "resource_adapter_dialog",
               requestAction: "poll",
               adaptationId,
             });
@@ -426,6 +429,7 @@ export function useWorksheetScaffolding({
           setApplyingSuggestion(null);
           trackRef.current({
             name: "Adaptation Request Failed",
+            componentType: "resource_adapter_dialog",
             requestAction: "apply",
             adaptationId: state.value.adaptationId,
           });
@@ -452,6 +456,7 @@ export function useWorksheetScaffolding({
             setState({ status: "ready", value });
             trackRef.current({
               name: "Adaptation Started",
+              componentType: "resource_adapter_dialog",
               adaptationId: value.adaptationId,
               startMode: "resumed",
             });
@@ -461,6 +466,7 @@ export function useWorksheetScaffolding({
           if (workflowGenerationRef.current === workflowGeneration) {
             trackRef.current({
               name: "Adaptation Request Failed",
+              componentType: "resource_adapter_dialog",
               requestAction: "resume",
               adaptationId: adaptationId_,
             });
@@ -529,6 +535,7 @@ export function useWorksheetScaffolding({
             setActionInFlight(null);
             trackRef.current({
               name: "Adaptation Request Failed",
+              componentType: "resource_adapter_dialog",
               ...failedRequest(action),
               adaptationId: state.value.adaptationId,
             });
@@ -660,6 +667,7 @@ export function useWorksheetScaffolding({
       if (isCurrent()) {
         trackRef.current({
           name: "Adaptation Request Failed",
+          componentType: "resource_adapter_dialog",
           requestAction: "refresh",
           adaptationId,
         });

@@ -1402,10 +1402,12 @@ describe("analytics", () => {
         capabilityId: "worksheetScaffolding",
         packageVersion: expect.any(String),
         name: "Adaptation Started",
+        componentType: "resource_adapter_dialog",
         startMode: "new",
       },
       {
         name: "Suggestions Displayed",
+        componentType: "resource_adapter_dialog",
         adaptationId: "adaptation-1",
         capabilityId: "worksheetScaffolding",
         packageVersion: expect.any(String),
@@ -1430,6 +1432,7 @@ describe("analytics", () => {
 
     expect(lastEvent(onAnalyticsEvent)).toMatchObject({
       name: "Suggestions Displayed",
+      componentType: "resource_adapter_dialog",
       suggestionCount: 0,
       transformationKinds: [],
     });
@@ -1461,6 +1464,7 @@ describe("analytics", () => {
         adaptationId: "adaptation-1",
         capabilityId: "worksheetScaffolding",
         name: "Adaptation Request Failed",
+        componentType: "resource_adapter_dialog",
         packageVersion: expect.any(String),
         requestAction: "retry",
         retryTarget: "suggestions",
@@ -1480,6 +1484,7 @@ describe("analytics", () => {
         adaptationId: "adaptation-1",
         capabilityId: "worksheetScaffolding",
         name: "Adaptation Request Failed",
+        componentType: "resource_adapter_dialog",
         packageVersion: expect.any(String),
         requestAction: "retry",
         retryTarget: "transformation",
@@ -1500,6 +1505,7 @@ describe("analytics", () => {
       adaptationId: "adaptation-1",
       capabilityId: "worksheetScaffolding",
       name: "Adaptation Request Failed",
+      componentType: "resource_adapter_dialog",
       packageVersion: expect.any(String),
       requestAction: "poll",
     });
@@ -1529,6 +1535,7 @@ describe("analytics", () => {
       jobKind: "suggestions.generate",
       jobId: "job-1",
       name: "Adaptation Step Failed",
+      componentType: "resource_adapter_dialog",
     });
   });
 
@@ -1715,6 +1722,7 @@ describe("analytics", () => {
     expect(onAnalyticsEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "Adaptation Request Failed",
+        componentType: "resource_adapter_dialog",
         requestAction: "accept",
         adaptationId: "adaptation-1",
       }),
@@ -1738,6 +1746,7 @@ describe("analytics", () => {
       expect(onAnalyticsEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           name: "Suggestions Displayed",
+          componentType: "resource_adapter_dialog",
           jobId: "fast-job",
         }),
       ),
@@ -1789,6 +1798,7 @@ describe("analytics", () => {
           capabilityId: "worksheetScaffolding",
           packageVersion: expect.any(String),
           name: "Adaptation Started",
+          componentType: "resource_adapter_dialog",
           startMode: "resumed",
         },
       ]);
@@ -1805,6 +1815,7 @@ describe("analytics", () => {
       expect(onAnalyticsEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           name: "Suggestions Displayed",
+          componentType: "resource_adapter_dialog",
           adaptationId: "adaptation-9",
         }),
       );
@@ -1831,6 +1842,7 @@ describe("analytics", () => {
           capabilityId: "worksheetScaffolding",
           packageVersion: expect.any(String),
           name: "Adaptation Started",
+          componentType: "resource_adapter_dialog",
           startMode: "new",
         },
       ]);

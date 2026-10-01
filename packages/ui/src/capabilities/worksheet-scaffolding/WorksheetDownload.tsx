@@ -158,12 +158,13 @@ export function WorksheetDownload({
       track({
         name: "Adapted Resource Downloaded",
         adaptationId,
-        componentType: "adapted_resource_download_button",
+        componentType: "download_button",
         format: "docx",
       }),
     onFailed: () =>
       track({
         name: "Adaptation Request Failed",
+        componentType: "resource_adapter_dialog",
         adaptationId,
         requestAction: "download",
       }),

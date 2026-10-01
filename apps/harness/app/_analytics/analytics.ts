@@ -58,7 +58,7 @@ export function toPostHogProperties(event: HarnessAnalyticsEvent) {
     "Analytics Use Case": "Teacher",
     Platform: "harness",
     Product: "resource adapter",
-    "Event Version": "1.0.0",
+    "Event Version": "2.0.0",
     "Engagement Intent": engagementIntent[event.name],
   };
   for (const [key, value] of Object.entries(event)) {

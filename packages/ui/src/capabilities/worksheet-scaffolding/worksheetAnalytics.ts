@@ -25,6 +25,7 @@ export function createWorksheetAnalyticsTracker(track: TrackAnalyticsEvent) {
     reportedFailures.add(job.id);
     track({
       name: "Adaptation Step Failed",
+      componentType: "resource_adapter_dialog",
       adaptationId,
       jobId: job.id,
       jobKind: job.kind,
@@ -48,6 +49,7 @@ export function createWorksheetAnalyticsTracker(track: TrackAnalyticsEvent) {
       displayedSuggestions.add(job.id);
       track({
         name: "Suggestions Displayed",
+        componentType: "resource_adapter_dialog",
         adaptationId,
         jobId: job.id,
         suggestionCount: suggestions.length,
@@ -58,6 +60,7 @@ export function createWorksheetAnalyticsTracker(track: TrackAnalyticsEvent) {
       displayedPreviews.add(pendingReview.attemptId);
       track({
         name: "Transformation Preview Displayed",
+        componentType: "resource_adapter_dialog",
         adaptationId,
         attemptId: pendingReview.attemptId,
         transformationKind: pendingReview.kind,
