@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { adapterProxyPath } from "../../harness-api";
+import { adapterProxyPath, readApiResponse } from "../../harness-api";
 import type { LessonScenario } from "../../scenario-types";
 
 const partSchema = z.strictObject({
@@ -30,23 +30,6 @@ export async function fetchOakMaterial(
     signal,
   });
 
-  if (!response.ok) {
-    const failure = z
-      .object({ error: z.string() })
-      .safeParse(await response.json().catch(() => null));
-
-    throw new Error(
-      failure.success
-        ? failure.data.error
-        : `The API returned HTTP ${response.status}.`,
-    );
-  }
-
-  const parsed = responseSchema.safeParse(await response.json());
-
-  if (!parsed.success) {
-    throw new Error("The API returned Oak material in an unrecognised shape.");
-  }
-
-  return parsed.data.parts;
+  const { parts } = await readApiResponse(response, responseSchema, "Oak material");
+  return parts;
 }

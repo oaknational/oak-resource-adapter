@@ -69,8 +69,8 @@ const blockScaffold = defineTransformation({
   kind: "test-block-scaffold",
   label: "Block scaffold",
   supportLevels: [
-    { level: "low", description: "Names the words." },
-    { level: "mid", description: "Defines the words." },
+    { level: "low", label: "Name the words", description: "Names the words." },
+    { level: "mid", label: "Define the words", description: "Defines the words." },
   ],
   status: "draft",
   suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
@@ -106,7 +106,9 @@ const contextHungry = defineTransformation({
 const vocabularyScaffold = defineTransformation({
   kind: "test-vocabulary-scaffold",
   label: "Vocabulary scaffold",
-  supportLevels: [{ level: "mid", description: "Defines the words." }],
+  supportLevels: [
+    { level: "mid", label: "Define the words", description: "Defines the words." },
+  ],
   status: "draft",
   suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   materialRequirements: [{ key: "lesson.keywords", required: false }],

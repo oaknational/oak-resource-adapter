@@ -6,7 +6,7 @@ import {
   jobs,
   type Job,
 } from "@oaknational/resource-adapter-db";
-import { and, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 
 import type { JobFailure, JobJsonValue } from "./domain";
 
@@ -223,4 +223,37 @@ export async function failJob(
           : or(isNull(jobs.workflowRunId), eq(jobs.workflowRunId, workflowRunId)),
       ),
     );
+}
+
+/** Prefers work still in flight, so a stale failure never masks a running job. */
+export async function getLatestJobForConcurrencyKey(
+  concurrencyKey: string,
+  kinds: readonly string[],
+): Promise<Job | null> {
+  const database = getDatabaseClient();
+  const matchesConcurrencyKey = and(
+    inArray(jobs.kind, [...kinds]),
+    eq(jobs.concurrencyKey, concurrencyKey),
+  );
+  const [activeJob] = await database
+    .select()
+    .from(jobs)
+    .where(
+      and(
+        matchesConcurrencyKey,
+        inArray(jobs.status, [JobStatus.QUEUED, JobStatus.RUNNING]),
+      ),
+    )
+    .orderBy(desc(jobs.createdAt))
+    .limit(1);
+  if (activeJob !== undefined) {
+    return activeJob;
+  }
+  const [latestJob] = await database
+    .select()
+    .from(jobs)
+    .where(matchesConcurrencyKey)
+    .orderBy(desc(jobs.createdAt))
+    .limit(1);
+  return latestJob ?? null;
 }

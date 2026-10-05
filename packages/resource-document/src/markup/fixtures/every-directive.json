@@ -1,0 +1,270 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:every-directive",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "unstable:heading-adding-fractions",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Adding fractions"
+        }
+      ]
+    },
+    {
+      "id": "unstable:paragraph-read-each-question-carefully-show-your-working",
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Read each question carefully.\nShow your working."
+        }
+      ]
+    },
+    {
+      "id": "unstable:paragraph-read-each-question-carefully-show-your-working-2",
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Read each question carefully.\nShow your working."
+        }
+      ]
+    },
+    {
+      "id": "objective",
+      "type": "callout",
+      "role": "learning-objective",
+      "content": [
+        {
+          "type": "text",
+          "text": "I can add fractions with different denominators."
+        }
+      ]
+    },
+    {
+      "id": "instruction",
+      "type": "callout",
+      "role": "instruction",
+      "content": [
+        {
+          "type": "text",
+          "text": "Use a pencil."
+        }
+      ]
+    },
+    {
+      "id": "tip",
+      "type": "callout",
+      "role": "note",
+      "content": [
+        {
+          "type": "text",
+          "text": "Find a common denominator first."
+        }
+      ]
+    },
+    {
+      "id": "practice",
+      "layout": {
+        "keepWithNext": true,
+        "breakBefore": "page"
+      },
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Practice"
+        }
+      ]
+    },
+    {
+      "id": "section",
+      "layout": {
+        "preferredWidth": "full"
+      },
+      "extensions": {
+        "oak:example": true
+      },
+      "type": "section",
+      "children": [
+        {
+          "id": "question-1",
+          "layout": {
+            "keepTogether": true
+          },
+          "type": "question",
+          "label": "1",
+          "marks": 2,
+          "children": [
+            {
+              "id": "question-1-text",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What is "
+                },
+                {
+                  "type": "math",
+                  "value": "\\frac{1}{2} + \\frac{1}{4}",
+                  "display": false
+                },
+                {
+                  "type": "text",
+                  "text": "?"
+                }
+              ]
+            },
+            {
+              "id": "question-1-space",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diagram",
+      "type": "figure",
+      "assetId": "fraction-bar",
+      "caption": [
+        {
+          "type": "text",
+          "text": "A fraction bar."
+        }
+      ]
+    },
+    {
+      "id": "diagram-again",
+      "type": "figure",
+      "assetId": "fraction-bar"
+    },
+    {
+      "id": "border",
+      "type": "figure",
+      "assetId": "border-image"
+    },
+    {
+      "id": "code",
+      "type": "codeBlock",
+      "language": "python",
+      "source": "total = 1/2 + 1/4"
+    },
+    {
+      "id": "chart",
+      "type": "unsupported",
+      "description": "A pie chart",
+      "accessibleText": "Three quarters shaded",
+      "original": {
+        "format": "svg",
+        "value": "<svg></svg>"
+      }
+    },
+    {
+      "id": "unstable:unsupported-oak-mystery",
+      "type": "unsupported",
+      "description": "Unsupported extraction directive oak-mystery",
+      "original": {
+        "format": "oak-mmd",
+        "value": ":::oak-mystery {kind=\"new\"}\nSomething extraction emits that this grammar does not know.\n:::"
+      }
+    }
+  ],
+  "answers": [
+    {
+      "id": "answer-1",
+      "targetId": "question-1",
+      "placement": "append",
+      "content": [
+        {
+          "id": "answer-1-text",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "math",
+              "value": "\\frac{3}{4}",
+              "display": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "fraction-bar",
+      "mediaType": "image/png",
+      "contentRef": "https://example.test/fraction-bar.png",
+      "dimensions": {
+        "width": 640,
+        "height": 320
+      },
+      "alternative": {
+        "kind": "text",
+        "text": "A bar split into quarters",
+        "origin": "source"
+      },
+      "rights": "Oak",
+      "credit": "Oak National Academy"
+    },
+    {
+      "id": "border-image",
+      "mediaType": "image/svg+xml",
+      "contentRef": "https://example.test/border.svg",
+      "alternative": {
+        "kind": "decorative"
+      },
+      "extensions": {
+        "oak:layer": "background"
+      }
+    }
+  ],
+  "provenance": {
+    "source": {
+      "system": "test",
+      "id": "every-directive",
+      "uri": "https://example.test/every-directive.pdf",
+      "checksum": {
+        "algorithm": "sha256",
+        "value": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    "producer": {
+      "name": "test",
+      "version": "1"
+    }
+  },
+  "diagnostics": [
+    {
+      "category": "unsupported-markup",
+      "severity": "warning",
+      "message": "Unsupported extraction directive oak-mystery was preserved without interpretation.",
+      "nodeId": "unstable:unsupported-oak-mystery",
+      "fallback": "unsupported-node",
+      "reviewRequired": true
+    }
+  ],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Every directive",
+    "subject": {
+      "id": "maths",
+      "label": "Maths"
+    },
+    "keyStage": {
+      "id": "ks3"
+    },
+    "yearGroup": {
+      "id": "year-7",
+      "label": "Year 7"
+    },
+    "targetReadingAge": 11
+  }
+}

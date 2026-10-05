@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { parseResourceMarkup, safeParseResourceMarkup } from "./parse.js";
@@ -17,6 +19,20 @@ const genericFrontmatter = [
 ].join("\n");
 
 describe("resource markup", () => {
+  it.each([String.raw`bad\q`, String.raw`bad\u12G4`, "bad\tvalue"])(
+    "fails safely with a source line for invalid JSON attribute %j",
+    (value) => {
+      const result = safeParseResourceMarkup(
+        `${genericFrontmatter}\n:::oak-paragraph {id="${value}"}\nText\n:::`,
+      );
+
+      expect(result).toMatchObject({
+        success: false,
+        error: { code: "invalid_markup", context: { line: 12 } },
+      });
+    },
+  );
+
   it("fails safely when directive attributes are malformed", () => {
     const result = safeParseResourceMarkup(
       `---\nmarkup-version: "0.1"\nschema-version: "0.1"\nprofile: "generic.v0"\ndocument-id: "bad"\nlanguage: "en-GB"\nsource-system: "test"\nsource-id: "bad"\nproducer: "test"\nproducer-version: "1"\n---\n\n:::oak-paragraph {id=no-quotes}\nBad\n:::\n`,
@@ -258,4 +274,85 @@ describe("tables and code", () => {
       }
     },
   );
+});
+
+describe("the canonical document", () => {
+  it("parses every directive, heading and paragraph form", () => {
+    const fixture = (name: string) =>
+      readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
+
+    expect(parseResourceMarkup(fixture("every-directive.mmd"))).toEqual(
+      JSON.parse(fixture("every-directive.json")),
+    );
+  });
+});
+
+describe("markup rules", () => {
+  const worksheetFrontmatter = genericFrontmatter.replace(
+    'profile: "generic.v0"',
+    'profile: "worksheet.v0"\ntitle: "Rules"',
+  );
+  const figure = (attributes: string) =>
+    `:::oak-figure {id="figure" asset-id="image" media-type="image/png" src="https://example.test/image.png" ${attributes}}\n:::`;
+
+  it.each([
+    [
+      "a decorative figure with alt text",
+      `${genericFrontmatter}\n${figure('alt-kind="decorative" alt="A bar"')}`,
+      /must not declare alt or alt-origin/,
+    ],
+    [
+      "a figure width without a height",
+      `${genericFrontmatter}\n${figure('alt-kind="missing" width="10"')}`,
+      /width and height together/,
+    ],
+    [
+      "one asset declared with different metadata",
+      `${genericFrontmatter}\n${figure('alt-kind="missing"')}\n${figure('alt-kind="decorative"').replace('id="figure"', 'id="figure-2"')}`,
+      /Conflicting metadata was declared for asset "image"/,
+    ],
+    [
+      "a context label without its id",
+      worksheetFrontmatter.replace(
+        'title: "Rules"',
+        'title: "Rules"\nsubject-label: "Maths"',
+      ),
+      /subject-label requires subject-id/,
+    ],
+    [
+      "an unrecognised frontmatter field",
+      genericFrontmatter.replace(
+        'language: "en-GB"',
+        'language: "en-GB"\nauthor: "Sam"',
+      ),
+      /Unsupported frontmatter field "author"/,
+    ],
+    [
+      "an attribute the directive does not take",
+      `${genericFrontmatter}\n:::oak-paragraph {id="p" level="2"}\nText\n:::`,
+      /oak-paragraph does not support attribute "level"/,
+    ],
+    [
+      "extensions that are not a JSON object",
+      `${genericFrontmatter}\n:::oak-paragraph {id="p" extensions="[1]"}\nText\n:::`,
+      /extensions must contain a JSON object/,
+    ],
+    [
+      "an answer space with content",
+      `${genericFrontmatter}\n:::oak-answer-space {id="space" kind="box"}\nText\n:::`,
+      /cannot contain child content/,
+    ],
+    [
+      "a heading level outside 1 to 6",
+      `${genericFrontmatter}\n:::oak-heading {id="h" level="7"}\nText\n:::`,
+      /level must be between 1 and 6/,
+    ],
+    [
+      "a directive that is never closed",
+      `${genericFrontmatter}\n:::oak-section {id="s"}\n:::oak-paragraph {id="p"}\nText\n:::`,
+      /Directive oak-section is not closed/,
+    ],
+  ])("rejects %s", (_case, markup, message) => {
+    expect(() => parseResourceMarkup(markup)).toThrow(message);
+  });
 });
