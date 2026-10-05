@@ -4,14 +4,14 @@ import { useId, type ReactNode } from "react";
 
 import styles from "../../page.module.css";
 
-type SmokeTestPanelProps = {
+type SmokeTestPanelProps = Readonly<{
   buttonLabel: string;
   children?: ReactNode;
   disabled?: boolean;
   heading: string;
   onRun: () => void;
   status?: string;
-};
+}>;
 
 export function SmokeTestPanel({
   buttonLabel,

@@ -72,8 +72,14 @@ export async function readOakMaterial(
   const material: Partial<Record<OakMaterialKey, OakMaterialValue>> = {};
   const omissions: Partial<Record<OakMaterialKey, string>> = {};
 
-  for (const { key, required } of requirements) {
-    const resolution = await resolveOakMaterial(key, lesson, derivationDependencies);
+  const resolutions = await Promise.all(
+    requirements.map(({ key }) =>
+      resolveOakMaterial(key, lesson, derivationDependencies),
+    ),
+  );
+
+  for (const [index, { key, required }] of requirements.entries()) {
+    const resolution = resolutions[index];
 
     if (resolution?.value !== undefined) {
       material[key] = resolution.value;
