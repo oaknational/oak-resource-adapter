@@ -1,7 +1,13 @@
 "use client";
 
+import { useEffect, useMemo, useRef } from "react";
 import { OakModalCenter, OakModalCenterBody } from "@oaknational/oak-components";
 
+import {
+  createAnalyticsTracker,
+  type ResourceAdapterAnalyticsHandler,
+  type TrackAnalyticsEvent,
+} from "./analytics.js";
 import { capabilityWorkflows } from "./capabilities/workflowRegistry.js";
 import {
   ResourceAdapterErrorBoundary,
@@ -20,6 +26,7 @@ export type ResourceAdapterDialogProps = Readonly<{
   getToken: GetToken;
   isOpen: boolean;
   lesson: LessonContext;
+  onAnalyticsEvent?: ResourceAdapterAnalyticsHandler;
   onClose: () => void;
   /** Invoked with any error the adapter catches, for the host's observability. */
   onError?: ResourceAdapterErrorHandler;
@@ -30,8 +37,30 @@ export type ResourceAdapterDialogProps = Readonly<{
  * while this shell owns focus management, dismissal and crash containment.
  */
 export function ResourceAdapterDialog(props: ResourceAdapterDialogProps) {
-  const { capability, isOpen, lesson, onClose, onError } = props;
+  const { capability, isOpen, lesson, onAnalyticsEvent, onClose, onError } = props;
   const resetKeys = [isOpen, lesson.lessonSlug, capability.id];
+  // Hosts pass inline callbacks, so the tracker reads the latest ones instead of
+  // being rebuilt, and re-rendering the workflow, on every host render.
+  const handlers = useRef({ onAnalyticsEvent, onError });
+  useEffect(() => {
+    handlers.current = { onAnalyticsEvent, onError };
+  });
+  const track = useMemo(
+    () =>
+      createAnalyticsTracker(
+        capability.id,
+        (event) => handlers.current.onAnalyticsEvent?.(event),
+        (error, info) => handlers.current.onError?.(error, info),
+      ),
+    [capability.id],
+  );
+  const closeDialog = () => {
+    track({
+      name: "Resource Adapter Closed",
+      componentType: "resource_adapter_dialog",
+    });
+    onClose();
+  };
 
   return (
     <ResourceAdapterErrorBoundary
@@ -40,7 +69,7 @@ export function ResourceAdapterDialog(props: ResourceAdapterDialogProps) {
           <ResourceAdapterUnavailableMessage
             focusOnMount={true}
             message="An unexpected problem closed this dialog. The rest of the page still works."
-            onDismiss={onClose}
+            onDismiss={closeDialog}
             onTryAgain={onTryAgain}
             testId="resource-adapter-dialog-fallback"
           />
@@ -49,13 +78,18 @@ export function ResourceAdapterDialog(props: ResourceAdapterDialogProps) {
       {...(onError ? { onError } : {})}
       resetKeys={resetKeys}
     >
-      <ResourceAdapterDialogInner {...props} resetKeys={resetKeys} />
+      <ResourceAdapterDialogInner
+        {...props}
+        onClose={closeDialog}
+        resetKeys={resetKeys}
+        track={track}
+      />
     </ResourceAdapterErrorBoundary>
   );
 }
 
 type ResourceAdapterDialogInnerProps = ResourceAdapterDialogProps &
-  Readonly<{ resetKeys: readonly unknown[] }>;
+  Readonly<{ resetKeys: readonly unknown[]; track: TrackAnalyticsEvent }>;
 
 /** `min-width: 0` lets wide worksheet content shrink inside the modal's flex row. */
 const workflowContainerStyle = { minWidth: 0, width: "100%" } as const;
@@ -69,6 +103,7 @@ function ResourceAdapterDialogInner({
   onClose,
   onError,
   resetKeys,
+  track,
 }: ResourceAdapterDialogInnerProps) {
   const Workflow = capabilityWorkflows[capability.id];
   const titleId = `resource-adapter-${capability.id}-title`;
@@ -110,6 +145,7 @@ function ResourceAdapterDialogInner({
               isOpen={isOpen}
               lesson={lesson}
               {...(onError ? { onError } : {})}
+              track={track}
             />
           </ResourceAdapterErrorBoundary>
         </div>

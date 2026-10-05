@@ -94,6 +94,20 @@ describe("ResourceAdapterDialog", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
+  it("reports the teacher closing the dialog", async () => {
+    const onAnalyticsEvent = vi.fn();
+    renderDialog({ onAnalyticsEvent });
+
+    await userEvent.click(screen.getByRole("button", { name: "Close Modal" }));
+
+    expect(onAnalyticsEvent).toHaveBeenCalledWith({
+      capabilityId: "worksheetScaffolding",
+      packageVersion: expect.any(String),
+      name: "Resource Adapter Closed",
+      componentType: "resource_adapter_dialog",
+    });
+  });
+
   it("contains a shell crash without removing host content", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     renderWithTheme(

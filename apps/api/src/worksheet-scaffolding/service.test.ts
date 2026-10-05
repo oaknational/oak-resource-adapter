@@ -395,8 +395,10 @@ describe("reading worksheet scaffolding state", () => {
       pendingReview: {
         attemptId: ATTEMPT_ID,
         contributionId: TRANSFORMATION_ID,
+        kind: "scaffold-add-word-bank",
         label: "Add a word bank",
         reason: "This question depends on recalling several topic words.",
+        supportLevel: "low",
       },
     });
     expect(dependencies.enqueue).not.toHaveBeenCalled();
