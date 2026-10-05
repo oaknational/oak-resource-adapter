@@ -131,6 +131,26 @@ export type WorksheetScaffoldingEntry =
   | Readonly<{ outcome: "opened"; state: WorksheetScaffoldingState }>
   | Readonly<{ outcome: "resumable"; resumable: WorksheetScaffoldingResumable }>;
 
+export const transformationInputSchema = z.readonly(
+  z.object({
+    id: z.string(),
+    kind: z.literal("choice"),
+    label: z.string(),
+    options: z.readonly(
+      z.array(
+        z.readonly(
+          z.object({
+            description: z.string(),
+            label: z.string(),
+            value: z.string(),
+          }),
+        ),
+      ),
+    ),
+  }),
+);
+export type TransformationInput = z.infer<typeof transformationInputSchema>;
+
 export const worksheetDownloadAvailabilitySchema = z.enum([
   "available",
   "original",
@@ -173,9 +193,10 @@ export type WorksheetScaffoldingState = Readonly<{
   }>;
   suggestions: readonly Readonly<{
     id: string;
+    inputs?: readonly TransformationInput[];
     kind: string;
     label: string;
-    params: Readonly<Record<string, unknown>>;
+    params: Readonly<NonNullable<WorksheetScaffoldingApplyRequest["params"]>>;
     reason: string;
     targetBlockId: string | null;
   }>[];

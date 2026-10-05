@@ -17,7 +17,7 @@ const defaultDependencies: EnqueueDependencies = {
   createOrGet: createOrGetJob,
   markDispatchFailed: failJob,
   recordRun: recordWorkflowRun,
-  startWorkflow: async (jobId) => start(runJob, [jobId]),
+  startWorkflow: (jobId) => start(runJob, [jobId]),
 };
 
 export async function enqueueJob(

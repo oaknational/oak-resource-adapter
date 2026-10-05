@@ -1,4 +1,3 @@
-import { TRPCClientError } from "@trpc/client";
 import type {
   WorksheetExportRequest,
   WorksheetScaffoldingApplyRequest,
@@ -12,28 +11,12 @@ import type {
 } from "@oaknational/resource-adapter-contracts/internal";
 
 import type { GetToken, LessonContext } from "./publicTypes.js";
-import { createResourceAdapterInternalClient } from "./client.js";
-import { ResourceAdapterApiError } from "./errors.js";
+import { callApi, createResourceAdapterInternalClient } from "./client.js";
 
 type ClientOptions = Readonly<{
   apiBaseUrl: string;
   getToken: GetToken;
 }>;
-
-function apiError(message: string, error: unknown): ResourceAdapterApiError {
-  return new ResourceAdapterApiError(
-    message,
-    error instanceof TRPCClientError ? error.data?.httpStatus : undefined,
-  );
-}
-
-async function callApi<T>(message: string, request: () => Promise<T>): Promise<T> {
-  try {
-    return await request();
-  } catch (error) {
-    throw apiError(message, error);
-  }
-}
 
 export function openWorksheetScaffolding(
   options: ClientOptions &
@@ -78,7 +61,7 @@ async function reviewAction(
   action: "accept" | "undo",
   options: ClientOptions & WorksheetScaffoldingReviewRequest,
 ): Promise<WorksheetScaffoldingState> {
-  return callApi(`Resource Adapter could not ${action} that scaffold.`, async () => {
+  return callApi(`Resource Adapter could not ${action} that scaffold.`, () => {
     const client = createResourceAdapterInternalClient(options);
     return client.worksheetScaffolding[action].mutate({
       adaptationId: options.adaptationId,

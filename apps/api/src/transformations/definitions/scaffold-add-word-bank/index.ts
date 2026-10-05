@@ -21,9 +21,14 @@ export const addWordBankTransformation = defineTransformation({
   supportLevels: [
     {
       level: "low",
+      label: "Add a word bank",
       description: "Lists the words a pupil needs, without definitions.",
     },
-    { level: "mid", description: "Lists the words with a short definition of each." },
+    {
+      level: "mid",
+      label: "Add a word bank with definitions",
+      description: "Lists the words with a short definition of each.",
+    },
   ],
   target: { scope: "node", nodeTypes: ["question"] },
   materialRequirements: [

@@ -1,4 +1,3 @@
-import { TRPCClientError } from "@trpc/client";
 import { resourceAdapterCapabilitiesResponseSchema } from "@oaknational/resource-adapter-contracts";
 
 import type {
@@ -6,7 +5,7 @@ import type {
   ResourceAdapterHostProps,
 } from "./publicTypes.js";
 import { getSupportedCapabilities } from "./capabilities.js";
-import { createResourceAdapterClient } from "./client.js";
+import { callApi, createResourceAdapterClient } from "./client.js";
 import { ResourceAdapterApiError } from "./errors.js";
 
 /**
@@ -19,7 +18,7 @@ export async function getResourceAdapterCapabilities({
   getToken,
   lesson,
 }: ResourceAdapterHostProps): Promise<ResourceAdapterCapabilitiesResponse> {
-  try {
+  return callApi("Resource Adapter could not load capabilities.", async () => {
     const response = await createResourceAdapterClient({
       apiBaseUrl,
       getToken,
@@ -34,18 +33,5 @@ export async function getResourceAdapterCapabilities({
     }
 
     return getSupportedCapabilities(parsedResponse.data);
-  } catch (error) {
-    if (error instanceof ResourceAdapterApiError) {
-      throw error;
-    }
-
-    if (error instanceof TRPCClientError) {
-      throw new ResourceAdapterApiError(
-        "Resource Adapter could not load capabilities.",
-        error.data?.httpStatus,
-      );
-    }
-
-    throw new ResourceAdapterApiError("Resource Adapter could not load capabilities.");
-  }
+  });
 }

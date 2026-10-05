@@ -20,7 +20,7 @@ const pollIntervalMs = 500;
 export function WorkerSmokeTest() {
   const [job, setJob] = useState<TestJobResponse | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const jobId = job?.id;
   const jobIsActive = job?.status === "queued" || job?.status === "running";
@@ -28,13 +28,13 @@ export function WorkerSmokeTest() {
   const run = useCallback(async () => {
     setIsCreating(true);
     setJob(null);
-    setError(null);
+    setErrorMessage(null);
 
     try {
       setJob(await createTestJob());
-    } catch (thrown) {
-      log.error(thrown);
-      setError("Could not create the test job.");
+    } catch (error) {
+      log.error(error);
+      setErrorMessage("Could not create the test job.");
     } finally {
       setIsCreating(false);
     }
@@ -60,14 +60,14 @@ export function WorkerSmokeTest() {
 
       try {
         setJob(await readTestJob(activeJobId, controller.signal));
-      } catch (thrown) {
-        if (thrown instanceof DOMException && thrown.name === "AbortError") {
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
           return;
         }
 
-        log.error(thrown);
+        log.error(error);
         setJob(null);
-        setError("Could not read the test job status.");
+        setErrorMessage("Could not read the test job status.");
       } finally {
         requestInFlight = false;
       }
@@ -85,8 +85,8 @@ export function WorkerSmokeTest() {
   let status = "Not run";
   if (isCreating) {
     status = "Creating";
-  } else if (error) {
-    status = error;
+  } else if (errorMessage) {
+    status = errorMessage;
   } else if (job) {
     status = statusLabels[job.status];
     if (job.failure?.message) {

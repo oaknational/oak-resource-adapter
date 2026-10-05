@@ -7,6 +7,7 @@ import type { ResourceAdapterAuthenticatedTeacher } from "./authentication.js";
 import {
   resourceAdapterFeatureFlagsResponseSchema,
   resourceAdapterSourceDocumentRequestSchema,
+  transformationInputSchema,
   worksheetExportRequestSchema,
   worksheetDownloadAvailabilitySchema,
   type WorksheetExportRequest,
@@ -127,15 +128,16 @@ const worksheetScaffoldingStateSchema = z.object({
     z.array(
       z.object({
         id: z.string(),
+        inputs: z.exactOptional(z.readonly(z.array(transformationInputSchema))),
         kind: z.string(),
         label: z.string(),
-        params: z.record(z.string(), z.unknown()),
+        params: z.record(z.string(), z.json()),
         reason: z.string(),
         targetBlockId: z.nullable(z.string()),
       }),
     ),
   ),
-});
+}) satisfies z.ZodType<WorksheetScaffoldingState>;
 
 const worksheetScaffoldingEntrySchema = z.discriminatedUnion("outcome", [
   z.object({ outcome: z.literal("opened"), state: worksheetScaffoldingStateSchema }),
@@ -148,7 +150,7 @@ const worksheetScaffoldingEntrySchema = z.discriminatedUnion("outcome", [
       updatedAt: z.string(),
     }),
   }),
-]);
+]) satisfies z.ZodType<WorksheetScaffoldingEntry>;
 
 function requireWorksheetScaffolding<TValue>(value: TValue | null): TValue {
   if (value === null) {

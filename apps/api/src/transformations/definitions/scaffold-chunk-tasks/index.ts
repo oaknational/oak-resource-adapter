@@ -20,6 +20,7 @@ export const chunkTasksTransformation = defineTransformation({
   supportLevels: [
     {
       level: "low",
+      label: "Break the task into ordered steps",
       description: "Breaks the task into the steps a pupil works through in order.",
     },
   ],

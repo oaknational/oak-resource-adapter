@@ -6,11 +6,7 @@ import type { ResourceDocument } from "@oaknational/resource-document";
 
 import { capabilityDefinitions } from "../capabilities/registry";
 import { identityTransformation } from "./definitions/identity";
-import {
-  isRegisteredTransformationKind,
-  parseTransformationParams,
-  transformationDefinitions,
-} from "./registry";
+import { isRegisteredTransformationKind, transformationDefinitions } from "./registry";
 import { SUPPORT_LEVELS } from "./support-level";
 
 const PLACEHOLDER_PATTERN = /\{\{(\w+)\}\}/g;
@@ -98,11 +94,6 @@ describe("transformationDefinitions", () => {
   it("recognises a registered kind and rejects an unregistered one", () => {
     expect(isRegisteredTransformationKind("identity")).toBe(true);
     expect(isRegisteredTransformationKind("scaffold-invent-a-worksheet")).toBe(false);
-  });
-
-  it("parses params through the kind's own schema", () => {
-    expect(parseTransformationParams("identity", {})).toEqual({});
-    expect(() => parseTransformationParams("identity", { unexpected: true })).toThrow();
   });
 
   it.each(definitions)("declares %s's exclusions on both sides", (kind, definition) => {

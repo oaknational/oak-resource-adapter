@@ -1,21 +1,15 @@
-import type {
-  LessonContext,
-  LessonResourceType,
-} from "@oaknational/resource-adapter-contracts";
-import type {
-  ResourceAdapterCapabilitiesResponse,
-  ResourceAdapterCapability,
-  ResourceAdapterCapabilityId,
-} from "./capabilities.js";
+import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 
 /** Public host and capability types shipped with the UI package. */
 export type {
   LessonContext,
   LessonResourceType,
+} from "@oaknational/resource-adapter-contracts";
+export type {
   ResourceAdapterCapabilitiesResponse,
   ResourceAdapterCapability,
   ResourceAdapterCapabilityId,
-};
+} from "./capabilities.js";
 
 export type GetToken = () => Promise<string | null>;
 

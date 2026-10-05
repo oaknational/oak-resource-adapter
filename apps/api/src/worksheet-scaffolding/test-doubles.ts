@@ -320,7 +320,6 @@ export function repositoryDefaults(): RepositoryResults {
     getAcceptedSuggestion: null,
     getAdaptationHead: head(),
     getAttemptForJob: null,
-    getLatestJobForConcurrencyKey: null,
     getOpenSuggestion: storedSuggestion(),
     getPendingReview: null,
     getPrimaryTransformationInput: storedDocument(DOCUMENT_ID),

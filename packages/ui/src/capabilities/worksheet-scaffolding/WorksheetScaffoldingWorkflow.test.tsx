@@ -168,6 +168,25 @@ function deferred<T>() {
 
 const wordBankSuggestion = {
   id: "suggestion-1",
+  inputs: [
+    {
+      id: "supportLevel",
+      kind: "choice",
+      label: "Support level",
+      options: [
+        {
+          description: "Lists the words a pupil needs, without definitions.",
+          label: "Add a word bank",
+          value: "low",
+        },
+        {
+          description: "Lists the words with a short definition of each.",
+          label: "Add a word bank with definitions",
+          value: "mid",
+        },
+      ],
+    },
+  ],
   kind: "scaffold-add-word-bank",
   label: "Add a word bank",
   params: { supportLevel: "low" },
@@ -330,7 +349,8 @@ describe("WorksheetScaffoldingWorkflow", () => {
   it("loads and renders the capability source document", async () => {
     const { props } = renderDialog();
 
-    expect(screen.getByRole("status", { name: "Worksheet status" })).toHaveTextContent(
+    const announcement = screen.getByRole("status", { name: "Worksheet status" });
+    expect(announcement).toHaveTextContent(
       "Loading worksheet. Getting your worksheet ready.",
     );
     const spinner = screen.getByTestId("worksheet-scaffolding-loading-spinner");
@@ -338,6 +358,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(
       await screen.findByRole("article", { name: "Adding fractions worksheet" }),
     ).toBeVisible();
+    expect(screen.getByRole("status", { name: "Worksheet status" })).toBe(announcement);
     expect(screen.getByText("What is one half plus one quarter?")).toBeVisible();
     expect(openWorksheetScaffoldingMock).toHaveBeenCalledWith({
       apiBaseUrl: props.apiBaseUrl,
@@ -363,7 +384,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
     });
   });
 
-  it("shows a suggestion beside its question and applies its stored parameters", async () => {
+  it("shows a suggestion beside its question and applies the chosen level", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
     renderDialog();
 
@@ -376,10 +397,9 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(screen.getByRole("status", { name: "Worksheet status" })).toHaveTextContent(
       "There is one suggested scaffold for this worksheet.",
     );
-    expect(
-      screen.queryByText("This question depends on recalling several topic words."),
-    ).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Add a word bank" }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Add a word bank" }),
+    );
 
     expect(screen.getByTestId("worksheet-scaffolding-local-spinner")).toBeVisible();
     expect(screen.getByText("Working on it…")).toBeVisible();
@@ -391,8 +411,65 @@ describe("WorksheetScaffoldingWorkflow", () => {
       adaptationId: "adaptation-1",
       apiBaseUrl,
       getToken: expect.any(Function),
+      params: { supportLevel: "low" },
       suggestionId: "suggestion-1",
     });
+  });
+
+  it("applies the support level named on the button", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    renderDialog();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Add a word bank with definitions" }),
+    );
+
+    expect(applySuggestionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ params: { supportLevel: "mid" } }),
+    );
+  });
+
+  it("offers each support level as its own button", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    renderDialog();
+
+    const group = await screen.findByRole("group", { name: "Suggested scaffolds" });
+
+    expect(
+      within(group)
+        .getAllByRole("button")
+        .map((button) => button.textContent),
+    ).toEqual([
+      "Add a word bank",
+      "Add a word bank with definitions",
+      "No scaffold required",
+    ]);
+  });
+
+  it("offers one button when a suggestion has only one option", async () => {
+    const [supportLevel] = wordBankSuggestion.inputs;
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(
+        readyState({
+          job: generatedJob,
+          suggestions: [
+            {
+              ...wordBankSuggestion,
+              inputs: [{ ...supportLevel, options: [supportLevel.options[0]] }],
+            },
+          ],
+        }),
+      ),
+    );
+    renderDialog();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Add a word bank" }),
+    );
+
+    expect(applySuggestionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ params: { supportLevel: "low" } }),
+    );
   });
 
   it("counts current suggestions separately from added scaffolds", async () => {
@@ -429,25 +506,23 @@ describe("WorksheetScaffoldingWorkflow", () => {
 
     const group = await screen.findByRole("group", { name: "Suggested scaffolds" });
 
-    expect(within(group).getAllByRole("button")).toHaveLength(3);
     expect(
-      within(group).getByRole("button", { name: "Add a word bank" }),
-    ).toBeVisible();
-    expect(
-      within(group).getByRole("button", { name: "Add recall questions" }),
-    ).toBeVisible();
-    const rejection = within(group).getByRole("button", {
-      name: "No scaffold required",
-    });
-    expect(rejection).toBeVisible();
-    expect(within(group).getByRole("list")).toContainElement(rejection);
+      within(group)
+        .getAllByRole("button")
+        .map((button) => button.textContent),
+    ).toEqual([
+      "Add a word bank",
+      "Add a word bank with definitions",
+      "Add recall questions",
+      "No scaffold required",
+    ]);
 
     await userEvent.click(
       within(group).getByRole("button", { name: "Add a word bank" }),
     );
 
     expect(
-      within(group).queryByRole("button", { name: "Add a word bank" }),
+      within(group).queryByRole("button", { name: /^Add a word bank/ }),
     ).not.toBeInTheDocument();
     expect(within(group).getByText("Working on it…")).toBeVisible();
     expect(
@@ -1367,3 +1442,24 @@ it.each(["resolve", "reject"] as const)(
     expect(onError).not.toHaveBeenCalled();
   },
 );
+
+it("tells the teacher when refreshing a changed worksheet fails", async () => {
+  openWorksheetScaffoldingMock.mockResolvedValueOnce(
+    opened({ ...readyWithAcceptedScaffold, downloadAvailability: "available" }),
+  );
+  getWorksheetScaffoldingMock.mockRejectedValueOnce(new Error("refresh failed"));
+  vi.mocked(prepareWorksheetExport).mockRejectedValueOnce(
+    new ResourceAdapterApiError("stale", 409),
+  );
+  renderDialog();
+
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Download worksheet" }),
+  );
+
+  await waitFor(() =>
+    expect(screen.getByRole("status", { name: "Download status" })).toHaveTextContent(
+      "We couldn’t refresh the worksheet.",
+    ),
+  );
+});

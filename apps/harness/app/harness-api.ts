@@ -62,7 +62,7 @@ const modelInvocationResponseSchema = z.object({
 
 export type ModelInvocationResponse = z.infer<typeof modelInvocationResponseSchema>;
 
-async function readJson<TSchema extends z.ZodType>(
+async function readApiJson<TSchema extends z.ZodType>(
   response: Response,
   schema: TSchema,
   what: string,
@@ -74,6 +74,27 @@ async function readJson<TSchema extends z.ZodType>(
   }
 
   return parsed.data;
+}
+
+/** Dev routes report a failure as `{ error }`; anything else falls back to the status. */
+export async function readApiError(response: Response): Promise<Error> {
+  const parsed = z
+    .object({ error: z.string() })
+    .safeParse(await response.json().catch(() => null));
+  return new Error(
+    parsed.success ? parsed.data.error : `The API returned HTTP ${response.status}.`,
+  );
+}
+
+export async function readApiResponse<TSchema extends z.ZodType>(
+  response: Response,
+  schema: TSchema,
+  what: string,
+): Promise<z.infer<TSchema>> {
+  if (!response.ok) {
+    throw await readApiError(response);
+  }
+  return readApiJson(response, schema, what);
 }
 
 export async function fetchApiHealth(signal: AbortSignal): Promise<boolean> {
@@ -101,7 +122,7 @@ export async function fetchApiReadiness(signal: AbortSignal): Promise<ApiReadine
     throw new Error("The readiness endpoint is unavailable.");
   }
 
-  const readiness = await readJson(response, readinessResponseSchema, "readiness");
+  const readiness = await readApiJson(response, readinessResponseSchema, "readiness");
   if ((response.status === 200) !== (readiness.status === "ready")) {
     throw new Error("The readiness response is inconsistent.");
   }
@@ -120,7 +141,7 @@ export async function createTestJob(): Promise<TestJobResponse> {
     throw new Error(`The API returned HTTP ${response.status}.`);
   }
 
-  return readJson(response, testJobResponseSchema, "a test job");
+  return readApiJson(response, testJobResponseSchema, "a test job");
 }
 
 export async function readTestJob(
@@ -133,7 +154,7 @@ export async function readTestJob(
     throw new Error(`The API returned HTTP ${response.status}.`);
   }
 
-  return readJson(response, testJobResponseSchema, "a test job");
+  return readApiJson(response, testJobResponseSchema, "a test job");
 }
 
 const storageRoundTripResponseSchema = z.object({
@@ -216,5 +237,5 @@ export async function invokeModel(): Promise<ModelInvocationResponse> {
     throw new Error(`The API returned HTTP ${response.status}.`);
   }
 
-  return readJson(response, modelInvocationResponseSchema, "a model invocation");
+  return readApiJson(response, modelInvocationResponseSchema, "a model invocation");
 }

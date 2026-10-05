@@ -143,6 +143,14 @@ and run without Google credentials. Locally, after `gcloud auth application-defa
 login`, run `pnpm test:integration --filter=@oaknational/resource-adapter-storage`
 from the repository root to load the bucket setting from `.env`.
 
+## Sonar issues
+
+CI fails on any open Sonar issue, not only on a failed quality gate: a pull
+request may introduce none, and `main` carries none. Fix the issue. If it is a
+genuine false positive, or the suggested change would be wrong, resolve it in
+SonarCloud as "False positive" or "Accepted" with a comment giving the reason,
+then re-run the `scan` job.
+
 ## Package release enforcement
 
 `@oaknational/resource-adapter` and

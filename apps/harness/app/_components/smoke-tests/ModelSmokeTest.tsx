@@ -18,21 +18,19 @@ const outcomeLabels = {
 export function ModelSmokeTest() {
   const [result, setResult] = useState<ModelInvocationResponse | null>(null);
   const [isInvoking, setIsInvoking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const run = useCallback(async () => {
     setIsInvoking(true);
     setResult(null);
-    setError(null);
+    setErrorMessage(null);
 
     try {
       setResult(await invokeModel());
-    } catch (thrown) {
-      log.error(thrown);
-      setError(
-        thrown instanceof Error
-          ? thrown.message
-          : "Could not run the model invocation.",
+    } catch (error) {
+      log.error(error);
+      setErrorMessage(
+        error instanceof Error ? error.message : "Could not run the model invocation.",
       );
     } finally {
       setIsInvoking(false);
@@ -42,8 +40,8 @@ export function ModelSmokeTest() {
   let status = "Not run";
   if (isInvoking) {
     status = "Invoking";
-  } else if (error) {
-    status = error;
+  } else if (errorMessage) {
+    status = errorMessage;
   } else if (result) {
     status = outcomeLabels[result.outcome];
     if (result.outcome === "SUCCESS" && result.usage) {

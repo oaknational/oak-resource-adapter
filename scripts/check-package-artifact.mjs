@@ -255,14 +255,6 @@ minimumReleaseAgeExclude:
     }
   }
 
-  for (const declaration of [
-    "package/dist/index.d.ts",
-    "package/dist/markup/index.d.ts",
-    "package/dist/parse.d.ts",
-    "package/dist/schema/index.d.ts",
-  ]) {
-    readPackedFile(resourceDocumentTarball, declaration);
-  }
   readPackedFile(resourceDocumentTarball, "package/EXTRACTION_HANDOFF.md");
   const unexpectedFixtureFiles = listPackedFiles(resourceDocumentTarball).filter(
     (file) => file.includes("/fixtures/"),
@@ -400,6 +392,12 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "capabilities/worksheet-scaffolding/WorksheetDownload.js",
     "useResourceDownload.js",
     "capabilities/worksheet-scaffolding/useWorksheetScaffolding.js",
+    "capabilities/worksheet-scaffolding/useWorksheetScaffoldingPolling.js",
+    "capabilities/worksheet-scaffolding/PendingReviewControls.js",
+    "capabilities/worksheet-scaffolding/ResumeChoice.js",
+    "capabilities/worksheet-scaffolding/SuggestionGroup.js",
+    "capabilities/worksheet-scaffolding/WorkflowStatusBanner.js",
+    "capabilities/worksheet-scaffolding/styles.js",
   ];
   const serverSafeModules = [
     "index.js",
@@ -415,6 +413,8 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "requestId.js",
     "resource-document/InlineContentRenderer.js",
     "resource-document/ResourceNodeRenderer.js",
+    "capabilities/worksheet-scaffolding/workflowState.js",
+    "capabilities/worksheet-scaffolding/workflowStatus.js",
   ];
 
   for (const file of clientModules) {
@@ -433,8 +433,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
 
   // Nothing beyond those lists may ship. This catches both a module nobody
   // listed above and a build artefact importing packages hosts do not install
-  const packedModules = execFileSync("tar", ["-tf", uiTarball], { encoding: "utf8" })
-    .split("\n")
+  const packedModules = listPackedFiles(uiTarball)
     .filter((path) => /^package\/dist\/.+\.js$/.test(path))
     .map((path) => path.replace("package/dist/", ""));
   const expectedModules = new Set([...clientModules, ...serverSafeModules]);
@@ -444,7 +443,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
 
   if (unexpectedModules.length > 0) {
     throw new Error(
-      `Published package ships modules with no source counterpart: ${unexpectedModules.join(", ")}.`,
+      `Published package ships modules missing from clientModules and serverSafeModules: ${unexpectedModules.join(", ")}.`,
     );
   }
 

@@ -21,6 +21,9 @@ updates:
       # @types/node tracks .nvmrc (Node 24).
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      # Tracks OWA's major; v8 needs React 19 and OWA is on React 18.
+      - dependency-name: "@portabletext/react"
+        update-types: ["version-update:semver-major"]
     groups:
       # The connector pins its own google-auth-library major and the two
       # exchange auth client types, so a split bump fails to compile. Majors are
