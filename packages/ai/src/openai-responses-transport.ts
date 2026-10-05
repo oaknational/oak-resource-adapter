@@ -232,8 +232,6 @@ export function createOpenAIResponsesTransport(
         {
           ...invocation.request,
           model: invocation.model,
-          // `prompt_cache_key` is not an identity field: keying it per teacher
-          // would split the prompt cache.
           ...(invocation.subject === undefined
             ? {}
             : { safety_identifier: invocation.subject }),

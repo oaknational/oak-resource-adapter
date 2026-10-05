@@ -103,6 +103,10 @@ export type ModelInvokerConfig<TBindings extends RoleBindings> = Readonly<{
    */
   onRecorderError?: RecorderErrorHandler;
   recorder: InvocationRecorder;
+  /**
+   * The teacher's Clerk user ID, sent to providers as is. Omit it for calls
+   * not made for a teacher.
+   */
   subject?: string;
   transports: Readonly<Record<ModelTransportId<TBindings>, ModelTransport>>;
 }>;

@@ -9,8 +9,8 @@ export type ModelInvocationIdentity = Readonly<{
   provider: ModelProvider;
   role: string;
   /**
-   * The teacher's Clerk user ID. Each transport maps it to its provider's
-   * attribution field.
+   * The teacher's Clerk user ID. A transport maps it to its provider's
+   * attribution field, if there is one.
    */
   subject?: string;
   transport: string;
