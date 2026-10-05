@@ -20,7 +20,7 @@
     "@oaknational/resource-adapter-logger": "workspace:*",
     "@oaknational/resource-adapter-original-resource-documents": "workspace:*",
     "@oaknational/resource-document": "workspace:*",
-    "@portabletext/react": "^4.0.3",
+    "@portabletext/react": "^8.0.1",
     "next": "^16.3.6",
     "next-cloudinary": "^6.19.3",
     "react": "^19.3.0",
