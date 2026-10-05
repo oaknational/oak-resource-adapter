@@ -176,7 +176,8 @@ interface ModelTransport {
 ```
 
 `prepare` converts the logical invocation into the exact serialisable provider
-request without sending it. The invoker records that request before calling
+request without sending it, mapping any [subject](#attribution) to the provider's
+attribution field. The invoker records that request before calling
 `execute`. A terminal provider failure is returned with its response data;
 failures without a normal provider response are thrown.
 
@@ -198,6 +199,18 @@ harness page's "Model invocation test" section.
 
 Threat detection and response moderation belong in orchestration around this
 boundary, not inside the transport.
+
+## Attribution
+
+`createModelInvoker({ subject })` attributes every call from that invoker to the
+teacher it was made for. The subject is their Clerk user ID, sent as is. Each
+transport maps it to its provider's attribution field (`safety_identifier` for
+OpenAI), and call sites cannot set those fields themselves. Invokers with no
+teacher, such as the dev invoker, omit it. Because the recorder stores the
+prepared request, the subject is also in `model_invocations.request`.
+
+If a subject would ever reach a processor without a data processing agreement,
+send a salted deterministic hash instead of the raw ID.
 
 ## Deterministic model responses
 
