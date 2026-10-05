@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { TransformationInput } from "@oaknational/resource-adapter-contracts/internal";
 
 import {
   supportLevelsOf,
@@ -59,6 +60,27 @@ export type DefinedTransformation<TDeclaration extends TransformationDeclaration
     TDeclaration["execution"]
   >;
 
+function inputsFromSupportLevels(
+  supportLevels: SupportLevelOptions | undefined,
+): readonly TransformationInput[] | undefined {
+  if (supportLevels === undefined) {
+    return undefined;
+  }
+
+  return [
+    {
+      id: "supportLevel",
+      kind: "choice",
+      label: "Support level",
+      options: supportLevels.map(({ description, label, level }) => ({
+        description,
+        label,
+        value: level,
+      })),
+    },
+  ];
+}
+
 function paramsSchema<TDeclaration extends TransformationDeclaration>(
   declaration: TDeclaration,
 ): z.ZodType<DerivedParams<TDeclaration>> {
@@ -103,5 +125,10 @@ export function defineTransformation<
 >(declaration: TDeclaration): DefinedTransformation<TDeclaration> {
   validateDeclaration(declaration);
 
-  return { ...declaration, params: paramsSchema(declaration) };
+  const inputs = inputsFromSupportLevels(declaration.supportLevels);
+  return {
+    ...declaration,
+    ...(inputs === undefined ? {} : { inputs }),
+    params: paramsSchema(declaration),
+  };
 }

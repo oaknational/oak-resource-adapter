@@ -8,9 +8,17 @@ export const targetSchema = z.discriminatedUnion("scope", [
   }),
 ]);
 
-export const supportLevelSchema = z.strictObject({
-  description: z.string(),
-  level: z.enum(["low", "mid", "high"]),
+export const transformationInputSchema = z.strictObject({
+  id: z.string(),
+  kind: z.literal("choice"),
+  label: z.string(),
+  options: z.array(
+    z.strictObject({
+      description: z.string(),
+      label: z.string(),
+      value: z.string(),
+    }),
+  ),
 });
 
 export const suggestionGuidanceSchema = z.strictObject({

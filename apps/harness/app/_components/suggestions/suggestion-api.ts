@@ -3,8 +3,8 @@ import { z } from "zod";
 import { adapterProxyPath } from "../../harness-api";
 import {
   suggestionGuidanceSchema,
-  supportLevelSchema,
   targetSchema,
+  transformationInputSchema,
   transformationOutputsSchema,
 } from "../shared/catalogue-schemas";
 import type { ResourceDocument } from "@oaknational/resource-document";
@@ -28,11 +28,11 @@ const candidateSchema = z.strictObject({
       scope: z.literal("node"),
     }),
   ]),
+  inputs: z.array(transformationInputSchema).optional(),
   kind: z.string(),
   label: z.string(),
   outputs: transformationOutputsSchema,
   suggestion: suggestionGuidanceSchema,
-  supportLevels: z.array(supportLevelSchema).min(1).optional(),
   target: targetSchema,
 });
 

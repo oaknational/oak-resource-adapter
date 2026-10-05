@@ -76,7 +76,14 @@ describe("suggestion harness API", () => {
             description: "Adds vocabulary for one question.",
             useWhen: "Relevant vocabulary needs recalling.",
           },
-          supportLevels: [{ description: "Words only.", level: "low" }],
+          inputs: [
+            {
+              id: "supportLevel",
+              kind: "choice",
+              label: "Support level",
+              options: [{ description: "Words only.", label: "Low", value: "low" }],
+            },
+          ],
           target: { nodeTypes: ["question"], scope: "node" },
         },
       ],

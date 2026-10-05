@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { downloadAvailability } from "./download-availability";
 import {
   worksheetScaffoldingJobKinds,
@@ -102,11 +104,15 @@ function generationRequest(adaptationId: string, resourceDocumentId: string) {
  * Undoing reopens the same offer, so keying on the offer alone would make a second
  * acceptance replay the first job and silently do nothing.
  */
-function applicationIdempotencyKey(suggestion: {
-  id: string;
-  undoCount: number;
-}): string {
-  return `apply:${suggestion.id}:${suggestion.undoCount}`;
+function applicationIdempotencyKey(
+  suggestion: { id: string; undoCount: number },
+  params: Readonly<Record<string, JobJsonValue>>,
+): string {
+  const paramsHash = createHash("sha256")
+    .update(JSON.stringify(params))
+    .digest("base64url")
+    .slice(0, 16);
+  return `apply:${suggestion.id}:${suggestion.undoCount}:${paramsHash}`;
 }
 
 /**
@@ -210,16 +216,20 @@ async function readAdaptation(
               reason: pending.suggestion.reason,
               targetBlockId: pending.transformation.targetBlockId,
             },
-      suggestions: rows.map((row) => ({
-        id: row.id,
-        kind: row.kind,
-        label: isRegisteredTransformationKind(row.kind)
-          ? transformationDefinitions[row.kind].label
-          : row.kind,
-        params: asParams(row.params),
-        reason: row.reason,
-        targetBlockId: row.targetBlockId,
-      })),
+      suggestions: rows.map((row) => {
+        const definition = isRegisteredTransformationKind(row.kind)
+          ? transformationDefinitions[row.kind]
+          : undefined;
+        return {
+          id: row.id,
+          ...(definition?.inputs === undefined ? {} : { inputs: definition.inputs }),
+          kind: row.kind,
+          label: definition?.label ?? row.kind,
+          params: asParams(row.params),
+          reason: row.reason,
+          targetBlockId: row.targetBlockId,
+        };
+      }),
     },
   };
 }
@@ -348,8 +358,10 @@ export async function enqueueSuggestionApplication(
   if (suggestion === null || !isRegisteredTransformationKind(suggestion.kind)) {
     return null;
   }
-  const params = transformationDefinitions[suggestion.kind].params.parse(
-    input.params ?? suggestion.params,
+  const params = asJobParams(
+    transformationDefinitions[suggestion.kind].params.parse(
+      input.params ?? suggestion.params,
+    ),
   );
 
   await enqueueUnlessAlreadyRunning(dependencies.enqueue, {
@@ -357,10 +369,10 @@ export async function enqueueSuggestionApplication(
       input.adaptationId,
       head.storedDocument.id,
     ),
-    idempotencyKey: applicationIdempotencyKey(suggestion),
+    idempotencyKey: applicationIdempotencyKey(suggestion, params),
     input: {
       adaptationId: input.adaptationId,
-      params: asJobParams(params),
+      params,
       resourceDocumentId: head.storedDocument.id,
       suggestionId: input.suggestionId,
     },
