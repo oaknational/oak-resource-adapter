@@ -26,9 +26,10 @@ const GroupPanel = styled.div`
 `;
 
 const SuggestionList = styled.ul`
+  align-items: flex-start;
   display: flex;
-  gap: 0.75rem;
   flex-wrap: wrap;
+  gap: 0.75rem;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -36,12 +37,6 @@ const SuggestionList = styled.ul`
   button {
     min-height: 3.5rem;
   }
-`;
-
-const SuggestionItem = styled.li`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
 `;
 
 const LocalWorking = styled.div`
@@ -68,7 +63,36 @@ export function groupSuggestionsByTarget(
   return grouped;
 }
 
-// Applying removes the chosen button, so focus moves to the marker that replaces it.
+type ScaffoldOption = Readonly<{
+  key: string;
+  label: string;
+  params: ScaffoldSuggestion["params"] | undefined;
+  suggestionId: string;
+}>;
+
+function scaffoldOptionsFor(suggestion: ScaffoldSuggestion): ScaffoldOption[] {
+  const [choice] = suggestion.inputs ?? [];
+
+  if (choice === undefined) {
+    return [
+      {
+        key: suggestion.id,
+        label: suggestion.label,
+        params: undefined,
+        suggestionId: suggestion.id,
+      },
+    ];
+  }
+
+  return choice.options.map((option) => ({
+    key: `${suggestion.id}:${option.value}`,
+    label: option.label,
+    params: { ...suggestion.params, [choice.id]: option.value },
+    suggestionId: suggestion.id,
+  }));
+}
+
+// Applying removes the chosen button, so focus moves to the progress marker.
 function LocalProgress() {
   const ref = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -95,39 +119,38 @@ export function SuggestionGroup({
 }: Readonly<{
   applyingSuggestionId: string | null;
   disabled: boolean;
-  onApply: (suggestionId: string) => void;
+  onApply: (suggestionId: string, params: ScaffoldOption["params"]) => void;
   onDismiss: () => void;
   suggestions: readonly ScaffoldSuggestion[];
 }>) {
   const headingId = useId();
+  const isApplyingHere = suggestions.some(({ id }) => id === applyingSuggestionId);
+  const options = suggestions
+    .filter(({ id }) => id !== applyingSuggestionId)
+    .flatMap(scaffoldOptionsFor);
 
   return (
     <GroupPanel aria-labelledby={headingId} role="group">
       <OakP $font="heading-7" id={headingId}>
         Suggested scaffolds
       </OakP>
+      {isApplyingHere && <LocalProgress />}
       <SuggestionList>
-        {suggestions.map((suggestion) => (
-          <SuggestionItem key={suggestion.id}>
-            {suggestion.id === applyingSuggestionId ? (
-              <LocalProgress />
-            ) : (
-              <div>
-                <OakSecondaryButton
-                  disabled={disabled}
-                  onClick={() => onApply(suggestion.id)}
-                >
-                  {suggestion.label}
-                </OakSecondaryButton>
-              </div>
-            )}
-          </SuggestionItem>
+        {options.map((option) => (
+          <li key={option.key}>
+            <OakSecondaryButton
+              disabled={disabled}
+              onClick={() => onApply(option.suggestionId, option.params)}
+            >
+              {option.label}
+            </OakSecondaryButton>
+          </li>
         ))}
-        <SuggestionItem>
+        <li>
           <OakSecondaryButton disabled={disabled} iconName="cross" onClick={onDismiss}>
             No scaffold required
           </OakSecondaryButton>
-        </SuggestionItem>
+        </li>
       </SuggestionList>
     </GroupPanel>
   );

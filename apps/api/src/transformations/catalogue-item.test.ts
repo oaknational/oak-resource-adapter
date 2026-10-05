@@ -100,6 +100,38 @@ describe("toCatalogueItem", () => {
       target: { scope: "node", nodeTypes: ["question"] },
     });
   });
+
+  it("derives choice inputs from declared support levels", () => {
+    const item = toCatalogueItem(
+      defineTransformation({
+        kind: "test-with-levels",
+        label: "With levels",
+        status: "draft",
+        suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
+        target: { scope: "document" },
+        outputs: ["revised-resource"],
+        isAvailable: always,
+        execution: { strategy: "deterministic", apply: (document) => [document] },
+        supportLevels: [
+          { description: "A little help.", label: "Add a little help", level: "low" },
+          { description: "More help.", label: "Add more help", level: "mid" },
+        ],
+      }),
+    );
+
+    expect(item.inputs).toEqual([
+      {
+        id: "supportLevel",
+        kind: "choice",
+        label: "Support level",
+        options: [
+          { description: "A little help.", label: "Add a little help", value: "low" },
+          { description: "More help.", label: "Add more help", value: "mid" },
+        ],
+      },
+    ]);
+    expect(toCatalogueItem(deterministic).inputs).toBeUndefined();
+  });
 });
 
 describe("listRegisteredTransformations", () => {

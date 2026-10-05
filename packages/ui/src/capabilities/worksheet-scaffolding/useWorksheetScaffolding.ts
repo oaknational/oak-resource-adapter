@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type {
+  WorksheetScaffoldingApplyRequest,
   WorksheetScaffoldingEntry,
   WorksheetScaffoldingState,
 } from "@oaknational/resource-adapter-contracts/internal";
@@ -172,7 +173,7 @@ export function useWorksheetScaffolding({
   });
 
   const applySuggestion = useCallback(
-    (suggestionId: string) => {
+    (suggestionId: string, params?: WorksheetScaffoldingApplyRequest["params"]) => {
       if (
         ready === null ||
         jobIsBusy(ready.value) ||
@@ -191,6 +192,7 @@ export function useWorksheetScaffolding({
         applyWorksheetScaffoldingSuggestion({
           ...connection,
           adaptationId: ready.value.adaptationId,
+          ...(params === undefined ? {} : { params }),
           suggestionId,
         }),
         "received",

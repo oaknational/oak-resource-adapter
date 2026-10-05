@@ -205,16 +205,20 @@ async function readAdaptation(
               reason: pending.suggestion.reason,
               targetBlockId: pending.transformation.targetBlockId,
             },
-      suggestions: rows.map((row) => ({
-        id: row.id,
-        kind: row.kind,
-        label: isRegisteredTransformationKind(row.kind)
-          ? transformationDefinitions[row.kind].label
-          : row.kind,
-        params: asParams(row.params),
-        reason: row.reason,
-        targetBlockId: row.targetBlockId,
-      })),
+      suggestions: rows.map((row) => {
+        const definition = isRegisteredTransformationKind(row.kind)
+          ? transformationDefinitions[row.kind]
+          : undefined;
+        return {
+          id: row.id,
+          ...(definition?.inputs === undefined ? {} : { inputs: definition.inputs }),
+          kind: row.kind,
+          label: definition?.label ?? row.kind,
+          params: asParams(row.params),
+          reason: row.reason,
+          targetBlockId: row.targetBlockId,
+        };
+      }),
     },
   };
 }
@@ -388,15 +392,17 @@ export async function enqueueSuggestionApplication(
   if (suggestion === null || !isRegisteredTransformationKind(suggestion.kind)) {
     return null;
   }
-  const params = transformationDefinitions[suggestion.kind].params.parse(
-    input.params ?? suggestion.params,
+  const params = asJobParams(
+    transformationDefinitions[suggestion.kind].params.parse(
+      input.params ?? suggestion.params,
+    ),
   );
 
   return enqueueOnHead(head, input, target, dependencies, {
-    idempotencyKey: applicationJobKey(suggestion),
+    idempotencyKey: applicationJobKey(suggestion, params),
     input: {
       adaptationId: input.adaptationId,
-      params: asJobParams(params),
+      params,
       resourceDocumentId: head.storedDocument.id,
       suggestionId: input.suggestionId,
     },

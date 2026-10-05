@@ -1,4 +1,7 @@
+import { createHash } from "node:crypto";
+
 import { capabilityDefinitions } from "../capabilities/registry";
+import type { JobJsonValue } from "../jobs/domain";
 
 export const CAPABILITY = capabilityDefinitions.worksheetScaffolding;
 export const SUGGESTION_FLOW_ID = CAPABILITY.suggestionFlowId;
@@ -27,11 +30,15 @@ export function suggestionRetryJobKey(
  * Undoing reopens the same offer, so keying on the offer alone would make a second
  * acceptance replay the first job and silently do nothing.
  */
-export function applicationJobKey(suggestion: {
-  id: string;
-  undoCount: number;
-}): string {
-  return `apply:${suggestion.id}:${suggestion.undoCount}`;
+export function applicationJobKey(
+  suggestion: { id: string; undoCount: number },
+  params: Readonly<Record<string, JobJsonValue>>,
+): string {
+  const paramsHash = createHash("sha256")
+    .update(JSON.stringify(params))
+    .digest("base64url")
+    .slice(0, 16);
+  return `apply:${suggestion.id}:${suggestion.undoCount}:${paramsHash}`;
 }
 
 export function transformationRetryJobKey(

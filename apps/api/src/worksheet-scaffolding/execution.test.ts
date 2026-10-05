@@ -277,6 +277,38 @@ describe("applying an accepted suggestion", () => {
     expect(repository.storeOutputsAndAdvanceHead).not.toHaveBeenCalled();
   });
 
+  it("applies at the level the job carries rather than the suggested one", async () => {
+    const repository = stubRepository({
+      acceptSuggestion: vi.fn(async ({ params }) =>
+        acceptedSuggestion({ transformation: { params } }),
+      ),
+    });
+    const dependencies = stubDependencies({
+      executeTransformation: vi.fn().mockResolvedValue(appliedRun),
+      readJob: vi.fn().mockResolvedValue(
+        applyJob({
+          input: {
+            adaptationId: ADAPTATION_ID,
+            params: { supportLevel: "mid" },
+            resourceDocumentId: DOCUMENT_ID,
+            suggestionId: SUGGESTION_ID,
+          },
+        }),
+      ),
+      repository,
+    });
+
+    await executeApplySuggestion(JOB_ID, dependencies);
+
+    expect(repository.acceptSuggestion).toHaveBeenCalledWith(
+      expect.objectContaining({ params: { supportLevel: "mid" } }),
+    );
+    expect(dependencies.executeTransformation).toHaveBeenCalledWith(
+      expect.objectContaining({ params: { supportLevel: "mid" } }),
+      expect.any(Object),
+    );
+  });
+
   it("refuses an execution belonging to a different adaptation", async () => {
     const repository = stubRepository({
       getAcceptedSuggestion: vi.fn().mockResolvedValue(
