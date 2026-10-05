@@ -61,8 +61,8 @@ so the control a teacher sees and the arguments the database accepts cannot
 disagree.
 
 Clients see a kind's levels as a `choice` input with the id `supportLevel`, one
-option per level, rather than as `supportLevels`. A client sends the chosen
-option's `value`, such as `"mid"`, back in `params` under the input's `id`.
+option per level. A client sends the chosen option's `value`, such as `"mid"`,
+back in `params` under the input's `id`.
 
 `outputs` declares what a run produces and in what order. Execution is checked
 against it, so a kind cannot quietly return a revision where a companion document

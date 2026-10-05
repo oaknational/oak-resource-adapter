@@ -100,24 +100,6 @@ function generationRequest(adaptationId: string, resourceDocumentId: string) {
   } as const;
 }
 
-/** Fixed locale so keys order identically regardless of the host's default locale. */
-function compareKeys(a: string, b: string): number {
-  return a.localeCompare(b, "en");
-}
-
-function canonicalJson(value: JobJsonValue): string {
-  if (Array.isArray(value)) {
-    return `[${value.map(canonicalJson).join(",")}]`;
-  }
-  if (value !== null && typeof value === "object") {
-    return `{${Object.keys(value)
-      .sort(compareKeys)
-      .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key] ?? null)}`)
-      .join(",")}}`;
-  }
-  return JSON.stringify(value);
-}
-
 /**
  * Undoing reopens the same offer, so keying on the offer alone would make a second
  * acceptance replay the first job and silently do nothing.
@@ -127,7 +109,7 @@ function applicationIdempotencyKey(
   params: Readonly<Record<string, JobJsonValue>>,
 ): string {
   const paramsHash = createHash("sha256")
-    .update(canonicalJson(params))
+    .update(JSON.stringify(params))
     .digest("base64url")
     .slice(0, 16);
   return `apply:${suggestion.id}:${suggestion.undoCount}:${paramsHash}`;

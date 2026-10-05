@@ -461,15 +461,14 @@ type ScaffoldOption = Readonly<{
 }>;
 
 function scaffoldOptionsFor(suggestion: ScaffoldSuggestion): ScaffoldOption[] {
-  const choices = suggestion.inputs?.filter(({ kind }) => kind === "choice") ?? [];
-  const [choice] = choices;
+  const [choice] = suggestion.inputs ?? [];
 
-  if (choice === undefined || choices.length > 1) {
+  if (choice === undefined) {
     return [
       {
         key: suggestion.id,
         label: suggestion.label,
-        params: suggestion.inputs === undefined ? undefined : suggestion.params,
+        params: undefined,
         suggestionId: suggestion.id,
       },
     ];
