@@ -79,7 +79,7 @@ jobs:
           project=oaknational_oak-resource-adapter
           if [ -n "$PULL_REQUEST" ]; then scope="pullRequest=$PULL_REQUEST"; else scope="branch=$BRANCH"; fi
           if ! response="$(curl --fail-with-body -sS -H "Authorization: Bearer $SONAR_TOKEN" \
-            "https://sonarcloud.io/api/issues/search?componentKeys=$project&resolved=false&ps=1&$scope")"; then
+            "https://sonarcloud.io/api/issues/search?organization=oaknational&componentKeys=$project&resolved=false&ps=1&$scope")"; then
             echo "::error::Sonar issue search failed: $response"
             exit 1
           fi
