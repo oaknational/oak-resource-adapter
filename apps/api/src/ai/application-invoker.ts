@@ -16,12 +16,14 @@ import {
 
 export function createApplicationModelInvoker(
   transformationAttemptId: string,
+  teacherId: string,
 ): ResourceAdapterModelInvoker {
   const transport = resolveModelTransport();
   if (transport === "deterministic") {
     return createModelInvoker({
       recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
       roleBindings: rebindModelRoles("deterministic"),
+      subject: teacherId,
       transports: {
         deterministic: createDeterministicModelTransport({
           resolve: resolveDeterministicResponse,
@@ -33,6 +35,7 @@ export function createApplicationModelInvoker(
   return createModelInvoker({
     recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
     roleBindings: modelRoleBindings,
+    subject: teacherId,
     transports: {
       openai: createOpenAIResponsesTransport({ client: new OpenAI() }),
     },
