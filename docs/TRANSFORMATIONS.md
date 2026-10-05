@@ -208,10 +208,10 @@ its own.
 
 `isAvailable` decides whether a listed kind is offered for a particular document
 and adaptation. The rules live in `availability.ts` and compose: `always`,
-`disabled`, `notAlreadyApplied`, `notAlreadyAppliedToTarget`,
-`requiresNodeType`, and `all` to combine them. Availability history carries kind,
-params, target and contribution identity, so target-scoped rules need not treat
-applying a scaffold to two different questions as the same work.
+`disabled`, `notAlreadyApplied`, `notAlreadyAppliedToTarget`, and `all` to
+combine them. Availability history carries kind, params, target and contribution
+identity, so target-scoped rules need not treat applying a scaffold to two
+different questions as the same work.
 
 `listTransformationsForCapability` in `service.ts` resolves a capability's kinds
 and applies those rules, returning what a teacher needs to choose between them.

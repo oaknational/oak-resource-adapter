@@ -64,6 +64,7 @@ function stubDependencies(
 ): WorksheetScaffoldingDependencies {
   return {
     enqueue: vi.fn(),
+    getLatestJob: vi.fn().mockResolvedValue(null),
     resumableCutoff: () => new Date("2026-01-01T00:00:00.000Z"),
     readSourceDocument: vi.fn().mockResolvedValue(worksheet),
     repository: stubRepository(),
@@ -205,7 +206,7 @@ describe("reading worksheet scaffolding state", () => {
       ADAPTATION_ID,
       teacher.teacherId,
     );
-    expect(dependencies.repository.getLatestJobForConcurrencyKey).toHaveBeenCalledWith(
+    expect(dependencies.getLatestJob).toHaveBeenCalledWith(
       `adaptation:${ADAPTATION_ID}:head:${DOCUMENT_ID}`,
       [
         "suggestions.apply",
@@ -257,11 +258,9 @@ describe("reading worksheet scaffolding state", () => {
 
   it("ignores a job whose kind this workflow does not own", async () => {
     const dependencies = stubDependencies({
-      repository: stubRepository({
-        getLatestJobForConcurrencyKey: vi
-          .fn()
-          .mockResolvedValue({ id: JOB_ID, kind: "test.echo", status: "queued" }),
-      }),
+      getLatestJob: vi
+        .fn()
+        .mockResolvedValue({ id: JOB_ID, kind: "test.echo", status: "queued" }),
     });
 
     await expect(
@@ -280,8 +279,8 @@ describe("reading worksheet scaffolding state", () => {
   });
 
   it("asks for suggestions after a scaffold removal changes the worksheet", async () => {
-    const repository = stubRepository({
-      getLatestJobForConcurrencyKey: vi
+    const dependencies = stubDependencies({
+      getLatestJob: vi
         .fn()
         .mockResolvedValueOnce({
           failureMessage: null,
@@ -291,7 +290,6 @@ describe("reading worksheet scaffolding state", () => {
         })
         .mockResolvedValue(null),
     });
-    const dependencies = stubDependencies({ repository });
 
     await getWorksheetScaffoldingState(ADAPTATION_ID, teacher, dependencies);
 
@@ -302,13 +300,11 @@ describe("reading worksheet scaffolding state", () => {
 
   it("waits rather than asking again while a run is in flight", async () => {
     const dependencies = stubDependencies({
-      repository: stubRepository({
-        getLatestJobForConcurrencyKey: vi.fn().mockResolvedValue({
-          failureMessage: null,
-          id: JOB_ID,
-          kind: "suggestions.generate",
-          status: "running",
-        }),
+      getLatestJob: vi.fn().mockResolvedValue({
+        failureMessage: null,
+        id: JOB_ID,
+        kind: "suggestions.generate",
+        status: "running",
       }),
     });
 
@@ -324,10 +320,9 @@ describe("reading worksheet scaffolding state", () => {
       kind: "suggestions.apply",
       status: "failed",
     } as const;
-    const repository = stubRepository({
-      getLatestJobForConcurrencyKey: vi.fn().mockResolvedValue(failedApplication),
+    const dependencies = stubDependencies({
+      getLatestJob: vi.fn().mockResolvedValue(failedApplication),
     });
-    const dependencies = stubDependencies({ repository });
 
     await expect(
       getWorksheetScaffoldingState(ADAPTATION_ID, teacher, dependencies),
@@ -341,8 +336,8 @@ describe("reading worksheet scaffolding state", () => {
       status: "failed",
     });
     const dependencies = stubDependencies({
+      getLatestJob: vi.fn().mockResolvedValue(failedRetry),
       repository: stubRepository({
-        getLatestJobForConcurrencyKey: vi.fn().mockResolvedValue(failedRetry),
         getPendingReview: vi.fn().mockResolvedValue(pendingReview()),
       }),
     });
@@ -362,13 +357,11 @@ describe("reading worksheet scaffolding state", () => {
 
   it("does not ask again when a completed run found nothing to suggest", async () => {
     const dependencies = stubDependencies({
-      repository: stubRepository({
-        getLatestJobForConcurrencyKey: vi.fn().mockResolvedValue({
-          failureMessage: null,
-          id: JOB_ID,
-          kind: "suggestions.generate",
-          status: "succeeded",
-        }),
+      getLatestJob: vi.fn().mockResolvedValue({
+        failureMessage: null,
+        id: JOB_ID,
+        kind: "suggestions.generate",
+        status: "succeeded",
       }),
     });
 
@@ -792,12 +785,14 @@ describe("reviewing an applied scaffold", () => {
       .mockResolvedValue(null);
     const repository = stubRepository({
       acceptPendingReview: vi.fn().mockResolvedValue(true),
-      getLatestJobForConcurrencyKey: vi.fn((_, kinds: readonly string[]) =>
-        Promise.resolve(kinds.length === 1 ? null : failedRetry),
-      ),
       getPendingReview,
     });
-    const dependencies = stubDependencies({ repository });
+    const dependencies = stubDependencies({
+      getLatestJob: vi.fn((_, kinds: readonly string[]) =>
+        Promise.resolve(kinds.length === 1 ? null : failedRetry),
+      ),
+      repository,
+    });
 
     const state = await acceptWorksheetScaffoldingReview(
       { adaptationId: ADAPTATION_ID, attemptId: ATTEMPT_ID },
@@ -875,9 +870,9 @@ describe("reviewing an applied scaffold", () => {
       status: "queued",
     } as const;
     const dependencies = stubDependencies({
+      getLatestJob: vi.fn().mockResolvedValue(removalJob),
       repository: stubRepository({
         getAdaptationHead: vi.fn().mockResolvedValue(head(DOCUMENT_ID, contributed)),
-        getLatestJobForConcurrencyKey: vi.fn().mockResolvedValue(removalJob),
         isAcceptedContribution: vi.fn().mockResolvedValue(true),
       }),
     });

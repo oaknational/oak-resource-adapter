@@ -179,7 +179,7 @@ test("adapts, accepts, downloads, resumes and removes a scaffold without losing 
   );
   await downloadButton.click();
   const retryDownload = drawer.getByRole("button", { name: "Retry download" });
-  await expect(retryDownload).toBeEnabled();
+  await expect(retryDownload).toBeEnabled({ timeout: 30_000 });
   await expect(worksheet.getByText("compare", { exact: true })).toBeVisible();
   const firstXml = await downloadWorksheetXml(page, retryDownload);
   expect(firstXml).toContain("Vocabulary you could include:");

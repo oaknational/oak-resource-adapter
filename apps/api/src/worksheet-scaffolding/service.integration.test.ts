@@ -11,7 +11,12 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { enqueueJob } from "../jobs/enqueue-job";
-import { createOrGetJob, failJob, recordWorkflowRun } from "../jobs/job-repository";
+import {
+  createOrGetJob,
+  failJob,
+  getLatestJobForConcurrencyKey,
+  recordWorkflowRun,
+} from "../jobs/job-repository";
 import { applySuggestionJob } from "../jobs/suggestions/apply-definition";
 import { adaptationHeadConcurrencyKey } from "./capability";
 import * as repository from "./repository";
@@ -106,6 +111,7 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
           recordRun: recordWorkflowRun,
           startWorkflow,
         })) as typeof enqueueJob,
+      getLatestJob: getLatestJobForConcurrencyKey,
       readSourceDocument: () => {
         throw new Error("Applying a suggestion does not read the source document.");
       },

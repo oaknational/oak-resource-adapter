@@ -1,7 +1,7 @@
 import { resourceDocumentSchema } from "@oaknational/resource-document/schema";
 import { z } from "zod";
 
-import { adapterProxyPath } from "../../harness-api";
+import { adapterProxyPath, readApiResponse } from "../../harness-api";
 import {
   suggestionGuidanceSchema,
   targetSchema,
@@ -145,33 +145,13 @@ export type TransformationCommand = Readonly<{
   targetBlockId?: string | undefined;
 }>;
 
-async function readError(response: Response): Promise<Error> {
-  const parsed = z
-    .object({ error: z.string() })
-    .safeParse(await response.json().catch(() => null));
-  return new Error(
-    parsed.success ? parsed.data.error : `The API returned HTTP ${response.status}.`,
-  );
-}
-
-async function read<TSchema extends z.ZodType>(
-  response: Response,
-  schema: TSchema,
-  what: string,
-): Promise<z.output<TSchema>> {
-  if (!response.ok) {
-    throw await readError(response);
-  }
-  const parsed = schema.safeParse(await response.json());
-  if (!parsed.success) {
-    throw new Error(`The API returned ${what} in an unrecognised shape.`);
-  }
-  return parsed.data;
-}
-
 export async function fetchTransformationCatalogue(): Promise<TransformationCatalogue> {
   const response = await fetch(`${adapterProxyPath}/dev/transformations/catalogue`);
-  return read(response, catalogueResponseSchema, "a transformation catalogue");
+  return readApiResponse(
+    response,
+    catalogueResponseSchema,
+    "a transformation catalogue",
+  );
 }
 
 async function postTransformation<TSchema extends z.ZodType>(
@@ -186,7 +166,7 @@ async function postTransformation<TSchema extends z.ZodType>(
     method: "POST",
     ...(signal === undefined ? {} : { signal }),
   });
-  return read(response, schema, `a transformation ${action}`);
+  return readApiResponse(response, schema, `a transformation ${action}`);
 }
 
 export function previewTransformation(

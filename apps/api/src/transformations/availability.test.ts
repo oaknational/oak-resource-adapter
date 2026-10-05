@@ -9,7 +9,6 @@ import {
   disabled,
   notAlreadyApplied,
   notAlreadyAppliedToTarget,
-  requiresNodeType,
 } from "./availability";
 
 import type { TransformationAvailabilityContext } from "./types";
@@ -93,20 +92,5 @@ describe("notAlreadyAppliedToTarget", () => {
     };
 
     expect(notAlreadyAppliedToTarget("scaffold-add-word-bank")(context)).toBe(false);
-  });
-});
-
-describe("requiresNodeType", () => {
-  it("offers the kind when the document contains the node type", () => {
-    expect(requiresNodeType("question")(contextFor())).toBe(true);
-  });
-
-  it("withdraws the kind when the document contains no such node", () => {
-    const empty = {
-      ...contextFor(),
-      document: { ...worksheet, answers: [], content: [] },
-    };
-
-    expect(requiresNodeType("question")(empty)).toBe(false);
   });
 });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { adapterProxyPath } from "../../harness-api";
+import { adapterProxyPath, readApiResponse } from "../../harness-api";
 import {
   suggestionGuidanceSchema,
   targetSchema,
@@ -71,33 +71,13 @@ export type SuggestionCommand = Readonly<{
   lesson: Pick<LessonScenario["lesson"], "lessonSlug" | "programmeSlug">;
 }>;
 
-async function readError(response: Response): Promise<Error> {
-  const parsed = z
-    .object({ error: z.string() })
-    .safeParse(await response.json().catch(() => null));
-  return new Error(
-    parsed.success ? parsed.data.error : `The API returned HTTP ${response.status}.`,
-  );
-}
-
-async function read<TSchema extends z.ZodType>(
-  response: Response,
-  schema: TSchema,
-  what: string,
-): Promise<z.output<TSchema>> {
-  if (!response.ok) {
-    throw await readError(response);
-  }
-  const parsed = schema.safeParse(await response.json());
-  if (!parsed.success) {
-    throw new Error(`The API returned ${what} in an unrecognised shape.`);
-  }
-  return parsed.data;
-}
-
 export async function fetchSuggestionCatalogue(): Promise<SuggestionCatalogue> {
   const response = await fetch(`${adapterProxyPath}/dev/suggestions/catalogue`);
-  return read(response, catalogueResponseSchema, "a suggestion-flow catalogue");
+  return readApiResponse(
+    response,
+    catalogueResponseSchema,
+    "a suggestion-flow catalogue",
+  );
 }
 
 async function postSuggestion<TSchema extends z.ZodType>(
@@ -112,7 +92,7 @@ async function postSuggestion<TSchema extends z.ZodType>(
     method: "POST",
     ...(signal === undefined ? {} : { signal }),
   });
-  return read(response, schema, `a suggestion ${action}`);
+  return readApiResponse(response, schema, `a suggestion ${action}`);
 }
 
 export function previewSuggestions(command: SuggestionCommand, signal?: AbortSignal) {

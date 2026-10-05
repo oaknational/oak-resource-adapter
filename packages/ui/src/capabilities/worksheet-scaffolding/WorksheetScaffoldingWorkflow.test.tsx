@@ -349,7 +349,8 @@ describe("WorksheetScaffoldingWorkflow", () => {
   it("loads and renders the capability source document", async () => {
     const { props } = renderDialog();
 
-    expect(screen.getByRole("status", { name: "Worksheet status" })).toHaveTextContent(
+    const announcement = screen.getByRole("status", { name: "Worksheet status" });
+    expect(announcement).toHaveTextContent(
       "Loading worksheet. Getting your worksheet ready.",
     );
     const spinner = screen.getByTestId("worksheet-scaffolding-loading-spinner");
@@ -357,6 +358,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(
       await screen.findByRole("article", { name: "Adding fractions worksheet" }),
     ).toBeVisible();
+    expect(screen.getByRole("status", { name: "Worksheet status" })).toBe(announcement);
     expect(screen.getByText("What is one half plus one quarter?")).toBeVisible();
     expect(openWorksheetScaffoldingMock).toHaveBeenCalledWith({
       apiBaseUrl: props.apiBaseUrl,
@@ -1440,3 +1442,24 @@ it.each(["resolve", "reject"] as const)(
     expect(onError).not.toHaveBeenCalled();
   },
 );
+
+it("tells the teacher when refreshing a changed worksheet fails", async () => {
+  openWorksheetScaffoldingMock.mockResolvedValueOnce(
+    opened({ ...readyWithAcceptedScaffold, downloadAvailability: "available" }),
+  );
+  getWorksheetScaffoldingMock.mockRejectedValueOnce(new Error("refresh failed"));
+  vi.mocked(prepareWorksheetExport).mockRejectedValueOnce(
+    new ResourceAdapterApiError("stale", 409),
+  );
+  renderDialog();
+
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Download worksheet" }),
+  );
+
+  await waitFor(() =>
+    expect(screen.getByRole("status", { name: "Download status" })).toHaveTextContent(
+      "We couldn’t refresh the worksheet.",
+    ),
+  );
+});

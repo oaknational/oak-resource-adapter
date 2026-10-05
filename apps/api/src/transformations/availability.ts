@@ -1,7 +1,3 @@
-import { getResourceNodesByType } from "@oaknational/resource-document";
-
-import type { ResourceNode } from "@oaknational/resource-document";
-
 import type { TransformationAvailabilityContext } from "./types";
 
 export type AvailabilityRule = (context: TransformationAvailabilityContext) => boolean;
@@ -26,8 +22,4 @@ export function notAlreadyAppliedToTarget(kind: string): AvailabilityRule {
       (transformation) =>
         transformation.kind === kind && transformation.targetBlockId === targetBlockId,
     );
-}
-
-export function requiresNodeType(type: ResourceNode["type"]): AvailabilityRule {
-  return ({ document }) => getResourceNodesByType(document, type).length > 0;
 }

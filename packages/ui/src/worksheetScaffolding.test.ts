@@ -29,7 +29,8 @@ const api = vi.hoisted(() => ({
   undo: vi.fn(),
 }));
 
-vi.mock("./client.js", () => ({
+vi.mock("./client.js", async (original) => ({
+  ...(await original<typeof import("./client.js")>()),
   createResourceAdapterInternalClient: vi.fn(() => ({
     worksheetScaffolding: {
       accept: { mutate: api.accept },

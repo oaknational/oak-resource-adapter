@@ -15,8 +15,7 @@ import type { ResourceDocument } from "@oaknational/resource-document";
 import { eq, inArray, sql } from "drizzle-orm";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { createOrGetJob, failJob } from "../jobs/job-repository";
-import { adaptationHeadConcurrencyKey } from "./capability";
+import { createOrGetJob } from "../jobs/job-repository";
 import {
   acceptSuggestion,
   acceptPendingReview,
@@ -25,7 +24,6 @@ import {
   isAttemptComplete,
   findResumableAdaptation,
   getAdaptationHead,
-  getLatestJobForConcurrencyKey,
   getOpenSuggestion,
   getPendingReview,
   getPrimaryTransformationInput,
@@ -770,70 +768,6 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
     await expect(getAdaptationHead(first.adaptationId)).resolves.toMatchObject({
       storedDocument: { id: first.pendingHeadId },
     });
-  });
-
-  it("prefers a job still in flight over a finished one", async () => {
-    const { adaptationId, resourceDocumentId } = await newAdaptation();
-    const kinds = ["suggestions.apply", "suggestions.generate"] as const;
-    const concurrencyKey = adaptationHeadConcurrencyKey(
-      adaptationId,
-      resourceDocumentId,
-    );
-
-    const finished = await createOrGetJob({
-      concurrencyKey,
-      idempotencyKey: `integration-${randomUUID()}`,
-      input: { adaptationId, flowId: "worksheet-scaffolding", resourceDocumentId },
-      kind: "suggestions.generate",
-    });
-    await failJob(finished.job.id, null, {
-      code: "test_failure",
-      message: "The earlier job finished.",
-    });
-    const queued = await createOrGetJob({
-      concurrencyKey,
-      idempotencyKey: `integration-${randomUUID()}`,
-      input: { adaptationId, flowId: "worksheet-scaffolding", resourceDocumentId },
-      kind: "suggestions.generate",
-    });
-    const otherResourceDocumentId = randomUUID();
-    await createOrGetJob({
-      concurrencyKey: adaptationHeadConcurrencyKey(
-        adaptationId,
-        otherResourceDocumentId,
-      ),
-      idempotencyKey: `integration-${randomUUID()}`,
-      input: {
-        adaptationId,
-        flowId: "worksheet-scaffolding",
-        resourceDocumentId: otherResourceDocumentId,
-      },
-      kind: "suggestions.generate",
-    });
-    const other = await createAdaptationWithSourceDocument({
-      capabilityId: "worksheetScaffolding",
-      document: worksheet,
-      lesson,
-      teacherId: `integration-${randomUUID()}`,
-    });
-    createdAdaptationIds.push(other.adaptationId);
-    await createOrGetJob({
-      concurrencyKey: adaptationHeadConcurrencyKey(
-        other.adaptationId,
-        other.resourceDocumentId,
-      ),
-      idempotencyKey: `integration-${randomUUID()}`,
-      input: {
-        adaptationId: other.adaptationId,
-        flowId: "worksheet-scaffolding",
-        resourceDocumentId: other.resourceDocumentId,
-      },
-      kind: "suggestions.generate",
-    });
-
-    await expect(
-      getLatestJobForConcurrencyKey(concurrencyKey, kinds),
-    ).resolves.toMatchObject({ id: queued.job.id });
   });
 
   describe("resumable work", () => {

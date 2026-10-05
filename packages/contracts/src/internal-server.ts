@@ -128,7 +128,7 @@ const worksheetScaffoldingStateSchema = z.object({
     z.array(
       z.object({
         id: z.string(),
-        inputs: z.optional(z.readonly(z.array(transformationInputSchema))),
+        inputs: z.exactOptional(z.readonly(z.array(transformationInputSchema))),
         kind: z.string(),
         label: z.string(),
         params: z.record(z.string(), z.json()),
@@ -137,7 +137,7 @@ const worksheetScaffoldingStateSchema = z.object({
       }),
     ),
   ),
-});
+}) satisfies z.ZodType<WorksheetScaffoldingState>;
 
 const worksheetScaffoldingEntrySchema = z.discriminatedUnion("outcome", [
   z.object({ outcome: z.literal("opened"), state: worksheetScaffoldingStateSchema }),
@@ -150,7 +150,7 @@ const worksheetScaffoldingEntrySchema = z.discriminatedUnion("outcome", [
       updatedAt: z.string(),
     }),
   }),
-]);
+]) satisfies z.ZodType<WorksheetScaffoldingEntry>;
 
 function requireWorksheetScaffolding<TValue>(value: TValue | null): TValue {
   if (value === null) {

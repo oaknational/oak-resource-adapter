@@ -1,4 +1,9 @@
-import { createTRPCClient, httpBatchLink, type TRPCClient } from "@trpc/client";
+import {
+  createTRPCClient,
+  httpBatchLink,
+  TRPCClientError,
+  type TRPCClient,
+} from "@trpc/client";
 import {
   resourceAdapterApiContractVersion,
   resourceAdapterApiContractVersionHeader,
@@ -112,6 +117,23 @@ export function createResourceAdapterInternalClient({
       httpBatchLink(createLinkOptions({ getToken, url: `${base}/trpc/internal` })),
     ],
   });
+}
+
+export async function callApi<T>(
+  message: string,
+  request: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await request();
+  } catch (error) {
+    if (error instanceof ResourceAdapterApiError) {
+      throw error;
+    }
+    throw new ResourceAdapterApiError(
+      message,
+      error instanceof TRPCClientError ? error.data?.httpStatus : undefined,
+    );
+  }
 }
 
 export async function fetchResourceArtifact({

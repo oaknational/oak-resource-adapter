@@ -1,189 +1,74 @@
 # Oak Resource Adapter
 
-Oak Resource Adapter is Oak National Academy's service and UI package for adapting
-lesson resources with Aila, Oak's AI Lesson Assistant.
+Oak Resource Adapter (ORA) lets teachers adapt Oak lesson resources for their
+pupils, from the lesson page on Oak's website.
 
-This repository is in initial setup, containing a local and hosted
-harness to run the `@oaknational/resource-adapter` inside
-an OWA-like host, along with a skeleton API.
+It's currently an MVP with a single capability, worksheet scaffolding. ORA
+reviews a lesson's worksheet and suggests scaffolds where pupils may need
+support, such as a word bank, sentence starters or a task broken into ordered
+steps. A teacher applies the ones they want, reviews each change before keeping
+it, and downloads the result as an editable Word document. Unfinished work is
+saved and offered back when they return.
 
-## Project policies
+## How it fits together
 
-- [Contributing](CONTRIBUTING.md)
-- [Security](SECURITY.md)
-- [Oak branding and documentation notice](NOTICE.md)
-- [Database](docs/DATABASE.md)
+Oak's website (OWA) installs the published `@oaknational/resource-adapter` React
+package and renders its button and dialog on lesson pages. The dialog talks to
+the ORA API over tRPC. The API reads the lesson from Oak's curriculum, stores
+each adaptation in PostgreSQL, and runs model calls as background jobs on
+Vercel Workflow.
 
-Contributor documentation is indexed in [docs/README.md](docs/README.md).
+| Path                                                                           | What it is                                                               |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| [`apps/api`](apps/api)                                                         | The API and background worker, a Next.js app on Vercel                   |
+| [`apps/harness`](apps/harness)                                                 | An OWA-like host for running the UI package locally and on Vercel        |
+| [`packages/ui`](packages/ui)                                                   | The published React package hosts install                                |
+| [`packages/contracts`](packages/contracts)                                     | The tRPC contracts shared by the API and UI, published with the UI       |
+| [`packages/resource-document`](packages/resource-document)                     | The schema for worksheets as structured documents, published with the UI |
+| [`packages/original-resource-documents`](packages/original-resource-documents) | Retrieves and validates the source worksheet for a lesson                |
+| [`packages/curriculum`](packages/curriculum)                                   | Reads lessons and their resource files from Oak                          |
+| [`packages/ai`](packages/ai)                                                   | Model invocation, behind roles rather than named models                  |
+| [`packages/db`](packages/db)                                                   | The Drizzle schema, migrations and database client                       |
+| [`packages/storage`](packages/storage)                                         | Writes generated files to a private Cloud Storage bucket                 |
+| [`packages/logger`](packages/logger)                                           | The shared logger                                                        |
 
-## Architecture notes
+## Getting started
 
-- [Background jobs](docs/BACKGROUND_JOBS.md)
-- [Curriculum](docs/CURRICULUM.md)
-- [Model invocation](docs/MODEL_INVOCATION.md)
-
-## Prerequisites
-
-- Node.js 24 LTS (see `.nvmrc`)
-- pnpm 10 or later
-- The [Doppler CLI](https://docs.doppler.com/docs/install-cli), signed in with
-  `doppler login`, with access to the `oak-resource-adapter` project
+You need Node.js 24 (see `.nvmrc`), pnpm 10 or later, a local PostgreSQL, and the
+[Doppler CLI](https://docs.doppler.com/docs/install-cli) signed in with access to
+the `oak-resource-adapter` project.
 
 Shared development values live in Doppler's `dev` config. Write them into a
-local, gitignored `.env` once after cloning, and again whenever they change:
+local, gitignored `.env` after cloning, and again whenever they change:
 
 ```sh
 doppler secrets download --project oak-resource-adapter --config dev --no-file --format env > .env
 ```
 
-Repository commands read that file. Preview, staging and production get their
-configuration from Terraform instead; see [development
-notes](docs/DEVELOPMENT.md#where-configuration-lives).
-
-## Commands
+Then install, build the local schema and start the apps:
 
 ```sh
 pnpm install
-pnpm format
-pnpm lint
-pnpm deps:check
-pnpm type-check
-pnpm build
-pnpm test
-pnpm test:coverage
-pnpm test:package-artifact
-pnpm test:e2e
-pnpm secrets:scan
-pnpm changeset
-pnpm docker:db:bootstrap
-pnpm docker:db:reset
-pnpm docker:db:psql
-pnpm docker:db:clear
-```
-
-Run `pnpm exec playwright install chromium` once before the first browser test.
-
-## Local harness
-
-The harness is an OWA-like local host for the published UI boundary.
-
-```sh
+pnpm db:reset
 pnpm dev
 ```
 
-This starts the harness on port 3000 and the local API on port 3001. The harness page
-uses the workspace UI package helper to resolve capabilities, then renders the
-package-owned drawer with representative lesson context. The drawer resolves
-its own source document through the authenticated internal API. This mirrors
-the OWA/package composition boundary without making the host transport or
-render Resource Documents.
+`pnpm dev` starts the harness on port 3000 and the API on port 3001, with
+background jobs running on Workflow's local runtime. If you don't have
+PostgreSQL installed, `pnpm docker:db:bootstrap` runs one in Docker.
 
-One difference from OWA: the harness browser calls its own `/adapter-proxy` route,
-which forwards to the API server-side. That is what lets a deployed harness be
-paired with an API deployment whose URL is only known once it exists. OWA calls
-the API directly, so the API's cross-origin handling is covered by unit tests
-rather than by the harness.
+Before pushing, run `sh .husky/pre-push`, which runs the quick parts of CI. Run
+`pnpm exec playwright install chromium` once before your first `pnpm test:e2e`.
 
-The API dev server also runs background jobs through Workflow's local runtime,
-using the same workflow and step code intended for Vercel. See
-[background jobs](docs/BACKGROUND_JOBS.md) for the dummy job smoke test and the
-job and durable-output conventions.
+The harness differs from OWA in one way: its browser calls its own
+`/adapter-proxy` route, which forwards to the API server-side. That lets a
+deployed harness pair with an API deployment whose URL is only known once it
+exists. OWA calls the API directly.
 
-## Calling the service
+## Documentation
 
-The service API uses tRPC. The typed client is internal to the UI package;
-hosts such as OWA or the harness call `getResourceAdapterCapabilities`, while
-`ResourceAdapterDialog` fetches its source document internally, so hosts never
-depend on `@trpc/client` or handle resource documents themselves:
-
-```ts
-import {
-  getResourceAdapterCapabilities,
-  ResourceAdapterButton,
-  ResourceAdapterDialog,
-} from "@oaknational/resource-adapter";
-
-const capabilities = await getResourceAdapterCapabilities({
-  apiBaseUrl: "https://resource-adapter.example",
-  getToken,
-  lesson,
-});
-
-<ResourceAdapterButton
-  capabilities={capabilities.capabilities}
-  onSelectCapability={setSelectedCapability}
-/>;
-
-{selectedCapability && (
-  <ResourceAdapterDialog
-    apiBaseUrl="https://resource-adapter.example"
-    capability={selectedCapability}
-    getToken={getToken}
-    isOpen={true}
-    lesson={lesson}
-    onClose={() => {}}
-  />
-)}
-```
-
-## Local database
-
-PostgreSQL, accessed through Drizzle. `DATABASE_URL` is read from the process
-environment or the root `.env` (see Prerequisites). Point it at any local
-PostgreSQL instance you control and build the schema:
-
-```sh
-pnpm db:reset          # drops and recreates the local schema, then migrates
-```
-
-### Docker alternative (local PostgreSQL)
-
-```sh
-pnpm docker:db:bootstrap
-pnpm db:reset
-```
-
-To stop and remove it later:
-
-```sh
-pnpm docker:db:clear
-```
-
-To recreate the container from scratch:
-
-```sh
-pnpm docker:db:reset
-```
-
-To open a `psql` shell inside the container:
-
-```sh
-pnpm docker:db:psql
-```
-
-Day to day:
-
-```sh
-pnpm db:migrate:dev    # apply migrations someone else added
-pnpm db:generate       # write a migration for a schema change you made
-pnpm db:seed:dev       # restore the fixture data the browser tests expect
-```
-
-Note that `db:generate` writes a migration file; it does not create a database.
-Migration SQL is committed and reviewed alongside the code that needs it, and CI
-fails if a schema change arrives without one.
-
-See [database](docs/DATABASE.md) for the schema, the migration workflow, and the
-retention implications of storing prompts and worksheet content.
-
-## Release Versioning
-
-`@oaknational/resource-adapter`, its contracts package and the resource-document
-package release together as a fixed version group on public npm and are
-versioned with Changesets. Once
-release automation is enabled, [`release.yml`](.github/workflows/release.yml)
-publishes them from `production`. The operational sequence is described in the
-[release process](docs/RELEASE_PROCESS.md), contributor-facing Changesets
-guidance is in [development notes](docs/DEVELOPMENT.md), and testing local
-changes inside a host app is in the
-[UI local development workflow](docs/UI_LOCAL_DEVELOPMENT.md).
+- [Contributor documentation](docs/README.md): how the service works, and how the
+  repository is developed, deployed and released.
+- [UI package](packages/ui/README.md): how a host installs and renders ORA.
+- [Contributing](CONTRIBUTING.md), [security](SECURITY.md) and the [Oak branding
+  and documentation notice](NOTICE.md).

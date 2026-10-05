@@ -1,9 +1,8 @@
-import { TRPCClientError } from "@trpc/client";
 import { resourceAdapterFeatureFlagsResponseSchema } from "@oaknational/resource-adapter-contracts/internal";
 import type { ResourceAdapterFeatureFlagsResponse } from "@oaknational/resource-adapter-contracts/internal";
 
 import type { ResourceAdapterHostProps } from "./publicTypes.js";
-import { createResourceAdapterInternalClient } from "./client.js";
+import { callApi, createResourceAdapterInternalClient } from "./client.js";
 import { ResourceAdapterApiError } from "./errors.js";
 
 type ResourceAdapterFeatureFlagsHostProps = Pick<
@@ -18,7 +17,7 @@ export async function getResourceAdapterFeatureFlags({
   apiBaseUrl,
   getToken,
 }: ResourceAdapterFeatureFlagsHostProps): Promise<ResourceAdapterFeatureFlagsResponse> {
-  try {
+  return callApi("Resource Adapter could not load feature flags.", async () => {
     const response = await createResourceAdapterInternalClient({
       apiBaseUrl,
       getToken,
@@ -33,18 +32,5 @@ export async function getResourceAdapterFeatureFlags({
     }
 
     return parsedResponse.data;
-  } catch (error) {
-    if (error instanceof ResourceAdapterApiError) {
-      throw error;
-    }
-
-    if (error instanceof TRPCClientError) {
-      throw new ResourceAdapterApiError(
-        "Resource Adapter could not load feature flags.",
-        error.data?.httpStatus,
-      );
-    }
-
-    throw new ResourceAdapterApiError("Resource Adapter could not load feature flags.");
-  }
+  });
 }
