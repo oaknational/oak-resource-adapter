@@ -1,11 +1,6 @@
-import {
-  supportLevels,
-  type SupportLevel,
-} from "@oaknational/resource-adapter-contracts/internal";
+import type { SupportLevel } from "@oaknational/resource-adapter-contracts/internal";
 
-export type { SupportLevel };
-
-export const SUPPORT_LEVELS = supportLevels;
+export type { SupportLevel } from "@oaknational/resource-adapter-contracts/internal";
 
 export type SupportLevelOption = Readonly<{
   description: string;

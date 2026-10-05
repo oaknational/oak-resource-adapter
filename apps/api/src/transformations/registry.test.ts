@@ -7,7 +7,7 @@ import type { ResourceDocument } from "@oaknational/resource-document";
 import { capabilityDefinitions } from "../capabilities/registry";
 import { identityTransformation } from "./definitions/identity";
 import { isRegisteredTransformationKind, transformationDefinitions } from "./registry";
-import { SUPPORT_LEVELS } from "./support-level";
+import { supportLevels as SUPPORT_LEVELS } from "@oaknational/resource-adapter-contracts/internal";
 
 const PLACEHOLDER_PATTERN = /\{\{(\w+)\}\}/g;
 

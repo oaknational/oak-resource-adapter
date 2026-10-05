@@ -1,6 +1,7 @@
 import { preparePrompt } from "@oaknational/resource-adapter-ai";
 import { getResourceNodeById } from "@oaknational/resource-document";
 import { parseResourceDocument } from "@oaknational/resource-document/parse";
+import { supportLevels } from "@oaknational/resource-adapter-contracts/internal";
 import { z } from "zod";
 
 import type {
@@ -17,7 +18,7 @@ import { TransformationRequestError } from "./errors";
 import type { OakMaterial } from "../oak-material/material";
 import { transformationPromptVariables } from "./prompt-input";
 import { assertRequiredMaterial } from "./required-material";
-import { SUPPORT_LEVELS, type SupportLevel } from "./support-level";
+import type { SupportLevel } from "./support-level";
 import type {
   TransformationDefinition,
   TransformationDocuments,
@@ -92,7 +93,7 @@ export type ExecutePreparedTransformationConfig = Readonly<{
 export type ExecuteTransformationConfig = PrepareTransformationConfig &
   ExecutePreparedTransformationConfig;
 
-const supportLevelSchema = z.enum(SUPPORT_LEVELS);
+const supportLevelSchema = z.enum(supportLevels);
 
 /** Params live in a jsonb column, so a caller's arguments have to survive that. */
 function assertStorableParams(
