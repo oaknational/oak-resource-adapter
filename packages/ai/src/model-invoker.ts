@@ -103,6 +103,7 @@ export type ModelInvokerConfig<TBindings extends RoleBindings> = Readonly<{
    */
   onRecorderError?: RecorderErrorHandler;
   recorder: InvocationRecorder;
+  subject?: string;
   transports: Readonly<Record<ModelTransportId<TBindings>, ModelTransport>>;
 }>;
 
@@ -278,6 +279,7 @@ export function createModelInvoker<const TBindings extends RoleBindings>(
         provider: providerForModel(binding.model),
         request: params.request,
         role: params.role,
+        ...(config.subject === undefined ? {} : { subject: config.subject }),
         transport: binding.transport,
       },
       timeoutMs,

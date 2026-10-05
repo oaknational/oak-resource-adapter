@@ -7,12 +7,15 @@ export type JsonObject = Readonly<{ [key: string]: JsonValue }>;
 /**
  * Initially OpenAI-compatible; unlike outputs, this boundary may need
  * normalising when a non-compatible provider is introduced. Streaming and
- * background calls need different lifecycles, so they are excluded.
+ * background calls need different lifecycles, so they are excluded. Identity
+ * fields are set by transports from the invocation's subject; they are `never`
+ * as well as omitted because `Omit` alone only rejects object literals.
  */
 export type ModelInvocationRequest = Omit<
   ResponseCreateParamsNonStreaming,
-  "background" | "model" | "stream"
->;
+  "background" | "model" | "safety_identifier" | "stream" | "user"
+> &
+  Readonly<{ safety_identifier?: never; user?: never }>;
 
 export type ModelProviderRequest = JsonObject;
 

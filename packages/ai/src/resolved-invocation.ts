@@ -8,6 +8,11 @@ export type ModelInvocationIdentity = Readonly<{
   promptTemplateId?: string;
   provider: ModelProvider;
   role: string;
+  /**
+   * The teacher's Clerk user ID. Each transport maps it to its provider's
+   * attribution field.
+   */
+  subject?: string;
   transport: string;
 }>;
 

@@ -232,6 +232,11 @@ export function createOpenAIResponsesTransport(
         {
           ...invocation.request,
           model: invocation.model,
+          // `prompt_cache_key` is not an identity field: keying it per teacher
+          // would split the prompt cache.
+          ...(invocation.subject === undefined
+            ? {}
+            : { safety_identifier: invocation.subject }),
           // This API retains prompts and output for 30 days by default. Opt out
           // unless a caller has asked for provider-side retention, which
           // `previous_response_id` needs.
