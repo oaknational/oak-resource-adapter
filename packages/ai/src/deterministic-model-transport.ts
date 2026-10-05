@@ -52,18 +52,18 @@ export function createDeterministicModelTransport(
 
       return {
         request,
-        async execute({ signal }) {
+        execute({ signal }) {
           if (signal.aborted) {
-            throw normaliseModelInvocationError(signal.reason, signal);
+            return Promise.reject(normaliseModelInvocationError(signal.reason, signal));
           }
           const responseOutput = { kind: "TEXT", text } as const;
-          return {
+          return Promise.resolve({
             kind: "SUCCESS",
             response: {
               output: responseOutput,
               rawResponse: { output: responseOutput },
             },
-          };
+          });
         },
       };
     },

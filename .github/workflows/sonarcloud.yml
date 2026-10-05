@@ -63,3 +63,23 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          # The issue query below only sees this analysis once it has been processed.
+          args: -Dsonar.qualitygate.wait=true
+
+      # The quality gate tolerates minor code smells; this fails on any open issue.
+      - name: Fail on open Sonar issues
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          PULL_REQUEST: ${{ github.event.pull_request.number }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          project=oaknational_oak-resource-adapter
+          if [ -n "$PULL_REQUEST" ]; then scope="pullRequest=$PULL_REQUEST"; else scope="branch=$BRANCH"; fi
+          total="$(curl -fsS -H "Authorization: Bearer $SONAR_TOKEN" \
+            "https://sonarcloud.io/api/issues/search?componentKeys=$project&resolved=false&ps=1&$scope" |
+            jq '.paging.total')"
+          if [ "$total" -ne 0 ]; then
+            echo "::error::$total open Sonar issue(s): https://sonarcloud.io/project/issues?id=$project&$scope&resolved=false"
+            exit 1
+          fi

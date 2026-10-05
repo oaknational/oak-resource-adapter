@@ -15,7 +15,7 @@ export type ResourceAdapterCapabilitiesResponse = Readonly<{
 function isSupportedCapability(
   capability: ServiceCapability,
 ): capability is ResourceAdapterCapability {
-  return supportedCapabilityIds.some((id) => id === capability.id);
+  return (supportedCapabilityIds as readonly string[]).includes(capability.id);
 }
 
 /**

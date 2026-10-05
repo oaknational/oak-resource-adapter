@@ -61,7 +61,7 @@ async function reviewAction(
   action: "accept" | "undo",
   options: ClientOptions & WorksheetScaffoldingReviewRequest,
 ): Promise<WorksheetScaffoldingState> {
-  return callApi(`Resource Adapter could not ${action} that scaffold.`, async () => {
+  return callApi(`Resource Adapter could not ${action} that scaffold.`, () => {
     const client = createResourceAdapterInternalClient(options);
     return client.worksheetScaffolding[action].mutate({
       adaptationId: options.adaptationId,
