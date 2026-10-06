@@ -47,9 +47,7 @@ const REVISED_RESOURCE = "revised-resource";
  * together. Follow-up generation is requested when the state is next read.
  */
 export type WorksheetScaffoldingJobDependencies = {
-  createInvoker: (
-    transformationAttemptId: string,
-  ) => ReturnType<typeof createApplicationModelInvoker>;
+  createInvoker: typeof createApplicationModelInvoker;
   executeTransformation: typeof executeRegisteredTransformation;
   generate: typeof generateSuggestions;
   readJob: typeof getJob;
@@ -193,7 +191,8 @@ export async function executeGenerateSuggestions(
 
   const document = head.storedDocument.document;
   const flow = suggestionFlowDefinitions[input.flowId];
-  const createInvoker = () => dependencies.createInvoker(attempt.id);
+  const createInvoker = () =>
+    dependencies.createInvoker(attempt.id, head.adaptation.clerkUserId);
   const { material } = await dependencies.resolveMaterial(
     suggestionMaterialRequirements(flow),
     lessonOf(head.adaptation),
@@ -295,7 +294,8 @@ export async function executeApplySuggestion(
       targetBlockId: transformation.targetBlockId ?? undefined,
     },
     {
-      createInvoker: () => dependencies.createInvoker(attempt.id),
+      createInvoker: () =>
+        dependencies.createInvoker(attempt.id, adaptation.clerkUserId),
       resolveMaterial: dependencies.resolveMaterial,
     },
   );
@@ -370,7 +370,8 @@ export async function executeRetryTransformation(
       targetBlockId: pending.transformation.targetBlockId ?? undefined,
     },
     {
-      createInvoker: () => dependencies.createInvoker(attempt.id),
+      createInvoker: () =>
+        dependencies.createInvoker(attempt.id, head.adaptation.clerkUserId),
       resolveMaterial: dependencies.resolveMaterial,
     },
   );

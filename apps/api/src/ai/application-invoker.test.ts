@@ -8,20 +8,18 @@ const mocks = vi.hoisted(() => {
     recordSucceeded: vi.fn<InvocationRecorder["recordSucceeded"]>(),
     recordFailed: vi.fn<InvocationRecorder["recordFailed"]>(),
   };
+  const create = vi.fn(async () => ({
+    id: "local-sdk-response",
+    status: "completed",
+    output: [],
+    output_text: "local SDK response",
+  }));
   return {
+    create,
     recorder,
     databaseRecorder: vi.fn(() => recorder),
     openai: vi.fn(function () {
-      return {
-        responses: {
-          create: async () => ({
-            id: "local-sdk-response",
-            status: "completed",
-            output: [],
-            output_text: "local SDK response",
-          }),
-        },
-      };
+      return { responses: { create } };
     }),
   };
 });
@@ -37,6 +35,8 @@ vi.mock("@oaknational/resource-adapter-ai", async (importOriginal) => ({
 }));
 
 import { createApplicationModelInvoker } from "./application-invoker";
+
+const TEACHER_ID = "user_teacher";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -58,7 +58,7 @@ describe("application model transport selection", () => {
   ])("requires an API key for $selector with key $key", ({ selector, key }) => {
     vi.stubEnv("MODEL_TRANSPORT", selector);
     vi.stubEnv("OPENAI_API_KEY", key);
-    expect(() => createApplicationModelInvoker("attempt")).toThrow(
+    expect(() => createApplicationModelInvoker("attempt", TEACHER_ID)).toThrow(
       expect.objectContaining({
         code: "INVALID_CONFIGURATION",
         message: "OPENAI_API_KEY is not configured.",
@@ -73,7 +73,10 @@ describe("application model transport selection", () => {
     async (selector) => {
       vi.stubEnv("MODEL_TRANSPORT", selector);
       vi.stubEnv("OPENAI_API_KEY", "test-only-not-a-real-key");
-      const result = await createApplicationModelInvoker("attempt-openai").invokeText({
+      const result = await createApplicationModelInvoker(
+        "attempt-openai",
+        TEACHER_ID,
+      ).invokeText({
         role: "dev-smoke",
         request: { input: "Local constructor double only" },
       });
@@ -82,11 +85,19 @@ describe("application model transport selection", () => {
         output: "local SDK response",
       });
       expect(mocks.openai).toHaveBeenCalledOnce();
+      expect(mocks.create).toHaveBeenCalledWith(
+        expect.objectContaining({ safety_identifier: TEACHER_ID }),
+        expect.anything(),
+      );
       expect(mocks.databaseRecorder).toHaveBeenCalledWith({
         transformationAttemptId: "attempt-openai",
       });
       expect(mocks.recorder.recordStarted).toHaveBeenCalledWith(
-        expect.objectContaining({ transport: "openai", provider: "openai" }),
+        expect.objectContaining({
+          provider: "openai",
+          request: expect.objectContaining({ safety_identifier: TEACHER_ID }),
+          transport: "openai",
+        }),
       );
     },
   );
@@ -106,6 +117,7 @@ describe("application model transport selection", () => {
       vi.stubEnv("NODE_ENV", node);
       const result = await createApplicationModelInvoker(
         "attempt-deterministic",
+        TEACHER_ID,
       ).invokeStructured({
         role: "worksheet-scaffold",
         request: { input: "Add vocabulary support" },
@@ -128,6 +140,7 @@ describe("application model transport selection", () => {
           provider: "openai",
           transport: "deterministic",
           role: "worksheet-scaffold",
+          userId: TEACHER_ID,
         }),
       );
       expect(mocks.recorder.recordSucceeded).toHaveBeenCalledWith(
@@ -143,7 +156,7 @@ describe("application model transport selection", () => {
       vi.stubEnv("MODEL_TRANSPORT", "deterministic");
       vi.stubEnv("VERCEL_ENV", "production");
       vi.stubEnv("OPENAI_API_KEY", key);
-      expect(() => createApplicationModelInvoker("attempt")).toThrow(
+      expect(() => createApplicationModelInvoker("attempt", TEACHER_ID)).toThrow(
         expect.objectContaining({
           code: "INVALID_CONFIGURATION",
           message: "Deterministic model transport is not allowed in production.",
@@ -159,7 +172,7 @@ describe("application model transport selection", () => {
     (selector) => {
       vi.stubEnv("MODEL_TRANSPORT", selector);
       vi.stubEnv("OPENAI_API_KEY", "test-only-not-a-real-key");
-      expect(() => createApplicationModelInvoker("attempt")).toThrow(
+      expect(() => createApplicationModelInvoker("attempt", TEACHER_ID)).toThrow(
         expect.objectContaining({
           code: "INVALID_CONFIGURATION",
           message: "MODEL_TRANSPORT must be openai or deterministic.",

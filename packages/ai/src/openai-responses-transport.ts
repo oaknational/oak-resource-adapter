@@ -232,6 +232,9 @@ export function createOpenAIResponsesTransport(
         {
           ...invocation.request,
           model: invocation.model,
+          ...(invocation.userId === undefined
+            ? {}
+            : { safety_identifier: invocation.userId }),
           // This API retains prompts and output for 30 days by default. Opt out
           // unless a caller has asked for provider-side retention, which
           // `previous_response_id` needs.

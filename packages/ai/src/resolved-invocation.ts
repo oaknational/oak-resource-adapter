@@ -9,6 +9,7 @@ export type ModelInvocationIdentity = Readonly<{
   provider: ModelProvider;
   role: string;
   transport: string;
+  userId?: string;
 }>;
 
 export type ModelTransportInvocation = ModelInvocationIdentity &

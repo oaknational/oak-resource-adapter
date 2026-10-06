@@ -176,7 +176,8 @@ interface ModelTransport {
 ```
 
 `prepare` converts the logical invocation into the exact serialisable provider
-request without sending it. The invoker records that request before calling
+request without sending it, mapping any [`userId`](#attribution) to the
+provider's attribution field. The invoker records that request before calling
 `execute`. A terminal provider failure is returned with its response data;
 failures without a normal provider response are thrown.
 
@@ -198,6 +199,15 @@ harness page's "Model invocation test" section.
 
 Threat detection and response moderation belong in orchestration around this
 boundary, not inside the transport.
+
+## Attribution
+
+`userId` is the Clerk user ID, sent as is. If it would ever reach a processor
+without a data processing agreement, send a salted deterministic hash instead.
+
+Call sites can't set identity fields such as `safety_identifier`, because
+transports set them. Fields that no transport sets, such as `metadata`, stay
+open. Don't key `prompt_cache_key` per user: it splits the cache.
 
 ## Deterministic model responses
 

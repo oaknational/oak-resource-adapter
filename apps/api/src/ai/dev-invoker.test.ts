@@ -71,5 +71,6 @@ describe("invokeDevSmokeText", () => {
       }),
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
+    expect(createMock.mock.calls[0]?.[0]).not.toHaveProperty("safety_identifier");
   });
 });

@@ -104,6 +104,7 @@ export type ModelInvokerConfig<TBindings extends RoleBindings> = Readonly<{
   onRecorderError?: RecorderErrorHandler;
   recorder: InvocationRecorder;
   transports: Readonly<Record<ModelTransportId<TBindings>, ModelTransport>>;
+  userId?: string;
 }>;
 
 type OutputInterpretation<TOutcome> = Readonly<{
@@ -279,6 +280,7 @@ export function createModelInvoker<const TBindings extends RoleBindings>(
         request: params.request,
         role: params.role,
         transport: binding.transport,
+        ...(config.userId === undefined ? {} : { userId: config.userId }),
       },
       timeoutMs,
       transport,

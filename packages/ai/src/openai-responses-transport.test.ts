@@ -99,6 +99,22 @@ describe("createOpenAIResponsesTransport", () => {
     expect(create).toHaveBeenCalledWith(prepared.request, {
       signal: controller.signal,
     });
+    expect(prepared.request).not.toHaveProperty("safety_identifier");
+  });
+
+  it("sends the invocation's user ID as the safety identifier", async () => {
+    const { create, transport } = transportFixture();
+    const prepared = transport.prepare(
+      { ...invocation, userId: "user_teacher" },
+      { kind: "TEXT" },
+    );
+
+    expect(prepared.request).toMatchObject({ safety_identifier: "user_teacher" });
+    await prepared.execute({ signal: new AbortController().signal });
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ safety_identifier: "user_teacher" }),
+      expect.anything(),
+    );
   });
 
   it("prepares a strict JSON Schema format while preserving text options", () => {

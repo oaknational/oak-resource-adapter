@@ -16,6 +16,7 @@ import {
 
 export function createApplicationModelInvoker(
   transformationAttemptId: string,
+  teacherId: string,
 ): ResourceAdapterModelInvoker {
   const transport = resolveModelTransport();
   if (transport === "deterministic") {
@@ -27,6 +28,7 @@ export function createApplicationModelInvoker(
           resolve: resolveDeterministicResponse,
         }),
       },
+      userId: teacherId,
     });
   }
 
@@ -36,5 +38,6 @@ export function createApplicationModelInvoker(
     transports: {
       openai: createOpenAIResponsesTransport({ client: new OpenAI() }),
     },
+    userId: teacherId,
   });
 }

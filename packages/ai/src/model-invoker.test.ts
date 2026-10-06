@@ -4,12 +4,14 @@ import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import type {
   InvocationRecorder,
   JsonObject,
+  ModelInvocationRequest,
   ModelInvocationResponse,
   ModelResponseOutput,
   ModelRole,
   ModelTransport,
   ModelTransportOptions,
   ModelTransportInvocation,
+  OutputManagedModelInvocationRequest,
   RecordingStage,
   StructuredModelOutputResult,
 } from "./index.js";
@@ -176,6 +178,43 @@ describe("createModelInvoker", () => {
     const started = recorder.recordStarted.mock.calls[0]?.[0];
     expect(started).not.toHaveProperty("correlationKey");
     expect(started).not.toHaveProperty("promptTemplateId");
+    expect(started).not.toHaveProperty("userId");
+  });
+
+  it("attributes every call to the invoker's user", async () => {
+    const recorder = recorderFixture();
+    const transport = transportFixture();
+    const invoker = createModelInvoker({
+      recorder,
+      roleBindings,
+      transports: { primary: transport.transport },
+      userId: "user_teacher",
+    });
+
+    await invoker.invoke({ request: { input: "Classify" }, role: "quick-classifier" });
+
+    expect(transport.prepare).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user_teacher" }),
+      { kind: "PROVIDER_DEFAULT" },
+    );
+    expect(recorder.recordStarted).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user_teacher" }),
+    );
+  });
+
+  it("leaves provider identity fields to the transport", () => {
+    type Attributed = { input: string; safety_identifier: string };
+    type LegacyAttributed = { input: string; user: string };
+
+    expectTypeOf<Attributed>().not.toExtend<ModelInvocationRequest>();
+    expectTypeOf<LegacyAttributed>().not.toExtend<ModelInvocationRequest>();
+    expectTypeOf<Attributed>().not.toExtend<OutputManagedModelInvocationRequest>();
+    expectTypeOf<LegacyAttributed>().not.toExtend<OutputManagedModelInvocationRequest>();
+    expectTypeOf<{
+      input: string;
+      metadata: { source: string };
+      prompt_cache_key: string;
+    }>().toExtend<ModelInvocationRequest>();
   });
 
   it("normalises provider failures and records the stable error", async () => {

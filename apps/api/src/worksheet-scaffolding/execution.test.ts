@@ -28,6 +28,7 @@ import {
   retryJob,
   removeJob,
   dismissJob,
+  teacher,
 } from "./test-doubles";
 import {
   dismissedTargetIds,
@@ -210,6 +211,20 @@ describe("generating suggestions", () => {
       expect.objectContaining({ material }),
     );
   });
+
+  it("attributes its model calls to the adaptation's teacher", async () => {
+    const dependencies = stubDependencies({
+      readJob: vi.fn().mockResolvedValue(generateJob()),
+    });
+
+    await executeGenerateSuggestions(JOB_ID, dependencies);
+    vi.mocked(dependencies.generate).mock.calls[0]?.[3].createInvoker();
+
+    expect(dependencies.createInvoker).toHaveBeenCalledWith(
+      ATTEMPT_ID,
+      teacher.teacherId,
+    );
+  });
 });
 
 describe("applying an accepted suggestion", () => {
@@ -245,6 +260,21 @@ describe("applying an accepted suggestion", () => {
     );
     expect(repository.storeOutputsAndAdvanceHead).toHaveBeenCalledWith(
       expect.objectContaining({ expectedHeadId: DOCUMENT_ID, revisedPosition: 0 }),
+    );
+  });
+
+  it("attributes its model calls to the adaptation's teacher", async () => {
+    const dependencies = stubDependencies({
+      executeTransformation: vi.fn().mockResolvedValue(appliedRun),
+      readJob: vi.fn().mockResolvedValue(applyJob()),
+    });
+
+    await executeApplySuggestion(JOB_ID, dependencies);
+    vi.mocked(dependencies.executeTransformation).mock.calls[0]?.[1].createInvoker();
+
+    expect(dependencies.createInvoker).toHaveBeenCalledWith(
+      ATTEMPT_ID,
+      teacher.teacherId,
     );
   });
 
@@ -373,6 +403,24 @@ describe("retrying an applied scaffold", () => {
         expectedHeadId: DOCUMENT_ID,
         expectedPendingAttemptId: ATTEMPT_ID,
       }),
+    );
+  });
+
+  it("attributes its model calls to the adaptation's teacher", async () => {
+    const dependencies = stubDependencies({
+      executeTransformation: vi.fn().mockResolvedValue(retriedRun),
+      readJob: vi.fn().mockResolvedValue(retryJob()),
+      repository: stubRepository({
+        getPendingReview: vi.fn().mockResolvedValue(pendingReview()),
+      }),
+    });
+
+    await executeRetryTransformation(JOB_ID, dependencies);
+    vi.mocked(dependencies.executeTransformation).mock.calls[0]?.[1].createInvoker();
+
+    expect(dependencies.createInvoker).toHaveBeenCalledWith(
+      ATTEMPT_ID,
+      teacher.teacherId,
     );
   });
 
