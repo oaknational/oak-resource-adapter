@@ -2,6 +2,7 @@ export { ResourceAdapterButton } from "./ResourceAdapterButton.js";
 export type {
   ResourceAdapterButtonProps,
   ResourceAdapterCapabilityOption,
+  ResourceAdapterOpeningControl,
 } from "./ResourceAdapterButton.js";
 export { ResourceAdapterDialog } from "./ResourceAdapterDialog.js";
 export type { ResourceAdapterDialogProps } from "./ResourceAdapterDialog.js";
@@ -11,6 +12,10 @@ export { ResourceDocumentRenderer } from "./resource-document/ResourceDocumentRe
 export { getResourceAdapterCapabilities } from "./getResourceAdapterCapabilities.js";
 export { getResourceAdapterCapabilityAvailability } from "./getResourceAdapterCapabilityAvailability.js";
 export { ResourceAdapterApiError } from "./errors.js";
+export type {
+  ResourceAdapterAnalyticsEvent,
+  ResourceAdapterAnalyticsHandler,
+} from "./analytics.js";
 
 export type {
   GetToken,

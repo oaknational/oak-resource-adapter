@@ -73,12 +73,20 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           PULL_REQUEST: ${{ github.event.pull_request.number }}
           BRANCH: ${{ github.ref_name }}
+        # A lookup that fails must fail the step: an unread count is not zero.
         run: |
+          set -euo pipefail
           project=oaknational_oak-resource-adapter
           if [ -n "$PULL_REQUEST" ]; then scope="pullRequest=$PULL_REQUEST"; else scope="branch=$BRANCH"; fi
-          total="$(curl -fsS -H "Authorization: Bearer $SONAR_TOKEN" \
-            "https://sonarcloud.io/api/issues/search?componentKeys=$project&resolved=false&ps=1&$scope" |
-            jq '.paging.total')"
+          if ! response="$(curl --fail-with-body -sS -H "Authorization: Bearer $SONAR_TOKEN" \
+            "https://sonarcloud.io/api/issues/search?organization=oaknational&componentKeys=$project&resolved=false&ps=1&$scope")"; then
+            echo "::error::Sonar issue search failed: $response"
+            exit 1
+          fi
+          if ! total="$(jq -er '.paging.total | numbers' <<<"$response")"; then
+            echo "::error::Sonar issue search returned no issue count: $response"
+            exit 1
+          fi
           if [ "$total" -ne 0 ]; then
             echo "::error::$total open Sonar issue(s): https://sonarcloud.io/project/issues?id=$project&$scope&resolved=false"
             exit 1

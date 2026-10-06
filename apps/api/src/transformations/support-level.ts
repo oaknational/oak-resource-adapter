@@ -1,10 +1,6 @@
-/**
- * How much support a scaffold gives, on one scale shared by every transformation so a
- * teacher can compare across them.
- */
-export const SUPPORT_LEVELS = ["low", "mid", "high"] as const;
+import type { SupportLevel } from "@oaknational/resource-adapter-contracts/internal";
 
-export type SupportLevel = (typeof SUPPORT_LEVELS)[number];
+export type { SupportLevel } from "@oaknational/resource-adapter-contracts/internal";
 
 export type SupportLevelOption = Readonly<{
   description: string;

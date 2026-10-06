@@ -32,6 +32,11 @@ export type ResourceAdapterSourceDocumentResponse = ResourceDocument;
 
 const internalIdSchema = z.uuid();
 
+/** One scale shared by every transformation, so a teacher can compare across them. */
+export const supportLevels = ["low", "mid", "high"] as const;
+
+export type SupportLevel = (typeof supportLevels)[number];
+
 export const worksheetScaffoldingJobKinds = [
   "suggestions.apply",
   "suggestions.generate",
@@ -187,8 +192,10 @@ export type WorksheetScaffoldingState = Readonly<{
   pendingReview: null | Readonly<{
     attemptId: string;
     contributionId: string;
+    kind: string;
     label: string;
     reason: string;
+    supportLevel: SupportLevel | null;
     targetBlockId: string | null;
   }>;
   suggestions: readonly Readonly<{

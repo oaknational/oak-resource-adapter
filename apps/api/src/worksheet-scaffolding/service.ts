@@ -47,7 +47,7 @@ import {
   transformationRetryJobKey,
 } from "./capability";
 import * as scaffoldingRepository from "./repository";
-import { asParams } from "./stored-params";
+import { asParams, storedSupportLevel } from "./stored-params";
 
 /**
  * How long unfinished work stays on offer. Long enough to cover a teacher
@@ -201,8 +201,10 @@ async function readAdaptation(
           : {
               attemptId: pending.attempt.id,
               contributionId: pending.transformation.id,
+              kind: pending.transformation.kind,
               label: transformationDefinitions[pending.transformation.kind].label,
               reason: pending.suggestion.reason,
+              supportLevel: storedSupportLevel(pending.transformation.params),
               targetBlockId: pending.transformation.targetBlockId,
             },
       suggestions: rows.map((row) => {

@@ -20,6 +20,8 @@ export function useResourceDownload({
   enabled,
   prepare,
   onStale,
+  onDownloaded,
+  onFailed,
   onError,
 }: Readonly<{
   apiBaseUrl: string;
@@ -29,6 +31,8 @@ export function useResourceDownload({
   enabled: boolean;
   prepare: (signal: AbortSignal) => Promise<{ artifactId: string }>;
   onStale: () => Promise<void>;
+  onDownloaded?: () => void;
+  onFailed?: () => void;
   onError?: ResourceAdapterErrorHandler | undefined;
 }>) {
   const [state, setState] = useState<ResourceDownloadState>({ phase: "idle" });
@@ -69,6 +73,7 @@ export function useResourceDownload({
     }
     // A collected artifact never returns, so drop the id and let the retry prepare a new one.
     if (stage === "delivery" && status === 404) artifactId.current = null;
+    onFailed?.();
     reportToHost(onError, error);
     setState({ phase: status === 413 ? "tooLarge" : "error", error, stage });
   }
@@ -97,6 +102,7 @@ export function useResourceDownload({
       if (signal.aborted) return;
       downloadBlob(blob, downloadFilename(contentDisposition, format));
       setState({ phase: "done" });
+      onDownloaded?.();
     } catch (error) {
       await handleFailure(error, stage, signal);
     } finally {

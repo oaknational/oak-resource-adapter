@@ -7,6 +7,7 @@ import type { ResourceAdapterAuthenticatedTeacher } from "./authentication.js";
 import {
   resourceAdapterFeatureFlagsResponseSchema,
   resourceAdapterSourceDocumentRequestSchema,
+  supportLevels,
   transformationInputSchema,
   worksheetExportRequestSchema,
   worksheetDownloadAvailabilitySchema,
@@ -119,8 +120,10 @@ const worksheetScaffoldingStateSchema = z.object({
     z.object({
       attemptId: z.string(),
       contributionId: z.string(),
+      kind: z.string(),
       label: z.string(),
       reason: z.string(),
+      supportLevel: z.nullable(z.enum(supportLevels)),
       targetBlockId: z.nullable(z.string()),
     }),
   ),

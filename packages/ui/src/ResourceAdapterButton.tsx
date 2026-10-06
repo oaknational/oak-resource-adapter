@@ -13,11 +13,18 @@ export type ResourceAdapterCapabilityOption = Readonly<{
   label: string;
 }>;
 
+/** Which control the teacher used, for the host's "opened" analytics event. */
+export type ResourceAdapterOpeningControl =
+  "resource_adapter_button" | "resource_adapter_menu_item";
+
 export type ResourceAdapterButtonProps<
   TCapability extends ResourceAdapterCapabilityOption = ResourceAdapterCapabilityOption,
 > = Readonly<{
   capabilities: readonly TCapability[];
-  onSelectCapability: (capability: TCapability) => void;
+  onSelectCapability: (
+    capability: TCapability,
+    control: ResourceAdapterOpeningControl,
+  ) => void;
 }>;
 
 /**
@@ -37,7 +44,7 @@ export function ResourceAdapterButton<
     return (
       <OakSecondaryButton
         iconName="ai"
-        onClick={() => onSelectCapability(onlyCapability)}
+        onClick={() => onSelectCapability(onlyCapability, "resource_adapter_button")}
       >
         {onlyCapability.label}
       </OakSecondaryButton>
@@ -66,7 +73,7 @@ function CapabilityMenuItem<TCapability extends ResourceAdapterCapabilityOption>
   onSelectCapability,
 }: Readonly<{
   capability: TCapability;
-  onSelectCapability: (capability: TCapability) => void;
+  onSelectCapability: ResourceAdapterButtonProps<TCapability>["onSelectCapability"];
 }>) {
   const { onClose } = useDropdownContext();
 
@@ -75,7 +82,7 @@ function CapabilityMenuItem<TCapability extends ResourceAdapterCapabilityOption>
       element="button"
       iconName="ai"
       onClick={() => {
-        onSelectCapability(capability);
+        onSelectCapability(capability, "resource_adapter_menu_item");
         onClose();
       }}
       role="menuitem"
