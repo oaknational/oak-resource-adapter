@@ -23,21 +23,21 @@ export function createApplicationModelInvoker(
     return createModelInvoker({
       recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
       roleBindings: rebindModelRoles("deterministic"),
-      subject: teacherId,
       transports: {
         deterministic: createDeterministicModelTransport({
           resolve: resolveDeterministicResponse,
         }),
       },
+      userId: teacherId,
     });
   }
 
   return createModelInvoker({
     recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
     roleBindings: modelRoleBindings,
-    subject: teacherId,
     transports: {
       openai: createOpenAIResponsesTransport({ client: new OpenAI() }),
     },
+    userId: teacherId,
   });
 }

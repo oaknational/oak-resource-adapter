@@ -178,27 +178,27 @@ describe("createModelInvoker", () => {
     const started = recorder.recordStarted.mock.calls[0]?.[0];
     expect(started).not.toHaveProperty("correlationKey");
     expect(started).not.toHaveProperty("promptTemplateId");
-    expect(started).not.toHaveProperty("subject");
+    expect(started).not.toHaveProperty("userId");
   });
 
-  it("attributes every call to the invoker's subject", async () => {
+  it("attributes every call to the invoker's user", async () => {
     const recorder = recorderFixture();
     const transport = transportFixture();
     const invoker = createModelInvoker({
       recorder,
       roleBindings,
-      subject: "user_teacher",
       transports: { primary: transport.transport },
+      userId: "user_teacher",
     });
 
     await invoker.invoke({ request: { input: "Classify" }, role: "quick-classifier" });
 
     expect(transport.prepare).toHaveBeenCalledWith(
-      expect.objectContaining({ subject: "user_teacher" }),
+      expect.objectContaining({ userId: "user_teacher" }),
       { kind: "PROVIDER_DEFAULT" },
     );
     expect(recorder.recordStarted).toHaveBeenCalledWith(
-      expect.objectContaining({ subject: "user_teacher" }),
+      expect.objectContaining({ userId: "user_teacher" }),
     );
   });
 

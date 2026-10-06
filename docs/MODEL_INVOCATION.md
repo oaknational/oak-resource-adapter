@@ -176,8 +176,8 @@ interface ModelTransport {
 ```
 
 `prepare` converts the logical invocation into the exact serialisable provider
-request without sending it, mapping any [subject](#attribution) to the provider's
-attribution field. The invoker records that request before calling
+request without sending it, mapping any [`userId`](#attribution) to the
+provider's attribution field. The invoker records that request before calling
 `execute`. A terminal provider failure is returned with its response data;
 failures without a normal provider response are thrown.
 
@@ -202,28 +202,9 @@ boundary, not inside the transport.
 
 ## Attribution
 
-`createModelInvoker({ subject })` attributes every call from that invoker to the
-teacher it was made for. The subject is their Clerk user ID, sent as is. A
-transport whose provider has an attribution field maps it there
-(`safety_identifier` for OpenAI), and call sites cannot set those fields
-themselves. The deterministic transport ignores it. Invokers with no teacher,
-such as the dev invoker, omit it. The recorder stores the prepared request and
-the raw response, and OpenAI echoes `safety_identifier` in its response, so the
-subject is in both `model_invocations.request` and `model_invocations.response`.
-
-Call sites can still set `metadata`, because no transport sets it today. Only
-fields a transport sets are blocked, so each field has one owner. If a gateway
-transport starts putting attribution in `metadata`, remove `metadata` from
-`ModelInvocationRequest` too, or the transport's value and the call site's will
-silently replace each other.
-
-OpenAI's deprecated `user` field points to both `safety_identifier` and
-`prompt_cache_key`, but only `safety_identifier` identifies the teacher.
-`prompt_cache_key` groups requests for prompt caching, so keying it per teacher
-would split the cache.
-
-If a subject would ever reach a processor without a data processing agreement,
-send a salted deterministic hash instead of the raw ID.
+Call sites can't set identity fields such as `safety_identifier`, because
+transports set them. Fields that no transport sets, such as `metadata`, stay
+open. Don't key `prompt_cache_key` per user: it splits the cache.
 
 ## Deterministic model responses
 

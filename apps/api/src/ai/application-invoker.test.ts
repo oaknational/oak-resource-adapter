@@ -140,7 +140,7 @@ describe("application model transport selection", () => {
           provider: "openai",
           transport: "deterministic",
           role: "worksheet-scaffold",
-          subject: TEACHER_ID,
+          userId: TEACHER_ID,
         }),
       );
       expect(mocks.recorder.recordSucceeded).toHaveBeenCalledWith(

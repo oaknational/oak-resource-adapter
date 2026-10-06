@@ -102,10 +102,10 @@ describe("createOpenAIResponsesTransport", () => {
     expect(prepared.request).not.toHaveProperty("safety_identifier");
   });
 
-  it("sends the invocation's subject as the safety identifier", async () => {
+  it("sends the invocation's user ID as the safety identifier", async () => {
     const { create, transport } = transportFixture();
     const prepared = transport.prepare(
-      { ...invocation, subject: "user_teacher" },
+      { ...invocation, userId: "user_teacher" },
       { kind: "TEXT" },
     );
 

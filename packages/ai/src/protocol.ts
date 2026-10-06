@@ -8,7 +8,7 @@ export type JsonObject = Readonly<{ [key: string]: JsonValue }>;
  * Initially OpenAI-compatible; unlike outputs, this boundary may need
  * normalising when a non-compatible provider is introduced. Streaming and
  * background calls need different lifecycles, so they are excluded. Identity
- * fields are set by transports from the invocation's subject; they are `never`
+ * fields are set by transports from the invocation's `userId`; they are `never`
  * as well as omitted because `Omit` alone only rejects object literals.
  */
 export type ModelInvocationRequest = Omit<

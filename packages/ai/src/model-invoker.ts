@@ -103,12 +103,8 @@ export type ModelInvokerConfig<TBindings extends RoleBindings> = Readonly<{
    */
   onRecorderError?: RecorderErrorHandler;
   recorder: InvocationRecorder;
-  /**
-   * The teacher's Clerk user ID, sent to providers as is. Omit it for calls
-   * not made for a teacher.
-   */
-  subject?: string;
   transports: Readonly<Record<ModelTransportId<TBindings>, ModelTransport>>;
+  userId?: string;
 }>;
 
 type OutputInterpretation<TOutcome> = Readonly<{
@@ -283,8 +279,8 @@ export function createModelInvoker<const TBindings extends RoleBindings>(
         provider: providerForModel(binding.model),
         request: params.request,
         role: params.role,
-        ...(config.subject === undefined ? {} : { subject: config.subject }),
         transport: binding.transport,
+        ...(config.userId === undefined ? {} : { userId: config.userId }),
       },
       timeoutMs,
       transport,
