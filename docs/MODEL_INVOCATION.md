@@ -202,6 +202,9 @@ boundary, not inside the transport.
 
 ## Attribution
 
+`userId` is the Clerk user ID, sent as is. If it would ever reach a processor
+without a data processing agreement, send a salted deterministic hash instead.
+
 Call sites can't set identity fields such as `safety_identifier`, because
 transports set them. Fields that no transport sets, such as `metadata`, stay
 open. Don't key `prompt_cache_key` per user: it splits the cache.
