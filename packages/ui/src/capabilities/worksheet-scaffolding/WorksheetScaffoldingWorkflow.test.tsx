@@ -592,6 +592,35 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(getWorksheetScaffoldingMock).not.toHaveBeenCalled();
   });
 
+  it("lifts the refusal once its retry time passes, without reopening", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened({
+        ...readyWithSuggestion,
+        modelWorkBlocked: {
+          kind: "model_jobs_24h",
+          retryAt: new Date(Date.now() + 1000).toISOString(),
+        },
+      }),
+    );
+    renderDialog();
+
+    expect(
+      await screen.findByRole("button", { name: "Add a word bank" }),
+    ).toBeDisabled();
+    expect(
+      await screen.findByRole(
+        "button",
+        { name: "Generate new suggestions" },
+        { timeout: 5000 },
+      ),
+    ).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Add a word bank" })).toBeEnabled();
+    expect(
+      screen.queryByText("You've reached your fair usage limit"),
+    ).not.toBeInTheDocument();
+    expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps a pending scaffold's review open but its retry closed when model work is refused", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce(
       opened({

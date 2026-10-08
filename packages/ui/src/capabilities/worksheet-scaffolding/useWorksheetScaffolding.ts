@@ -268,6 +268,17 @@ export function useWorksheetScaffolding({
   const ready = state.status === "ready" ? state : null;
   const adaptationId = ready?.value.adaptationId ?? null;
   const adaptationIdRef = useLatestRef(adaptationId);
+  const retryAt = ready?.value.modelWorkBlocked?.retryAt ?? null;
+
+  // A refused worksheet isn't polled, so this is what lifts the refusal at `retryAt`.
+  useEffect(() => {
+    if (retryAt === null) return;
+    const timer = setTimeout(
+      () => dispatch({ type: "refusalExpired" }),
+      Math.max(0, Date.parse(retryAt) - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [dispatch, retryAt]);
 
   useEffect(() => {
     if (!isOpen || ready === null) return;
