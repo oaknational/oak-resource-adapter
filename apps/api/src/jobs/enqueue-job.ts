@@ -101,15 +101,16 @@ export async function enqueueJob(
     return { outcome: "usageLimitReached", usageLimit: admission.usageLimit };
   }
 
-  const { created, job } =
-    admission.existing === null
-      ? await dependencies.createOrGet({
-          ...jobRequest,
-          ...(request.teacherId === undefined
-            ? {}
-            : { countsAgainstClerkUserId: request.teacherId }),
-        })
-      : { created: false, job: admission.existing };
+  let job = admission.existing;
+  let created = false;
+  if (job === null) {
+    const inserted = await dependencies.createOrGet({
+      ...jobRequest,
+      countsAgainstClerkUserId: request.teacherId,
+    });
+    job = inserted.job;
+    created = inserted.created;
+  }
 
   const needsDispatch =
     created || (job.status === JobStatus.QUEUED && job.workflowRunId === null);

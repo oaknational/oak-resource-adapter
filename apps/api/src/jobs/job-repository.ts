@@ -87,41 +87,52 @@ export async function findExistingJob(request: JobRequest): Promise<Job | null> 
   return null;
 }
 
-export async function createOrGetJob(
-  request: JobRequest & { countsAgainstClerkUserId?: string | undefined },
-): Promise<{ job: Job; created: boolean }> {
-  const database = getDatabaseClient();
+type NewJobRequest = JobRequest & { countsAgainstClerkUserId?: string | undefined };
 
-  for (let insertAttempt = 0; insertAttempt < 2; insertAttempt += 1) {
-    // Either unique key may arbitrate the race. A loser resolves the row that
-    // won instead of depending on a wrapped driver error's constraint name.
-    const [created] = await database
-      .insert(jobs)
-      .values({
-        concurrencyKey: request.concurrencyKey ?? null,
-        countsAgainstClerkUserId: request.countsAgainstClerkUserId ?? null,
-        idempotencyKey: request.idempotencyKey,
-        input: request.input,
-        kind: request.kind,
-      })
-      .onConflictDoNothing()
-      .returning();
+type CreatedOrExisting = { job: Job; created: boolean };
 
-    if (created) {
-      return { created: true, job: created };
-    }
+/** Null when the row that blocked the insert was gone by the time it was read. */
+async function insertOrResolveJob(
+  request: NewJobRequest,
+): Promise<CreatedOrExisting | null> {
+  // Either unique key may arbitrate the race. A loser resolves the row that
+  // won instead of depending on a wrapped driver error's constraint name.
+  const [created] = await getDatabaseClient()
+    .insert(jobs)
+    .values({
+      concurrencyKey: request.concurrencyKey ?? null,
+      countsAgainstClerkUserId: request.countsAgainstClerkUserId ?? null,
+      idempotencyKey: request.idempotencyKey,
+      input: request.input,
+      kind: request.kind,
+    })
+    .onConflictDoNothing()
+    .returning();
 
-    const idempotent = await findIdempotentJob(request);
-    if (idempotent !== null) {
-      return { created: false, job: idempotent };
-    }
-
-    await assertNoActiveJob(request.concurrencyKey);
+  if (created) {
+    return { created: true, job: created };
   }
 
-  throw new Error(
-    `Job with idempotency key ${request.idempotencyKey} was neither inserted nor found.`,
-  );
+  const idempotent = await findIdempotentJob(request);
+  if (idempotent !== null) {
+    return { created: false, job: idempotent };
+  }
+
+  await assertNoActiveJob(request.concurrencyKey);
+  return null;
+}
+
+export async function createOrGetJob(
+  request: NewJobRequest,
+): Promise<CreatedOrExisting> {
+  const result =
+    (await insertOrResolveJob(request)) ?? (await insertOrResolveJob(request));
+  if (result === null) {
+    throw new Error(
+      `Job with idempotency key ${request.idempotencyKey} was neither inserted nor found.`,
+    );
+  }
+  return result;
 }
 
 export async function getJob(id: string): Promise<Job | null> {
