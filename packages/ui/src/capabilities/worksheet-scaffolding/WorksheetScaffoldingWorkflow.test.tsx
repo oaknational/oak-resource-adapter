@@ -155,6 +155,10 @@ function readyState(
   };
 }
 
+function anHourFromNow(): string {
+  return new Date(Date.now() + 60 * 60 * 1000).toISOString();
+}
+
 function opened(state: WorksheetScaffoldingState) {
   return { outcome: "opened", state } as const;
 }
@@ -563,7 +567,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
   it("says when to come back and keeps the worksheet when model work is refused", async () => {
     const modelWorkBlocked = {
       kind: "model_jobs_24h",
-      retryAt: "2026-10-09T09:30:00.000Z",
+      retryAt: anHourFromNow(),
     } as const;
     openWorksheetScaffoldingMock.mockResolvedValueOnce(
       opened({ ...readyWithSuggestion, modelWorkBlocked }),
@@ -627,7 +631,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
         ...readyWithPendingReview,
         modelWorkBlocked: {
           kind: "model_jobs_24h",
-          retryAt: "2026-10-09T09:30:00.000Z",
+          retryAt: anHourFromNow(),
         },
       }),
     );
@@ -645,7 +649,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
           job: { ...generatedJob, status: "running" },
           modelWorkBlocked: {
             kind: "model_jobs_24h",
-            retryAt: "2026-10-09T09:30:00.000Z",
+            retryAt: anHourFromNow(),
           },
         }),
       ),
