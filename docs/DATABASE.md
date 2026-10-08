@@ -124,8 +124,10 @@ The important cross-table relationships are:
 **An adaptation is the container; a transformation is one change a teacher asked
 for.** In an iterative capability that is one click, and there may be many per
 adaptation. A one-shot capability is the same shape with a single transformation.
-`capability_id` and `clerk_user_id` live only on the adaptation, so ownership has
-exactly one row to check against.
+`capability_id` and `clerk_user_id` on the adaptation are the only ownership
+record, so ownership has exactly one row to check against.
+`jobs.counts_against_clerk_user_id` records the teacher only to count their
+usage, and is never an ownership check.
 
 **A transformation is one requested change; an attempt is one try at making it.**
 Retrying creates a new attempt with its own job, preserving each try separately.
@@ -229,8 +231,9 @@ Content lives in `resource_documents.document` and `model_invocations.request` /
 `.response`. A request inlines the source document and any free text the teacher
 supplied, so that content exists in more than one place per attempt. Failures
 record classified metadata rather than a raw provider error, which can carry
-prompt content. `clerk_user_id` is a pseudonymous reference to Clerk; no names or
-email addresses are stored.
+prompt content. `adaptations.clerk_user_id` and
+`jobs.counts_against_clerk_user_id` are pseudonymous references to Clerk, and
+erasing a teacher must clear both. No names or email addresses are stored.
 
 Retention and deletion jobs are not yet implemented. Cascading a
 `resource_artifacts` row removes the database record, not the stored object; a

@@ -43,7 +43,8 @@ export type WorkflowEvent =
   | Readonly<{ type: "received"; value: WorksheetScaffoldingState }>
   | Readonly<{ type: "refreshed"; value: WorksheetScaffoldingState }>
   | Readonly<{ type: "applyStarted"; suggestion: WorksheetSuggestion }>
-  | Readonly<{ type: "actionStarted" }>;
+  | Readonly<{ type: "actionStarted" }>
+  | Readonly<{ type: "refusalExpired" }>;
 
 export function jobIsBusy(state: WorksheetScaffoldingState): boolean {
   return state.job?.status === "queued" || state.job?.status === "running";
@@ -131,6 +132,10 @@ export function workflowReducer(
     case "actionStarted":
       return state.status === "ready"
         ? { ...state, actionIsPending: true, refreshedResourceDocumentId: null }
+        : state;
+    case "refusalExpired":
+      return state.status === "ready"
+        ? { ...state, value: { ...state.value, modelWorkBlocked: null } }
         : state;
   }
 }

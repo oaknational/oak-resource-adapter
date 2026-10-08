@@ -6,5 +6,9 @@
   "editor.formatOnSave": true,
   "js/ts.preferences.preferTypeOnlyAutoImports": true,
   "js/ts.tsdk.path": "node_modules/typescript/lib",
-  "js/ts.tsdk.promptToUseWorkspaceVersion": true
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+  "sonarlint.connectedMode.project": {
+    "connectionId": "oaknational",
+    "projectKey": "oaknational_oak-resource-adapter"
+  }
 }

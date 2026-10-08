@@ -79,6 +79,7 @@ const document: ResourceDocument = {
 
 const state: WorksheetScaffoldingState = {
   adaptationId,
+  modelWorkBlocked: null,
   resourceDocumentId: adaptationId,
   downloadAvailability: "original",
   document,

@@ -10,14 +10,9 @@ import {
 } from "@oaknational/resource-adapter-db";
 import { documentChangingJobKinds } from "@oaknational/resource-adapter-contracts/internal";
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
-import { and, desc, eq, exists, gte, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, exists, inArray, isNull, sql } from "drizzle-orm";
 
-import {
-  contributionIdsInDocument,
-  type ResourceDocument,
-} from "@oaknational/resource-document";
-import { safeParseResourceDocument } from "@oaknational/resource-document/parse";
-import { raLogger } from "@oaknational/resource-adapter-logger";
+import type { ResourceDocument } from "@oaknational/resource-document";
 
 import {
   markAttemptComplete,
@@ -26,8 +21,6 @@ import {
   pendingAttemptOwnsHead,
   type Transaction,
 } from "./shared";
-
-const log = raLogger("internal-api");
 
 /** Guards against an attempt from a different adaptation advancing this head. */
 function attemptBelongsToAdaptation(
@@ -112,79 +105,6 @@ export async function getAdaptationHead(
   return row === undefined
     ? null
     : { ...row, storedDocument: parseStoredDocumentRow(row.storedDocument) };
-}
-
-export type ResumableAdaptation = Readonly<{
-  id: string;
-  pendingScaffoldCount: number;
-  scaffoldCount: number;
-  updatedAt: Date;
-}>;
-
-/**
- * Work a teacher can be offered back: their most recent adaptation of this
- * lesson that they have actually changed and have not abandoned. An adaptation
- * whose head is still the Oak worksheet has nothing they would recognise.
- */
-export async function findResumableAdaptation(input: {
-  capabilityId: string;
-  lesson: LessonContext;
-  notBefore: Date;
-  teacherId: string;
-}): Promise<ResumableAdaptation | null> {
-  const [row] = await getDatabaseClient()
-    .select({
-      acceptedAt: transformationAttempts.acceptedAt,
-      completedAt: transformationAttempts.completedAt,
-      document: resourceDocuments.document,
-      id: adaptations.id,
-      updatedAt: adaptations.updatedAt,
-    })
-    .from(adaptations)
-    .innerJoin(
-      resourceDocuments,
-      eq(resourceDocuments.id, adaptations.headResourceDocumentId),
-    )
-    .leftJoin(
-      transformationAttempts,
-      eq(transformationAttempts.id, resourceDocuments.transformationAttemptId),
-    )
-    .where(
-      and(
-        eq(adaptations.clerkUserId, input.teacherId),
-        eq(adaptations.capabilityId, input.capabilityId),
-        eq(adaptations.lessonSlug, input.lesson.lessonSlug),
-        eq(adaptations.programmeSlug, input.lesson.programmeSlug),
-        isNull(adaptations.abandonedAt),
-        gte(adaptations.updatedAt, input.notBefore),
-        eq(resourceDocuments.origin, ResourceDocumentOrigin.GENERATED),
-      ),
-    )
-    .orderBy(desc(adaptations.updatedAt))
-    .limit(1);
-
-  if (row === undefined) {
-    return null;
-  }
-  const read = safeParseResourceDocument(row.document);
-  if (!read.success) {
-    // Throwing here would stop the teacher opening the lesson at all.
-    log.error(
-      new Error(`Adaptation ${row.id} cannot be resumed.`, { cause: read.error }),
-      { report: true },
-    );
-    return null;
-  }
-  const scaffoldCount = contributionIdsInDocument(read.data).length;
-  return scaffoldCount === 0
-    ? null
-    : {
-        id: row.id,
-        pendingScaffoldCount:
-          row.acceptedAt === null && row.completedAt !== null ? 1 : 0,
-        scaffoldCount,
-        updatedAt: row.updatedAt,
-      };
 }
 
 export async function createAdaptationWithSourceDocument(input: {

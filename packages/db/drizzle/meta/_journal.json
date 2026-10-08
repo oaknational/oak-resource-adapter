@@ -36,6 +36,13 @@
       "when": 1790669380408,
       "tag": "0004_transcript_summary_cache",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791451524220,
+      "tag": "0005_jobs_usage_counting",
+      "breakpoints": true
     }
   ]
 }

@@ -10,6 +10,7 @@ import {
   createOrGetJob,
   ConcurrencyConflictError,
   failJob,
+  findExistingJob,
   getJob,
   getLatestJobForConcurrencyKey,
   IdempotencyConflictError,
@@ -56,6 +57,47 @@ describeWithDatabase("job repository integration", () => {
         input: { message: "different" },
         kind: "test.echo",
       }),
+    ).rejects.toBeInstanceOf(IdempotencyConflictError);
+  });
+
+  it("records which teacher a job counts against only when asked to", async () => {
+    const counted = await createOrGetJob({
+      countsAgainstClerkUserId: "user_test_counted",
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { message: "counted" },
+      kind: "test.echo",
+    });
+    const uncounted = await createOrGetJob({
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { message: "uncounted" },
+      kind: "test.echo",
+    });
+    createdJobIds.push(counted.job.id, uncounted.job.id);
+
+    expect(counted.job.countsAgainstClerkUserId).toBe("user_test_counted");
+    expect(uncounted.job.countsAgainstClerkUserId).toBeNull();
+  });
+
+  it("finds what an enqueue would resolve to without inserting", async () => {
+    const concurrencyKey = `integration-${randomUUID()}`;
+    const request = {
+      concurrencyKey,
+      idempotencyKey: `integration-${randomUUID()}`,
+      input: { message: "first" },
+      kind: "test.echo",
+    };
+
+    await expect(findExistingJob(request)).resolves.toBeNull();
+
+    const { job } = await createOrGetJob(request);
+    createdJobIds.push(job.id);
+
+    await expect(findExistingJob(request)).resolves.toMatchObject({ id: job.id });
+    await expect(
+      findExistingJob({ ...request, idempotencyKey: `integration-${randomUUID()}` }),
+    ).rejects.toBeInstanceOf(ConcurrencyConflictError);
+    await expect(
+      findExistingJob({ ...request, input: { message: "different" } }),
     ).rejects.toBeInstanceOf(IdempotencyConflictError);
   });
 

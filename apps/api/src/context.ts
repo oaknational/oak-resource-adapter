@@ -6,6 +6,7 @@ import {
 import { requestAuthenticator, type RequestAuthenticator } from "./authentication";
 import { getCapabilities, hasCapabilities } from "./capabilities/service";
 import { getFeatureFlagService } from "./feature-flags/service";
+import { openWorksheetScaffolding } from "./worksheet-scaffolding/entry-service";
 import { prepareWorksheetExport } from "./worksheet-scaffolding/export-service";
 import { getSourceDocument } from "./source-documents/service";
 import {
@@ -13,7 +14,6 @@ import {
   enqueueSuggestionApplication,
   enqueueWorksheetScaffoldingRetryTransformation,
   getWorksheetScaffoldingState,
-  openWorksheetScaffolding,
   enqueueWorksheetScaffoldingRemoval,
   enqueueWorksheetScaffoldingDismissal,
   undoWorksheetScaffoldingReview,

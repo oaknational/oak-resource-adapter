@@ -1,4 +1,5 @@
 import type {
+  UsageLimitReached,
   WorksheetScaffoldingJobKind,
   WorksheetScaffoldingState,
 } from "@oaknational/resource-adapter-contracts/internal";
@@ -8,7 +9,7 @@ import { jobIsBusy } from "./workflowState.js";
 export type WorkflowStatus = Readonly<{
   message: string;
   title?: string;
-  tone: "info" | "neutral" | "working";
+  tone: "info" | "neutral" | "warning" | "working";
 }>;
 
 export const LOADING_STATUS = {
@@ -71,6 +72,22 @@ const BUSY_STATUSES = {
   },
 } as const satisfies Record<WorksheetScaffoldingJobKind, WorkflowStatus>;
 
+const LIMIT_TITLES = {
+  model_jobs_24h: "You've reached your fair usage limit",
+} as const satisfies Record<UsageLimitReached["kind"], string>;
+
+function blockedStatus(modelWorkBlocked: UsageLimitReached): WorkflowStatus {
+  const retryAt = new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(modelWorkBlocked.retryAt));
+  return {
+    message: `You can add scaffolds again after ${retryAt}.`,
+    title: LIMIT_TITLES[modelWorkBlocked.kind],
+    tone: "warning",
+  };
+}
+
 export const FAILURE_TITLES = {
   "suggestions.apply": "We couldn't apply that scaffold",
   "suggestions.generate": "We couldn't find scaffolds",
@@ -114,6 +131,9 @@ export function readyStatus(
   const reportedLocally = hasLocalProgress && state.job?.kind === "suggestions.apply";
   if (state.job !== null && jobIsBusy(state) && !reportedLocally) {
     return BUSY_STATUSES[state.job.kind];
+  }
+  if (state.modelWorkBlocked !== null) {
+    return blockedStatus(state.modelWorkBlocked);
   }
   if (state.job?.status === "failed") {
     return null;

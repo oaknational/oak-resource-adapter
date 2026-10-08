@@ -27,6 +27,7 @@ function job(kind: Job["kind"], status: Job["status"]): Job {
 function value(overrides: Partial<WorksheetScaffoldingState> = {}) {
   return {
     adaptationId: "adaptation-1",
+    modelWorkBlocked: null,
     resourceDocumentId: "document-1",
     downloadAvailability: "original",
     document: {} as WorksheetScaffoldingState["document"],

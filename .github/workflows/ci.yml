@@ -242,6 +242,7 @@ jobs:
       # The harness posts to the /dev routes, which fail closed without this.
       ENABLE_DEV_ROUTES: "1"
       MODEL_TRANSPORT: deterministic
+      USAGE_LIMIT_MODEL_JOBS_PER_24H: "100000"
       # The three values e2e/global.setup.ts asserts. `secrets` cannot be read
       # from an `if:` condition; `env` can.
       CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}

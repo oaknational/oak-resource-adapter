@@ -18,6 +18,7 @@ The row contains:
 
 - an opaque, unique `idempotency_key`;
 - an optional `concurrency_key` for work that must not overlap;
+- `counts_against_clerk_user_id`, set only on a job that invokes a model;
 - an open-ended string `kind`;
 - the lifecycle status and timestamps;
 - validated JSON `input`;
@@ -36,6 +37,19 @@ another resolves to that active job instead of starting in parallel. Succeeded
 and failed jobs release the key automatically. Idempotency therefore identifies
 one request; concurrency groups distinct requests that must run one at a time.
 
+## Usage limits
+
+A job that invokes a model counts towards its teacher's rolling allowance:
+`USAGE_LIMIT_MODEL_JOBS_PER_24H` jobs in a rolling 24 hours, or 100 when unset. The
+limit is checked only when an enqueue would insert a row, so a replay or a
+request that collides with running work is never refused. A refused enqueue
+writes nothing and returns `usageLimitReached`, which the worksheet state carries as
+`modelWorkBlocked`. Its `kind` identifies the policy (`model_jobs_24h`) and
+`retryAt` is when another job may fit, not when the whole allowance resets.
+
+Each admitted job counts once, including failed jobs; invocations and execution
+retries within it do not count separately.
+
 ## Durable outputs
 
 Job outcomes belong in their domain tables, not on the job. A `transformation_attempts`
@@ -47,14 +61,16 @@ in [database](DATABASE.md).
 
 1. Give the job its own directory under `apps/api/src/jobs`, containing its
    definition, strict input schema, and Workflow steps.
-2. Register the definition in `registry.ts`. The `kind` remains a string in
+2. Set `invokesModel` on the definition. When it is true, the enqueue requires
+   the teacher's ID and the job counts towards their usage limit.
+3. Register the definition in `registry.ts`. The `kind` remains a string in
    PostgreSQL while the registry gives application code a discriminated union.
-3. Add its executor to the typed map in `workflows/run-job.ts`.
-4. Put work with side effects in `"use step"` functions. Steps can represent a
+4. Add its executor to the typed map in `workflows/run-job.ts`.
+5. Put work with side effects in `"use step"` functions. Steps can represent a
    real pipeline; they do not require child job rows. External writes must use
    an idempotency key that remains stable across retries (normally Workflow's
    step ID).
-5. Persist durable output in its proper domain table and relationship.
+6. Persist durable output in its proper domain table and relationship.
 
 Unknown kinds fail safely rather than being guessed or silently accepted.
 

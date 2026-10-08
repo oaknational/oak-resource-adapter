@@ -21,6 +21,7 @@ function echoJob(overrides: Partial<Job> = {}): Job {
   return {
     completedAt: null,
     concurrencyKey: null,
+    countsAgainstClerkUserId: null,
     createdAt: now,
     failureCode: null,
     failureMessage: null,

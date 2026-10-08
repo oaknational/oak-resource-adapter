@@ -229,12 +229,12 @@ export function useWorksheetScaffolding({
         replacingRef.current = null;
         if (cancelled) return;
         dispatch({ type: "opened", entry });
-        if (entry.outcome === "opened") {
+        if (entry.outcome !== "resumable") {
           trackRef.current({
             name: "Adaptation Started",
             componentType: "resource_adapter_dialog",
             adaptationId: entry.state.adaptationId,
-            startMode: "new",
+            startMode: entry.outcome === "opened" ? "new" : "resumed",
           });
         }
       },
@@ -268,6 +268,17 @@ export function useWorksheetScaffolding({
   const ready = state.status === "ready" ? state : null;
   const adaptationId = ready?.value.adaptationId ?? null;
   const adaptationIdRef = useLatestRef(adaptationId);
+  const retryAt = ready?.value.modelWorkBlocked?.retryAt ?? null;
+
+  // A refused worksheet isn't polled, so this is what lifts the refusal at `retryAt`.
+  useEffect(() => {
+    if (retryAt === null) return;
+    const timer = setTimeout(
+      () => dispatch({ type: "refusalExpired" }),
+      Math.max(0, Date.parse(retryAt) - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [dispatch, retryAt]);
 
   useEffect(() => {
     if (!isOpen || ready === null) return;

@@ -4,13 +4,12 @@ import {
   type WorksheetScaffoldingApplyRequest,
   type WorksheetScaffoldingReviewRequest,
   type WorksheetScaffoldingRetryTransformationRequest,
-  type WorksheetScaffoldingEntry,
-  type WorksheetScaffoldingOpenRequest,
   type WorksheetScaffoldingRemoveRequest,
   type WorksheetScaffoldingJobKind,
   type WorksheetScaffoldingState,
   type WorksheetScaffoldingDismissRequest,
   type WorksheetScaffoldingRetrySuggestionsRequest,
+  type UsageLimitReached,
 } from "@oaknational/resource-adapter-contracts/internal";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 import {
@@ -19,25 +18,19 @@ import {
 } from "@oaknational/resource-document";
 import { z } from "zod";
 
-import { enqueueJob } from "../jobs/enqueue-job";
-import {
-  ConcurrencyConflictError,
-  getLatestJobForConcurrencyKey,
-} from "../jobs/job-repository";
+import { ConcurrencyConflictError } from "../jobs/job-repository";
 import { jobJsonSchema, type JobJsonValue } from "../jobs/domain";
 import { applySuggestionJob } from "../jobs/suggestions/apply-definition";
 import { generateSuggestionsJob } from "../jobs/suggestions/generate-definition";
 import { removeTransformationJob } from "../jobs/transformations/remove-definition";
 import { retryTransformationJob } from "../jobs/transformations/retry-definition";
 import { dismissTransformationsJob } from "../jobs/transformations/dismiss-definition";
-import { getSourceDocument } from "../source-documents/service";
 import {
   isRegisteredTransformationKind,
   transformationDefinitions,
 } from "../transformations/registry";
 import {
   adaptationHeadConcurrencyKey,
-  CAPABILITY,
   SUGGESTION_FLOW_ID,
   applicationJobKey,
   dismissalJobKey,
@@ -46,47 +39,12 @@ import {
   suggestionRetryJobKey,
   transformationRetryJobKey,
 } from "./capability";
-import * as scaffoldingRepository from "./repository";
+import {
+  defaultDependencies,
+  type WorksheetScaffoldingDependencies,
+  type WorksheetScaffoldingServiceRepository,
+} from "./dependencies";
 import { asParams, storedSupportLevel } from "./stored-params";
-
-/**
- * How long unfinished work stays on offer. Long enough to cover a teacher
- * returning to their planning the following week, short enough that last term's
- * half-finished worksheet does not reappear without explanation.
- */
-const RESUMABLE_WINDOW_DAYS = 30;
-
-export type WorksheetScaffoldingDependencies = {
-  enqueue: typeof enqueueJob;
-  getLatestJob: typeof getLatestJobForConcurrencyKey;
-  resumableCutoff: (windowDays: number) => Date;
-  readSourceDocument: typeof getSourceDocument;
-  repository: WorksheetScaffoldingServiceRepository;
-};
-
-export type WorksheetScaffoldingServiceRepository = Pick<
-  typeof scaffoldingRepository,
-  | "createAdaptationWithSourceDocument"
-  | "acceptPendingReview"
-  | "findResumableAdaptation"
-  | "getAdaptationHead"
-  | "getOpenSuggestion"
-  | "getPendingReview"
-  | "getPrimaryTransformationInput"
-  | "isAcceptedContribution"
-  | "listOpenSuggestions"
-  | "replaceAdaptationWithSourceDocument"
-  | "undoPendingReview"
->;
-
-const defaultDependencies: WorksheetScaffoldingDependencies = {
-  enqueue: enqueueJob,
-  getLatestJob: getLatestJobForConcurrencyKey,
-  resumableCutoff: (windowDays) =>
-    new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000),
-  readSourceDocument: getSourceDocument,
-  repository: scaffoldingRepository,
-};
 
 /** The job input is stored as JSON, so validated params are narrowed to it. */
 function asJobParams(value: unknown): Record<string, JobJsonValue> {
@@ -97,12 +55,17 @@ function isSuggestionJobKind(kind: string): kind is WorksheetScaffoldingJobKind 
   return (worksheetScaffoldingJobKinds as readonly string[]).includes(kind);
 }
 
-function generationRequest(adaptationId: string, resourceDocumentId: string) {
+function generationRequest(
+  adaptationId: string,
+  resourceDocumentId: string,
+  teacherId: string,
+) {
   return {
     concurrencyKey: adaptationHeadConcurrencyKey(adaptationId, resourceDocumentId),
     idempotencyKey: suggestionOperationKey(resourceDocumentId),
     input: { adaptationId, flowId: SUGGESTION_FLOW_ID, resourceDocumentId },
     kind: generateSuggestionsJob.kind,
+    teacherId,
   } as const;
 }
 
@@ -135,13 +98,15 @@ function isSupersededRetryFailure(
 async function enqueueUnlessAlreadyRunning(
   enqueue: WorksheetScaffoldingDependencies["enqueue"],
   ...request: Parameters<WorksheetScaffoldingDependencies["enqueue"]>
-): Promise<void> {
+): Promise<UsageLimitReached | null> {
   try {
-    await enqueue(...request);
+    const result = await enqueue(...request);
+    return result.outcome === "usageLimitReached" ? result.usageLimit : null;
   } catch (error) {
     if (!(error instanceof ConcurrencyConflictError)) {
       throw error;
     }
+    return null;
   }
 }
 
@@ -183,6 +148,7 @@ async function readAdaptation(
     headResourceDocumentId: head.storedDocument.id,
     state: {
       adaptationId,
+      modelWorkBlocked: null,
       document: head.storedDocument.document,
       resourceDocumentId: head.storedDocument.id,
       downloadAvailability: downloadAvailability(head),
@@ -247,7 +213,7 @@ function needsSuggestions(state: WorksheetScaffoldingState): boolean {
  */
 async function readAndRequestSuggestions(
   adaptationId: string,
-  teacherId: string | undefined,
+  teacherId: string,
   dependencies: WorksheetScaffoldingDependencies,
 ): Promise<WorksheetScaffoldingState | null> {
   const read = await readAdaptation(adaptationId, teacherId, dependencies);
@@ -255,10 +221,13 @@ async function readAndRequestSuggestions(
     return read?.state ?? null;
   }
 
-  await enqueueUnlessAlreadyRunning(
+  const modelWorkBlocked = await enqueueUnlessAlreadyRunning(
     dependencies.enqueue,
-    generationRequest(adaptationId, read.headResourceDocumentId),
+    generationRequest(adaptationId, read.headResourceDocumentId, teacherId),
   );
+  if (modelWorkBlocked !== null) {
+    return { ...read.state, modelWorkBlocked };
+  }
   const refreshed = await readAdaptation(adaptationId, teacherId, dependencies);
   return refreshed?.state ?? read.state;
 }
@@ -301,12 +270,12 @@ async function enqueueOnHead(
   dependencies: WorksheetScaffoldingDependencies,
   request: Parameters<WorksheetScaffoldingDependencies["enqueue"]>[0],
 ): Promise<WorksheetScaffoldingState | null> {
-  await enqueueUnlessAlreadyRunning(dependencies.enqueue, {
+  const modelWorkBlocked = await enqueueUnlessAlreadyRunning(dependencies.enqueue, {
     ...request,
     concurrencyKey: adaptationHeadConcurrencyKey(adaptationId, head.storedDocument.id),
   });
   const read = await readAdaptation(adaptationId, target.teacherId, dependencies);
-  return read?.state ?? null;
+  return read === null ? null : { ...read.state, modelWorkBlocked };
 }
 
 export async function getWorksheetScaffoldingState(
@@ -315,65 +284,6 @@ export async function getWorksheetScaffoldingState(
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingState | null> {
   return readAndRequestSuggestions(adaptationId, target.teacherId, dependencies);
-}
-
-export async function openWorksheetScaffolding(
-  request: WorksheetScaffoldingOpenRequest,
-  target: ResourceAdapterAuthenticatedTeacher,
-  dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
-): Promise<WorksheetScaffoldingEntry | null> {
-  const { lesson, replacing } = request;
-  const { repository } = dependencies;
-
-  if (replacing === undefined) {
-    const resumable = await repository.findResumableAdaptation({
-      capabilityId: CAPABILITY.id,
-      lesson,
-      notBefore: dependencies.resumableCutoff(RESUMABLE_WINDOW_DAYS),
-      teacherId: target.teacherId,
-    });
-    if (resumable !== null) {
-      return {
-        outcome: "resumable",
-        resumable: {
-          adaptationId: resumable.id,
-          pendingScaffoldCount: resumable.pendingScaffoldCount,
-          scaffoldCount: resumable.scaffoldCount,
-          updatedAt: resumable.updatedAt.toISOString(),
-        },
-      };
-    }
-  }
-
-  const document = await dependencies.readSourceDocument(
-    { capabilityId: CAPABILITY.id, lesson },
-    target,
-  );
-  if (document === null) {
-    return null;
-  }
-
-  const adaptationInput = {
-    capabilityId: CAPABILITY.id,
-    document,
-    lesson,
-    teacherId: target.teacherId,
-  };
-  const { adaptationId } =
-    replacing === undefined
-      ? await repository.createAdaptationWithSourceDocument(adaptationInput)
-      : await repository.replaceAdaptationWithSourceDocument({
-          ...adaptationInput,
-          replacingAdaptationId: replacing.adaptationId,
-          replacementRequestId: replacing.requestId,
-        });
-
-  const state = await readAndRequestSuggestions(
-    adaptationId,
-    target.teacherId,
-    dependencies,
-  );
-  return state === null ? null : { outcome: "opened", state };
 }
 
 export async function enqueueSuggestionApplication(
@@ -409,6 +319,7 @@ export async function enqueueSuggestionApplication(
       suggestionId: input.suggestionId,
     },
     kind: applySuggestionJob.kind,
+    teacherId: target.teacherId,
   });
 }
 
@@ -480,6 +391,7 @@ export async function enqueueWorksheetScaffoldingRetryTransformation(
       resourceDocumentId: head.storedDocument.id,
     },
     kind: retryTransformationJob.kind,
+    teacherId: target.teacherId,
   });
 }
 
@@ -500,6 +412,7 @@ export async function enqueueWorksheetScaffoldingRetrySuggestions(
       resourceDocumentId: head.storedDocument.id,
     },
     kind: generateSuggestionsJob.kind,
+    teacherId: target.teacherId,
   });
 }
 

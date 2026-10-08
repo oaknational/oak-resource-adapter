@@ -1,0 +1,2 @@
+ALTER TABLE "resource_adapter"."jobs" ADD COLUMN "counts_against_clerk_user_id" text;--> statement-breakpoint
+CREATE INDEX "jobs_counts_against_clerk_user_id_created_at_idx" ON "resource_adapter"."jobs" USING btree ("counts_against_clerk_user_id","created_at") WHERE "resource_adapter"."jobs"."counts_against_clerk_user_id" is not null;
