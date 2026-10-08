@@ -1356,6 +1356,21 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(2);
   });
 
+  it("keeps a failed suggestion run's Try again closed while model work is refused", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened({
+        ...readyWithAcceptedScaffold,
+        job: { ...generatedJob, status: "failed" },
+        modelWorkBlocked: { kind: "model_jobs_24h", retryAt: anHourFromNow() },
+      }),
+    );
+    renderDialog();
+
+    const alert = await screen.findByRole("alert");
+    expect(within(alert).getByRole("button", { name: "Try again" })).toBeDisabled();
+    expect(within(alert).getByRole("button", { name: "Start again" })).toBeEnabled();
+  });
+
   it("keeps accepted scaffolds when a failed suggestion run is tried again", async () => {
     const retryJob = {
       failureMessage: null,

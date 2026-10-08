@@ -235,7 +235,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
               <ActionRow>
                 {canRetryFailedSuggestions && (
                   <OakSecondaryButton
-                    disabled={isWorking}
+                    disabled={isWorking || modelWorkRefused}
                     onClick={() => retrySuggestions("try_again_button")}
                   >
                     Try again
