@@ -22,6 +22,7 @@ import {
   createAdaptationWithSourceDocument,
   createRetryAttempt,
   isAttemptComplete,
+  findReopenableAdaptation,
   findResumableAdaptation,
   getAdaptationHead,
   getOpenSuggestion,
@@ -923,6 +924,39 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       createdAdaptationIds.push(first.adaptationId);
 
       await expect(replace(randomUUID())).rejects.toThrow("could not be replaced");
+    });
+
+    it("reopens an adaptation the teacher never changed", async () => {
+      const { adaptationId, teacherId } = await newAdaptation();
+
+      await expect(
+        findReopenableAdaptation(resumableQuery(teacherId)),
+      ).resolves.toEqual({ id: adaptationId });
+    });
+
+    it("does not reopen an adaptation with a scaffold", async () => {
+      const { teacherId } = await withPendingScaffold();
+
+      await expect(
+        findReopenableAdaptation(resumableQuery(teacherId)),
+      ).resolves.toBeNull();
+    });
+
+    it("reopens the replacement rather than the work it abandoned", async () => {
+      const { adaptationId, teacherId } = await newAdaptation();
+      const replacement = await replaceAdaptationWithSourceDocument({
+        capabilityId: "worksheetScaffolding",
+        document: worksheet,
+        lesson,
+        replacingAdaptationId: adaptationId,
+        replacementRequestId: randomUUID(),
+        teacherId,
+      });
+      createdAdaptationIds.push(replacement.adaptationId);
+
+      await expect(
+        findReopenableAdaptation(resumableQuery(teacherId)),
+      ).resolves.toEqual({ id: replacement.adaptationId });
     });
 
     it("does not offer one teacher's work to another", async () => {

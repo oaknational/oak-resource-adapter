@@ -23,7 +23,9 @@ export type RegisteredJobRequest = {
   [TKind in RegisteredJobKind]: {
     kind: TKind;
     input: z.infer<(typeof jobDefinitions)[TKind]["input"]>;
-  };
+  } & ((typeof jobDefinitions)[TKind]["invokesModel"] extends true
+    ? { teacherId: string }
+    : { teacherId?: never });
 }[RegisteredJobKind];
 
 export function isRegisteredJobKind(kind: string): kind is RegisteredJobKind {

@@ -4,6 +4,7 @@ import { defineJob } from "../define-job";
 
 export const dismissTransformationsJob = defineJob({
   kind: "transformations.dismiss",
+  invokesModel: false,
   input: z.strictObject({
     adaptationId: z.uuid(),
     resourceDocumentId: z.uuid(),

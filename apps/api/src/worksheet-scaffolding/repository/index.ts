@@ -1,5 +1,6 @@
 export * from "./attempts";
 export * from "./heads";
+export * from "./recent-adaptations";
 export * from "./reviews";
 export * from "./suggestions";
 export {

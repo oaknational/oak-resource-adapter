@@ -131,11 +131,13 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     applyingSuggestion !== null,
   );
   const suggestionsByTarget = groupSuggestionsByTarget(listedSuggestions);
+  const modelWorkRefused = state.value.modelWorkBlocked !== null;
 
   const renderSuggestionGroup = (targetBlockId: string | null) => {
     const suggestions = suggestionsByTarget.get(targetBlockId);
     return suggestions === undefined ? null : (
       <SuggestionGroup
+        applyDisabled={modelWorkRefused}
         applyingSuggestionId={applyingSuggestion?.id ?? null}
         disabled={isWorking}
         onApply={applySuggestion}
@@ -156,6 +158,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           onRetry={retryTransformationReview}
           onUndo={undoReview}
           reason={pendingReview.reason}
+          retryDisabled={modelWorkRefused}
         />
       ) : (
         <OakSecondaryButton
@@ -175,6 +178,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
 
   const canAskForNewSuggestions =
     pendingReview === null &&
+    !modelWorkRefused &&
     (hasScaffoldsInDocument || hasSuggestedScaffolds || noScaffoldsFound);
   const showWorkflowCta = canAskForNewSuggestions || hasScaffoldsInDocument;
 

@@ -31,13 +31,16 @@ export async function POST(request: NextRequest): Promise<Response> {
 
   try {
     const body = requestSchema.parse(await request.json());
-    const job = await enqueueJob({
+    const result = await enqueueJob({
       idempotencyKey: body.idempotencyKey ?? crypto.randomUUID(),
       input: { message: body.message },
       kind: testEchoJob.kind,
     });
+    if (result.outcome === "usageLimitReached") {
+      throw new Error("A job that invokes no model cannot reach a usage limit.");
+    }
 
-    return NextResponse.json(toJobResponse(job), { headers, status: 202 });
+    return NextResponse.json(toJobResponse(result.job), { headers, status: 202 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

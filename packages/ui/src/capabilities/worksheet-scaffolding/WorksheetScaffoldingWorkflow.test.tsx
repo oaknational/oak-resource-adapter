@@ -144,6 +144,7 @@ function readyState(
 ): WorksheetScaffoldingState {
   return {
     adaptationId: "adaptation-1",
+    modelWorkBlocked: null,
     resourceDocumentId: "11111111-1111-4111-8111-111111111111",
     downloadAvailability: "original",
     document: sourceDocument,
@@ -557,6 +558,74 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(
       screen.queryByRole("button", { name: "Generate new suggestions" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("says when to come back and keeps the worksheet when model work is refused", async () => {
+    const modelWorkBlocked = {
+      kind: "model_jobs_24h",
+      retryAt: "2026-10-09T09:30:00.000Z",
+    } as const;
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened({ ...readyWithSuggestion, modelWorkBlocked }),
+    );
+    renderDialog();
+
+    expect(
+      await screen.findByText("You've reached your fair usage limit"),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        `You can add scaffolds again after ${new Intl.DateTimeFormat("en-GB", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(new Date(modelWorkBlocked.retryAt))}.`,
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("article", { name: "Adding fractions worksheet" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Generate new suggestions" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add a word bank" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "No scaffold required" })).toBeEnabled();
+    expect(getWorksheetScaffoldingMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps a pending scaffold's review open but its retry closed when model work is refused", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened({
+        ...readyWithPendingReview,
+        modelWorkBlocked: {
+          kind: "model_jobs_24h",
+          retryAt: "2026-10-09T09:30:00.000Z",
+        },
+      }),
+    );
+    renderDialog();
+
+    expect(await screen.findByRole("button", { name: "Retry" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Accept" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled();
+  });
+
+  it("continues polling a running job even when model work was refused", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(
+        readyState({
+          job: { ...generatedJob, status: "running" },
+          modelWorkBlocked: {
+            kind: "model_jobs_24h",
+            retryAt: "2026-10-09T09:30:00.000Z",
+          },
+        }),
+      ),
+    );
+    getWorksheetScaffoldingMock.mockResolvedValueOnce(readyWithSuggestion);
+    renderDialog();
+
+    await screen.findByRole("group", { name: "Suggested scaffolds" });
+    expect(getWorksheetScaffoldingMock).toHaveBeenCalledTimes(1);
   });
 
   it.each(["queued", "running"] as const)(
@@ -1532,6 +1601,21 @@ describe("analytics", () => {
       componentType: "resource_adapter_dialog",
       suggestionCount: 0,
       transformationKinds: [],
+    });
+  });
+
+  it("reports a reopened adaptation as resumed", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce({
+      outcome: "reopened",
+      state: readyWithSuggestion,
+    });
+    const onAnalyticsEvent = renderTracked();
+
+    await screen.findByRole("group", { name: "Suggested scaffolds" });
+
+    expect(onAnalyticsEvent.mock.calls[0]?.[0]).toMatchObject({
+      name: "Adaptation Started",
+      startMode: "resumed",
     });
   });
 

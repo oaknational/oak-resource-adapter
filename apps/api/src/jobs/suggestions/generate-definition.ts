@@ -5,6 +5,7 @@ import { registeredSuggestionFlowIds } from "../../suggestions/flow-ids";
 
 export const generateSuggestionsJob = defineJob({
   kind: "suggestions.generate",
+  invokesModel: true,
   input: z.strictObject({
     adaptationId: z.uuid(),
     flowId: z.enum(registeredSuggestionFlowIds),

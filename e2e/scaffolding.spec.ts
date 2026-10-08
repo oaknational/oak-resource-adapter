@@ -9,6 +9,9 @@ import {
   expectRenderedWorksheet,
   expectSuggestionsReady,
   openFreshScaffolding,
+  openScaffolding,
+  suggestionIds,
+  waitForGeneratedSuggestions,
   scaffoldingLessons,
   signIn,
   waitForCapabilities,
@@ -78,17 +81,22 @@ test("shows the API state, a capability-based trigger, and the adapter sidebar",
   ).toBeVisible();
 });
 
-// Not @deployment-safe: opening the drawer creates an adaptation and queues a
-// suggestions job, which this test never cleans up. It also expects the
-// deterministic model's suggestion names, and deployments call OpenAI.
-test("generates and lists named scaffolding suggestions when the drawer opens", async ({
+// Not @deployment-safe: local adaptation fixtures and deterministic model output.
+test("generates named scaffolding suggestions when the drawer opens, and keeps them when it reopens", async ({
   page,
+  clearLessonAdaptations,
+  trackAdaptation,
 }) => {
-  const { drawer, worksheet } = await openFreshScaffolding(
+  const generated = waitForGeneratedSuggestions(page);
+  const { adaptationId, jobId, drawer, worksheet } = await openFreshScaffolding(
     page,
     scaffoldingLessons.generatingSuggestions,
+    { clearLessonAdaptations, trackAdaptation },
   );
+  expect(jobId).toBeDefined();
   await expectSuggestionsReady(drawer);
+  const generatedIds = suggestionIds(await generated);
+  expect(generatedIds.length).toBeGreaterThan(0);
   for (const name of [
     "Add a task vocabulary bank",
     "Add sentence starters",
@@ -103,19 +111,32 @@ test("generates and lists named scaffolding suggestions when the drawer opens", 
     }),
   ).toHaveCount(0);
   await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(0);
+
+  await page.reload();
+  const reopened = await openScaffolding(page);
+  expect(reopened).toMatchObject({
+    outcome: "reopened",
+    state: {
+      adaptationId,
+      job: { id: jobId, kind: "suggestions.generate", status: "succeeded" },
+    },
+  });
+  expect(suggestionIds(reopened.state)).toEqual(generatedIds);
+  await expectSuggestionsReady(drawer);
 });
 
 // Not @deployment-safe: trackAdaptation needs a local database and servers, and
 // the assertions expect the deterministic model's output.
 test("adapts, accepts, downloads, resumes and removes a scaffold without losing work", async ({
   page,
+  clearLessonAdaptations,
   trackAdaptation,
 }) => {
   test.setTimeout(90_000);
   const { drawer, title, worksheet } = await openFreshScaffolding(
     page,
     scaffoldingLessons.applyingASuggestion,
-    trackAdaptation,
+    { clearLessonAdaptations, trackAdaptation },
   );
   await expectSuggestionsReady(drawer);
   await expect(

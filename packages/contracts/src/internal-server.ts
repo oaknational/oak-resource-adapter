@@ -9,6 +9,7 @@ import {
   resourceAdapterSourceDocumentRequestSchema,
   supportLevels,
   transformationInputSchema,
+  usageLimitKinds,
   worksheetExportRequestSchema,
   worksheetDownloadAvailabilitySchema,
   type WorksheetExportRequest,
@@ -105,6 +106,9 @@ const t_internal = initTRPC.context<ResourceAdapterApiContextInternal>().create(
 
 const worksheetScaffoldingStateSchema = z.object({
   adaptationId: z.string(),
+  modelWorkBlocked: z.nullable(
+    z.object({ kind: z.enum(usageLimitKinds), retryAt: z.iso.datetime() }),
+  ),
   resourceDocumentId: z.uuid(),
   downloadAvailability: worksheetDownloadAvailabilitySchema,
   document: resourceDocumentSchema,
@@ -144,6 +148,7 @@ const worksheetScaffoldingStateSchema = z.object({
 
 const worksheetScaffoldingEntrySchema = z.discriminatedUnion("outcome", [
   z.object({ outcome: z.literal("opened"), state: worksheetScaffoldingStateSchema }),
+  z.object({ outcome: z.literal("reopened"), state: worksheetScaffoldingStateSchema }),
   z.object({
     outcome: z.literal("resumable"),
     resumable: z.object({

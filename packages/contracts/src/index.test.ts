@@ -49,6 +49,7 @@ const suggestionId = "33333333-3333-4333-8333-333333333333";
 const requestId = "44444444-4444-4444-8444-444444444444";
 const worksheetState = {
   adaptationId,
+  modelWorkBlocked: null,
   resourceDocumentId: attemptId,
   downloadAvailability: "original",
   document: sourceDocument,

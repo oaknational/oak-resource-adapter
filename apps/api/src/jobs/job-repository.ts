@@ -20,14 +20,14 @@ export class ConcurrencyConflictError extends Error {
 
 export type ClaimedJob = { outcome: "claimed"; kind: string } | { outcome: "ignored" };
 
-function matchesRequest(
-  job: Job,
-  request: {
-    concurrencyKey?: string | undefined;
-    kind: string;
-    input: JobJsonValue;
-  },
-): boolean {
+type JobRequest = {
+  concurrencyKey?: string | undefined;
+  idempotencyKey: string;
+  kind: string;
+  input: JobJsonValue;
+};
+
+function matchesRequest(job: Job, request: JobRequest): boolean {
   return (
     job.concurrencyKey === (request.concurrencyKey ?? null) &&
     job.kind === request.kind &&
@@ -35,14 +35,62 @@ function matchesRequest(
   );
 }
 
-export async function createOrGetJob(request: {
-  concurrencyKey?: string | undefined;
-  idempotencyKey: string;
-  kind: string;
-  input: JobJsonValue;
-}): Promise<{ job: Job; created: boolean }> {
+async function findIdempotentJob(request: JobRequest): Promise<Job | null> {
+  const [idempotent] = await getDatabaseClient()
+    .select()
+    .from(jobs)
+    .where(eq(jobs.idempotencyKey, request.idempotencyKey))
+    .limit(1);
+  if (idempotent === undefined) {
+    return null;
+  }
+  if (!matchesRequest(idempotent, request)) {
+    throw new IdempotencyConflictError(
+      "The idempotency key is already attached to a different job request.",
+    );
+  }
+  return idempotent;
+}
+
+async function assertNoActiveJob(concurrencyKey: string | undefined): Promise<void> {
+  if (concurrencyKey === undefined) {
+    return;
+  }
+  const [active] = await getDatabaseClient()
+    .select()
+    .from(jobs)
+    .where(
+      and(
+        eq(jobs.concurrencyKey, concurrencyKey),
+        inArray(jobs.status, [JobStatus.QUEUED, JobStatus.RUNNING]),
+      ),
+    )
+    .limit(1);
+  if (active !== undefined) {
+    throw new ConcurrencyConflictError(
+      `Concurrency key ${concurrencyKey} is already attached to active job ${active.id}.`,
+    );
+  }
+}
+
+/**
+ * What `createOrGetJob` would resolve to without inserting: the job already
+ * holding the idempotency key, or null when it would insert a new row. Throws as
+ * it would when other work holds the concurrency key.
+ */
+export async function findExistingJob(request: JobRequest): Promise<Job | null> {
+  const idempotent = await findIdempotentJob(request);
+  if (idempotent !== null) {
+    return idempotent;
+  }
+  await assertNoActiveJob(request.concurrencyKey);
+  return null;
+}
+
+export async function createOrGetJob(
+  request: JobRequest & { countsAgainstClerkUserId?: string | undefined },
+): Promise<{ job: Job; created: boolean }> {
   const database = getDatabaseClient();
-  const concurrencyKey = request.concurrencyKey ?? null;
 
   for (let insertAttempt = 0; insertAttempt < 2; insertAttempt += 1) {
     // Either unique key may arbitrate the race. A loser resolves the row that
@@ -50,7 +98,8 @@ export async function createOrGetJob(request: {
     const [created] = await database
       .insert(jobs)
       .values({
-        concurrencyKey,
+        concurrencyKey: request.concurrencyKey ?? null,
+        countsAgainstClerkUserId: request.countsAgainstClerkUserId ?? null,
         idempotencyKey: request.idempotencyKey,
         input: request.input,
         kind: request.kind,
@@ -62,37 +111,12 @@ export async function createOrGetJob(request: {
       return { created: true, job: created };
     }
 
-    const [idempotent] = await database
-      .select()
-      .from(jobs)
-      .where(eq(jobs.idempotencyKey, request.idempotencyKey))
-      .limit(1);
-    if (idempotent !== undefined) {
-      if (!matchesRequest(idempotent, request)) {
-        throw new IdempotencyConflictError(
-          "The idempotency key is already attached to a different job request.",
-        );
-      }
+    const idempotent = await findIdempotentJob(request);
+    if (idempotent !== null) {
       return { created: false, job: idempotent };
     }
 
-    if (request.concurrencyKey !== undefined) {
-      const [active] = await database
-        .select()
-        .from(jobs)
-        .where(
-          and(
-            eq(jobs.concurrencyKey, request.concurrencyKey),
-            inArray(jobs.status, [JobStatus.QUEUED, JobStatus.RUNNING]),
-          ),
-        )
-        .limit(1);
-      if (active !== undefined) {
-        throw new ConcurrencyConflictError(
-          `Concurrency key ${request.concurrencyKey} is already attached to active job ${active.id}.`,
-        );
-      }
-    }
+    await assertNoActiveJob(request.concurrencyKey);
   }
 
   throw new Error(

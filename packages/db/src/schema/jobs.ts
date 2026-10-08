@@ -33,6 +33,8 @@ export const jobs = resourceAdapterSchema.table(
   {
     completedAt: timestamp("completed_at", { precision: 3, withTimezone: true }),
     concurrencyKey: varchar("concurrency_key", { length: 128 }),
+    /** Usage counting only. Ownership is always checked on `adaptations`. */
+    countsAgainstClerkUserId: text("counts_against_clerk_user_id"),
     createdAt: timestamp("created_at", { precision: 3, withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -58,6 +60,9 @@ export const jobs = resourceAdapterSchema.table(
     index("jobs_concurrency_key_created_at_idx")
       .on(table.concurrencyKey, table.createdAt.desc())
       .where(sql`${table.concurrencyKey} is not null`),
+    index("jobs_counts_against_clerk_user_id_created_at_idx")
+      .on(table.countsAgainstClerkUserId, table.createdAt)
+      .where(sql`${table.countsAgainstClerkUserId} is not null`),
     uniqueIndex("jobs_active_concurrency_key_unique")
       .on(table.concurrencyKey)
       .where(

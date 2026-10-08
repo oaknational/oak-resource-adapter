@@ -132,8 +132,13 @@ export type WorksheetScaffoldingResumable = Readonly<{
   updatedAt: string;
 }>;
 
+/**
+ * `reopened` returns the teacher's latest adaptation of the lesson that has no
+ * scaffolds in its head, so closing and reopening the dialog keeps its suggestions.
+ */
 export type WorksheetScaffoldingEntry =
   | Readonly<{ outcome: "opened"; state: WorksheetScaffoldingState }>
+  | Readonly<{ outcome: "reopened"; state: WorksheetScaffoldingState }>
   | Readonly<{ outcome: "resumable"; resumable: WorksheetScaffoldingResumable }>;
 
 export const transformationInputSchema = z.readonly(
@@ -177,8 +182,18 @@ export type WorksheetExportResult = Readonly<{
   artifactId: string;
 }>;
 
+export const usageLimitKinds = ["model_jobs_24h"] as const;
+
+export type UsageLimitReached = Readonly<{
+  kind: (typeof usageLimitKinds)[number];
+  /** Earliest retry time in ISO format; another request can consume the freed allowance. */
+  retryAt: string;
+}>;
+
 export type WorksheetScaffoldingState = Readonly<{
   adaptationId: string;
+  /** A refusal for this request; null does not imply remaining allowance. */
+  modelWorkBlocked: UsageLimitReached | null;
   document: ResourceDocument;
   resourceDocumentId: string;
   downloadAvailability: WorksheetDownloadAvailability;

@@ -1,17 +1,20 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import type {
+  WorksheetScaffoldingDependencies,
+  WorksheetScaffoldingServiceRepository,
+} from "./dependencies";
+import { openWorksheetScaffolding } from "./entry-service";
+
 import {
   acceptWorksheetScaffoldingReview,
   enqueueSuggestionApplication,
   enqueueWorksheetScaffoldingRetrySuggestions,
   enqueueWorksheetScaffoldingRetryTransformation,
   getWorksheetScaffoldingState,
-  openWorksheetScaffolding,
   enqueueWorksheetScaffoldingRemoval,
   enqueueWorksheetScaffoldingDismissal,
   undoWorksheetScaffoldingReview,
-  type WorksheetScaffoldingDependencies,
-  type WorksheetScaffoldingServiceRepository,
 } from "./service";
 import {
   ADAPTATION_ID,
@@ -28,6 +31,7 @@ import {
   head,
   storedSuggestion,
   repositoryDefaults,
+  generateJob,
   retryJob,
   teacher,
 } from "./test-doubles";
@@ -63,7 +67,7 @@ function stubDependencies(
   overrides: Partial<WorksheetScaffoldingDependencies> = {},
 ): WorksheetScaffoldingDependencies {
   return {
-    enqueue: vi.fn(),
+    enqueue: vi.fn().mockResolvedValue({ job: generateJob(), outcome: "enqueued" }),
     getLatestJob: vi.fn().mockResolvedValue(null),
     resumableCutoff: () => new Date("2026-01-01T00:00:00.000Z"),
     readSourceDocument: vi.fn().mockResolvedValue(worksheet),
@@ -192,7 +196,172 @@ describe("opening worksheet scaffolding", () => {
         resourceDocumentId: DOCUMENT_ID,
       },
       kind: "suggestions.generate",
+      teacherId: teacher.teacherId,
     });
+  });
+
+  it("reopens the latest adaptation with no scaffolds and its stored suggestions", async () => {
+    const repository = stubRepository({
+      findReopenableAdaptation: vi.fn().mockResolvedValue({ id: ADAPTATION_ID }),
+      listOpenSuggestions: vi.fn().mockResolvedValue([storedSuggestion()]),
+    });
+    const dependencies = stubDependencies({ repository });
+
+    const entry = await openWorksheetScaffolding({ lesson }, teacher, dependencies);
+
+    expect(entry).toMatchObject({
+      outcome: "reopened",
+      state: { adaptationId: ADAPTATION_ID, suggestions: [{ id: SUGGESTION_ID }] },
+    });
+    expect(repository.createAdaptationWithSourceDocument).not.toHaveBeenCalled();
+    expect(dependencies.readSourceDocument).not.toHaveBeenCalled();
+    expect(dependencies.enqueue).not.toHaveBeenCalled();
+  });
+
+  it("reopens a suggestion run still in flight rather than starting another", async () => {
+    const repository = stubRepository({
+      findReopenableAdaptation: vi.fn().mockResolvedValue({ id: ADAPTATION_ID }),
+    });
+    const dependencies = stubDependencies({
+      getLatestJob: vi.fn().mockResolvedValue(generateJob({ status: "running" })),
+      repository,
+    });
+
+    const entry = await openWorksheetScaffolding({ lesson }, teacher, dependencies);
+
+    expect(entry).toMatchObject({ outcome: "reopened" });
+    expect(repository.createAdaptationWithSourceDocument).not.toHaveBeenCalled();
+    expect(dependencies.enqueue).not.toHaveBeenCalled();
+  });
+
+  it("reopens stored suggestions after an application failure", async () => {
+    const repository = stubRepository({
+      findReopenableAdaptation: vi.fn().mockResolvedValue({ id: ADAPTATION_ID }),
+      listOpenSuggestions: vi.fn().mockResolvedValue([storedSuggestion()]),
+    });
+    const dependencies = stubDependencies({
+      getLatestJob: vi
+        .fn()
+        .mockImplementation((_key, kinds: readonly string[]) =>
+          Promise.resolve(
+            kinds.length === 1
+              ? generateJob({ status: "succeeded" })
+              : generateJob({ kind: "suggestions.apply", status: "failed" }),
+          ),
+        ),
+      repository,
+    });
+
+    await expect(
+      openWorksheetScaffolding({ lesson }, teacher, dependencies),
+    ).resolves.toMatchObject({
+      outcome: "reopened",
+      state: {
+        adaptationId: ADAPTATION_ID,
+        job: { kind: "suggestions.apply", status: "failed" },
+        suggestions: [{ id: SUGGESTION_ID }],
+      },
+    });
+    expect(repository.createAdaptationWithSourceDocument).not.toHaveBeenCalled();
+    expect(dependencies.readSourceDocument).not.toHaveBeenCalled();
+    expect(dependencies.enqueue).not.toHaveBeenCalled();
+  });
+
+  it("reopens stored suggestions after a generation retry fails", async () => {
+    const repository = stubRepository({
+      findReopenableAdaptation: vi.fn().mockResolvedValue({ id: ADAPTATION_ID }),
+      listOpenSuggestions: vi.fn().mockResolvedValue([storedSuggestion()]),
+    });
+    const dependencies = stubDependencies({
+      getLatestJob: vi.fn().mockResolvedValue(generateJob({ status: "failed" })),
+      repository,
+    });
+
+    await expect(
+      openWorksheetScaffolding({ lesson }, teacher, dependencies),
+    ).resolves.toMatchObject({
+      outcome: "reopened",
+      state: {
+        adaptationId: ADAPTATION_ID,
+        job: { kind: "suggestions.generate", status: "failed" },
+        suggestions: [{ id: SUGGESTION_ID }],
+      },
+    });
+    expect(repository.createAdaptationWithSourceDocument).not.toHaveBeenCalled();
+    expect(dependencies.enqueue).not.toHaveBeenCalled();
+  });
+
+  it("starts a new adaptation when a failed application left no suggestions", async () => {
+    const repository = stubRepository({
+      findReopenableAdaptation: vi.fn().mockResolvedValue({ id: ADAPTATION_ID }),
+    });
+    const dependencies = stubDependencies({
+      getLatestJob: vi
+        .fn()
+        .mockImplementation((_key, kinds: readonly string[]) =>
+          Promise.resolve(
+            kinds.length === 1
+              ? generateJob({ status: "succeeded" })
+              : generateJob({ kind: "suggestions.apply", status: "failed" }),
+          ),
+        ),
+      repository,
+    });
+
+    const entry = await openWorksheetScaffolding({ lesson }, teacher, dependencies);
+
+    expect(entry).toMatchObject({ outcome: "opened" });
+    expect(repository.createAdaptationWithSourceDocument).toHaveBeenCalled();
+  });
+
+  it("starts a new adaptation rather than reopening a failed suggestion run", async () => {
+    const repository = stubRepository({
+      findReopenableAdaptation: vi.fn().mockResolvedValue({ id: ADAPTATION_ID }),
+    });
+    const dependencies = stubDependencies({
+      getLatestJob: vi.fn().mockResolvedValue(generateJob({ status: "failed" })),
+      repository,
+    });
+
+    const entry = await openWorksheetScaffolding({ lesson }, teacher, dependencies);
+
+    expect(entry).toMatchObject({ outcome: "opened" });
+    expect(repository.createAdaptationWithSourceDocument).toHaveBeenCalled();
+  });
+
+  it("offers scaffolded work back before reopening anything", async () => {
+    const repository = stubRepository({
+      findReopenableAdaptation: vi.fn().mockResolvedValue({ id: ADAPTATION_ID }),
+      findResumableAdaptation: vi.fn().mockResolvedValue({
+        id: ADAPTATION_ID,
+        pendingScaffoldCount: 0,
+        scaffoldCount: 1,
+        updatedAt: new Date("2026-02-03T09:00:00.000Z"),
+      }),
+    });
+
+    const entry = await openWorksheetScaffolding(
+      { lesson },
+      teacher,
+      stubDependencies({ repository }),
+    );
+
+    expect(entry).toMatchObject({ outcome: "resumable" });
+    expect(repository.findReopenableAdaptation).not.toHaveBeenCalled();
+  });
+
+  it("does not reopen anything when the teacher starts again", async () => {
+    const repository = stubRepository({
+      findReopenableAdaptation: vi.fn().mockResolvedValue({ id: ADAPTATION_ID }),
+    });
+
+    await openWorksheetScaffolding(
+      { lesson, replacing: { adaptationId: ADAPTATION_ID, requestId: REQUEST_ID } },
+      teacher,
+      stubDependencies({ repository }),
+    );
+
+    expect(repository.findReopenableAdaptation).not.toHaveBeenCalled();
   });
 });
 
@@ -651,6 +820,76 @@ describe("work that collides with a job already running on the head", () => {
   });
 });
 
+describe("model work refused at a usage limit", () => {
+  const modelWorkBlocked = {
+    kind: "model_jobs_24h",
+    retryAt: "2026-02-04T09:00:00.000Z",
+  } as const;
+  const refuses = () =>
+    vi.fn().mockResolvedValue({
+      outcome: "usageLimitReached",
+      usageLimit: modelWorkBlocked,
+    });
+
+  it("reports nothing refused when the work was queued", async () => {
+    await expect(
+      getWorksheetScaffoldingState(ADAPTATION_ID, teacher, stubDependencies()),
+    ).resolves.toMatchObject({ modelWorkBlocked: null });
+  });
+
+  it("returns the worksheet with the limit when suggestions are refused", async () => {
+    const dependencies = stubDependencies({ enqueue: refuses() });
+
+    await expect(
+      getWorksheetScaffoldingState(ADAPTATION_ID, teacher, dependencies),
+    ).resolves.toMatchObject({
+      modelWorkBlocked,
+      document: { id: expect.any(String) },
+      job: null,
+    });
+  });
+
+  it("reports a refused application with the current state", async () => {
+    const dependencies = stubDependencies({
+      enqueue: refuses(),
+      repository: stubRepository({
+        listOpenSuggestions: vi.fn().mockResolvedValue([storedSuggestion()]),
+      }),
+    });
+
+    await expect(
+      enqueueSuggestionApplication(
+        { adaptationId: ADAPTATION_ID, suggestionId: SUGGESTION_ID },
+        teacher,
+        dependencies,
+      ),
+    ).resolves.toMatchObject({
+      modelWorkBlocked,
+      suggestions: [{ id: SUGGESTION_ID }],
+    });
+  });
+
+  it("reports the limit when suggestions after an acceptance are refused", async () => {
+    const dependencies = stubDependencies({
+      enqueue: refuses(),
+      repository: stubRepository({
+        getPendingReview: vi
+          .fn()
+          .mockResolvedValueOnce(pendingReview())
+          .mockResolvedValue(null),
+      }),
+    });
+
+    await expect(
+      acceptWorksheetScaffoldingReview(
+        { adaptationId: ADAPTATION_ID, attemptId: ATTEMPT_ID },
+        teacher,
+        dependencies,
+      ),
+    ).resolves.toMatchObject({ modelWorkBlocked });
+  });
+});
+
 describe("reviewing an applied scaffold", () => {
   it("accepts only the attempt that produced the current head", async () => {
     const getPendingReview = vi
@@ -736,6 +975,7 @@ describe("reviewing an applied scaffold", () => {
         resourceDocumentId: DOCUMENT_ID,
       },
       kind: "transformations.retry",
+      teacherId: teacher.teacherId,
     });
   });
 
@@ -826,6 +1066,7 @@ describe("reviewing an applied scaffold", () => {
         resourceDocumentId: DOCUMENT_ID,
       },
       kind: "suggestions.generate",
+      teacherId: teacher.teacherId,
     });
   });
 

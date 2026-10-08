@@ -199,6 +199,7 @@ function storedJob(
   const job: Job = {
     completedAt: null,
     concurrencyKey: `adaptation:${ADAPTATION_ID}:head:${DOCUMENT_ID}`,
+    countsAgainstClerkUserId: null,
     createdAt: fixtureTimestamp,
     failureCode: null,
     failureMessage: null,
@@ -316,6 +317,7 @@ export function repositoryDefaults(): RepositoryResults {
     acceptPendingReview: true,
     createOperationAttempt: storedAttempt(),
     createRetryAttempt: storedAttempt(),
+    findReopenableAdaptation: null,
     findResumableAdaptation: null,
     getAcceptedSuggestion: null,
     getAdaptationHead: head(),

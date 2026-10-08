@@ -111,12 +111,14 @@ function LocalProgress() {
 }
 
 export function SuggestionGroup({
+  applyDisabled,
   applyingSuggestionId,
   disabled,
   onApply,
   onDismiss,
   suggestions,
 }: Readonly<{
+  applyDisabled: boolean;
   applyingSuggestionId: string | null;
   disabled: boolean;
   onApply: (suggestionId: string, params: ScaffoldOption["params"]) => void;
@@ -139,7 +141,7 @@ export function SuggestionGroup({
         {options.map((option) => (
           <li key={option.key}>
             <OakSecondaryButton
-              disabled={disabled}
+              disabled={disabled || applyDisabled}
               onClick={() => onApply(option.suggestionId, option.params)}
             >
               {option.label}

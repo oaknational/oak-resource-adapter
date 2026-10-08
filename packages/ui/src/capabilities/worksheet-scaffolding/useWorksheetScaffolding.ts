@@ -229,12 +229,12 @@ export function useWorksheetScaffolding({
         replacingRef.current = null;
         if (cancelled) return;
         dispatch({ type: "opened", entry });
-        if (entry.outcome === "opened") {
+        if (entry.outcome !== "resumable") {
           trackRef.current({
             name: "Adaptation Started",
             componentType: "resource_adapter_dialog",
             adaptationId: entry.state.adaptationId,
-            startMode: "new",
+            startMode: entry.outcome === "opened" ? "new" : "resumed",
           });
         }
       },

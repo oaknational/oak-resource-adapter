@@ -1,5 +1,5 @@
 import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
-import { expect, type Locator, type Page } from "@playwright/test";
+import { expect, type Locator, type Page, type Response } from "@playwright/test";
 
 // Presence is verified by the setup project, which the test projects depend on.
 const emailAddress = process.env.E2E_CLERK_USER_EMAIL as string;
@@ -55,17 +55,72 @@ export async function signIn(page: Page) {
   await clerk.signIn({ page, emailAddress });
 }
 
-export async function openFreshScaffolding(
-  page: Page,
-  lessonId: string,
-  trackAdaptation?: (adaptationId: string) => void,
-) {
-  await signIn(page);
-  await page.goto(`/?lesson=${lessonId}`);
-  const title = await page.getByRole("heading", { level: 1 }).innerText();
+type ScaffoldingState = {
+  adaptationId: string;
+  job: { id: string; kind: string; status: string } | null;
+  suggestions: { id: string }[];
+};
+
+type ScaffoldingEntry = { outcome: string; state: ScaffoldingState };
+
+/**
+ * tRPC batches concurrent calls into one request, so a procedure's result sits
+ * at that procedure's position in the URL path.
+ */
+async function procedureData<T>(
+  response: Response,
+  procedure: string,
+): Promise<T | undefined> {
+  const path = decodeURIComponent(new URL(response.url()).pathname);
+  const index = (path.split("/").at(-1) ?? "").split(",").indexOf(procedure);
+  if (index === -1 || !response.ok()) return undefined;
+  const results = (await response.json()) as { result: { data: T } }[];
+  return results[index]?.result.data;
+}
+
+async function scaffoldingStateIn(response: Response) {
+  const entry = await procedureData<ScaffoldingEntry>(
+    response,
+    "worksheetScaffolding.open",
+  );
+  return (
+    entry?.state ??
+    (await procedureData<ScaffoldingState>(response, "worksheetScaffolding.get"))
+  );
+}
+
+function hasGeneratedSuggestions(
+  state: ScaffoldingState | undefined,
+): state is ScaffoldingState {
+  return (
+    state?.job?.kind === "suggestions.generate" && state.job.status === "succeeded"
+  );
+}
+
+/**
+ * Start before opening the drawer. Resolves with the first state, from `open`
+ * or a poll, that shows a finished suggestion run.
+ */
+export async function waitForGeneratedSuggestions(page: Page) {
+  const response = await page.waitForResponse(async (candidate) =>
+    hasGeneratedSuggestions(await scaffoldingStateIn(candidate)),
+  );
+  const state = await scaffoldingStateIn(response);
+  if (!hasGeneratedSuggestions(state)) {
+    throw new Error("The finished suggestion run could not be read back.");
+  }
+  return state;
+}
+
+export function suggestionIds(state: ScaffoldingState): string[] {
+  return state.suggestions.map(({ id }) => id).toSorted((a, b) => a.localeCompare(b));
+}
+
+/** Opens the drawer and returns what `worksheetScaffolding.open` answered. */
+export async function openScaffolding(page: Page): Promise<ScaffoldingEntry> {
   const opening = page.waitForResponse(
     (response) =>
-      response.url().includes("/trpc/internal/worksheetScaffolding.open") &&
+      response.url().includes("worksheetScaffolding.open") &&
       response.request().method() === "POST",
   );
   await page
@@ -73,18 +128,45 @@ export async function openFreshScaffolding(
     .click();
   const response = await opening;
   expect(response.ok()).toBe(true);
-  const [entry] = (await response.json()) as {
-    result: { data: { outcome: string; state: { adaptationId: string } } };
-  }[];
-  expect(entry?.result.data.outcome).toBe("opened");
-  const adaptationId = entry!.result.data.state.adaptationId;
+  const entry = await procedureData<ScaffoldingEntry>(
+    response,
+    "worksheetScaffolding.open",
+  );
+  if (entry === undefined) throw new Error("The open response had no entry.");
+  return entry;
+}
+
+export async function openFreshScaffolding(
+  page: Page,
+  lessonId: string,
+  {
+    clearLessonAdaptations,
+    trackAdaptation,
+  }: {
+    clearLessonAdaptations: (lessonSlug: string) => Promise<void>;
+    trackAdaptation: (adaptationId: string) => void;
+  },
+) {
+  await signIn(page);
+  await clearLessonAdaptations(lessonId);
+  await page.goto(`/?lesson=${lessonId}`);
+  const title = await page.getByRole("heading", { level: 1 }).innerText();
+  const entry = await openScaffolding(page);
+  expect(entry.outcome).toBe("opened");
+  const { adaptationId } = entry.state;
   expect(adaptationId).toMatch(
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
   );
-  trackAdaptation?.(adaptationId);
+  trackAdaptation(adaptationId);
   const drawer = page.getByRole("dialog", { name: "Add extra scaffolding" });
   await expectRenderedWorksheet(drawer, title);
-  return { drawer, title, worksheet: drawer.getByRole("article", { name: title }) };
+  return {
+    adaptationId,
+    jobId: entry.state.job?.id,
+    drawer,
+    title,
+    worksheet: drawer.getByRole("article", { name: title }),
+  };
 }
 
 // Signed out, the sign-in prompt appears only once availability comes back true.

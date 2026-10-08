@@ -50,12 +50,14 @@ export function PendingReviewControls({
   onRetry,
   onUndo,
   reason,
+  retryDisabled,
 }: Readonly<{
   disabled: boolean;
   onAccept: () => void;
   onRetry: () => void;
   onUndo: () => void;
   reason: string;
+  retryDisabled: boolean;
 }>) {
   const [isOpen, setIsOpen] = useState(false);
   const panelId = useId();
@@ -87,7 +89,11 @@ export function PendingReviewControls({
         <OakSecondaryButton disabled={disabled} iconName="arrow-left" onClick={onUndo}>
           Undo
         </OakSecondaryButton>
-        <OakSecondaryButton disabled={disabled} iconName="retake" onClick={onRetry}>
+        <OakSecondaryButton
+          disabled={disabled || retryDisabled}
+          iconName="retake"
+          onClick={onRetry}
+        >
           Retry
         </OakSecondaryButton>
         <OakPrimaryButton disabled={disabled} onClick={onAccept}>
