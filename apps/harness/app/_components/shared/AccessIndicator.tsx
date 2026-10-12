@@ -105,7 +105,11 @@ function AccountAccessIndicator({
           <h2 id={headingId}>ORA access</h2>
           <span className={`${styles.healthBadge} ${className}`}>{label}</span>
         </div>
-        {status === "loading" ? <p role="status">Checking access…</p> : null}
+        {status === "loading" ? (
+          <p>
+            <output>Checking access…</output>
+          </p>
+        ) : null}
         {status === "error" ? (
           <p role="alert">
             Access could not be checked.{" "}
@@ -137,7 +141,6 @@ function AccountAccessIndicator({
             <dt>Give this account full access</dt>
             <dd>
               Run <code>{command}</code> with a {instance} <code>CLERK_SECRET_KEY</code>
-              .
             </dd>
           </div>
         </dl>

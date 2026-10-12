@@ -202,6 +202,20 @@ export function useWorksheetScaffolding({
     [dispatch, failWith],
   );
 
+  const loadAllowance = useCallback(
+    (isCurrent: () => boolean) => {
+      void getTeacherAllowance(connection).then(
+        (value) => {
+          if (isCurrent()) setAllowance(value);
+        },
+        (error: unknown) => {
+          if (isCurrent()) reportToHost(onErrorRef.current, error);
+        },
+      );
+    },
+    [connection, onErrorRef],
+  );
+
   useEffect(() => {
     let cancelled = false;
     sessionRef.current += 1;
@@ -255,14 +269,7 @@ export function useWorksheetScaffolding({
           });
         }
         // Fetched once `open` settles, since opening can spend a use.
-        void getTeacherAllowance(connection).then(
-          (value) => {
-            if (!cancelled) setAllowance(value);
-          },
-          (error: unknown) => {
-            if (!cancelled) reportToHost(onErrorRef.current, error);
-          },
-        );
+        loadAllowance(() => !cancelled);
       },
       (error: unknown) => {
         if (cancelled) return;
@@ -287,6 +294,7 @@ export function useWorksheetScaffolding({
     isOpen,
     lessonKey,
     lessonRef,
+    loadAllowance,
     openCount,
     trackRef,
   ]);
@@ -311,17 +319,10 @@ export function useWorksheetScaffolding({
   useEffect(() => {
     if (!isOpen || allowanceResetsAt === null) return;
     const session = sessionRef.current;
-    return scheduleAt(Date.parse(allowanceResetsAt), () => {
-      void getTeacherAllowance(connection).then(
-        (value) => {
-          if (sessionRef.current === session) setAllowance(value);
-        },
-        (error: unknown) => {
-          if (sessionRef.current === session) reportToHost(onErrorRef.current, error);
-        },
-      );
-    });
-  }, [allowanceResetsAt, connection, isOpen, onErrorRef]);
+    return scheduleAt(Date.parse(allowanceResetsAt), () =>
+      loadAllowance(() => sessionRef.current === session),
+    );
+  }, [allowanceResetsAt, isOpen, loadAllowance]);
 
   // A new refusal can carry the same retry time as the previous one.
   useEffect(() => {

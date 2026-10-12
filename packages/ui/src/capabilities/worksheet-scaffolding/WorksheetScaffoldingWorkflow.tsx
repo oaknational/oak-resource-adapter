@@ -10,6 +10,8 @@ import {
   type ResourceNode,
 } from "@oaknational/resource-document";
 
+import type { TeacherAllowance } from "@oaknational/resource-adapter-contracts/internal";
+
 import { ResourceAdapterUnavailableMessage } from "../../ResourceAdapterErrorBoundary.js";
 import { ResourceDocumentRenderer } from "../../resource-document/ResourceDocumentRenderer.js";
 import type { TrackAnalyticsEvent } from "../../analytics.js";
@@ -34,6 +36,7 @@ import {
 import {
   documentUpdateIsBusy,
   jobIsBusy,
+  type WorkflowState,
   worksheetWasRefreshed,
 } from "./workflowState.js";
 import {
@@ -54,6 +57,59 @@ export type WorksheetScaffoldingWorkflowProps = Readonly<{
   onError?: ResourceAdapterErrorHandler;
   track: TrackAnalyticsEvent;
 }>;
+
+function ResumeChoiceWorkflow({
+  allowance,
+  onResume,
+  onStartFresh,
+  state,
+}: Readonly<{
+  allowance: TeacherAllowance | null;
+  onResume: () => void;
+  onStartFresh: () => void;
+  state: Extract<WorkflowState, { status: "choosing" }>;
+}>) {
+  const status = state.usageLimit === null ? null : usageLimitStatus(state.usageLimit);
+  return (
+    <WorkflowFrame status={status}>
+      {status === null ? (
+        <AllowanceSummary allowance={allowance} />
+      ) : (
+        <WorkflowStatusBanner cta={null} status={status} />
+      )}
+      <ResumeChoice
+        canStartFresh={state.usageLimit === null}
+        onResume={onResume}
+        onStartFresh={onStartFresh}
+        resumable={state.resumable}
+      />
+    </WorkflowFrame>
+  );
+}
+
+function MonthlyLimitWorkflow({
+  onTryAgain,
+  state,
+}: Readonly<{
+  onTryAgain: () => void;
+  state: Extract<WorkflowState, { status: "monthlyLimitReached" }>;
+}>) {
+  const status = state.expired
+    ? MONTHLY_RESET_STATUS
+    : usageLimitStatus(state.usageLimit);
+  return (
+    <WorkflowFrame status={status}>
+      <WorkflowStatusBanner
+        cta={
+          state.expired ? (
+            <OakSecondaryButton onClick={onTryAgain}>Try again</OakSecondaryButton>
+          ) : null
+        }
+        status={status}
+      />
+    </WorkflowFrame>
+  );
+}
 
 export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflowProps) {
   const {
@@ -89,42 +145,19 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     );
   }
   if (state.status === "choosing") {
-    const status =
-      state.usageLimit === null ? null : usageLimitStatus(state.usageLimit);
     return (
-      <WorkflowFrame status={status}>
-        {status === null ? (
-          <AllowanceSummary allowance={allowance} />
-        ) : (
-          <WorkflowStatusBanner cta={null} status={status} />
-        )}
-        <ResumeChoice
-          canStartFresh={state.usageLimit === null}
-          onResume={() => resume(state.resumable.adaptationId)}
-          onStartFresh={() =>
-            startFresh(state.resumable.adaptationId, "start_from_original_button")
-          }
-          resumable={state.resumable}
-        />
-      </WorkflowFrame>
+      <ResumeChoiceWorkflow
+        allowance={allowance}
+        onResume={() => resume(state.resumable.adaptationId)}
+        onStartFresh={() =>
+          startFresh(state.resumable.adaptationId, "start_from_original_button")
+        }
+        state={state}
+      />
     );
   }
   if (state.status === "monthlyLimitReached") {
-    const status = state.expired
-      ? MONTHLY_RESET_STATUS
-      : usageLimitStatus(state.usageLimit);
-    return (
-      <WorkflowFrame status={status}>
-        <WorkflowStatusBanner
-          cta={
-            state.expired ? (
-              <OakSecondaryButton onClick={tryAgain}>Try again</OakSecondaryButton>
-            ) : null
-          }
-          status={status}
-        />
-      </WorkflowFrame>
-    );
+    return <MonthlyLimitWorkflow onTryAgain={tryAgain} state={state} />;
   }
   if (state.status === "error") {
     return (

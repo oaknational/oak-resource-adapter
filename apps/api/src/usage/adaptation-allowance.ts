@@ -47,8 +47,9 @@ export async function isWithinAllowance(
   if (allowance === "unlimited") {
     return true;
   }
+  const lockKey = `ora:adapted-resources:${input.teacherId}`;
   await transaction.execute(
-    sql`select pg_advisory_xact_lock(hashtextextended(${`ora:adapted-resources:${input.teacherId}`}, 0))`,
+    sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
   );
   const counted = await adaptedResourcesSince(
     input.teacherId,
