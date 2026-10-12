@@ -46,6 +46,8 @@ request that collides with running work is never refused. A refused enqueue
 writes nothing and returns `usageLimitReached`, which the worksheet state carries as
 `modelWorkBlocked`. Its `kind` identifies the policy (`model_jobs_24h`) and
 `retryAt` is when another job may fit, not when the whole allowance resets.
+A teacher can have their own limit in place of the default: see
+[teacher access](TEACHER_ACCESS.md).
 
 Each admitted job counts once, including failed jobs; invocations and execution
 retries within it do not count separately.

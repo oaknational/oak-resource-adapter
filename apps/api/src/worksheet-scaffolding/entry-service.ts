@@ -5,12 +5,16 @@ import type {
 } from "@oaknational/resource-adapter-contracts/internal";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 
+import { type CalendarMonth, ukCalendarMonth } from "../calendar/uk-calendar-month";
 import { CAPABILITY } from "./capability";
 import {
   defaultDependencies,
   type WorksheetScaffoldingDependencies,
   type WorksheetScaffoldingServiceRepository,
 } from "./dependencies";
+import type { AdaptationAllowance } from "../usage/adaptation-allowance";
+import { adaptationAllowanceFor } from "../usage/allowance-service";
+import type { AdaptationCreationResult } from "./repository";
 import { getWorksheetScaffoldingState } from "./service";
 
 const RESUMABLE_WINDOW_DAYS = 30;
@@ -31,6 +35,28 @@ async function reopen(
   return state?.job?.status === "failed" && state.suggestions.length === 0
     ? null
     : state;
+}
+
+async function createWithinAllowance(
+  create: (allowance: AdaptationAllowance) => Promise<AdaptationCreationResult>,
+  teacherId: string,
+  month: CalendarMonth,
+  { access, adaptedResourcesPerMonth }: WorksheetScaffoldingDependencies,
+): Promise<AdaptationCreationResult> {
+  const limit = adaptedResourcesPerMonth();
+  const created = await create(
+    adaptationAllowanceFor(await access.resolve(teacherId), month, limit),
+  );
+  if (created.outcome !== "usageLimitReached") {
+    return created;
+  }
+  // A cached lookup can predate a grant.
+  const rechecked = adaptationAllowanceFor(
+    await access.recheck(teacherId),
+    month,
+    limit,
+  );
+  return rechecked === "unlimited" ? create("unlimited") : created;
 }
 
 export async function openWorksheetScaffolding(
@@ -83,15 +109,38 @@ export async function openWorksheetScaffolding(
     lesson,
     teacherId: target.teacherId,
   };
-  const { adaptationId } =
+  const create = (allowance: AdaptationAllowance) =>
     replacing === undefined
-      ? await repository.createAdaptationWithSourceDocument(adaptationInput)
-      : await repository.replaceAdaptationWithSourceDocument({
+      ? repository.createAdaptationWithSourceDocument({ ...adaptationInput, allowance })
+      : repository.replaceAdaptationWithSourceDocument({
           ...adaptationInput,
+          allowance,
           replacingAdaptationId: replacing.adaptationId,
           replacementRequestId: replacing.requestId,
         });
+  const month = ukCalendarMonth(dependencies.now());
+  const created = await createWithinAllowance(
+    create,
+    target.teacherId,
+    month,
+    dependencies,
+  );
+  if (created.outcome === "usageLimitReached") {
+    const usageLimit = {
+      kind: "adapted_resources_month",
+      retryAt: month.resetsAt.toISOString(),
+    } as const;
+    console.warn("Usage limit reached", {
+      limitKind: usageLimit.kind,
+      retryAt: usageLimit.retryAt,
+    });
+    return { outcome: "usageLimitReached", usageLimit };
+  }
 
-  const state = await getWorksheetScaffoldingState(adaptationId, target, dependencies);
+  const state = await getWorksheetScaffoldingState(
+    created.adaptationId,
+    target,
+    dependencies,
+  );
   return state === null ? null : { outcome: "opened", state };
 }

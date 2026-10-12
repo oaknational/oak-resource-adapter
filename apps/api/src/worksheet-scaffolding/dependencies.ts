@@ -1,9 +1,13 @@
 import { enqueueJob } from "../jobs/enqueue-job";
 import { getLatestJobForConcurrencyKey } from "../jobs/job-repository";
 import { getSourceDocument } from "../source-documents/service";
+import {
+  type AllowanceDependencies,
+  allowanceDependencies,
+} from "../usage/allowance-service";
 import * as scaffoldingRepository from "./repository";
 
-export type WorksheetScaffoldingDependencies = {
+export type WorksheetScaffoldingDependencies = AllowanceDependencies & {
   enqueue: typeof enqueueJob;
   getLatestJob: typeof getLatestJobForConcurrencyKey;
   resumableCutoff: (windowDays: number) => Date;
@@ -28,6 +32,7 @@ export type WorksheetScaffoldingServiceRepository = Pick<
 >;
 
 export const defaultDependencies: WorksheetScaffoldingDependencies = {
+  ...allowanceDependencies,
   enqueue: enqueueJob,
   getLatestJob: getLatestJobForConcurrencyKey,
   resumableCutoff: (windowDays) =>

@@ -27,6 +27,11 @@
       "types": "./dist/downloads.d.ts",
       "import": "./dist/downloads.js",
       "default": "./dist/downloads.js"
+    },
+    "./internal/allowance": {
+      "types": "./dist/allowance.d.ts",
+      "import": "./dist/allowance.js",
+      "default": "./dist/allowance.js"
     }
   },
   "files": [

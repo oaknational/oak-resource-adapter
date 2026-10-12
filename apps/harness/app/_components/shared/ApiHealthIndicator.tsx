@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId } from "react";
 
 import { useApiHealth } from "../../_hooks/useApiHealth";
+import { useDisclosure } from "../../_hooks/useDisclosure";
 import styles from "../../page.module.css";
 
 const labels = {
@@ -24,33 +25,7 @@ export function ApiHealthIndicator() {
   const { liveness, readiness } = useApiHealth();
   const headingId = useId();
   const panelId = useId();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    function dismissOutside(event: PointerEvent) {
-      if (
-        event.target instanceof Node &&
-        !containerRef.current?.contains(event.target)
-      ) {
-        setIsOpen(false);
-      }
-    }
-    function dismissOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setIsOpen(false);
-        buttonRef.current?.focus();
-      }
-    }
-    document.addEventListener("pointerdown", dismissOutside);
-    document.addEventListener("keydown", dismissOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", dismissOutside);
-      document.removeEventListener("keydown", dismissOnEscape);
-    };
-  }, [isOpen]);
+  const { buttonRef, containerRef, isOpen, toggle } = useDisclosure();
 
   return (
     <div className={styles.apiHealthDisclosure} ref={containerRef}>
@@ -58,7 +33,7 @@ export function ApiHealthIndicator() {
         aria-controls={panelId}
         aria-expanded={isOpen}
         className={`${styles.apiHealth} ${styles[readiness.status]}`}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={toggle}
         ref={buttonRef}
         type="button"
       >
