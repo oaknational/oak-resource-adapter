@@ -18,6 +18,7 @@ import type {
   LessonContext,
   ResourceAdapterErrorHandler,
 } from "../../publicTypes.js";
+import { AllowanceSummary } from "./AllowanceSummary.js";
 import { PendingReviewControls } from "./PendingReviewControls.js";
 import { ResumeChoice } from "./ResumeChoice.js";
 import { SuggestionGroup, groupSuggestionsByTarget } from "./SuggestionGroup.js";
@@ -38,9 +39,11 @@ import {
 import {
   FAILURE_TITLES,
   LOADING_STATUS,
+  MONTHLY_RESET_STATUS,
   failureMessage,
   foundNoScaffolds,
   readyStatus,
+  usageLimitStatus,
 } from "./workflowStatus.js";
 
 export type WorksheetScaffoldingWorkflowProps = Readonly<{
@@ -55,6 +58,7 @@ export type WorksheetScaffoldingWorkflowProps = Readonly<{
 export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflowProps) {
   const {
     acceptReview,
+    allowance,
     applySuggestion,
     removeContribution,
     refresh,
@@ -85,14 +89,39 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     );
   }
   if (state.status === "choosing") {
+    const status =
+      state.usageLimit === null ? null : usageLimitStatus(state.usageLimit);
     return (
-      <WorkflowFrame status={null}>
+      <WorkflowFrame status={status}>
+        {status === null ? (
+          <AllowanceSummary allowance={allowance} />
+        ) : (
+          <WorkflowStatusBanner cta={null} status={status} />
+        )}
         <ResumeChoice
+          canStartFresh={state.usageLimit === null}
           onResume={() => resume(state.resumable.adaptationId)}
           onStartFresh={() =>
             startFresh(state.resumable.adaptationId, "start_from_original_button")
           }
           resumable={state.resumable}
+        />
+      </WorkflowFrame>
+    );
+  }
+  if (state.status === "monthlyLimitReached") {
+    const status = state.expired
+      ? MONTHLY_RESET_STATUS
+      : usageLimitStatus(state.usageLimit);
+    return (
+      <WorkflowFrame status={status}>
+        <WorkflowStatusBanner
+          cta={
+            state.expired ? (
+              <OakSecondaryButton onClick={tryAgain}>Try again</OakSecondaryButton>
+            ) : null
+          }
+          status={status}
         />
       </WorkflowFrame>
     );
@@ -252,6 +281,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           />
         </StickyWorkflowStatus>
       )}
+      <AllowanceSummary allowance={allowance} />
       {state.documentIsVisible && (
         <>
           <WorksheetDownload

@@ -12,8 +12,10 @@ import {
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import type { ResourceDocument } from "@oaknational/resource-document";
-import { eq, inArray, sql } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+
+import type { AdaptationAllowance } from "../usage/adaptation-allowance";
 
 import { createOrGetJob } from "../jobs/job-repository";
 import {
@@ -35,6 +37,7 @@ import {
   storeOutputsAndAdvanceHead,
   completeSuggestionAttempt,
   undoPendingReview,
+  type AdaptationCreationResult,
 } from "./repository";
 
 const describeWithDatabase =
@@ -52,6 +55,13 @@ const lesson = {
   subjectSlug: "english",
   title: "Adopting different perspectives",
 } as const;
+
+function expectCreated(result: AdaptationCreationResult) {
+  if (result.outcome !== "created") {
+    throw new Error("Expected the adaptation to be created.");
+  }
+  return result;
+}
 
 describeWithDatabase("worksheet scaffolding repository integration", () => {
   const createdAdaptationIds: string[] = [];
@@ -74,12 +84,15 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
 
   async function newAdaptation() {
     const teacherId = `integration-${randomUUID()}`;
-    const created = await createAdaptationWithSourceDocument({
-      capabilityId: "worksheetScaffolding",
-      document: worksheet,
-      lesson,
-      teacherId,
-    });
+    const created = expectCreated(
+      await createAdaptationWithSourceDocument({
+        allowance: "unlimited",
+        capabilityId: "worksheetScaffolding",
+        document: worksheet,
+        lesson,
+        teacherId,
+      }),
+    );
     createdAdaptationIds.push(created.adaptationId);
     return { ...created, teacherId };
   }
@@ -874,14 +887,17 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
     it("stops offering work the teacher replaced", async () => {
       const { adaptationId, teacherId } = await withPendingScaffold();
 
-      const replacement = await replaceAdaptationWithSourceDocument({
-        capabilityId: "worksheetScaffolding",
-        document: worksheet,
-        lesson,
-        replacingAdaptationId: adaptationId,
-        replacementRequestId: randomUUID(),
-        teacherId,
-      });
+      const replacement = expectCreated(
+        await replaceAdaptationWithSourceDocument({
+          allowance: "unlimited",
+          capabilityId: "worksheetScaffolding",
+          document: worksheet,
+          lesson,
+          replacingAdaptationId: adaptationId,
+          replacementRequestId: randomUUID(),
+          teacherId,
+        }),
+      );
       createdAdaptationIds.push(replacement.adaptationId);
 
       await expect(
@@ -894,6 +910,7 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       const replacementRequestId = randomUUID();
       const replace = () =>
         replaceAdaptationWithSourceDocument({
+          allowance: "unlimited",
           capabilityId: "worksheetScaffolding",
           document: worksheet,
           lesson,
@@ -902,7 +919,7 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
           teacherId,
         });
 
-      const first = await replace();
+      const first = expectCreated(await replace());
       createdAdaptationIds.push(first.adaptationId);
 
       await expect(replace()).resolves.toEqual(first);
@@ -912,6 +929,7 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       const { adaptationId, teacherId } = await withPendingScaffold();
       const replace = (replacementRequestId: string) =>
         replaceAdaptationWithSourceDocument({
+          allowance: "unlimited",
           capabilityId: "worksheetScaffolding",
           document: worksheet,
           lesson,
@@ -920,7 +938,7 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
           teacherId,
         });
 
-      const first = await replace(randomUUID());
+      const first = expectCreated(await replace(randomUUID()));
       createdAdaptationIds.push(first.adaptationId);
 
       await expect(replace(randomUUID())).rejects.toThrow("could not be replaced");
@@ -944,14 +962,17 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
 
     it("reopens the replacement rather than the work it abandoned", async () => {
       const { adaptationId, teacherId } = await newAdaptation();
-      const replacement = await replaceAdaptationWithSourceDocument({
-        capabilityId: "worksheetScaffolding",
-        document: worksheet,
-        lesson,
-        replacingAdaptationId: adaptationId,
-        replacementRequestId: randomUUID(),
-        teacherId,
-      });
+      const replacement = expectCreated(
+        await replaceAdaptationWithSourceDocument({
+          allowance: "unlimited",
+          capabilityId: "worksheetScaffolding",
+          document: worksheet,
+          lesson,
+          replacingAdaptationId: adaptationId,
+          replacementRequestId: randomUUID(),
+          teacherId,
+        }),
+      );
       createdAdaptationIds.push(replacement.adaptationId);
 
       await expect(
@@ -1034,14 +1055,17 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
   it("replaces old work and stores the new worksheet atomically", async () => {
     const previous = await newAdaptation();
 
-    const replacement = await replaceAdaptationWithSourceDocument({
-      capabilityId: "worksheetScaffolding",
-      document: worksheet,
-      lesson,
-      replacingAdaptationId: previous.adaptationId,
-      replacementRequestId: randomUUID(),
-      teacherId: previous.teacherId,
-    });
+    const replacement = expectCreated(
+      await replaceAdaptationWithSourceDocument({
+        allowance: "unlimited",
+        capabilityId: "worksheetScaffolding",
+        document: worksheet,
+        lesson,
+        replacingAdaptationId: previous.adaptationId,
+        replacementRequestId: randomUUID(),
+        teacherId: previous.teacherId,
+      }),
+    );
     createdAdaptationIds.push(replacement.adaptationId);
 
     await expect(getAdaptationHead(replacement.adaptationId)).resolves.toMatchObject({
@@ -1058,6 +1082,7 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
     const previous = await newAdaptation();
     const replace = (overrides: { capabilityId?: string; lesson?: LessonContext }) =>
       replaceAdaptationWithSourceDocument({
+        allowance: "unlimited",
         capabilityId: overrides.capabilityId ?? "worksheetScaffolding",
         document: worksheet,
         lesson: overrides.lesson ?? lesson,
@@ -1092,5 +1117,137 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       .where(eq(resourceDocuments.id, resourceDocumentId));
 
     await expect(getAdaptationHead(adaptationId)).resolves.toBeNull();
+  });
+
+  describe("the monthly allowance", () => {
+    const allowanceOf = (limit: number, since = new Date(0)) => ({ limit, since });
+
+    async function adapt(
+      teacherId: string,
+      lessonSlug: string,
+      allowance: AdaptationAllowance,
+    ) {
+      const result = await createAdaptationWithSourceDocument({
+        allowance,
+        capabilityId: "worksheetScaffolding",
+        document: worksheet,
+        lesson: { ...lesson, lessonSlug },
+        teacherId,
+      });
+      if (result.outcome === "created") {
+        createdAdaptationIds.push(result.adaptationId);
+      }
+      return result;
+    }
+
+    async function startOver(
+      previous: Readonly<{ adaptationId: string }>,
+      teacherId: string,
+      allowance: AdaptationAllowance,
+    ) {
+      const result = await replaceAdaptationWithSourceDocument({
+        allowance,
+        capabilityId: "worksheetScaffolding",
+        document: worksheet,
+        lesson: { ...lesson, lessonSlug: "first" },
+        replacingAdaptationId: previous.adaptationId,
+        replacementRequestId: randomUUID(),
+        teacherId,
+      });
+      if (result.outcome === "created") {
+        createdAdaptationIds.push(result.adaptationId);
+      }
+      return result;
+    }
+
+    async function justAfterLatestAdaptation(teacherId: string) {
+      const [latest] = await getDatabaseClient()
+        .select({ createdAt: adaptations.createdAt })
+        .from(adaptations)
+        .where(eq(adaptations.clerkUserId, teacherId))
+        .orderBy(desc(adaptations.createdAt))
+        .limit(1);
+      if (latest === undefined) {
+        throw new Error("The teacher has no adaptations.");
+      }
+      return new Date(latest.createdAt.getTime() + 1);
+    }
+
+    it("refuses a resource beyond the limit", async () => {
+      const teacherId = `integration-${randomUUID()}`;
+      for (const lessonSlug of ["first", "second", "third"]) {
+        await expect(
+          adapt(teacherId, lessonSlug, allowanceOf(3)),
+        ).resolves.toMatchObject({
+          outcome: "created",
+        });
+      }
+
+      await expect(adapt(teacherId, "fourth", allowanceOf(3))).resolves.toEqual({
+        outcome: "usageLimitReached",
+      });
+    });
+
+    it("admits a resource already counted, even at the limit", async () => {
+      const teacherId = `integration-${randomUUID()}`;
+      await adapt(teacherId, "first", allowanceOf(1));
+
+      await expect(adapt(teacherId, "first", allowanceOf(1))).resolves.toMatchObject({
+        outcome: "created",
+      });
+    });
+
+    it("counts only adaptations since the allowance started", async () => {
+      const teacherId = `integration-${randomUUID()}`;
+      await adapt(teacherId, "first", allowanceOf(1));
+      const since = await justAfterLatestAdaptation(teacherId);
+
+      await expect(
+        adapt(teacherId, "second", allowanceOf(1, since)),
+      ).resolves.toMatchObject({ outcome: "created" });
+    });
+
+    it("lets a teacher start over on a counted resource at the limit", async () => {
+      const teacherId = `integration-${randomUUID()}`;
+      const original = expectCreated(await adapt(teacherId, "first", allowanceOf(1)));
+
+      await expect(
+        startOver(original, teacherId, allowanceOf(1)),
+      ).resolves.toMatchObject({ outcome: "created" });
+    });
+
+    it("refuses to start over earlier work without abandoning it", async () => {
+      const teacherId = `integration-${randomUUID()}`;
+      const original = expectCreated(await adapt(teacherId, "first", allowanceOf(1)));
+      const since = await justAfterLatestAdaptation(teacherId);
+      await adapt(teacherId, "second", allowanceOf(1, since));
+
+      await expect(
+        startOver(original, teacherId, allowanceOf(1, since)),
+      ).resolves.toEqual({
+        outcome: "usageLimitReached",
+      });
+      const [kept] = await getDatabaseClient()
+        .select({ abandonedAt: adaptations.abandonedAt })
+        .from(adaptations)
+        .where(eq(adaptations.id, original.adaptationId));
+      expect(kept?.abandonedAt).toBeNull();
+    });
+
+    it("gives the last use to only one of several concurrent requests", async () => {
+      const teacherId = `integration-${randomUUID()}`;
+      const lessonSlugs = ["first", "second", "third", "fourth"];
+      // Opens the pool's connections first, so the requests overlap rather than queue
+      // behind connection set-up.
+      await Promise.all(
+        lessonSlugs.map(() => getDatabaseClient().execute(sql`select pg_sleep(0.05)`)),
+      );
+
+      const results = await Promise.all(
+        lessonSlugs.map((lessonSlug) => adapt(teacherId, lessonSlug, allowanceOf(1))),
+      );
+
+      expect(results.filter(({ outcome }) => outcome === "created")).toHaveLength(1);
+    });
   });
 });

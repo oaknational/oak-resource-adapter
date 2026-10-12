@@ -11,6 +11,7 @@
     "pnpm": ">=10"
   },
   "scripts": {
+    "access:grant": "node --env-file-if-exists=.env apps/api/scripts/access-grant.mjs",
     "build": "turbo run build",
     "changeset": "changeset",
     "changeset:status": "changeset status",

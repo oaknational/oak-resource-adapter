@@ -139,7 +139,11 @@ export type WorksheetScaffoldingResumable = Readonly<{
 export type WorksheetScaffoldingEntry =
   | Readonly<{ outcome: "opened"; state: WorksheetScaffoldingState }>
   | Readonly<{ outcome: "reopened"; state: WorksheetScaffoldingState }>
-  | Readonly<{ outcome: "resumable"; resumable: WorksheetScaffoldingResumable }>;
+  | Readonly<{ outcome: "resumable"; resumable: WorksheetScaffoldingResumable }>
+  | Readonly<{
+      outcome: "usageLimitReached";
+      usageLimit: UsageLimitReached<"adapted_resources_month">;
+    }>;
 
 export const transformationInputSchema = z.readonly(
   z.object({
@@ -182,18 +186,25 @@ export type WorksheetExportResult = Readonly<{
   artifactId: string;
 }>;
 
-export const usageLimitKinds = ["model_jobs_24h"] as const;
+export const usageLimitKinds = ["model_jobs_24h", "adapted_resources_month"] as const;
 
-export type UsageLimitReached = Readonly<{
-  kind: (typeof usageLimitKinds)[number];
-  /** Earliest retry time in ISO format; another request can consume the freed allowance. */
-  retryAt: string;
-}>;
+export type UsageLimitKind = (typeof usageLimitKinds)[number];
+
+export type UsageLimitReached<TKind extends UsageLimitKind = UsageLimitKind> =
+  Readonly<{
+    kind: TKind;
+    /** Earliest retry time in ISO format; another request can consume the freed allowance. */
+    retryAt: string;
+  }>;
+
+export type TeacherAllowance =
+  | Readonly<{ tier: "full" }>
+  | Readonly<{ tier: "limited"; limit: number; remaining: number; resetsAt: string }>;
 
 export type WorksheetScaffoldingState = Readonly<{
   adaptationId: string;
   /** A refusal for this request; null does not imply remaining allowance. */
-  modelWorkBlocked: UsageLimitReached | null;
+  modelWorkBlocked: UsageLimitReached<"model_jobs_24h"> | null;
   document: ResourceDocument;
   resourceDocumentId: string;
   downloadAvailability: WorksheetDownloadAvailability;
