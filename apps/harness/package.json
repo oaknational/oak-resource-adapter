@@ -21,7 +21,7 @@
     "@oaknational/resource-adapter-original-resource-documents": "workspace:*",
     "@oaknational/resource-document": "workspace:*",
     "@portabletext/react": "^4.0.3",
-    "next": "^16.3.6",
+    "next": "^16.3.8",
     "next-cloudinary": "^6.19.3",
     "posthog-js": "^1.434.10",
     "react": "^19.3.0",
