@@ -93,20 +93,28 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # The API first: the harness deployment below needs its URL. Vercel builds
-      # remotely from the project's own environment variables, which Terraform
-      # owns, so nothing here reconstructs configuration.
+      # The harness needs only the URL assigned at upload, so previews don't
+      # wait. Staging waits so a failed API build cannot become the staging
+      # harness's target. Vercel builds from the project's Terraform-owned
+      # environment variables; don't reconstruct them here.
       - name: Deploy the API
         id: api
         env:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
         run: |
-          url="$(pnpm exec vercel deploy --yes --target="$VERCEL_TARGET" --token="$VERCEL_TOKEN")"
+          args=(--yes --target="$VERCEL_TARGET" --token="$VERCEL_TOKEN")
+          if [ "$VERCEL_TARGET" != "staging" ]; then
+            args+=(--no-wait)
+          fi
+          url="$(pnpm exec vercel deploy "${args[@]}")"
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed the API to $url"
 
       # RESOURCE_ADAPTER_API_BYPASS_SECRET is the API project's secret, not this
       # project's: see app/adapter-proxy/[...path]/route.ts.
+      #
+      # Keep this blocking: only a blocking deploy waits for the staging domain
+      # the browser tests use.
       - name: Deploy the harness
         id: harness
         env:
@@ -119,6 +127,22 @@ jobs:
             --env "RESOURCE_ADAPTER_API_BYPASS_SECRET=$API_BYPASS_SECRET")"
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed the harness to $url"
+
+      # Vercel CLI 60.1.3 exits 0 after an inspect timeout; require READY.
+      # Explicit scope is needed without VERCEL_PROJECT_ID.
+      - name: Wait for the API deployment
+        env:
+          API_URL: ${{ steps.api.outputs.url }}
+        run: |
+          json="$(pnpm exec vercel inspect "$API_URL" --wait --timeout=10m --json \
+            --scope="$VERCEL_ORG_ID" --token="$VERCEL_TOKEN")" || true
+          state="$(printf '%s' "$json" | jq -r '.readyState // empty')"
+          if [ "$state" != "READY" ]; then
+            reason="$(printf '%s' "$json" | jq -r '.readyStateReason // empty')"
+            echo "::error::The API deployment at $API_URL is ${state:-unknown}, not READY.${reason:+ $reason}"
+            exit 1
+          fi
+          echo "The API deployment at $API_URL is ready."
 
       # Before the tests, so the URLs are on the pull request even when the
       # suite goes on to fail.
