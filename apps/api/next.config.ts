@@ -11,10 +11,6 @@ if (!process.env.VERCEL_DEPLOYMENT_ID && !process.env.WORKFLOW_TARGET_WORLD) {
   process.env.WORKFLOW_LOCAL_DATA_DIR ??= ".workflow-data";
 }
 
-if (process.env.VERCEL) {
-  throw new Error("ADAPT-133: deliberately broken API build");
-}
-
 const nextConfig: NextConfig = {
   // Next writes AGENTS.md and CLAUDE.md into the app on every build.
   agentRules: false,
