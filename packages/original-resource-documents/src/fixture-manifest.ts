@@ -47,8 +47,8 @@ const oakOriginalFileResourceTypes = [
 
 const oakLessonBaseUrl = "https://www.thenational.academy/teachers/lessons";
 const oakRights =
-  "Oak worksheet verified: every recorded third-party material restriction is OGL compatible or OGL equivalent, or no restriction is recorded.";
-const rightsCheckedOn = "2026-09-07";
+  "Oak worksheet verified: every recorded third-party material restriction is OGL compatible or OGL equivalent, or no restriction is recorded, and Oak does not mark the lesson copyright-restricted or expired.";
+const rightsCheckedOn = "2026-10-13";
 
 function oakWorksheetFixture(
   lesson: Readonly<{

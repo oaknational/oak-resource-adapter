@@ -19,6 +19,7 @@ export type { ResourceAdapterAuthenticatedTeacher } from "./authentication.js";
 export type ResourceAdapterCapabilitiesService = Readonly<{
   getCapabilities: (
     lesson: LessonContext,
+    target: ResourceAdapterAuthenticatedTeacher,
   ) =>
     Promise<ResourceAdapterCapabilitiesResponse> | ResourceAdapterCapabilitiesResponse;
   hasCapabilities: (
@@ -84,7 +85,9 @@ export const hostRouter = t_host.router({
     get: authenticatedProcedure
       .input(lessonContextSchema)
       .output(resourceAdapterCapabilitiesResponseSchema)
-      .query(({ ctx, input }) => ctx.capabilities.getCapabilities(input)),
+      .query(({ ctx, input }) =>
+        ctx.capabilities.getCapabilities(input, ctx.authenticatedTeacher),
+      ),
 
     /**
      * Deliberately unauthenticated, unlike every other teacher-facing

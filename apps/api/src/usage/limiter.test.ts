@@ -32,7 +32,7 @@ describe("the model job limiter", () => {
   it("checks the teacher's usage against the configured limit", async () => {
     const retryAt = vi.fn().mockResolvedValue(null);
     const limiter = createModelJobLimiter({
-      access: accessResolving({ tier: "full" }),
+      access: accessResolving({ tier: "full", inCopyrightRegion: true }),
       limit: () => 7,
       retryAt,
     });
@@ -45,7 +45,10 @@ describe("the model job limiter", () => {
 
   it("reports when a teacher at the limit can start work again", async () => {
     const limiter = createModelJobLimiter({
-      access: accessResolving({ tier: "full" }, { tier: "full" }),
+      access: accessResolving(
+        { tier: "full", inCopyrightRegion: true },
+        { tier: "full", inCopyrightRegion: true },
+      ),
       limit: () => 7,
       retryAt: vi.fn().mockResolvedValue(new Date("2026-02-04T09:00:00.000Z")),
     });
@@ -59,7 +62,11 @@ describe("the model job limiter", () => {
   it("uses the teacher's override in place of the configured limit", async () => {
     const retryAt = vi.fn().mockResolvedValue(null);
     const limiter = createModelJobLimiter({
-      access: accessResolving({ tier: "limited", modelJobsPer24h: 250 }),
+      access: accessResolving({
+        tier: "limited",
+        inCopyrightRegion: true,
+        modelJobsPer24h: 250,
+      }),
       limit: () => 7,
       retryAt,
     });
@@ -74,7 +81,10 @@ describe("the model job limiter", () => {
       .mockResolvedValueOnce(new Date("2026-02-04T09:00:00.000Z"))
       .mockResolvedValueOnce(null);
     const limiter = createModelJobLimiter({
-      access: accessResolving({ tier: "full" }, { tier: "full", modelJobsPer24h: 250 }),
+      access: accessResolving(
+        { tier: "full", inCopyrightRegion: true },
+        { tier: "full", inCopyrightRegion: true, modelJobsPer24h: 250 },
+      ),
       limit: () => 7,
       retryAt,
     });

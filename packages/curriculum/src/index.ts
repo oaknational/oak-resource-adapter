@@ -13,6 +13,7 @@ export type {
   LessonKeyword,
   LessonMisconception,
   LessonRepository,
+  LessonRights,
   Programme,
   RestrictionLevel,
   ThirdPartyMaterialCategory,
@@ -31,9 +32,8 @@ export type {
   LessonResourceType,
   LessonWithResources,
   ResourceFile,
-  ResourceFileLocation,
   ResourceStore,
 } from "./resource/resource.js";
 
-export { ADAPTABLE_RESTRICTION_LEVELS, hasAdaptableRights } from "./lesson/lesson.js";
-export { createOakLessonRestrictionReader } from "./lesson/oak-lesson-repository.js";
+export { hasAdaptableRights } from "./lesson/lesson.js";
+export { createOakLessonRightsReader } from "./lesson/oak-lesson-repository.js";
