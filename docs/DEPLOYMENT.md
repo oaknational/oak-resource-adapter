@@ -31,8 +31,9 @@ exactly `true`. Until then both workflows skip.
 1. Applies the branch's migrations to the staging database, so a schema change
    is testable in the Preview that introduces it. [Database](DATABASE.md) has
    the rules that keeps safe.
-2. Deploys the API and captures its URL.
-3. Deploys the harness, pointed at that URL.
+2. Starts the API deployment and captures its URL.
+3. Deploys the harness, pointed at that URL, while the API builds alongside it,
+   then waits for the API.
 4. Requests `/adapter-proxy/health` on the harness until it answers, which
    passes only if the pair is wired correctly.
 5. Gates on `/adapter-proxy/health/ready`.
@@ -46,7 +47,9 @@ store](#secrets-the-workflows-use), which holds no Vercel credentials.
 ## What happens on `main`
 
 The same workflow and the same steps, targeting the `staging` environment
-instead of a Preview, so the deployments land on the staging domains.
+instead of a Preview, so the deployments land on the staging domains. The one
+difference is that the API finishes deploying before the harness starts, so a
+failed API build never leaves the staging harness pointing at it.
 
 ## What happens on `production`
 
