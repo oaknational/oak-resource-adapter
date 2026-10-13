@@ -1,46 +1,45 @@
-import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
-import type { ResourceAdapterSourceDocumentRequest } from "@oaknational/resource-adapter-contracts/internal";
+import type { OriginalResourceDocumentLocator } from "@oaknational/resource-adapter-original-resource-documents";
+import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
-import type { ResourceDocument } from "@oaknational/resource-document";
 
 import {
   isCapabilityEligible,
+  meetsGeoRestriction,
   resolveEligibility,
   type EligibilityResolver,
 } from "../capabilities/service";
 import { capabilityDefinitions } from "../capabilities/registry";
 import type { CapabilityDefinition } from "../capabilities/types";
+import {
+  teacherAccessResolver,
+  type TeacherAccessResolver,
+} from "../teacher-access/resolver";
 
-type SourceDocumentReader = Readonly<{
-  get: (locator: {
-    source: "oak";
-    lessonSlug: string;
-    programmeSlug: string;
-    resourceType: string;
-  }) => Promise<ResourceDocument>;
-}>;
-
-/**
- * Source documents require authentication but are not teacher-owned.
- * Eligibility is checked at source entry, not on stored adaptations.
- */
-export async function getSourceDocument(
-  { capabilityId, lesson }: ResourceAdapterSourceDocumentRequest,
-  _target: ResourceAdapterAuthenticatedTeacher,
+/** Returns null when the capability is unavailable to this teacher. */
+export async function resolveSourceDocumentLocator(
+  { capabilityId, lesson }: Readonly<{ capabilityId: string; lesson: LessonContext }>,
+  target: ResourceAdapterAuthenticatedTeacher,
   resolveContext: EligibilityResolver = resolveEligibility,
-  documents: SourceDocumentReader = originalResourceDocuments,
-): Promise<ResourceDocument | null> {
-  const definitions: Record<string, CapabilityDefinition> = capabilityDefinitions;
-  const definition = definitions[capabilityId];
+  access: Pick<TeacherAccessResolver, "resolve"> = teacherAccessResolver,
+): Promise<OriginalResourceDocumentLocator | null> {
+  if (!Object.hasOwn(capabilityDefinitions, capabilityId)) {
+    return null;
+  }
+  const definition: CapabilityDefinition =
+    capabilityDefinitions[capabilityId as keyof typeof capabilityDefinitions];
 
-  if (!definition || !isCapabilityEligible(definition, await resolveContext(lesson))) {
+  const context = await resolveContext(lesson);
+  if (
+    !isCapabilityEligible(definition, context) ||
+    !(await meetsGeoRestriction(context.rights, target.teacherId, access))
+  ) {
     return null;
   }
 
-  return documents.get({
+  return {
     source: "oak",
     lessonSlug: lesson.lessonSlug,
     programmeSlug: lesson.programmeSlug,
     resourceType: definition.resourceType,
-  });
+  };
 }

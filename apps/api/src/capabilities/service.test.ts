@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { createOakLessonRestrictionReader } from "@oaknational/resource-adapter-curriculum";
+import type {
+  createOakLessonRightsReader,
+  LessonRights,
+} from "@oaknational/resource-adapter-curriculum";
 
-const { readRestrictions } = vi.hoisted(() => ({
-  readRestrictions: vi.fn<ReturnType<typeof createOakLessonRestrictionReader>>(),
+const { readRights } = vi.hoisted(() => ({
+  readRights: vi.fn<ReturnType<typeof createOakLessonRightsReader>>(),
 }));
 
 vi.mock("@oaknational/resource-adapter-curriculum", async (importOriginal) => ({
@@ -13,7 +16,7 @@ vi.mock("@oaknational/resource-adapter-curriculum", async (importOriginal) => ({
     endpoint: "https://curriculum.test",
     apiKey: "test",
   }),
-  createOakLessonRestrictionReader: () => readRestrictions,
+  createOakLessonRightsReader: () => readRights,
 }));
 
 import {
@@ -23,12 +26,27 @@ import {
   resolveEligibility,
   type EligibilityResolver,
 } from "./service";
-import { isAdaptable, type CapabilityDefinition } from "./types";
+import { hasResourceInputs, type CapabilityDefinition } from "./types";
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
+import type { TeacherAccess } from "../teacher-access/access";
+
+const unrestricted: LessonRights = {
+  maxRestrictions: [],
+  copyrightRestricted: false,
+  legacyCopyright: false,
+  expired: false,
+  geoRestricted: false,
+};
 
 beforeEach(() => {
-  readRestrictions.mockReset().mockResolvedValue([]);
+  readRights.mockReset().mockResolvedValue(unrestricted);
 });
+
+const teacher = { organisationId: null, teacherId: "teacher-456" };
+
+function accessResolving(access: TeacherAccess) {
+  return { resolve: vi.fn().mockResolvedValue(access) };
+}
 
 const worksheetLesson: LessonContext = {
   lessonSlug: "adopting-different-perspectives",
@@ -47,11 +65,12 @@ const quizOnlyLesson: LessonContext = {
 function resolverFor(
   originalFileResourceTypes: readonly string[],
   extractedResourceTypes: readonly string[],
+  rights: LessonRights | null = unrestricted,
 ): EligibilityResolver {
   return (lesson) =>
     Promise.resolve({
       lesson,
-      maxRestrictions: [],
+      rights,
       originalFileResourceTypes,
       extractedResourceTypes,
     });
@@ -61,7 +80,7 @@ const worksheetGatedCapability: CapabilityDefinition = {
   id: "test-worksheet-capability",
   label: "Worksheet capability",
   resourceType: "worksheet",
-  isEligible: (context) => isAdaptable(context, "worksheet"),
+  isEligible: (context) => hasResourceInputs(context, "worksheet"),
   transformationKinds: ["identity"],
 };
 
@@ -69,7 +88,7 @@ const starterQuizGatedCapability: CapabilityDefinition = {
   id: "test-starter-quiz-capability",
   label: "Starter quiz capability",
   resourceType: "starter-quiz",
-  isEligible: (context) => isAdaptable(context, "starter-quiz"),
+  isEligible: (context) => hasResourceInputs(context, "starter-quiz"),
   transformationKinds: ["identity"],
 };
 
@@ -81,7 +100,11 @@ const testDefinitions: ReadonlyArray<CapabilityDefinition> = [
 describe("getCapabilities", () => {
   it("returns the extra scaffolding capability for an adaptable worksheet", async () => {
     await expect(
-      getCapabilities(worksheetLesson, resolverFor(["worksheet"], ["worksheet"])),
+      getCapabilities(
+        worksheetLesson,
+        teacher,
+        resolverFor(["worksheet"], ["worksheet"]),
+      ),
     ).resolves.toEqual({
       capabilities: [
         {
@@ -95,19 +118,24 @@ describe("getCapabilities", () => {
 
   it("returns no capabilities for a lesson without an original worksheet file", async () => {
     await expect(
-      getCapabilities(quizOnlyLesson, resolverFor(["starter-quiz"], ["worksheet"])),
+      getCapabilities(
+        quizOnlyLesson,
+        teacher,
+        resolverFor(["starter-quiz"], ["worksheet"]),
+      ),
     ).resolves.toEqual({ capabilities: [] });
   });
 
   it("returns no capabilities when no extraction exists", async () => {
     await expect(
-      getCapabilities(worksheetLesson, resolverFor(["worksheet"], [])),
+      getCapabilities(worksheetLesson, teacher, resolverFor(["worksheet"], [])),
     ).resolves.toEqual({ capabilities: [] });
   });
 
   it("excludes eligibility predicates from the response", async () => {
     const { capabilities } = await getCapabilities(
       worksheetLesson,
+      teacher,
       resolverFor(["worksheet"], ["worksheet"]),
     );
 
@@ -117,6 +145,7 @@ describe("getCapabilities", () => {
   it("excludes the capability's transformation kinds from the response", async () => {
     const { capabilities } = await getCapabilities(
       worksheetLesson,
+      teacher,
       resolverFor(["worksheet"], ["worksheet"]),
     );
 
@@ -128,31 +157,34 @@ describe("resolveEligibility", () => {
   it.each(["restricted", "highly-restricted"] as const)(
     "uses Oak's %s result in both capability endpoints",
     async (maxLevel) => {
-      readRestrictions.mockResolvedValue([{ category: "works", maxLevel }]);
+      readRights.mockResolvedValue({
+        ...unrestricted,
+        maxRestrictions: [{ category: "works", maxLevel }],
+      });
 
-      await expect(getCapabilities(worksheetLesson)).resolves.toEqual({
+      await expect(getCapabilities(worksheetLesson, teacher)).resolves.toEqual({
         capabilities: [],
       });
       await expect(hasCapabilities(worksheetLesson)).resolves.toEqual({
         available: false,
       });
-      expect(readRestrictions).toHaveBeenCalledTimes(2);
-      expect(readRestrictions).toHaveBeenNthCalledWith(1, worksheetLesson);
-      expect(readRestrictions).toHaveBeenNthCalledWith(2, worksheetLesson);
+      expect(readRights).toHaveBeenCalledTimes(2);
+      expect(readRights).toHaveBeenNthCalledWith(1, worksheetLesson);
+      expect(readRights).toHaveBeenNthCalledWith(2, worksheetLesson);
     },
   );
 
-  it("does not offer capabilities when the restriction lookup fails", async () => {
+  it("does not offer capabilities when the rights lookup fails", async () => {
     const error = new Error("Curriculum unavailable");
-    readRestrictions.mockRejectedValue(error);
+    readRights.mockRejectedValue(error);
 
-    await expect(getCapabilities(worksheetLesson)).rejects.toBe(error);
+    await expect(getCapabilities(worksheetLesson, teacher)).rejects.toBe(error);
     await expect(hasCapabilities(worksheetLesson)).rejects.toBe(error);
   });
 
   it("reads extracted resource types from the fixture corpus", async () => {
     await expect(resolveEligibility(worksheetLesson)).resolves.toMatchObject({
-      maxRestrictions: [],
+      rights: unrestricted,
       originalFileResourceTypes: ["worksheet"],
       extractedResourceTypes: ["worksheet"],
     });
@@ -169,7 +201,7 @@ describe("evaluateCapabilities", () => {
   it("evaluates each definition's predicate independently", () => {
     const response = evaluateCapabilities(testDefinitions, {
       lesson: quizOnlyLesson,
-      maxRestrictions: [],
+      rights: unrestricted,
       originalFileResourceTypes: ["starter-quiz"],
       extractedResourceTypes: ["starter-quiz"],
     });
@@ -188,7 +220,7 @@ describe("evaluateCapabilities", () => {
   it("preserves definition order in the response", () => {
     const response = evaluateCapabilities(testDefinitions, {
       lesson: worksheetLesson,
-      maxRestrictions: [],
+      rights: unrestricted,
       originalFileResourceTypes: ["worksheet", "starter-quiz"],
       extractedResourceTypes: ["worksheet", "starter-quiz"],
     });
@@ -202,13 +234,13 @@ describe("evaluateCapabilities", () => {
   it("requires both an original file and an extraction", () => {
     const originalFileOnly = evaluateCapabilities([worksheetGatedCapability], {
       lesson: worksheetLesson,
-      maxRestrictions: [],
+      rights: unrestricted,
       originalFileResourceTypes: ["worksheet"],
       extractedResourceTypes: [],
     });
     const extractionOnly = evaluateCapabilities([worksheetGatedCapability], {
       lesson: worksheetLesson,
-      maxRestrictions: [],
+      rights: unrestricted,
       originalFileResourceTypes: [],
       extractedResourceTypes: ["worksheet"],
     });
@@ -258,14 +290,122 @@ describe("capability rights gate", () => {
       lesson,
       originalFileResourceTypes: ["worksheet"],
       extractedResourceTypes: ["worksheet"],
-      maxRestrictions: [{ category: "works", maxLevel }],
+      rights: { ...unrestricted, maxRestrictions: [{ category: "works", maxLevel }] },
     });
     const allowed = maxLevel === "ogl-compatible" || maxLevel === "ogl-equivalent";
     expect(
-      (await getCapabilities(worksheetLesson, resolve)).capabilities.length > 0,
+      (await getCapabilities(worksheetLesson, teacher, resolve)).capabilities.length >
+        0,
     ).toBe(allowed);
     await expect(hasCapabilities(worksheetLesson, resolve)).resolves.toEqual({
       available: allowed,
     });
+  });
+});
+
+describe("capability copyright gate", () => {
+  const adaptable = (rights: LessonRights | null) =>
+    resolverFor(["worksheet"], ["worksheet"], rights);
+
+  it.each([
+    ["copyright-restricted", { ...unrestricted, copyrightRestricted: true }],
+    ["legacy copyright", { ...unrestricted, legacyCopyright: true }],
+    ["expired", { ...unrestricted, expired: true }],
+  ])("skips the teacher lookup for a geo-restricted, %s lesson", async (_, rights) => {
+    const access = {
+      resolve: vi.fn().mockRejectedValue(new Error("Clerk unavailable")),
+    };
+
+    await expect(
+      getCapabilities(
+        worksheetLesson,
+        teacher,
+        adaptable({ ...rights, geoRestricted: true }),
+        access,
+      ),
+    ).resolves.toEqual({ capabilities: [] });
+    expect(access.resolve).not.toHaveBeenCalled();
+  });
+
+  it("skips the teacher lookup when a geo-restricted lesson has no extraction", async () => {
+    const access = {
+      resolve: vi.fn().mockRejectedValue(new Error("Clerk unavailable")),
+    };
+
+    await expect(
+      getCapabilities(
+        worksheetLesson,
+        teacher,
+        resolverFor(["worksheet"], [], { ...unrestricted, geoRestricted: true }),
+        access,
+      ),
+    ).resolves.toEqual({ capabilities: [] });
+    expect(access.resolve).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a copyright-restricted lesson", { ...unrestricted, copyrightRestricted: true }],
+    ["a legacy copyright lesson", { ...unrestricted, legacyCopyright: true }],
+    ["an expired lesson", { ...unrestricted, expired: true }],
+    ["a lesson Oak does not publish in the programme", null],
+  ])("offers nothing for %s, signed in or out", async (_, rights) => {
+    await expect(
+      getCapabilities(worksheetLesson, teacher, adaptable(rights)),
+    ).resolves.toEqual({ capabilities: [] });
+    await expect(hasCapabilities(worksheetLesson, adaptable(rights))).resolves.toEqual({
+      available: false,
+    });
+  });
+
+  describe("for a geo-restricted lesson", () => {
+    const geoRestricted = adaptable({ ...unrestricted, geoRestricted: true });
+
+    it("offers the capability to a teacher in a copyright region", async () => {
+      const access = accessResolving({ tier: "full", inCopyrightRegion: true });
+
+      const { capabilities } = await getCapabilities(
+        worksheetLesson,
+        teacher,
+        geoRestricted,
+        access,
+      );
+
+      expect(capabilities).toHaveLength(1);
+      expect(access.resolve).toHaveBeenCalledWith(teacher.teacherId);
+    });
+
+    it.each<[string, TeacherAccess]>([
+      [
+        "a teacher outside the copyright regions",
+        { tier: "limited", inCopyrightRegion: false },
+      ],
+      [
+        "a granted teacher outside the copyright regions",
+        { tier: "full", inCopyrightRegion: false },
+      ],
+    ])("offers nothing to %s", async (_, access) => {
+      await expect(
+        getCapabilities(
+          worksheetLesson,
+          teacher,
+          geoRestricted,
+          accessResolving(access),
+        ),
+      ).resolves.toEqual({ capabilities: [] });
+    });
+
+    it("reports availability when signed out", async () => {
+      await expect(hasCapabilities(worksheetLesson, geoRestricted)).resolves.toEqual({
+        available: true,
+      });
+    });
+  });
+
+  it("does not look up the teacher for a lesson without the geo flag", async () => {
+    const access = accessResolving({ tier: "limited", inCopyrightRegion: false });
+
+    await getCapabilities(worksheetLesson, teacher, adaptable(unrestricted), access);
+
+    expect(access.resolve).not.toHaveBeenCalled();
   });
 });

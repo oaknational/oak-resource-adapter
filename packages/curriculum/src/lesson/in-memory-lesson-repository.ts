@@ -12,7 +12,6 @@ export function buildLesson(overrides: Partial<Lesson> = {}): Lesson {
       lessonSlug: "adding-fractions",
       programmeSlug: "maths-primary-ks2",
     },
-    maxRestrictions: [],
     programme: {
       examBoard: null,
       keyStage: "KS2",
@@ -21,16 +20,7 @@ export function buildLesson(overrides: Partial<Lesson> = {}): Lesson {
       subjectSlug: "maths",
       tier: null,
     },
-    resources: [
-      {
-        type: "worksheet",
-        pdf: {
-          bucketName: "ingested-assets-example",
-          bucketPath: "LESS-EXAMP-1/worksheet/PDF.pdf",
-        },
-        googleDriveUrl: "https://docs.google.com/presentation/d/example/edit",
-      },
-    ],
+    resources: [{ type: "worksheet" }],
     title: "Adding fractions",
     transcript: null,
     unit: { slug: "fractions", title: "Fractions" },

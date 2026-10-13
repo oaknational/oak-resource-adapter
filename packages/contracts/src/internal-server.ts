@@ -1,12 +1,10 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { resourceDocumentSchema } from "@oaknational/resource-document/schema";
-import type { ResourceDocument } from "@oaknational/resource-document";
 import { z } from "zod";
 
 import type { ResourceAdapterAuthenticatedTeacher } from "./authentication.js";
 import {
   resourceAdapterFeatureFlagsResponseSchema,
-  resourceAdapterSourceDocumentRequestSchema,
   supportLevels,
   transformationInputSchema,
   worksheetExportRequestSchema,
@@ -30,7 +28,6 @@ import {
   type WorksheetScaffoldingRemoveRequest,
   type WorksheetScaffoldingState,
   type WorksheetScaffoldingDismissRequest,
-  type ResourceAdapterSourceDocumentRequest,
   type ResourceAdapterFeatureFlagsResponse,
   type TeacherAllowance,
   type WorksheetScaffoldingRetrySuggestionsRequest,
@@ -43,13 +40,6 @@ export type ResourceAdapterFeatureFlagService = Readonly<{
     target: ResourceAdapterAuthenticatedTeacher,
   ) =>
     Promise<ResourceAdapterFeatureFlagsResponse> | ResourceAdapterFeatureFlagsResponse;
-}>;
-
-export type ResourceAdapterSourceDocumentService = Readonly<{
-  getSourceDocument: (
-    request: ResourceAdapterSourceDocumentRequest,
-    target: ResourceAdapterAuthenticatedTeacher,
-  ) => Promise<ResourceDocument | null> | ResourceDocument | null;
 }>;
 
 export type TeacherAllowanceService = Readonly<{
@@ -103,7 +93,6 @@ export type ResourceAdapterApiContextInternal = Readonly<{
   allowance: TeacherAllowanceService;
   authenticatedTeacher: ResourceAdapterAuthenticatedTeacher | null;
   featureFlags: ResourceAdapterFeatureFlagService;
-  sourceDocuments: ResourceAdapterSourceDocumentService;
   worksheetScaffolding: WorksheetScaffoldingService;
 }>;
 
@@ -222,26 +211,6 @@ export const internalRouter = t_internal.router({
     get: internalAuthenticatedProcedure
       .output(resourceAdapterFeatureFlagsResponseSchema)
       .query(({ ctx }) => ctx.featureFlags.getEnabledFlags(ctx.authenticatedTeacher)),
-  }),
-  sourceDocuments: t_internal.router({
-    get: internalAuthenticatedProcedure
-      .input(resourceAdapterSourceDocumentRequestSchema)
-      .output(resourceDocumentSchema)
-      .query(async ({ ctx, input }) => {
-        const document = await ctx.sourceDocuments.getSourceDocument(
-          input,
-          ctx.authenticatedTeacher,
-        );
-
-        if (document === null) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "The selected capability has no source document for this lesson.",
-          });
-        }
-
-        return document;
-      }),
   }),
   worksheetScaffolding: t_internal.router({
     prepareExport: internalAuthenticatedProcedure

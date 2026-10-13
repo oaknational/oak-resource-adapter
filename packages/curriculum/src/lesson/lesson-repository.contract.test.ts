@@ -5,18 +5,13 @@ import {
   buildLesson,
   createInMemoryLessonRepository,
 } from "./in-memory-lesson-repository.js";
-import {
-  assetsRow,
-  browseDataRow,
-  contentRow,
-  restrictionLevelsRow,
-} from "./lesson-fixtures.js";
+import { assetsRow, browseDataRow, contentRow } from "./lesson-fixtures.js";
 import type { LessonRepository } from "./lesson.js";
 import { createOakLessonRepository } from "./oak-lesson-repository.js";
 
 const theSameLesson = buildLesson();
 
-function oakPublishesThatLesson(restrictionLevels = [restrictionLevelsRow()]): void {
+function oakPublishesThatLesson(): void {
   vi.stubGlobal(
     "fetch",
     vi.fn().mockResolvedValue(
@@ -26,7 +21,6 @@ function oakPublishesThatLesson(restrictionLevels = [restrictionLevelsRow()]): v
             assets: [assetsRow()],
             browseData: [browseDataRow()],
             content: [contentRow()],
-            restrictionLevels,
           },
         }),
       ),
@@ -55,14 +49,6 @@ describe.each(implementations)("%s repository", (_name, build) => {
     oakPublishesThatLesson();
 
     await expect(build().fetch(theSameLesson.identity)).resolves.toEqual(theSameLesson);
-  });
-
-  it("reports no restrictions when no levels are recorded", async () => {
-    oakPublishesThatLesson([]);
-
-    await expect(build().fetch(theSameLesson.identity)).resolves.toMatchObject({
-      maxRestrictions: [],
-    });
   });
 
   it("refuses a blank identity without looking anything up", async () => {

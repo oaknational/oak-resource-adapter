@@ -4,7 +4,10 @@ import { oakCurriculumConfigFromEnv, oakResourceStoreConfigFromEnv } from "./con
 import { CurriculumError } from "./errors.js";
 import type { LessonRepository } from "./lesson/lesson.js";
 import { findLessonResource } from "./resource/resource.js";
-import { createOakLessonRepository } from "./lesson/oak-lesson-repository.js";
+import {
+  createOakLessonRepository,
+  createOakLessonRightsReader,
+} from "./lesson/oak-lesson-repository.js";
 import { createOakResourceStore } from "./resource/oak-resource-store.js";
 import type { ResourceStore } from "./resource/resource.js";
 
@@ -37,13 +40,37 @@ const RESTRICTED_LESSON = {
   programmeSlug: "music-secondary-ks4-edexcel",
 };
 
+const RIGHTS_FLAGGED_LESSONS = [
+  [
+    "copyrightRestricted",
+    { lessonSlug: "understanding-ground-bass", programmeSlug: "music-secondary-ks3" },
+  ],
+  [
+    "legacyCopyright",
+    {
+      lessonSlug: "d-is-for-danger-6rw64t",
+      programmeSlug:
+        "personal-social-and-emotional-development-foundation-early-years-foundation-stage-l",
+    },
+  ],
+  [
+    "expired",
+    {
+      lessonSlug: "chemical-formulae-and-conservation-of-mass-jeab35",
+      programmeSlug: "chemistry-secondary-ks4-l",
+    },
+  ],
+] as const;
+
 describeIntegration("Oak curriculum endpoint (development)", () => {
   let lessons: LessonRepository;
   let resources: ResourceStore;
+  let readRights: ReturnType<typeof createOakLessonRightsReader>;
 
   beforeAll(() => {
     lessons = createOakLessonRepository(oakCurriculumConfigFromEnv(process.env));
     resources = createOakResourceStore(oakResourceStoreConfigFromEnv(process.env));
+    readRights = createOakLessonRightsReader(oakCurriculumConfigFromEnv(process.env));
   });
 
   it("fetches a known lesson", async () => {
@@ -70,14 +97,7 @@ describeIntegration("Oak curriculum endpoint (development)", () => {
     const lesson = await lessons.fetch(LESSON_WITH_WORKSHEET);
     const worksheet = findLessonResource(lesson, "worksheet");
 
-    expect(worksheet).toMatchObject({
-      type: "worksheet",
-      pdf: {
-        bucketName: expect.any(String),
-        bucketPath: expect.stringContaining("worksheet"),
-      },
-      googleDriveUrl: expect.stringContaining("docs.google.com"),
-    });
+    expect(worksheet).toEqual({ type: "worksheet" });
   });
 
   it("reads the bytes of a worksheet through the downloads API", async () => {
@@ -114,10 +134,7 @@ describeIntegration("Oak curriculum endpoint (development)", () => {
       "exit-quiz",
       "exit-quiz-answers",
     ] as const) {
-      expect(findLessonResource(lesson, type)?.pdf).toMatchObject({
-        bucketName: expect.any(String),
-        bucketPath: expect.any(String),
-      });
+      expect(findLessonResource(lesson, type)).toEqual({ type });
     }
   });
 
@@ -140,11 +157,20 @@ describeIntegration("Oak curriculum endpoint (development)", () => {
   });
 
   it("reports the restriction levels of a lesson that carries third-party material", async () => {
-    const lesson = await lessons.fetch(RESTRICTED_LESSON);
+    const rights = await readRights(RESTRICTED_LESSON);
 
-    expect(lesson.maxRestrictions).toContainEqual({
+    expect(rights?.maxRestrictions).toContainEqual({
       category: "media",
       maxLevel: "restricted",
     });
   });
+
+  it.each(RIGHTS_FLAGGED_LESSONS)(
+    "reports a lesson marked %s",
+    async (flag, identity) => {
+      const rights = await readRights(identity);
+
+      expect(rights).toMatchObject({ [flag]: true });
+    },
+  );
 });

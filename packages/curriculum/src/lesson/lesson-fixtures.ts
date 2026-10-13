@@ -124,3 +124,17 @@ export function restrictionLevelsRow(
     },
   });
 }
+
+/** The browse data columns `LESSON_RIGHTS_QUERY` selects, under its aliases. */
+export function rightsBrowseRow(
+  overrides: Partial<{
+    copyright_content: { copyright_info: string }[] | null;
+    features: Record<string, unknown> | null;
+  }> = {},
+) {
+  return { copyright_content: null, features: {}, ...overrides };
+}
+
+export function rightsContentRow(expired: unknown = null) {
+  return { expired };
+}

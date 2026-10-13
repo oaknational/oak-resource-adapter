@@ -1,4 +1,4 @@
-import type { CategoryMaxRestriction } from "@oaknational/resource-adapter-curriculum";
+import type { LessonRights } from "@oaknational/resource-adapter-curriculum";
 import type {
   LessonContext,
   ResourceAdapterCapability,
@@ -10,7 +10,8 @@ import type { RegisteredSuggestionFlowId } from "../suggestions/flow-ids";
 /** Two lists rather than one: they come from different systems and can disagree. */
 export type EligibilityContext = Readonly<{
   lesson: LessonContext;
-  maxRestrictions: readonly CategoryMaxRestriction[];
+  /** `null` when Oak publishes no such lesson in the programme. */
+  rights: LessonRights | null;
   originalFileResourceTypes: readonly string[];
   extractedResourceTypes: readonly string[];
 }>;
@@ -24,8 +25,11 @@ export type CapabilityDefinition = Readonly<
   }
 >;
 
-export function isAdaptable(
-  { extractedResourceTypes, originalFileResourceTypes }: EligibilityContext,
+export function hasResourceInputs(
+  {
+    extractedResourceTypes,
+    originalFileResourceTypes,
+  }: Pick<EligibilityContext, "extractedResourceTypes" | "originalFileResourceTypes">,
   resourceType: string,
 ): boolean {
   return (
