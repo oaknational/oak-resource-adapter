@@ -74,16 +74,16 @@ export type LessonRights = Readonly<{
   geoRestricted: boolean;
 }>;
 
-const ADAPTABLE_RESTRICTION_LEVELS: readonly RestrictionLevel[] = [
+const ADAPTABLE_RESTRICTION_LEVELS: ReadonlySet<RestrictionLevel> = new Set([
   "ogl-compatible",
   "ogl-equivalent",
-];
+]);
 
 /** The caller must also check geo restrictions against the teacher's region. */
 export function hasAdaptableRights(rights: LessonRights): boolean {
   return (
     rights.maxRestrictions.every(({ maxLevel }) =>
-      ADAPTABLE_RESTRICTION_LEVELS.includes(maxLevel),
+      ADAPTABLE_RESTRICTION_LEVELS.has(maxLevel),
     ) &&
     !rights.copyrightRestricted &&
     !rights.legacyCopyright &&
