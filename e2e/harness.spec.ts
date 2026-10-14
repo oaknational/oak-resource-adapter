@@ -197,6 +197,9 @@ test(
     );
 
     await expect(
+      page.getByRole("heading", { name: "What teachers see in OWA", exact: true }),
+    ).toBeVisible();
+    await expect(
       page.getByRole("region", { name: "Sign in to create more with Aila" }),
     ).toHaveCount(0);
     await expect(

@@ -67,6 +67,5 @@ export function useAdapterLauncher({
     dialog,
     exitSignedOutPreview,
     selectCapability,
-    viewAsSignedOut,
   };
 }

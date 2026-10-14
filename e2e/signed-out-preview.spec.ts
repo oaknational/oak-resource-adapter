@@ -25,6 +25,12 @@ test(
     });
     await expect(signInPrompt).toBeVisible();
     await expect(
+      page.getByRole("heading", {
+        name: "What teachers see in OWA Stand-in",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
       page.getByRole("button", { name: "Add extra scaffolding" }),
     ).toHaveCount(0);
 
@@ -33,6 +39,9 @@ test(
     expect((await capabilities).status()).toBe(200);
     await expect(
       page.getByRole("button", { name: "Add extra scaffolding" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "What teachers see in OWA Live", exact: true }),
     ).toBeVisible();
   },
 );
@@ -114,10 +123,24 @@ test(
     await signIn(page);
     await page.goto("/?lesson=adopting-different-perspectives&as=signed-out");
     const sections = page.getByRole("navigation", { name: "Harness sections" });
-    for (const section of ["Edge cases", "Capabilities", "Try ORA"]) {
+    for (const section of ["Edge cases", "Capabilities", "Transformations"]) {
       await sections.getByRole("link", { name: section, exact: true }).click();
       await expect(page).toHaveURL(/as=signed-out/);
     }
+    await page
+      .getByRole("navigation", { name: "Transformation fixtures" })
+      .getByRole("link", { name: /The River Nile/ })
+      .click();
+    await expect(page).toHaveURL(/lesson=the-river-nile/);
+    await expect(page).toHaveURL(/as=signed-out/);
+    await sections.getByRole("link", { name: "Exports", exact: true }).click();
+    await page
+      .getByRole("navigation", { name: "Export mode" })
+      .getByRole("link", { name: "Stored downloads" })
+      .click();
+    await expect(page).toHaveURL(/mode=stored-downloads/);
+    await expect(page).toHaveURL(/as=signed-out/);
+    await sections.getByRole("link", { name: "Try ORA", exact: true }).click();
     await expect(
       page.getByRole("region", { name: "Sign in to create more with Aila" }),
     ).toBeVisible();

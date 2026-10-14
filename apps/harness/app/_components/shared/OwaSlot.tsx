@@ -1,20 +1,23 @@
 import type { ReactNode } from "react";
 
-import type { CapabilitiesState } from "../../_hooks/useCapabilities";
+import type { UseCapabilitiesResult } from "../../_hooks/useCapabilities";
 import styles from "../../page.module.css";
 import { ViewAsControl } from "./ViewAs";
 
 export type OwaSlotBadge = "Fixture" | "Live" | "Stand-in";
 
 /** The launcher is the real package; the sign-in and error panels are the harness's. */
-export function owaSlotBadge(
-  state: CapabilitiesState,
-  capabilityCount: number,
-): OwaSlotBadge | undefined {
-  if (capabilityCount > 0) {
+export function owaSlotBadge({
+  capabilities,
+  hasAvailableCapabilities,
+  state,
+}: Pick<UseCapabilitiesResult, "capabilities" | "hasAvailableCapabilities" | "state">):
+  OwaSlotBadge | undefined {
+  if (capabilities.length > 0) {
     return "Live";
   }
-  return state === "signedOut" || state === "error" ? "Stand-in" : undefined;
+  const showsSignInPrompt = state === "signedOut" && hasAvailableCapabilities;
+  return showsSignInPrompt || state === "error" ? "Stand-in" : undefined;
 }
 
 export function OwaSlot({
@@ -27,9 +30,14 @@ export function OwaSlot({
         <h2 id="teachers-see-heading">
           What teachers see in OWA
           {badge === undefined ? null : (
-            <span className={badge === "Live" ? styles.liveBadge : styles.standInBadge}>
-              {badge}
-            </span>
+            <>
+              {" "}
+              <span
+                className={badge === "Live" ? styles.liveBadge : styles.standInBadge}
+              >
+                {badge}
+              </span>
+            </>
           )}
         </h2>
         <ViewAsControl />

@@ -5,7 +5,6 @@ import { LessonMetadata } from "./LessonMetadata";
 import { OakMaterialPanel } from "./OakMaterialPanel";
 import { ScenarioLayout } from "../shared/ScenarioLayout";
 import { OwaSlot, owaSlotBadge } from "../shared/OwaSlot";
-import { withViewAs } from "../shared/ViewAs";
 import { WorksheetPanel } from "./WorksheetPanel";
 import styles from "../../page.module.css";
 import { useAdapterLauncher } from "../../_hooks/useAdapterLauncher";
@@ -33,7 +32,7 @@ export function LessonScenarioView({
   return (
     <>
       <ScenarioLayout
-        hrefFor={(id) => withViewAs(`/?lesson=${id}`, launcher.viewAsSignedOut)}
+        hrefFor={(id) => `/?lesson=${id}`}
         items={scenarioNavigation.map(({ id, keyStage, subject, title }) => ({
           id,
           title,
@@ -49,7 +48,7 @@ export function LessonScenarioView({
           <h1>{lesson.title}</h1>
           <p>{scenario.description}</p>
 
-          <OwaSlot badge={owaSlotBadge(launcher.state, launcher.capabilities.length)}>
+          <OwaSlot badge={owaSlotBadge(launcher)}>
             <CreateMorePanel
               capabilities={launcher.capabilities}
               hasAvailableCapabilities={launcher.hasAvailableCapabilities}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { useKeepViewAs } from "./ViewAs";
 import styles from "../../page.module.css";
 
 export type ScenarioNavigationItem = Readonly<{
@@ -23,6 +24,7 @@ export function ScenarioNavigation({
   selectedId: string;
 }>) {
   const navigation = useRef<HTMLElement>(null);
+  const keepViewAs = useKeepViewAs();
   const listId = useId();
   const [expanded, setExpanded] = useState(false);
 
@@ -63,7 +65,7 @@ export function ScenarioNavigation({
           <li key={item.id}>
             <Link
               aria-current={item.id === selectedId ? "page" : undefined}
-              href={hrefFor(item.id)}
+              href={keepViewAs(hrefFor(item.id))}
               onClick={() => setExpanded(false)}
             >
               <span>{item.title}</span>

@@ -9,7 +9,6 @@ import { CreateMorePanel } from "../shared/CreateMorePanel";
 import { ExtractionNotes } from "../shared/ExtractionNotes";
 import { ScenarioLayout } from "../shared/ScenarioLayout";
 import { OwaSlot, owaSlotBadge } from "../shared/OwaSlot";
-import { withViewAs } from "../shared/ViewAs";
 import styles from "../../page.module.css";
 import { useAdapterLauncher } from "../../_hooks/useAdapterLauncher";
 import type { EdgeCase, EdgeCaseNavigationItem } from "../../scenario-types";
@@ -32,7 +31,6 @@ export function EdgeCaseView({
     reload,
     selectCapability,
     state,
-    viewAsSignedOut,
   } = useAdapterLauncher({
     apiBaseUrl: edgeCase.brokenApiPath ? `${apiBaseUrl}-unreachable` : apiBaseUrl,
     lesson,
@@ -71,7 +69,7 @@ export function EdgeCaseView({
   return (
     <>
       <ScenarioLayout
-        hrefFor={(id) => withViewAs(`/?view=edge-cases&case=${id}`, viewAsSignedOut)}
+        hrefFor={(id) => `/?view=edge-cases&case=${id}`}
         items={navigation.map(({ id, summary, title }) => ({
           id,
           title,
@@ -89,7 +87,7 @@ export function EdgeCaseView({
             badge={
               showCapabilityFixture
                 ? "Fixture"
-                : owaSlotBadge(state, capabilities.length)
+                : owaSlotBadge({ capabilities, hasAvailableCapabilities, state })
             }
           >
             {showCapabilityFixture ? (
