@@ -22,6 +22,7 @@ const workspaceUnits = {
   "packages/curriculum": ["packages/logger"],
   "packages/db": ["packages/logger"],
   "packages/logger": [],
+  "packages/moderation": ["packages/logger"],
   "packages/original-resource-documents": ["packages/resource-document"],
   "packages/resource-document": [],
   "packages/storage": [],
