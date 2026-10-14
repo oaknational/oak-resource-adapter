@@ -253,19 +253,69 @@
   width: 100%;
 }
 
-.scenarioNavigation {
-  margin-bottom: clamp(2rem, 5vw, 3rem);
-  width: 100%;
+/* The sidebar docks to the viewport edge, so these pages leave the centred column. */
+.mainWithSidebar {
+  max-width: none;
+  padding: 0;
 }
 
-.exportModes {
+.scenarioLayout {
+  align-items: start;
+  display: grid;
+  grid-template-columns: 18rem minmax(0, 1fr);
+}
+
+.scenarioContent {
+  min-width: 0;
+  padding: clamp(1.5rem, 4vw, 4rem);
+}
+
+.chrome {
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.scenarioNavigation {
+  border-right: 1px solid #d0d0d0;
+  height: calc(100dvh - var(--harness-chrome-height, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1.5rem 1rem;
+  position: sticky;
+  scrollbar-color: #767676 transparent;
+  scrollbar-width: thin;
+  top: var(--harness-chrome-height, 0px);
+}
+
+/* Safari ignores scrollbar-color; these match it there. */
+.scenarioNavigation::-webkit-scrollbar {
+  width: 0.5rem;
+}
+
+.scenarioNavigation::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scenarioNavigation::-webkit-scrollbar-thumb {
+  background: #767676;
+  border-radius: 0.25rem;
+}
+
+.modeSwitch {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   margin: 1.25rem 0;
 }
 
-.exportModes a {
+.modeSwitchLabel {
+  align-self: center;
+  font-weight: 600;
+}
+
+.modeSwitch a {
   border: 2px solid #222222;
   border-radius: 0.375rem;
   color: #222222;
@@ -275,12 +325,12 @@
   text-decoration: none;
 }
 
-.exportModes a[aria-current="page"] {
+.modeSwitch a[aria-current="page"] {
   background: #222222;
   color: #ffffff;
 }
 
-.exportModes a:hover:not([aria-current="page"]) {
+.modeSwitch a:hover:not([aria-current="page"]) {
   background: #ebfbeb;
 }
 
@@ -330,25 +380,27 @@
   margin-top: 0.25rem;
 }
 
+.scenarioNavigationToggle {
+  display: none;
+}
+
 .scenarioNavigation ul {
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .scenarioNavigation a {
-  border: 2px solid #222222;
   border-radius: 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
-  height: 100%;
+  gap: 0.125rem;
   justify-content: center;
-  min-height: 5.5rem;
-  padding: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
 }
 
 .scenarioNavigation a:hover {
@@ -367,6 +419,53 @@
 
 .scenarioNavigation small {
   font-size: 0.8125rem;
+}
+
+@media (max-width: 60rem) {
+  .chrome {
+    position: static;
+  }
+
+  .scenarioLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .scenarioNavigation {
+    border-bottom: 1px solid #d0d0d0;
+    border-right: 0;
+    height: auto;
+    max-height: 60dvh;
+    padding-top: 0;
+    position: static;
+  }
+
+  .scenarioNavigationToggle {
+    align-items: center;
+    background: #ffffff;
+    border: 2px solid #222222;
+    border-radius: 0.375rem;
+    color: #222222;
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-weight: 600;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 1rem;
+    position: sticky;
+    top: 0;
+    width: 100%;
+    z-index: 1;
+  }
+
+  .scenarioNavigation[data-expanded="false"] ul {
+    display: none;
+  }
+
+  .scenarioNavigation[data-expanded="true"] ul {
+    margin-top: 0.75rem;
+  }
 }
 
 .lesson,
@@ -401,7 +500,7 @@
 .smokeTests h1,
 .suggestions h1,
 .transformations h1 {
-  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
   line-height: 1.1;
   margin: 0.5rem 0 1rem;
   overflow-wrap: anywhere;
@@ -1116,8 +1215,9 @@
   overflow-wrap: anywhere;
 }
 
+/* Neutral, so green stays the signal for what OWA itself renders. */
 .worksheet {
-  background: #ebfbeb;
+  background: #f2f2f2;
   border-radius: 0.75rem;
   margin-top: 2.5rem;
   padding: clamp(1rem, 4vw, 1.5rem);
@@ -1313,16 +1413,6 @@
   overflow-wrap: anywhere;
 }
 
-.lessonAdapterAction {
-  align-items: center;
-  background: #ebfbeb;
-  border-left: 0.375rem solid #0b5c2e;
-  display: flex;
-  margin: 1.5rem 0 2.5rem;
-  min-height: 5.5rem;
-  padding: 1.25rem clamp(1rem, 3vw, 1.5rem);
-}
-
 .createMore {
   background: #ebfbeb;
   border: 2px solid #222222;
@@ -1434,8 +1524,44 @@
   padding: clamp(1rem, 4vw, 1.5rem);
 }
 
-.owaSlot > h2 {
-  margin: 0 0 0.75rem;
+.owaSlotHeader {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.owaSlotHeader h2 {
+  margin: 0;
+}
+
+.owaSlotHeader .modeSwitch {
+  margin: 0;
+}
+
+.liveBadge,
+.standInBadge {
+  border: 2px solid #0b5c2e;
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-left: 0.75rem;
+  padding: 0.125rem 0.625rem;
+  vertical-align: middle;
+}
+
+.liveBadge {
+  background: #0b5c2e;
+  color: #ffffff;
+}
+
+.standInBadge {
+  background: #ffffff;
+  border-color: #222222;
+  color: #222222;
 }
 
 .owaSlotContent {

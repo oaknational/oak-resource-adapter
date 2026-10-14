@@ -74,7 +74,7 @@ export function ExportsView({
     <article className={styles.smokeTests}>
       <p className={styles.eyebrow}>Download scenarios</p>
       <h1>Exports</h1>
-      <nav aria-label="Export mode" className={styles.exportModes}>
+      <nav aria-label="Export mode" className={styles.modeSwitch}>
         <Link href={viewHref({})} aria-current={!storedDownloads ? "page" : undefined}>
           Generate an export
         </Link>
