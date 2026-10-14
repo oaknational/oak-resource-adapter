@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../../page.module.css";
+import { useKeepViewAs } from "./ViewAs";
 import type { ScenarioNavigationItem } from "./ScenarioNavigation";
 
 type GroupedScenario = ScenarioNavigationItem & Readonly<{ group: string }>;
@@ -20,6 +21,7 @@ export function ScenarioSelect({
 }>) {
   const id = useId();
   const router = useRouter();
+  const keepViewAs = useKeepViewAs();
   // Navigating on change would move the page while a keyboard user is still
   // arrowing through the options, so the choice is committed by the button.
   const [choice, setChoice] = useState(selectedId);
@@ -51,7 +53,7 @@ export function ScenarioSelect({
           className={styles.primaryButton}
           type="button"
           disabled={choice === selectedId}
-          onClick={() => router.push(hrefFor(choice))}
+          onClick={() => router.push(keepViewAs(hrefFor(choice)))}
         >
           Show
         </button>

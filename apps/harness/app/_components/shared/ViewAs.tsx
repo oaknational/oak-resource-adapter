@@ -12,8 +12,17 @@ export function useViewAsSignedOut(): boolean {
   return useSearchParams().get("as") === SIGNED_OUT;
 }
 
-export function withViewAs(href: string, viewAsSignedOut: boolean): string {
-  return viewAsSignedOut ? `${href}&as=${SIGNED_OUT}` : href;
+/** Carries the signed-out preview onto another harness link. */
+export function useKeepViewAs(): (href: string) => string {
+  const viewAsSignedOut = useViewAsSignedOut();
+  return (href) => {
+    if (!viewAsSignedOut) {
+      return href;
+    }
+    const url = new URL(href, "https://harness.invalid");
+    url.searchParams.set("as", SIGNED_OUT);
+    return `${url.pathname}${url.search}${url.hash}`;
+  };
 }
 
 export function useViewAsHref(): (signedOut: boolean) => string {

@@ -8,6 +8,7 @@ import { PersonalArtifactPanel } from "./PersonalArtifactPanel";
 import { downloadBlob } from "@oaknational/resource-adapter/internal/downloads";
 import { exportDocx } from "./export-api";
 import { ScenarioSelect } from "../shared/ScenarioSelect";
+import { useKeepViewAs } from "../shared/ViewAs";
 import styles from "../../page.module.css";
 import type { HarnessView } from "../../scenario-types";
 
@@ -29,6 +30,7 @@ export function ExportsView({
   const [downloaded, setDownloaded] = useState(false);
   const request = useRef<AbortController | null>(null);
   const storedDownloads = mode === "stored-downloads";
+  const keepViewAs = useKeepViewAs();
   const viewHref = (next: Readonly<{ fixture?: string; mode?: string }>) => {
     const parameters = new URLSearchParams({
       view: "exports",
@@ -36,7 +38,7 @@ export function ExportsView({
       lesson: lessonId,
       ...(next.mode ? { mode: next.mode } : {}),
     });
-    return `/?${parameters.toString()}`;
+    return keepViewAs(`/?${parameters.toString()}`);
   };
 
   useEffect(() => () => request.current?.abort(), []);

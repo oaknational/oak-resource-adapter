@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { useViewAsSignedOut, withViewAs } from "./ViewAs";
+import { useKeepViewAs } from "./ViewAs";
 import styles from "../../page.module.css";
 import type { HarnessSection } from "../../scenario-types";
 
@@ -10,8 +10,7 @@ export function PrimaryNavigation({
   lessonId,
   section,
 }: Readonly<{ lessonId: string; section: HarnessSection }>) {
-  const viewAsSignedOut = useViewAsSignedOut();
-  const hrefFor = (href: string) => withViewAs(href, viewAsSignedOut);
+  const hrefFor = useKeepViewAs();
 
   return (
     <nav aria-label="Harness sections" className={styles.primaryNavigation}>
