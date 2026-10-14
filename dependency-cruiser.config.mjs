@@ -7,6 +7,7 @@ const workspaceUnits = {
     "packages/curriculum",
     "packages/db",
     "packages/logger",
+    "packages/moderation",
     "packages/original-resource-documents",
     "packages/resource-document",
     "packages/storage",

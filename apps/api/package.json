@@ -23,6 +23,7 @@
     "@oaknational/resource-adapter-curriculum": "workspace:*",
     "@oaknational/resource-adapter-db": "workspace:*",
     "@oaknational/resource-adapter-logger": "workspace:*",
+    "@oaknational/resource-adapter-moderation": "workspace:*",
     "@oaknational/resource-adapter-original-resource-documents": "workspace:*",
     "@oaknational/resource-adapter-storage": "workspace:*",
     "@oaknational/resource-document": "workspace:*",

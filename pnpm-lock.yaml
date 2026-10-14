@@ -89,6 +89,9 @@ importers:
       '@oaknational/resource-adapter-logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@oaknational/resource-adapter-moderation':
+        specifier: workspace:*
+        version: link:../../packages/moderation
       '@oaknational/resource-adapter-original-resource-documents':
         specifier: workspace:*
         version: link:../../packages/original-resource-documents
