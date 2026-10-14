@@ -253,7 +253,8 @@ test.describe("mocked API health", { tag: "@deployment-safe" }, () => {
     await expect(panel(page)).toBeHidden();
     await expect(toggle(page)).toBeFocused();
     await toggle(page).click();
-    await page.getByRole("heading", { level: 1 }).click();
+    // The open panel covers the middle of the heading, so click its start.
+    await page.getByRole("heading", { level: 1 }).click({ position: { x: 4, y: 4 } });
     await expect(panel(page)).toBeHidden();
   });
 

@@ -214,11 +214,11 @@ const edgeCaseDefinitions = [
     reason:
       "Oak flags some lessons as containing copyright material. We offer none of them, even when every third-party restriction Oak records would allow reuse, as it does here. We hold no worksheet data for this lesson either, so this case shows the outcome but cannot show the flag alone causing it. The API's tests cover that.",
     lesson: {
-      lessonSlug: "understanding-ground-bass",
-      programmeSlug: "music-secondary-ks3",
-      title: "Understanding ground bass",
-      subjectSlug: "music",
-      keyStageSlug: "ks3",
+      lessonSlug: "winsome-pinnock-introduces-leave-taking",
+      programmeSlug: "english-secondary-ks4-aqa",
+      title: "Winsome Pinnock introduces ‘Leave Taking’",
+      subjectSlug: "english",
+      keyStageSlug: "ks4",
       availableResources: ["worksheet"],
     },
     brokenApiPath: false,

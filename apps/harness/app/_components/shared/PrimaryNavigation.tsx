@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 
+import { useViewAsSignedOut, withViewAs } from "./ViewAs";
 import styles from "../../page.module.css";
 import type { HarnessSection } from "../../scenario-types";
 
@@ -7,47 +10,50 @@ export function PrimaryNavigation({
   lessonId,
   section,
 }: Readonly<{ lessonId: string; section: HarnessSection }>) {
+  const viewAsSignedOut = useViewAsSignedOut();
+  const hrefFor = (href: string) => withViewAs(href, viewAsSignedOut);
+
   return (
     <nav aria-label="Harness sections" className={styles.primaryNavigation}>
       <Link
         aria-current={section === "lessons" ? "page" : undefined}
-        href={`/?lesson=${lessonId}`}
+        href={hrefFor(`/?lesson=${lessonId}`)}
       >
-        Lesson scenarios
+        Try ORA
       </Link>
       <Link
         aria-current={section === "capabilities" ? "page" : undefined}
-        href={`/?view=capabilities&lesson=${lessonId}`}
+        href={hrefFor(`/?view=capabilities&lesson=${lessonId}`)}
       >
         Capabilities
       </Link>
       <Link
         aria-current={section === "transformations" ? "page" : undefined}
-        href={`/?view=transformations&lesson=${lessonId}`}
+        href={hrefFor(`/?view=transformations&lesson=${lessonId}`)}
       >
         Transformations
       </Link>
       <Link
         aria-current={section === "suggestions" ? "page" : undefined}
-        href={`/?view=suggestions&lesson=${lessonId}`}
+        href={hrefFor(`/?view=suggestions&lesson=${lessonId}`)}
       >
         Suggestions
       </Link>
       <Link
         aria-current={section === "exports" ? "page" : undefined}
-        href={`/?view=exports&lesson=${lessonId}`}
+        href={hrefFor(`/?view=exports&lesson=${lessonId}`)}
       >
         Exports
       </Link>
       <Link
         aria-current={section === "edge-cases" ? "page" : undefined}
-        href="/?view=edge-cases"
+        href={hrefFor("/?view=edge-cases")}
       >
         Edge cases
       </Link>
       <Link
         aria-current={section === "smoke-tests" ? "page" : undefined}
-        href={`/?view=smoke-tests&lesson=${lessonId}`}
+        href={hrefFor(`/?view=smoke-tests&lesson=${lessonId}`)}
       >
         Smoke tests
       </Link>

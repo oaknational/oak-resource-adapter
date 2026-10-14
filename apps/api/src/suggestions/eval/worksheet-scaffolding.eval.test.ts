@@ -2,7 +2,10 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
-import { originalResourceDocumentFixtureManifest } from "@oaknational/resource-adapter-original-resource-documents/fixtures";
+import {
+  originalResourceDocumentFixtureManifest,
+  type OakWorksheetFixtureEntry,
+} from "@oaknational/resource-adapter-original-resource-documents/fixtures";
 import { describe, expect, it } from "vitest";
 
 import { createDevModelInvoker } from "../../ai/dev-invoker";
@@ -51,18 +54,12 @@ function expectedCells(expectation: WorksheetExpectation): Cell[] {
   ];
 }
 
-async function runWorksheet(expectation: WorksheetExpectation): Promise<
+async function runWorksheet(manifest: OakWorksheetFixtureEntry): Promise<
   Readonly<{
     runs: readonly (readonly TransformationSuggestion[])[];
     warnings: readonly string[];
   }>
 > {
-  const manifest = originalResourceDocumentFixtureManifest.find(
-    ({ id }) => id === expectation.lessonSlug,
-  );
-  if (manifest === undefined || !("oakLesson" in manifest)) {
-    throw new Error(`${expectation.lessonSlug} is not an Oak fixture.`);
-  }
   const lesson = {
     lessonSlug: manifest.oakLesson.lessonSlug,
     programmeSlug: manifest.oakLesson.programmeSlug,
@@ -80,7 +77,7 @@ async function runWorksheet(expectation: WorksheetExpectation): Promise<
   const runs = await Promise.all(
     Array.from({ length: RUNS }, () =>
       generateSuggestions(worksheetScaffoldingSuggestionFlow, document, [], {
-        correlationKey: `suggestion-eval-${expectation.lessonSlug}`,
+        correlationKey: `suggestion-eval-${manifest.id}`,
         createInvoker: createDevModelInvoker,
         material,
       }),
@@ -200,22 +197,65 @@ function markdownReport(results: readonly CellResult[]): string {
   return lines.join("\n");
 }
 
+type UnreviewedWorksheet = Readonly<{
+  lessonSlug: string;
+  runs: readonly (readonly TransformationSuggestion[])[];
+}>;
+
+function unreviewedReport(unreviewed: readonly UnreviewedWorksheet[]): string[] {
+  if (unreviewed.length === 0) {
+    return [];
+  }
+  return [
+    "",
+    "## Awaiting human expectations (excluded from scores)",
+    "",
+    ...unreviewed.flatMap(({ lessonSlug, runs }) => [
+      `### ${lessonSlug}`,
+      "",
+      ...runs.flatMap((suggestions, index) => [
+        `Run ${index + 1}:`,
+        ...suggestions.map(
+          ({ kind, targetBlockId, reason }) =>
+            `- ${targetBlockId ?? "document"} ${kind}: ${reason}`,
+        ),
+        ...(suggestions.length === 0 ? ["No suggestions."] : []),
+        "",
+      ]),
+    ]),
+  ];
+}
+
 describeEval("worksheet scaffolding suggestion eval", () => {
   it(
-    "matches the human scaffold decisions",
+    "reports scaffold decisions across the corpus",
     async () => {
-      const worksheets = await inPool(worksheetScaffoldingExpectations, runWorksheet);
-      const results = worksheetScaffoldingExpectations.flatMap((expectation, index) =>
-        score(expectation, worksheets[index]!.runs),
+      const fixtures = originalResourceDocumentFixtureManifest.filter(
+        (entry) => "oakLesson" in entry,
       );
-      const warnings = worksheetScaffoldingExpectations.flatMap(
-        ({ lessonSlug }, index) =>
-          worksheets[index]!.warnings.map(
-            (warning) => `- **${lessonSlug}** ${warning}`,
-          ),
+      for (const { lessonSlug } of worksheetScaffoldingExpectations) {
+        if (!fixtures.some(({ id }) => id === lessonSlug)) {
+          throw new Error(`${lessonSlug} is not an Oak fixture.`);
+        }
+      }
+      const worksheets = await inPool(fixtures, runWorksheet);
+      const results = fixtures.flatMap(({ id }, index) => {
+        const expectation = worksheetScaffoldingExpectations.find(
+          ({ lessonSlug }) => lessonSlug === id,
+        );
+        return expectation ? score(expectation, worksheets[index]!.runs) : [];
+      });
+      const unreviewed = fixtures.flatMap(({ id }, index): UnreviewedWorksheet[] =>
+        worksheetScaffoldingExpectations.some(({ lessonSlug }) => lessonSlug === id)
+          ? []
+          : [{ lessonSlug: id, runs: worksheets[index]!.runs }],
+      );
+      const warnings = fixtures.flatMap(({ id }, index) =>
+        worksheets[index]!.warnings.map((warning) => `- **${id}** ${warning}`),
       );
       const report = [
         markdownReport(results),
+        ...unreviewedReport(unreviewed),
         ...(warnings.length === 0 ? [] : ["", "## Material warnings", "", ...warnings]),
       ].join("\n");
       console.log(report);
@@ -227,7 +267,11 @@ describeEval("worksheet scaffolding suggestion eval", () => {
         await writeFile(join(outputDirectory, `eval-${stamp}.md`), report);
         await writeFile(
           join(outputDirectory, `eval-${stamp}.json`),
-          JSON.stringify({ results, runs: RUNS, summary: summarise(results) }, null, 2),
+          JSON.stringify(
+            { results, unreviewed, runs: RUNS, summary: summarise(results) },
+            null,
+            2,
+          ),
         );
       }
 

@@ -1,9 +1,10 @@
 "use client";
 
 import { ResourceAdapterButton } from "@oaknational/resource-adapter";
-import { SignInButton } from "@clerk/nextjs";
+import { SignInButton, useAuth } from "@clerk/nextjs";
 import { OakPrimaryButton, OakSecondaryButton } from "@oaknational/oak-components";
 
+import { useViewAsHref } from "./ViewAs";
 import styles from "../../page.module.css";
 import type { CapabilitiesState } from "../../_hooks/useCapabilities";
 import type {
@@ -16,14 +17,18 @@ export function CreateMorePanel<TCapability extends ResourceAdapterCapabilityOpt
   hasAvailableCapabilities,
   onSelectCapability,
   onRetry,
+  onPreviewSignIn,
   state,
 }: Readonly<{
   capabilities: readonly TCapability[];
   hasAvailableCapabilities: boolean;
   onSelectCapability: ResourceAdapterButtonProps<TCapability>["onSelectCapability"];
   onRetry: () => void;
+  onPreviewSignIn?: (() => void) | undefined;
   state: CapabilitiesState;
 }>) {
+  const { isSignedIn } = useAuth();
+  const signedInHref = useViewAsHref()(false);
   // Bare on purpose. The OWA slot renders this panel to show only what OWA itself
   // renders, so any harness framing belongs to the page that wants it.
   if (capabilities.length > 0) {
@@ -52,9 +57,17 @@ export function CreateMorePanel<TCapability extends ResourceAdapterCapabilityOpt
           Adapting this lesson&apos;s resources with AI is available to signed-in
           teachers.
         </p>
-        <SignInButton mode="modal">
-          <OakPrimaryButton>Sign in</OakPrimaryButton>
-        </SignInButton>
+        {onPreviewSignIn && isSignedIn ? (
+          <OakPrimaryButton onClick={onPreviewSignIn}>Sign in</OakPrimaryButton>
+        ) : (
+          <SignInButton
+            mode="modal"
+            forceRedirectUrl={signedInHref}
+            signUpForceRedirectUrl={signedInHref}
+          >
+            <OakPrimaryButton onClick={onPreviewSignIn}>Sign in</OakPrimaryButton>
+          </SignInButton>
+        )}
       </section>
     );
   }
