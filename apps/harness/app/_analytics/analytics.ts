@@ -18,13 +18,17 @@ type EventProperty<Event> = Event extends unknown
   : never;
 
 const propertyNames = {
+  accessTier: "Access Tier",
   adaptationId: "Adaptation Id",
+  allowanceLimit: "Allowance Limit",
+  allowanceRemaining: "Allowance Remaining",
   attemptId: "Attempt Id",
   capabilityId: "Capability Id",
   componentType: "Component Type",
   format: "Format",
   jobId: "Job Id",
   jobKind: "Job Kind",
+  limitKind: "Limit Kind",
   packageVersion: "Package Version",
   requestAction: "Request Action",
   retryTarget: "Retry Target",
@@ -52,6 +56,8 @@ const engagementIntent = {
   "Adaptation Step Failed": "use",
   "Adaptation Request Failed": "use",
   "Adapted Resource Downloaded": "use",
+  "Usage Limit Reached": "use",
+  "Monthly Allowance Displayed": "explore",
 } satisfies Record<HarnessAnalyticsEvent["name"], string>;
 
 export function toPostHogProperties(event: HarnessAnalyticsEvent) {

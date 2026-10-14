@@ -60,11 +60,13 @@ export type WorksheetScaffoldingWorkflowProps = Readonly<{
 
 function ResumeChoiceWorkflow({
   allowance,
+  onAllowanceDisplayed,
   onResume,
   onStartFresh,
   state,
 }: Readonly<{
   allowance: TeacherAllowance | null;
+  onAllowanceDisplayed: (allowance: TeacherAllowance) => void;
   onResume: () => void;
   onStartFresh: () => void;
   state: Extract<WorkflowState, { status: "choosing" }>;
@@ -73,7 +75,7 @@ function ResumeChoiceWorkflow({
   return (
     <WorkflowFrame status={status}>
       {status === null ? (
-        <AllowanceSummary allowance={allowance} />
+        <AllowanceSummary allowance={allowance} onDisplayed={onAllowanceDisplayed} />
       ) : (
         <WorkflowStatusBanner cta={null} status={status} />
       )}
@@ -116,6 +118,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     acceptReview,
     allowance,
     applySuggestion,
+    observeAllowance,
     removeContribution,
     refresh,
     resume,
@@ -148,7 +151,8 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     return (
       <ResumeChoiceWorkflow
         allowance={allowance}
-        onResume={() => resume(state.resumable.adaptationId)}
+        onAllowanceDisplayed={observeAllowance}
+        onResume={resume}
         onStartFresh={() =>
           startFresh(state.resumable.adaptationId, "start_from_original_button")
         }
@@ -314,7 +318,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           />
         </StickyWorkflowStatus>
       )}
-      <AllowanceSummary allowance={allowance} />
+      <AllowanceSummary allowance={allowance} onDisplayed={observeAllowance} />
       {state.documentIsVisible && (
         <>
           <WorksheetDownload

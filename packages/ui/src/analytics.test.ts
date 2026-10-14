@@ -12,6 +12,9 @@ type EventProperty<Event> = Event extends unknown ? keyof Event : never;
  * is added here only after checking what it can contain.
  */
 type ReviewedProperty =
+  | "accessTier"
+  | "allowanceLimit"
+  | "allowanceRemaining"
   | "attemptId"
   | "jobId"
   | "packageVersion"
@@ -22,6 +25,7 @@ type ReviewedProperty =
   | "componentType"
   | "format"
   | "jobKind"
+  | "limitKind"
   | "name"
   | "reviewAction"
   | "startMode"

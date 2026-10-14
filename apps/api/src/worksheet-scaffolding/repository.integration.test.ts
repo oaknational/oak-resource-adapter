@@ -12,7 +12,7 @@ import {
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import type { ResourceDocument } from "@oaknational/resource-document";
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type { AdaptationAllowance } from "../usage/adaptation-allowance";
@@ -1160,17 +1160,19 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       return result;
     }
 
-    async function justAfterLatestAdaptation(teacherId: string) {
-      const [latest] = await getDatabaseClient()
-        .select({ createdAt: adaptations.createdAt })
-        .from(adaptations)
-        .where(eq(adaptations.clerkUserId, teacherId))
-        .orderBy(desc(adaptations.createdAt))
-        .limit(1);
-      if (latest === undefined) {
-        throw new Error("The teacher has no adaptations.");
-      }
-      return new Date(latest.createdAt.getTime() + 1);
+    const allowanceStarted = new Date("2000-01-02T00:00:00.000Z");
+
+    /**
+     * Fixed times, not ones read back from the clock: an insert in the same
+     * millisecond as a clock-derived start lands before it and goes uncounted.
+     */
+    async function fromBeforeTheAllowance({
+      adaptationId,
+    }: Readonly<{ adaptationId: string }>) {
+      await getDatabaseClient()
+        .update(adaptations)
+        .set({ createdAt: new Date("2000-01-01T00:00:00.000Z") })
+        .where(eq(adaptations.id, adaptationId));
     }
 
     it("refuses a resource beyond the limit", async () => {
@@ -1199,11 +1201,12 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
 
     it("counts only adaptations since the allowance started", async () => {
       const teacherId = `integration-${randomUUID()}`;
-      await adapt(teacherId, "first", allowanceOf(1));
-      const since = await justAfterLatestAdaptation(teacherId);
+      await fromBeforeTheAllowance(
+        expectCreated(await adapt(teacherId, "first", allowanceOf(1))),
+      );
 
       await expect(
-        adapt(teacherId, "second", allowanceOf(1, since)),
+        adapt(teacherId, "second", allowanceOf(1, allowanceStarted)),
       ).resolves.toMatchObject({ outcome: "created" });
     });
 
@@ -1219,11 +1222,11 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
     it("refuses to start over earlier work without abandoning it", async () => {
       const teacherId = `integration-${randomUUID()}`;
       const original = expectCreated(await adapt(teacherId, "first", allowanceOf(1)));
-      const since = await justAfterLatestAdaptation(teacherId);
-      await adapt(teacherId, "second", allowanceOf(1, since));
+      await fromBeforeTheAllowance(original);
+      await adapt(teacherId, "second", allowanceOf(1, allowanceStarted));
 
       await expect(
-        startOver(original, teacherId, allowanceOf(1, since)),
+        startOver(original, teacherId, allowanceOf(1, allowanceStarted)),
       ).resolves.toEqual({
         outcome: "usageLimitReached",
       });

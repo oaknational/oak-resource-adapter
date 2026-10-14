@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { OakFlex, OakHeading, OakP } from "@oaknational/oak-components";
 import type { TeacherAllowance } from "@oaknational/resource-adapter-contracts/internal";
 
@@ -27,7 +28,15 @@ const SCHEMES = {
 
 export function AllowanceSummary({
   allowance,
-}: Readonly<{ allowance: TeacherAllowance | null }>) {
+  onDisplayed,
+}: Readonly<{
+  allowance: TeacherAllowance | null;
+  onDisplayed: (allowance: TeacherAllowance) => void;
+}>) {
+  useEffect(() => {
+    if (allowance !== null) onDisplayed(allowance);
+  }, [allowance, onDisplayed]);
+
   if (allowance?.tier !== "limited") {
     return null;
   }

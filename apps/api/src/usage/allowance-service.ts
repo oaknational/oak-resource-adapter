@@ -34,7 +34,7 @@ export function adaptationAllowanceFor(
   return tier === "full" ? "unlimited" : { limit, since: month.since };
 }
 
-type TeacherAllowanceDependencies = AllowanceDependencies & {
+export type TeacherAllowanceDependencies = AllowanceDependencies & {
   adaptedResourcesSince: typeof adaptedResourcesSince;
 };
 

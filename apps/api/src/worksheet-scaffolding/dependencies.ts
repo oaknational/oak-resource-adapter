@@ -3,13 +3,14 @@ import { originalResourceDocuments } from "@oaknational/resource-adapter-origina
 import { enqueueJob } from "../jobs/enqueue-job";
 import { getLatestJobForConcurrencyKey } from "../jobs/job-repository";
 import { resolveSourceDocumentLocator } from "../source-documents/service";
+import { adaptedResourcesSince } from "../usage/adaptation-allowance";
 import {
-  type AllowanceDependencies,
   allowanceDependencies,
+  type TeacherAllowanceDependencies,
 } from "../usage/allowance-service";
 import * as scaffoldingRepository from "./repository";
 
-export type WorksheetScaffoldingDependencies = AllowanceDependencies & {
+export type WorksheetScaffoldingDependencies = TeacherAllowanceDependencies & {
   enqueue: typeof enqueueJob;
   getLatestJob: typeof getLatestJobForConcurrencyKey;
   resumableCutoff: (windowDays: number) => Date;
@@ -36,6 +37,7 @@ export type WorksheetScaffoldingServiceRepository = Pick<
 
 export const defaultDependencies: WorksheetScaffoldingDependencies = {
   ...allowanceDependencies,
+  adaptedResourcesSince,
   enqueue: enqueueJob,
   getLatestJob: getLatestJobForConcurrencyKey,
   resumableCutoff: (windowDays) =>
