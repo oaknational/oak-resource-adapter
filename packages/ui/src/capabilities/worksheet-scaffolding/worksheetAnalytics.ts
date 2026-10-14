@@ -1,6 +1,10 @@
-import type { WorksheetScaffoldingState } from "@oaknational/resource-adapter-contracts/internal";
+import type {
+  TeacherAllowance,
+  UsageLimitReached,
+  WorksheetScaffoldingState,
+} from "@oaknational/resource-adapter-contracts/internal";
 
-import type { TrackAnalyticsEvent } from "../../analytics.js";
+import type { AdaptationRequest, TrackAnalyticsEvent } from "../../analytics.js";
 
 export function transformationKinds(
   suggestions: WorksheetScaffoldingState["suggestions"],
@@ -14,6 +18,7 @@ export function createWorksheetAnalyticsTracker(track: TrackAnalyticsEvent) {
   const reportedFailures = new Set<string>();
   const displayedSuggestions = new Set<string>();
   const displayedPreviews = new Set<string>();
+  const displayedAllowances = new Set<string>();
 
   function ignoreHistoricalJob({ job }: Pick<WorksheetScaffoldingState, "job">) {
     if (job?.status === "failed") reportedFailures.add(job.id);
@@ -73,10 +78,44 @@ export function createWorksheetAnalyticsTracker(track: TrackAnalyticsEvent) {
     }
   }
 
+  function observeUsageLimit(
+    usageLimit: UsageLimitReached | null,
+    request: AdaptationRequest & Readonly<{ adaptationId?: string }>,
+  ) {
+    if (usageLimit === null) return;
+    track({
+      name: "Usage Limit Reached",
+      componentType: "resource_adapter_dialog",
+      limitKind: usageLimit.kind,
+      ...request,
+    });
+  }
+
+  function observeAllowance(allowance: TeacherAllowance) {
+    if (allowance.tier !== "limited") return;
+    const key = `${allowance.limit}:${allowance.remaining}`;
+    if (displayedAllowances.has(key)) return;
+    displayedAllowances.add(key);
+    track({
+      name: "Monthly Allowance Displayed",
+      componentType: "resource_adapter_dialog",
+      allowanceLimit: allowance.limit,
+      allowanceRemaining: allowance.remaining,
+    });
+  }
+
   function resetDisplays() {
     displayedSuggestions.clear();
     displayedPreviews.clear();
+    displayedAllowances.clear();
   }
 
-  return { ignoreHistoricalJob, observeJob, observeDisplay, resetDisplays };
+  return {
+    ignoreHistoricalJob,
+    observeAllowance,
+    observeDisplay,
+    observeJob,
+    observeUsageLimit,
+    resetDisplays,
+  };
 }

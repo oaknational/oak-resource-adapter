@@ -151,9 +151,18 @@ const worksheetScaffoldingStateSchema = z.object({
 }) satisfies z.ZodType<WorksheetScaffoldingState>;
 
 const worksheetScaffoldingEntrySchema = z.discriminatedUnion("outcome", [
-  z.object({ outcome: z.literal("opened"), state: worksheetScaffoldingStateSchema }),
-  z.object({ outcome: z.literal("reopened"), state: worksheetScaffoldingStateSchema }),
   z.object({
+    allowance: teacherAllowanceSchema,
+    outcome: z.literal("opened"),
+    state: worksheetScaffoldingStateSchema,
+  }),
+  z.object({
+    allowance: teacherAllowanceSchema,
+    outcome: z.literal("reopened"),
+    state: worksheetScaffoldingStateSchema,
+  }),
+  z.object({
+    allowance: teacherAllowanceSchema,
     outcome: z.literal("resumable"),
     resumable: z.object({
       adaptationId: z.string(),
@@ -163,6 +172,7 @@ const worksheetScaffoldingEntrySchema = z.discriminatedUnion("outcome", [
     }),
   }),
   z.object({
+    allowance: teacherAllowanceSchema,
     outcome: z.literal("usageLimitReached"),
     usageLimit: z.object({
       kind: z.literal("adapted_resources_month"),

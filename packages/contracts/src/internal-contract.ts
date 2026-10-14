@@ -125,7 +125,7 @@ export type WorksheetScaffoldingResumable = Readonly<{
  * `reopened` returns the teacher's latest adaptation of the lesson that has no
  * scaffolds in its head, so closing and reopening the dialog keeps its suggestions.
  */
-export type WorksheetScaffoldingEntry =
+export type WorksheetScaffoldingEntryOutcome =
   | Readonly<{ outcome: "opened"; state: WorksheetScaffoldingState }>
   | Readonly<{ outcome: "reopened"; state: WorksheetScaffoldingState }>
   | Readonly<{ outcome: "resumable"; resumable: WorksheetScaffoldingResumable }>
@@ -133,6 +133,10 @@ export type WorksheetScaffoldingEntry =
       outcome: "usageLimitReached";
       usageLimit: UsageLimitReached<"adapted_resources_month">;
     }>;
+
+/** `allowance` is read after any use the request spent. */
+export type WorksheetScaffoldingEntry = WorksheetScaffoldingEntryOutcome &
+  Readonly<{ allowance: TeacherAllowance }>;
 
 export const transformationInputSchema = z.readonly(
   z.object({
