@@ -53,6 +53,7 @@ function lastRequest() {
   return {
     url,
     method: init?.method,
+    redirect: init?.redirect,
     headers: init?.headers as Record<string, string>,
     body: JSON.parse(String(init?.body)) as unknown,
   };
@@ -102,6 +103,7 @@ describe("moderate request", () => {
     expect(lastRequest()).toEqual({
       url: "https://moderation.test/v1/moderate",
       method: "POST",
+      redirect: "manual",
       headers: {
         authorization: "Bearer an-oidc-token",
         "content-type": "application/json",
@@ -307,6 +309,104 @@ describe("moderate failures", () => {
     await expect(pending).resolves.toMatchObject({
       outcome: "FAILED",
       reason: "ABORTED",
+    });
+  });
+});
+
+describe("moderate edge cases", () => {
+  it("does not follow a redirect, reporting it with its status", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(null, {
+        status: 307,
+        headers: { location: "https://elsewhere.test/" },
+      }),
+    );
+
+    const outcome = await moderate({}, "bypass");
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(outcome).toMatchObject({
+      outcome: "FAILED",
+      reason: "UPSTREAM_UNAVAILABLE",
+    });
+    expect(outcome).toHaveProperty(["cause", "status"], 307);
+  });
+
+  it("keeps the status when an error response's body has already failed", async () => {
+    const erroredBody = new ReadableStream({
+      start(controller) {
+        controller.error(new Error("connection reset"));
+      },
+    });
+    fetchMock.mockResolvedValue(new Response(erroredBody, { status: 401 }));
+
+    const outcome = await moderate();
+
+    expect(outcome).toMatchObject({ outcome: "FAILED", reason: "NOT_AUTHENTICATED" });
+    expect(outcome).toHaveProperty(["cause", "status"], 401);
+  });
+
+  it("times out while the OIDC token lookup is still pending", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.mocked(getVercelOidcToken).mockReturnValue(new Promise(() => undefined));
+
+    const pending = moderate();
+    await vi.advanceTimersByTimeAsync(35_000);
+
+    await expect(pending).resolves.toMatchObject({
+      outcome: "FAILED",
+      reason: "TIMED_OUT",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("aborts while the OIDC token lookup is still pending", async () => {
+    vi.mocked(getVercelOidcToken).mockReturnValue(new Promise(() => undefined));
+    const controller = new AbortController();
+
+    const pending = moderate({ signal: controller.signal });
+    controller.abort();
+
+    await expect(pending).resolves.toMatchObject({
+      outcome: "FAILED",
+      reason: "ABORTED",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("reports the caller's abort even when fetch only rejects after the deadline", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    fetchMock.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          setTimeout(() => reject(new TypeError("fetch failed")), 40_000);
+        }),
+    );
+    const controller = new AbortController();
+
+    const pending = moderate({ signal: controller.signal });
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+    controller.abort();
+    await vi.advanceTimersByTimeAsync(40_000);
+
+    await expect(pending).resolves.toMatchObject({
+      outcome: "FAILED",
+      reason: "ABORTED",
+    });
+  });
+
+  it("reports a timeout even when the caller aborts after the deadline", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    hangUntilAborted();
+    const controller = new AbortController();
+
+    const pending = moderate({ signal: controller.signal });
+    await vi.advanceTimersByTimeAsync(35_000);
+    controller.abort();
+
+    await expect(pending).resolves.toMatchObject({
+      outcome: "FAILED",
+      reason: "TIMED_OUT",
     });
   });
 });

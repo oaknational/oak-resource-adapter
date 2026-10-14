@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { createModerator, moderationConfigFromEnv } from "./index.js";
 
-/**
- * Live smoke test against the moderation service. Run by hand with `pnpm smoke:moderation`,
- * never from CI. Without `RUN_MODERATION_INTEGRATION_TESTS=1` it reports as skipped.
- */
+/** Live smoke test against the moderation service. Run by hand with `pnpm smoke:moderation`, never from CI. */
 const describeWithModeration =
   process.env.RUN_MODERATION_INTEGRATION_TESTS === "1" ? describe : describe.skip;
 

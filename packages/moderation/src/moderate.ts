@@ -2,7 +2,7 @@ import { raLogger } from "@oaknational/resource-adapter-logger";
 
 import { isModerationCategory } from "./categories.js";
 import { DEFAULT_MODERATION_TIMEOUT_MS, type ModerationConfig } from "./config.js";
-import { fetchWithTimeout } from "./fetch-with-timeout.js";
+import { withDeadline } from "./deadline.js";
 import { moderationResponseSchema } from "./response-schema.js";
 import {
   ModerationHttpError,
@@ -42,7 +42,7 @@ async function readAnswer(response: Response): Promise<HttpAnswer> {
   if (response.ok) {
     return { status: response.status, ok: true, body: await response.text() };
   }
-  await response.body?.cancel();
+  await response.body?.cancel().catch(() => undefined);
   return { status: response.status, ok: false, body: "" };
 }
 
@@ -141,22 +141,26 @@ export function createModerator(config: ModerationConfig): Moderator {
       return failed("ABORTED", request.signal.reason);
     }
 
-    const token = await readOidcToken();
-    const headers: Record<string, string> = { "content-type": "application/json" };
-    if (token !== undefined) {
-      headers.authorization = `Bearer ${token}`;
-    }
-    if (config.bypassSecret !== undefined) {
-      headers["x-vercel-protection-bypass"] = config.bypassSecret;
-    }
+    const result = await withDeadline(timeoutMs, request.signal, async (signal) => {
+      const token = await readOidcToken();
+      const headers: Record<string, string> = { "content-type": "application/json" };
+      if (token !== undefined) {
+        headers.authorization = `Bearer ${token}`;
+      }
+      if (config.bypassSecret !== undefined) {
+        headers["x-vercel-protection-bypass"] = config.bypassSecret;
+      }
 
-    const result = await fetchWithTimeout(
-      endpoint,
-      { method: "POST", headers, body: requestBody(request) },
-      timeoutMs,
-      readAnswer,
-      request.signal,
-    );
+      // A followed redirect would carry the content and bypass secret to wherever it points.
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers,
+        body: requestBody(request),
+        redirect: "manual",
+        signal,
+      });
+      return readAnswer(response);
+    });
 
     switch (result.kind) {
       case "timed-out":
