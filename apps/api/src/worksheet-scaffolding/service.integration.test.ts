@@ -24,6 +24,7 @@ import {
   modelJobsPer24hLimit,
   type UsageLimiter,
 } from "../usage/limiter";
+import { adaptedResourcesSince } from "../usage/adaptation-allowance";
 import { modelJobLimitRetryAt } from "../usage/repository";
 import { adaptationHeadConcurrencyKey } from "./capability";
 import type { WorksheetScaffoldingDependencies } from "./dependencies";
@@ -154,6 +155,7 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
     return {
       access,
       adaptedResourcesPerMonth: () => 3,
+      adaptedResourcesSince,
       enqueue: ((request) =>
         enqueueJob(request, {
           createOrGet: createOrGetJob,
