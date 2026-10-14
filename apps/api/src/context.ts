@@ -6,6 +6,7 @@ import {
 import { requestAuthenticator, type RequestAuthenticator } from "./authentication";
 import { getCapabilities, hasCapabilities } from "./capabilities/service";
 import { getFeatureFlagService } from "./feature-flags/service";
+import { getTeacherAllowance } from "./usage/allowance-service";
 import { openWorksheetScaffolding } from "./worksheet-scaffolding/entry-service";
 import { prepareWorksheetExport } from "./worksheet-scaffolding/export-service";
 import { getSourceDocument } from "./source-documents/service";
@@ -45,6 +46,7 @@ export async function createContextInternal(
   authenticateRequest: RequestAuthenticator = requestAuthenticator,
 ): Promise<ResourceAdapterApiContextInternal> {
   return {
+    allowance: { get: (target) => getTeacherAllowance(target) },
     authenticatedTeacher: await authenticateRequest(request),
     featureFlags: getFeatureFlagService(),
     sourceDocuments: { getSourceDocument },

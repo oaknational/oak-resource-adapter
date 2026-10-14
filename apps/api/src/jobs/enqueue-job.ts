@@ -33,7 +33,10 @@ const defaultDependencies: EnqueueDependencies = {
 
 export type EnqueueResult =
   | Readonly<{ outcome: "enqueued"; job: Job }>
-  | Readonly<{ outcome: "usageLimitReached"; usageLimit: UsageLimitReached }>;
+  | Readonly<{
+      outcome: "usageLimitReached";
+      usageLimit: UsageLimitReached<"model_jobs_24h">;
+    }>;
 
 type EnqueueRequest = RegisteredJobRequest & {
   concurrencyKey?: string | undefined;
@@ -43,7 +46,8 @@ type EnqueueRequest = RegisteredJobRequest & {
 type JobRequest = Parameters<EnqueueDependencies["findExisting"]>[0];
 
 type Admission =
-  Readonly<{ existing: Job | null }> | Readonly<{ usageLimit: UsageLimitReached }>;
+  | Readonly<{ existing: Job | null }>
+  | Readonly<{ usageLimit: UsageLimitReached<"model_jobs_24h"> }>;
 
 /**
  * A model job counts towards its teacher's usage, so the limit is checked only

@@ -36,6 +36,7 @@ import {
   teacher,
 } from "./test-doubles";
 import { ConcurrencyConflictError } from "../jobs/job-repository";
+import type { TeacherAccess } from "../teacher-access/access";
 import { transformationDefinitions } from "../transformations/registry";
 import {
   CONTRIBUTION_EXTENSION_KEY,
@@ -63,18 +64,103 @@ function stubRepository(
   } as unknown as WorksheetScaffoldingServiceRepository;
 }
 
+function accessResolving(access: TeacherAccess, refreshed: TeacherAccess = access) {
+  return {
+    recheck: vi.fn().mockResolvedValue(refreshed),
+    resolve: vi.fn().mockResolvedValue(access),
+  };
+}
+
 function stubDependencies(
   overrides: Partial<WorksheetScaffoldingDependencies> = {},
 ): WorksheetScaffoldingDependencies {
   return {
+    access: accessResolving({ tier: "full" }),
+    adaptedResourcesPerMonth: () => 3,
     enqueue: vi.fn().mockResolvedValue({ job: generateJob(), outcome: "enqueued" }),
     getLatestJob: vi.fn().mockResolvedValue(null),
+    now: () => new Date("2026-10-12T10:00:00.000Z"),
     resumableCutoff: () => new Date("2026-01-01T00:00:00.000Z"),
     readSourceDocument: vi.fn().mockResolvedValue(worksheet),
     repository: stubRepository(),
     ...overrides,
   } as unknown as WorksheetScaffoldingDependencies;
 }
+
+describe("the monthly allowance when opening worksheet scaffolding", () => {
+  const limitReached = { outcome: "usageLimitReached" } as const;
+
+  it("is unlimited for a teacher with full access", async () => {
+    const repository = stubRepository();
+
+    await openWorksheetScaffolding(
+      { lesson },
+      teacher,
+      stubDependencies({ repository }),
+    );
+
+    expect(repository.createAdaptationWithSourceDocument).toHaveBeenCalledWith(
+      expect.objectContaining({ allowance: "unlimited" }),
+    );
+  });
+
+  it("counts a limited teacher's adaptations from the start of the UK month", async () => {
+    const repository = stubRepository();
+
+    await openWorksheetScaffolding(
+      { lesson },
+      teacher,
+      stubDependencies({ access: accessResolving({ tier: "limited" }), repository }),
+    );
+
+    expect(repository.createAdaptationWithSourceDocument).toHaveBeenCalledWith(
+      expect.objectContaining({
+        allowance: { limit: 3, since: new Date("2026-09-30T23:00:00.000Z") },
+      }),
+    );
+  });
+
+  it("refuses until the next UK month once the allowance is used", async () => {
+    const repository = stubRepository({
+      createAdaptationWithSourceDocument: vi.fn().mockResolvedValue(limitReached),
+    });
+    const dependencies = stubDependencies({
+      access: accessResolving({ tier: "limited" }),
+      repository,
+    });
+
+    await expect(
+      openWorksheetScaffolding({ lesson }, teacher, dependencies),
+    ).resolves.toEqual({
+      outcome: "usageLimitReached",
+      usageLimit: {
+        kind: "adapted_resources_month",
+        retryAt: "2026-11-01T00:00:00.000Z",
+      },
+    });
+    expect(dependencies.enqueue).not.toHaveBeenCalled();
+  });
+
+  it("admits a teacher granted full access since their cached lookup", async () => {
+    const repository = stubRepository({
+      createAdaptationWithSourceDocument: vi
+        .fn()
+        .mockResolvedValueOnce(limitReached)
+        .mockResolvedValueOnce(repositoryDefaults().createAdaptationWithSourceDocument),
+    });
+    const dependencies = stubDependencies({
+      access: accessResolving({ tier: "limited" }, { tier: "full" }),
+      repository,
+    });
+
+    await expect(
+      openWorksheetScaffolding({ lesson }, teacher, dependencies),
+    ).resolves.toMatchObject({ outcome: "opened" });
+    expect(repository.createAdaptationWithSourceDocument).toHaveBeenLastCalledWith(
+      expect.objectContaining({ allowance: "unlimited" }),
+    );
+  });
+});
 
 describe("opening worksheet scaffolding", () => {
   it("declines a lesson with no source worksheet", async () => {
@@ -112,6 +198,7 @@ describe("opening worksheet scaffolding", () => {
     });
     expect(repository.createAdaptationWithSourceDocument).not.toHaveBeenCalled();
     expect(dependencies.enqueue).not.toHaveBeenCalled();
+    expect(dependencies.access.resolve).not.toHaveBeenCalled();
   });
 
   it("looks for resumable work as this teacher on this lesson and capability", async () => {

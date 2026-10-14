@@ -1,4 +1,5 @@
 import type {
+  UsageLimitKind,
   UsageLimitReached,
   WorksheetScaffoldingJobKind,
   WorksheetScaffoldingState,
@@ -16,6 +17,12 @@ export const LOADING_STATUS = {
   message: "Getting your worksheet ready.",
   title: "Loading worksheet",
   tone: "working",
+} as const satisfies WorkflowStatus;
+
+export const MONTHLY_RESET_STATUS = {
+  message: "You can try starting this adaptation again.",
+  title: "Your monthly allowance has reset",
+  tone: "neutral",
 } as const satisfies WorkflowStatus;
 
 function suggestedSentence(count: number): string {
@@ -72,18 +79,38 @@ const BUSY_STATUSES = {
   },
 } as const satisfies Record<WorksheetScaffoldingJobKind, WorkflowStatus>;
 
-const LIMIT_TITLES = {
-  model_jobs_24h: "You've reached your fair usage limit",
-} as const satisfies Record<UsageLimitReached["kind"], string>;
+// Allowances refill at midnight UK time, so the UK date is the one to name.
+export const ukDate = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "long",
+  timeZone: "Europe/London",
+});
 
-function blockedStatus(modelWorkBlocked: UsageLimitReached): WorkflowStatus {
-  const retryAt = new Intl.DateTimeFormat("en-GB", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(modelWorkBlocked.retryAt));
+const localDateTime = new Intl.DateTimeFormat("en-GB", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
+const LIMIT_STATUSES = {
+  adapted_resources_month: {
+    message: (retryAt: Date) =>
+      `You can start a new adaptation on ${ukDate.format(retryAt)}.`,
+    title: "You've used this month's adaptations",
+  },
+  model_jobs_24h: {
+    message: (retryAt: Date) =>
+      `You can add scaffolds again after ${localDateTime.format(retryAt)}.`,
+    title: "You've reached your fair usage limit",
+  },
+} as const satisfies Record<
+  UsageLimitKind,
+  Readonly<{ message: (retryAt: Date) => string; title: string }>
+>;
+
+export function usageLimitStatus({ kind, retryAt }: UsageLimitReached): WorkflowStatus {
   return {
-    message: `You can add scaffolds again after ${retryAt}.`,
-    title: LIMIT_TITLES[modelWorkBlocked.kind],
+    message: LIMIT_STATUSES[kind].message(new Date(retryAt)),
+    title: LIMIT_STATUSES[kind].title,
     tone: "warning",
   };
 }
@@ -133,7 +160,7 @@ export function readyStatus(
     return BUSY_STATUSES[state.job.kind];
   }
   if (state.modelWorkBlocked !== null) {
-    return blockedStatus(state.modelWorkBlocked);
+    return usageLimitStatus(state.modelWorkBlocked);
   }
   if (state.job?.status === "failed") {
     return null;

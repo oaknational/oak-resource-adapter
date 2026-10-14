@@ -3,11 +3,15 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   supportLevels,
+  type TeacherAllowance,
   type WorksheetScaffoldingApplyRequest,
   type WorksheetScaffoldingEntry,
+  type WorksheetScaffoldingResumable,
   type WorksheetScaffoldingState,
 } from "@oaknational/resource-adapter-contracts/internal";
 
+import { getTeacherAllowance } from "../../allowance.js";
+import { scheduleAt } from "../../scheduleAt.js";
 import type { CapabilityAnalyticsEvent, TrackAnalyticsEvent } from "../../analytics.js";
 import { reportToHost } from "../../errors.js";
 import type {
@@ -130,8 +134,10 @@ export function useWorksheetScaffolding({
 }>) {
   const [state, dispatchEvent] = useReducer(workflowReducer, { status: "idle" });
   const [openCount, setOpenCount] = useState(0);
+  const [allowance, setAllowance] = useState<TeacherAllowance | null>(null);
   const openRequestRef = useRef<OpenRequest | null>(null);
   const replacingRef = useRef<ReplacementRequest | null>(null);
+  const offeredRef = useRef<WorksheetScaffoldingResumable | null>(null);
   // Responses from before the workflow last (re)opened are dropped.
   const sessionRef = useRef(0);
   // A refresh response is dropped if anything else changed state after it started.
@@ -196,13 +202,29 @@ export function useWorksheetScaffolding({
     [dispatch, failWith],
   );
 
+  const loadAllowance = useCallback(
+    (isCurrent: () => boolean) => {
+      void getTeacherAllowance(connection).then(
+        (value) => {
+          if (isCurrent()) setAllowance(value);
+        },
+        (error: unknown) => {
+          if (isCurrent()) reportToHost(onErrorRef.current, error);
+        },
+      );
+    },
+    [connection, onErrorRef],
+  );
+
   useEffect(() => {
     let cancelled = false;
     sessionRef.current += 1;
+    setAllowance(null);
     if (!isOpen) {
       analytics.resetDisplays();
       openRequestRef.current = null;
       replacingRef.current = null;
+      offeredRef.current = null;
       dispatch({ type: "closed" });
       return;
     }
@@ -224,12 +246,21 @@ export function useWorksheetScaffolding({
     openRequestRef.current = request;
     void request.promise.then(
       (entry) => {
-        // The declined adaptation is abandoned once, so asking to replace it
-        // again would be refused.
-        replacingRef.current = null;
+        if (replacingRef.current === replacing) replacingRef.current = null;
         if (cancelled) return;
-        dispatch({ type: "opened", entry });
-        if (entry.outcome !== "resumable") {
+        const offered = offeredRef.current;
+        if (entry.outcome === "resumable") {
+          offeredRef.current = entry.resumable;
+        } else if (entry.outcome !== "usageLimitReached") {
+          // A refused start-over returns to the offer it declined.
+          offeredRef.current = null;
+        }
+        const declined =
+          offered !== null && offered.adaptationId === replacing?.adaptationId
+            ? offered
+            : null;
+        dispatch({ type: "opened", entry, ...(declined === null ? {} : { declined }) });
+        if (entry.outcome === "opened" || entry.outcome === "reopened") {
           trackRef.current({
             name: "Adaptation Started",
             componentType: "resource_adapter_dialog",
@@ -237,6 +268,8 @@ export function useWorksheetScaffolding({
             startMode: entry.outcome === "opened" ? "new" : "resumed",
           });
         }
+        // Fetched once `open` settles, since opening can spend a use.
+        loadAllowance(() => !cancelled);
       },
       (error: unknown) => {
         if (cancelled) return;
@@ -261,6 +294,7 @@ export function useWorksheetScaffolding({
     isOpen,
     lessonKey,
     lessonRef,
+    loadAllowance,
     openCount,
     trackRef,
   ]);
@@ -273,12 +307,30 @@ export function useWorksheetScaffolding({
   // A refused worksheet isn't polled, so this is what lifts the refusal at `retryAt`.
   useEffect(() => {
     if (retryAt === null) return;
-    const timer = setTimeout(
-      () => dispatch({ type: "refusalExpired" }),
-      Math.max(0, Date.parse(retryAt) - Date.now()),
-    );
-    return () => clearTimeout(timer);
+    return scheduleAt(Date.parse(retryAt), () => dispatch({ type: "refusalExpired" }));
   }, [dispatch, retryAt]);
+
+  const monthlyRefusal =
+    state.status === "choosing" ||
+    (state.status === "monthlyLimitReached" && !state.expired)
+      ? state.usageLimit
+      : null;
+  const allowanceResetsAt = allowance?.tier === "limited" ? allowance.resetsAt : null;
+  useEffect(() => {
+    if (!isOpen || allowanceResetsAt === null) return;
+    const session = sessionRef.current;
+    return scheduleAt(Date.parse(allowanceResetsAt), () =>
+      loadAllowance(() => sessionRef.current === session),
+    );
+  }, [allowanceResetsAt, isOpen, loadAllowance]);
+
+  // A new refusal can carry the same retry time as the previous one.
+  useEffect(() => {
+    if (!isOpen || monthlyRefusal === null) return;
+    return scheduleAt(Date.parse(monthlyRefusal.retryAt), () =>
+      dispatch({ type: "monthlyRefusalExpired" }),
+    );
+  }, [dispatch, isOpen, monthlyRefusal]);
 
   useEffect(() => {
     if (!isOpen || ready === null) return;
@@ -579,6 +631,7 @@ export function useWorksheetScaffolding({
 
   return {
     acceptReview,
+    allowance,
     applySuggestion,
     dismissTarget,
     refresh,

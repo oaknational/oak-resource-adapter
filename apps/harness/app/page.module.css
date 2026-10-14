@@ -65,6 +65,10 @@
   position: relative;
 }
 
+.accessDisclosure {
+  position: relative;
+}
+
 .apiHealth {
   align-items: center;
   border: 1px solid #b5c8b9;
@@ -181,7 +185,8 @@
   width: 0.625rem;
 }
 
-.checking {
+.checking,
+.limited {
   background: #fff7cc;
   color: #66510c;
 }
