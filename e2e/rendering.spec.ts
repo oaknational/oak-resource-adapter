@@ -7,7 +7,41 @@ import { expect, test } from "@playwright/test";
  * that stops rendering cannot quietly shrink the sweep below; a new fixture is
  * expected to update it.
  */
-const oakLessonFixtureCount = 10;
+const oakLessonFixtureCount = 13;
+
+test(
+  "collapses scenario navigation in small windows and restores the desktop sidebar",
+  {
+    tag: "@deployment-safe",
+  },
+  async ({ page }) => {
+    await page.setViewportSize({ width: 960, height: 900 });
+    await page.goto("/");
+    const navigation = page.getByRole("navigation", { name: "Lesson scenarios" });
+    const toggle = navigation.getByRole("button", { name: "Lesson scenarios" });
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(navigation.getByRole("list")).toBeHidden();
+    await expect(
+      page.getByRole("heading", { name: "What teachers see in OWA" }),
+    ).toBeInViewport();
+
+    await toggle.focus();
+    await page.keyboard.press("Enter");
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await navigation
+      .getByRole("link", { name: /What we know about Ancient Greece/ })
+      .click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "What we know about Ancient Greece",
+    );
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(navigation.getByRole("list")).toBeHidden();
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expect(toggle).toBeHidden();
+    await expect(navigation.getByRole("list")).toBeVisible();
+  },
+);
 
 test(
   "switches between representative lesson scenarios",
@@ -20,7 +54,7 @@ test(
     await expect(
       page.getByRole("heading", {
         level: 1,
-        name: "Explain how the quotient is affected when the divisor is equal to the dividend",
+        name: "Actions to tackle climate change",
       }),
     ).toBeVisible();
 

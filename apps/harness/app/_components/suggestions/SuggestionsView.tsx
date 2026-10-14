@@ -4,7 +4,7 @@ import { SuggestionControls } from "./SuggestionControls";
 import { SuggestionResults } from "./SuggestionResults";
 import { useSuggestionWorkbench } from "./useSuggestionWorkbench";
 import { ResourceDocumentInspector } from "../shared/ResourceDocumentInspector";
-import { ScenarioNavigation } from "../shared/ScenarioNavigation";
+import { ScenarioLayout } from "../shared/ScenarioLayout";
 import styles from "../../page.module.css";
 import type {
   LessonScenario,
@@ -23,17 +23,16 @@ export function SuggestionsView({
   const workbench = useSuggestionWorkbench(scenario, initialFlowId);
 
   return (
-    <>
-      <ScenarioNavigation
-        hrefFor={(id) => `/?view=suggestions&lesson=${id}`}
-        items={scenarioNavigation.map(({ id, keyStage, subject, title }) => ({
-          detail: `${keyStage} · ${subject}`,
-          id,
-          title,
-        }))}
-        label="Suggestion fixtures"
-        selectedId={scenario.id}
-      />
+    <ScenarioLayout
+      hrefFor={(id) => `/?view=suggestions&lesson=${id}`}
+      items={scenarioNavigation.map(({ id, keyStage, subject, title }) => ({
+        detail: `${keyStage} · ${subject}`,
+        id,
+        title,
+      }))}
+      label="Suggestion fixtures"
+      selectedId={scenario.id}
+    >
       <article className={styles.suggestions}>
         <p className={styles.eyebrow}>Suggestion-agent tools</p>
         <h1>Test suggestions</h1>
@@ -65,6 +64,6 @@ export function SuggestionsView({
         </section>
         <SuggestionResults {...workbench} document={scenario.document} />
       </article>
-    </>
+    </ScenarioLayout>
   );
 }
