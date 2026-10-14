@@ -13,21 +13,10 @@ const LESSON_VIEWS = {
 } as const;
 
 /**
- * Shared by both queries below. Despite its name the view carries a row per
- * `_state`, and an unpublished row can record different levels from the
- * published one, so `atMostOne` cannot resolve the lesson without this filter.
- */
-const RESTRICTION_LEVELS_SELECTION = `restrictionLevels: ${LESSON_VIEWS.restrictionLevels}(
-      where: { slug: { _eq: $lessonSlug }, _state: { _eq: "published" } }
-    ) {
-      ${RESTRICTION_COLUMNS.join("\n      ")}
-    }`;
-
-/**
  * The whole lesson: only the columns the schemas read. Every view except browse
  * data is keyed by lesson alone; only browse data distinguishes programmes. The
- * content view needs the same published filter as restrictions; assets has no
- * such column.
+ * content view carries a row per `_state`, so it is filtered to published rows;
+ * assets has no such column.
  */
 export const LESSON_BY_SLUG_QUERY = `
   query LessonBySlug($lessonSlug: String!, $programmeSlug: String!) {
@@ -57,17 +46,35 @@ export const LESSON_BY_SLUG_QUERY = `
     ) {
       ${ASSET_CONTENT_COLUMNS.join("\n      ")}
     }
-    ${RESTRICTION_LEVELS_SELECTION}
   }
 `;
 
 /**
- * Restrictions alone, for the availability call OWA makes on every lesson page.
- * `LESSON_BY_SLUG_QUERY` still selects them: `Lesson.maxRestrictions` is part
- * of the aggregate, and the fixture rights check reads them from there.
+ * Rights alone, for the availability call OWA makes on every lesson page.
+ * Despite its name the restriction levels view carries a row per `_state`, and
+ * an unpublished row can record different levels from the published one, so
+ * `atMostOne` cannot resolve the lesson without the published filter.
  */
-export const LESSON_RESTRICTIONS_QUERY = `
-  query LessonRestrictions($lessonSlug: String!) {
-    ${RESTRICTION_LEVELS_SELECTION}
+export const LESSON_RIGHTS_QUERY = `
+  query LessonRights($lessonSlug: String!, $programmeSlug: String!) {
+    browseData: ${LESSON_VIEWS.browseData}(
+      where: {
+        lesson_slug: { _eq: $lessonSlug }
+        programme_slug: { _eq: $programmeSlug }
+      }
+    ) {
+      features
+      copyright_content: lesson_data(path: "copyright_content")
+    }
+    content: ${LESSON_VIEWS.content}(
+      where: { lesson_slug: { _eq: $lessonSlug }, _state: { _eq: "published" } }
+    ) {
+      expired: deprecated_fields(path: "expired")
+    }
+    restrictionLevels: ${LESSON_VIEWS.restrictionLevels}(
+      where: { slug: { _eq: $lessonSlug }, _state: { _eq: "published" } }
+    ) {
+      ${RESTRICTION_COLUMNS.join("\n      ")}
+    }
   }
 `;

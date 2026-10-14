@@ -43,8 +43,8 @@ Resource Adapter needs no storage credential of its own. Two things follow:
   intro quiz.
 - **A gated lesson cannot be read.** Its authorisation wants a signed-in teacher's
   Clerk token and its issuer allowlist admits only OWA, so this service has no
-  identity it accepts. Every gated lesson carries third-party material at `Highly
-restricted`, so filtering `maxRestrictions` on that level excludes them before a
+  identity it accepts. Every gated lesson is also marked
+  `agf__has_copyright_restrictions`, so `hasAdaptableRights` refuses it before a
   download is attempted.
 
 The canonical semantic contract is a separate concern in

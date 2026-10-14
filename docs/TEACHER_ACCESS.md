@@ -19,9 +19,14 @@ applies to both tiers. `privateMetadata.ora.usageLimits.modelJobsPer24h`
 replaces it for one teacher. ORA does not read Aila's
 `privateMetadata.customRateLimit`, which counts Aila generations.
 
-ORA caches each teacher's access, and looks it up again before
-refusing them. A grant or a raised limit therefore applies on the teacher's next
-attempt that would have been refused.
+ORA caches each teacher's access and refreshes it before refusing work because
+of a usage limit, so a grant or raised limit applies on their next attempt.
+
+## Copyright region
+
+A lesson Oak marks `agf__geo_restricted` is offered only to a teacher whose
+stored region is in `COPYRIGHT_REGIONS`, OWA's list for geo-restricted downloads.
+This is independent of the tier: an `ora.access` grant does not unlock it.
 
 ## Changing a teacher's access
 
@@ -34,5 +39,5 @@ shell takes precedence, so a production change can set the production key for
 that one command.
 
 Accounts without a stored region, including harness and browser-test accounts,
-are limited until granted. The harness access indicator shows the account, Clerk
-instance and grant command.
+are limited until granted, and are never offered geo-restricted lessons. The harness
+access indicator shows the account, Clerk instance and grant command.

@@ -9,14 +9,21 @@ import {
 import { CurriculumError, toCurriculumError } from "../errors.js";
 import { executeHasuraQuery } from "../hasura.js";
 import { lessonNotFound, validateLessonIdentity } from "./lesson-identity.js";
-import { LESSON_RESTRICTIONS_QUERY, LESSON_BY_SLUG_QUERY } from "./lesson-query.js";
+import { LESSON_BY_SLUG_QUERY, LESSON_RIGHTS_QUERY } from "./lesson-query.js";
 import {
   assetsRowSchema,
   browseRowSchema,
   contentRowSchema,
   restrictionRowSchema,
+  rightsBrowseRowSchema,
+  rightsContentRowSchema,
 } from "./lesson-schema.js";
-import type { Lesson, LessonIdentity, LessonRepository } from "./lesson.js";
+import type {
+  Lesson,
+  LessonIdentity,
+  LessonRepository,
+  LessonRights,
+} from "./lesson.js";
 
 const log = raLogger("curriculum");
 
@@ -25,12 +32,15 @@ const responseSchema = z.object({
     assets: z.array(z.unknown()),
     browseData: z.array(z.unknown()),
     content: z.array(z.unknown()),
-    restrictionLevels: z.array(z.unknown()),
   }),
 });
 
-const restrictionResponseSchema = z.object({
-  data: z.object({ restrictionLevels: z.array(z.unknown()) }),
+const rightsResponseSchema = z.object({
+  data: z.object({
+    browseData: z.array(z.unknown()),
+    content: z.array(z.unknown()),
+    restrictionLevels: z.array(z.unknown()),
+  }),
 });
 
 export function createOakLessonRepository(
@@ -93,15 +103,8 @@ async function fetchLesson(
     what: "set of resources",
   });
 
-  const maxRestrictions =
-    atMostOne(response.data.restrictionLevels, restrictionRowSchema, {
-      identity,
-      what: "set of restriction levels",
-    }) ?? [];
-
   return {
     identity,
-    maxRestrictions,
     resources: assets?.resources ?? [],
     ...placement,
     ...content,
@@ -135,23 +138,38 @@ function atMostOne<Schema extends z.ZodType>(
   return byValue.values().next().value;
 }
 
-export function createOakLessonRestrictionReader(config: OakCurriculumConfig) {
+/** `null` when Oak publishes no such lesson in the programme. */
+export function createOakLessonRightsReader(config: OakCurriculumConfig) {
   const resolvedConfig = resolveOakCurriculumConfig(config);
-  return async (identity: LessonIdentity) => {
+  return async (identity: LessonIdentity): Promise<LessonRights | null> => {
     validateLessonIdentity(identity);
     try {
-      const response = restrictionResponseSchema.parse(
+      const response = rightsResponseSchema.parse(
         await executeHasuraQuery(resolvedConfig, {
-          query: LESSON_RESTRICTIONS_QUERY,
-          variables: { lessonSlug: identity.lessonSlug },
+          query: LESSON_RIGHTS_QUERY,
+          variables: {
+            lessonSlug: identity.lessonSlug,
+            programmeSlug: identity.programmeSlug,
+          },
         }),
       );
-      return (
+      const flags = atMostOne(response.data.browseData, rightsBrowseRowSchema, {
+        identity,
+        what: "copyright flags",
+      });
+      const content = atMostOne(response.data.content, rightsContentRowSchema, {
+        identity,
+        what: "expiry",
+      });
+      if (flags === undefined || content === undefined) {
+        return null;
+      }
+      const maxRestrictions =
         atMostOne(response.data.restrictionLevels, restrictionRowSchema, {
           identity,
           what: "set of restriction levels",
-        }) ?? []
-      );
+        }) ?? [];
+      return { maxRestrictions, ...flags, ...content };
     } catch (error) {
       throw toCurriculumError(error);
     }

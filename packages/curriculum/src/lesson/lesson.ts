@@ -54,7 +54,6 @@ export type Lesson = Readonly<{
   contentGuidance: readonly string[];
   keyLearningPoints: readonly string[];
   keywords: readonly LessonKeyword[];
-  maxRestrictions: readonly CategoryMaxRestriction[];
   misconceptions: readonly LessonMisconception[];
   /** What a pupil should be able to say they can do, in Oak's own words. */
   outcome: string | null;
@@ -64,15 +63,30 @@ export interface LessonRepository {
   fetch(identity: LessonIdentity): Promise<Lesson>;
 }
 
-export const ADAPTABLE_RESTRICTION_LEVELS: readonly RestrictionLevel[] = [
+export type LessonRights = Readonly<{
+  maxRestrictions: readonly CategoryMaxRestriction[];
+  /** `agf__has_copyright_restrictions` */
+  copyrightRestricted: boolean;
+  /** `copyright_content` carries Oak's older whole-lesson copyright notice. */
+  legacyCopyright: boolean;
+  expired: boolean;
+  /** `agf__geo_restricted` */
+  geoRestricted: boolean;
+}>;
+
+const ADAPTABLE_RESTRICTION_LEVELS: ReadonlySet<RestrictionLevel> = new Set([
   "ogl-compatible",
   "ogl-equivalent",
-];
+]);
 
-export function hasAdaptableRights(
-  restrictions: readonly CategoryMaxRestriction[],
-): boolean {
-  return restrictions.every(({ maxLevel }) =>
-    ADAPTABLE_RESTRICTION_LEVELS.includes(maxLevel),
+/** The caller must also check geo restrictions against the teacher's region. */
+export function hasAdaptableRights(rights: LessonRights): boolean {
+  return (
+    rights.maxRestrictions.every(({ maxLevel }) =>
+      ADAPTABLE_RESTRICTION_LEVELS.has(maxLevel),
+    ) &&
+    !rights.copyrightRestricted &&
+    !rights.legacyCopyright &&
+    !rights.expired
   );
 }

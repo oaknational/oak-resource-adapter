@@ -19,17 +19,6 @@ export type ResourceAdapterFeatureFlagsResponse = z.infer<
   typeof resourceAdapterFeatureFlagsResponseSchema
 >;
 
-export const resourceAdapterSourceDocumentRequestSchema = z.object({
-  capabilityId: z.string().check(z.minLength(1)),
-  lesson: lessonContextSchema,
-});
-
-export type ResourceAdapterSourceDocumentRequest = z.infer<
-  typeof resourceAdapterSourceDocumentRequestSchema
->;
-
-export type ResourceAdapterSourceDocumentResponse = ResourceDocument;
-
 const internalIdSchema = z.uuid();
 
 /** One scale shared by every transformation, so a teacher can compare across them. */
