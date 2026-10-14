@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { fetchApiHealth, fetchApiReadiness } from "./harness-api";
+import { fetchApiHealth, fetchApiReadiness, moderateContent } from "./harness-api";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -224,5 +224,48 @@ describe("fetchApiHealth", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(error));
 
     await expect(fetchApiHealth(new AbortController().signal)).rejects.toBe(error);
+  });
+});
+
+describe("moderateContent", () => {
+  const flagged = {
+    outcome: "FLAGGED",
+    flaggedCategories: ["p/practical-activities"],
+    unrecognisedCategories: [],
+    promptVersion: "v1",
+    reason: null,
+  };
+
+  it("posts the smoke case through the proxy and reads the result", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(flagged));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(moderateContent("expected-flag")).resolves.toEqual(flagged);
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+      "/adapter-proxy/dev/moderation/moderate",
+      {
+        body: JSON.stringify({ case: "expected-flag" }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
+    );
+  });
+
+  it.each([
+    [404, "Dev routes are not enabled on the API."],
+    [503, "The API has no moderation service URL configured."],
+    [500, "The API returned HTTP 500."],
+  ])("explains HTTP %i", async (status, message) => {
+    respond(new Response("<html>error</html>", { status }));
+
+    await expect(moderateContent("expected-pass")).rejects.toThrow(message);
+  });
+
+  it("rejects a result in an unrecognised shape", async () => {
+    respond(Response.json({ outcome: "MAYBE" }));
+
+    await expect(moderateContent("expected-pass")).rejects.toThrow(
+      "The API returned a moderation result in an unrecognised shape.",
+    );
   });
 });
