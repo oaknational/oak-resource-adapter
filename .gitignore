@@ -8,6 +8,7 @@ dist/
 apps/*/next-env.d.ts
 coverage/
 playwright-report/
+playwright/.auth/
 test-results/
 
 .env

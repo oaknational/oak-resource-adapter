@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+import { vercelBypassStatePath } from "./e2e/vercel-bypass.js";
+
 /**
  * E2E_BASE_URL points the suite at something already serving — a Vercel preview,
  * or a local `pnpm dev`. Unset, Playwright starts the apps itself.
@@ -12,6 +14,11 @@ const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 /**
  * A protected Vercel deployment serves an authentication wall instead of the
  * app. Only the harness needs this: the browser never reaches the API directly.
+ *
+ * global.setup.ts trades it for Vercel's bypass cookie. Not extraHTTPHeaders:
+ * those go to every origin, so Clerk's CDN would receive the secret, and its
+ * script loads become CORS preflights that the CDN answers with a redirect,
+ * which the browser rejects.
  */
 const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
@@ -66,11 +73,15 @@ export default defineConfig({
     {
       name: "setup",
       testMatch: /global\.setup\.ts/,
-      use: { ...devices["Desktop Chrome"] },
+      // Its requests carry the bypass secret, and CI uploads failure traces.
+      use: { ...devices["Desktop Chrome"], trace: "off" },
     },
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        ...(bypassSecret ? { storageState: vercelBypassStatePath } : {}),
+      },
       dependencies: ["setup"],
       testIgnore: /global\.setup\.ts/,
     },
@@ -81,9 +92,6 @@ export default defineConfig({
     // anything. A failure has to carry its own evidence.
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    ...(bypassSecret
-      ? { extraHTTPHeaders: { "x-vercel-protection-bypass": bypassSecret } }
-      : {}),
   },
   // Spread, not `webServer: undefined`: exactOptionalPropertyTypes requires the
   // key to be absent rather than present and undefined.

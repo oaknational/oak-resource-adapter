@@ -250,15 +250,17 @@ jobs:
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_HARNESS_BYPASS_SECRET }}
         run: pnpm test:e2e:deployment
 
-      # Traces and screenshots live only on the runner, so a failure is
-      # undiagnosable unless they leave with it.
+      # Screenshots and DOM snapshots only. Artifacts on a public repository are
+      # readable by any signed-in GitHub user, and traces, and the HTML report
+      # that embeds them, record the deployment's bypass cookie and the test
+      # user's Clerk session.
       - name: Upload browser test evidence
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: playwright-evidence-deployment
           path: |
-            test-results/
-            playwright-report/
+            test-results/**/*.png
+            test-results/**/error-context.md
           if-no-files-found: warn
           retention-days: 14
