@@ -82,6 +82,15 @@ async function owaResolvedVersions(packageNames) {
   if (missing.length > 0) {
     throw new Error(`OWA's lockfile resolves no ${missing.join(", ")}.`);
   }
+  // Each value becomes an install spec, so a URL or file: path would install
+  // from wherever it points.
+  for (const [name, version] of Object.entries(versions)) {
+    if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
+      throw new Error(
+        `OWA's lockfile resolves ${name} to ${version}, not a registry version.`,
+      );
+    }
+  }
   return versions;
 }
 
