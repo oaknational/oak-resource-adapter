@@ -1,0 +1,113 @@
+.suggestionList {
+  display: grid;
+  gap: 0.75rem;
+  padding-left: 1.5rem;
+}
+
+.candidateList {
+  display: grid;
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+}
+
+.candidateList > li {
+  border-top: 2px solid #222222;
+  padding: 1.5rem 0;
+}
+
+.candidateHeading {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  justify-content: space-between;
+}
+
+.candidateHeading h3,
+.candidateDescription {
+  margin: 0;
+}
+
+.candidateHeading code {
+  overflow-wrap: anywhere;
+}
+
+.candidateDescription {
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  margin-top: 0.5rem;
+  max-width: 48rem;
+}
+
+.eligibleTargets {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 1rem 0 0;
+}
+
+.eligibleTargets ul {
+  display: grid;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.candidateLevels {
+  margin-top: 1rem;
+}
+
+.candidateLevels h4 {
+  margin: 0;
+}
+
+.candidateLevels ul {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.candidateLevels li {
+  display: grid;
+  gap: 0.25rem 0.75rem;
+  grid-template-columns: 4rem minmax(0, 1fr);
+}
+
+.candidateList .tagList {
+  margin-top: 1rem;
+}
+
+.suggestionCard {
+  border: 1px solid #222222;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.suggestionCard h3 {
+  margin: 0;
+}
+
+.suggestionReason {
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+
+.suggestionCard dl {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+
+.suggestionCard dt {
+  font-weight: 600;
+}
+
+.suggestionCard dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}

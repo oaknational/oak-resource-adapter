@@ -1,6 +1,6 @@
 import { ResourceDocumentInspector } from "../shared/ResourceDocumentInspector";
 import type { TransformationWorkbench } from "./useTransformationWorkbench";
-import styles from "../../page.module.css";
+import styles from "./TransformationDocumentComparison.module.css";
 
 type TransformationDocumentComparisonProps = Pick<
   TransformationWorkbench,

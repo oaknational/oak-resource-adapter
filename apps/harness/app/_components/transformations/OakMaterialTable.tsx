@@ -1,6 +1,7 @@
 import { oakMaterialUsage } from "./oak-material-usage";
 import type { TransformationWorkbench } from "./useTransformationWorkbench";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
+import styles from "./OakMaterialTable.module.css";
 
 type OakMaterialTableProps = Pick<
   TransformationWorkbench,
@@ -16,7 +17,7 @@ export function OakMaterialTable({
   return (
     <section
       aria-labelledby="oak-material-heading"
-      className={styles.resultPanel}
+      className={shared.resultPanel}
       id="oak-material"
     >
       <h2 id="oak-material-heading">Oak lesson material</h2>

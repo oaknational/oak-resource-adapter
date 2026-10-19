@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import styles from "../../page.module.css";
+import styles from "./ScenarioLayout.module.css";
 import { ScenarioNavigation } from "./ScenarioNavigation";
 
 export function ScenarioLayout({

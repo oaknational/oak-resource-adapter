@@ -1,5 +1,5 @@
 import type { TransformationStatus } from "../transformations/transformation-api";
-import styles from "../../page.module.css";
+import styles from "./status-badge.module.css";
 
 const statusStyles = {
   active: styles.activeStatus,

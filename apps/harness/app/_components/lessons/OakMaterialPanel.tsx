@@ -1,7 +1,8 @@
 "use client";
 
 import { useOakMaterial, type OakMaterialState } from "./useOakMaterial";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
+import styles from "./OakMaterialPanel.module.css";
 import type { OakMaterialPart } from "./oak-material-api";
 import type { LessonScenario } from "../../scenario-types";
 
@@ -44,15 +45,15 @@ export function OakMaterialPanel({ scenario }: Readonly<{ scenario: LessonScenar
 
   return (
     <section aria-labelledby="oak-material-heading" className={styles.oakMaterial}>
-      <div className={styles.sectionHeadingRow}>
+      <div className={shared.sectionHeadingRow}>
         <div>
-          <p className={styles.eyebrow}>Oak lesson material</p>
+          <p className={shared.eyebrow}>Oak lesson material</p>
           <h2 id="oak-material-heading">What Oak publishes for this lesson</h2>
         </div>
         <div className={styles.materialAction}>
           <button
             aria-describedby="oak-material-cost"
-            className={styles.workerTestButton}
+            className={shared.workerTestButton}
             disabled={state === "loading"}
             onClick={load}
             type="button"
@@ -70,7 +71,7 @@ export function OakMaterialPanel({ scenario }: Readonly<{ scenario: LessonScenar
           <p>Reading the lesson and summarising its transcript…</p>
         )}
         {state === "error" && (
-          <p className={styles.errorMessage}>
+          <p className={shared.errorMessage}>
             {error ?? "The material could not load."}
           </p>
         )}

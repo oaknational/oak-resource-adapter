@@ -4,7 +4,8 @@ import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import styles from "../../page.module.css";
+import shared from "./shared.module.css";
+import styles from "./ViewAs.module.css";
 
 const SIGNED_OUT = "signed-out";
 
@@ -58,7 +59,7 @@ export function ViewAsControl() {
   }
 
   return (
-    <nav aria-label="View as" className={styles.modeSwitch}>
+    <nav aria-label="View as" className={shared.modeSwitch}>
       <span className={styles.modeSwitchLabel}>View as</span>
       <Link
         aria-current={viewAsSignedOut ? undefined : "page"}

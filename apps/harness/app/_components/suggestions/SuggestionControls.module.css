@@ -1,0 +1,11 @@
+.flowSummary {
+  border-top: 1px solid #c7c7c7;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.flowSummary h3,
+.flowSummary > p {
+  margin-bottom: 0;
+  margin-top: 0.5rem;
+}

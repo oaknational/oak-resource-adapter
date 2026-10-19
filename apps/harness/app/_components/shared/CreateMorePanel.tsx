@@ -5,7 +5,7 @@ import { SignInButton, useAuth } from "@clerk/nextjs";
 import { OakPrimaryButton, OakSecondaryButton } from "@oaknational/oak-components";
 
 import { useViewAsHref } from "./ViewAs";
-import styles from "../../page.module.css";
+import styles from "./CreateMorePanel.module.css";
 import type { CapabilitiesState } from "../../_hooks/useCapabilities";
 import type {
   ResourceAdapterButtonProps,
