@@ -281,6 +281,15 @@ peerDependencyRules:
     ]),
   );
 
+  await writeFile(
+    join(temporaryDirectory, "allowance-smoke.mjs"),
+    `import assert from "node:assert/strict";
+import { getTeacherAllowance } from "@oaknational/resource-adapter/internal/allowance";
+assert.equal(typeof getTeacherAllowance, "function");
+`,
+  );
+  run("node", ["allowance-smoke.mjs"], temporaryDirectory);
+
   // Peer, not a dependency: the parsing entries hand out or execute schemas,
   // and zod throws when a schema meets a foreign major. Optional because the
   // root runtime and type-only imports need no zod. Declaration reachability
@@ -466,6 +475,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "useResourceDownload.js",
     "capabilities/worksheet-scaffolding/useWorksheetScaffolding.js",
     "capabilities/worksheet-scaffolding/useWorksheetScaffoldingPolling.js",
+    "capabilities/worksheet-scaffolding/AllowanceSummary.js",
     "capabilities/worksheet-scaffolding/PendingReviewControls.js",
     "capabilities/worksheet-scaffolding/ResumeChoice.js",
     "capabilities/worksheet-scaffolding/SuggestionGroup.js",
@@ -483,6 +493,8 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "getResourceAdapterCapabilityAvailability.js",
     "getResourceAdapterFeatureFlags.js",
     "worksheetScaffolding.js",
+    "allowance.js",
+    "scheduleAt.js",
     "capabilities.js",
     "publicTypes.js",
     "requestId.js",

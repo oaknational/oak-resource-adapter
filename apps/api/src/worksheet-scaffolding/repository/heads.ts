@@ -15,6 +15,10 @@ import { and, eq, exists, inArray, isNull, sql } from "drizzle-orm";
 import type { ResourceDocument } from "@oaknational/resource-document";
 
 import {
+  type AdaptationAllowance,
+  isWithinAllowance,
+} from "../../usage/adaptation-allowance";
+import {
   markAttemptComplete,
   type ParsedStoredDocument,
   parseStoredDocumentRow,
@@ -107,15 +111,26 @@ export async function getAdaptationHead(
     : { ...row, storedDocument: parseStoredDocumentRow(row.storedDocument) };
 }
 
+export type AdaptationCreationResult =
+  | Readonly<{ outcome: "created"; adaptationId: string; resourceDocumentId: string }>
+  | Readonly<{ outcome: "usageLimitReached" }>;
+
 export async function createAdaptationWithSourceDocument(input: {
+  allowance: AdaptationAllowance;
   capabilityId: string;
   document: ResourceDocument;
   lesson: LessonContext;
   teacherId: string;
-}): Promise<{ adaptationId: string; resourceDocumentId: string }> {
-  return getDatabaseClient().transaction((transaction) =>
-    insertAdaptationWithSourceDocument(transaction, input),
-  );
+}): Promise<AdaptationCreationResult> {
+  return getDatabaseClient().transaction(async (transaction) => {
+    if (!(await isWithinAllowance(transaction, input, input.allowance))) {
+      return { outcome: "usageLimitReached" };
+    }
+    return {
+      outcome: "created",
+      ...(await insertAdaptationWithSourceDocument(transaction, input)),
+    };
+  });
 }
 
 type AdaptationWriter = Pick<DatabaseClient, "insert" | "update">;
@@ -173,13 +188,14 @@ async function insertAdaptationWithSourceDocument(
 
 /** Abandons declined work and creates its replacement as one indivisible change. */
 export async function replaceAdaptationWithSourceDocument(input: {
+  allowance: AdaptationAllowance;
   capabilityId: string;
   document: ResourceDocument;
   lesson: LessonContext;
   replacingAdaptationId: string;
   replacementRequestId: string;
   teacherId: string;
-}): Promise<{ adaptationId: string; resourceDocumentId: string }> {
+}): Promise<AdaptationCreationResult> {
   return getDatabaseClient().transaction(async (transaction) => {
     const findReplacement = async () => {
       const [replacement] = await transaction
@@ -202,12 +218,18 @@ export async function replaceAdaptationWithSourceDocument(input: {
         return null;
       }
       const { adaptationId, resourceDocumentId } = replacement;
-      return resourceDocumentId === null ? null : { adaptationId, resourceDocumentId };
+      return resourceDocumentId === null
+        ? null
+        : ({ adaptationId, outcome: "created", resourceDocumentId } as const);
     };
 
     const replay = await findReplacement();
     if (replay !== null) {
       return replay;
+    }
+    // Before abandoning, so a refusal leaves the declined work resumable.
+    if (!(await isWithinAllowance(transaction, input, input.allowance))) {
+      return { outcome: "usageLimitReached" };
     }
 
     const [abandoned] = await transaction
@@ -232,10 +254,13 @@ export async function replaceAdaptationWithSourceDocument(input: {
       throw new Error("The worksheet scaffolding adaptation could not be replaced.");
     }
 
-    return insertAdaptationWithSourceDocument(transaction, {
-      ...input,
-      replacementRequestId: input.replacementRequestId,
-    });
+    return {
+      outcome: "created",
+      ...(await insertAdaptationWithSourceDocument(transaction, {
+        ...input,
+        replacementRequestId: input.replacementRequestId,
+      })),
+    };
   });
 }
 

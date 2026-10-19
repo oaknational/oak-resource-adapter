@@ -2,6 +2,7 @@
 
 import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 
+import { AccessIndicator } from "./AccessIndicator";
 import { ApiHealthIndicator } from "./ApiHealthIndicator";
 import styles from "../../page.module.css";
 
@@ -15,6 +16,7 @@ export function SiteHeader() {
         <p className={styles.harnessLabel}>Resource Adapter harness</p>
       </div>
       <ApiHealthIndicator />
+      <AccessIndicator />
       {isLoaded && (isSignedIn ? <UserButton /> : <SignInButton mode="modal" />)}
     </header>
   );

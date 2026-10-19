@@ -10,6 +10,8 @@ import {
 import { internalRouter, type WorksheetScaffoldingService } from "./internal-server.js";
 import { hostRouter } from "./server.js";
 
+const fullAllowance = { get: () => Promise.resolve({ tier: "full" } as const) };
+
 const sourceDocument: ResourceDocument = {
   schemaVersion: "0.1",
   id: "oak:worksheet:adding-fractions:pupil",
@@ -227,6 +229,7 @@ describe("Resource Adapter API contracts", () => {
           organisationId: "org-123",
           teacherId: "teacher-456",
         },
+        allowance: fullAllowance,
         featureFlags: { getEnabledFlags: () => [] },
         sourceDocuments: {
           getSourceDocument: () =>
@@ -279,6 +282,7 @@ describe("Resource Adapter API contracts", () => {
     ): InternalCaller {
       return internalRouter.createCaller({
         authenticatedTeacher: internalTeacher,
+        allowance: fullAllowance,
         featureFlags: { getEnabledFlags: () => [] },
         sourceDocuments: { getSourceDocument: () => sourceDocument },
         worksheetScaffolding: { ...worksheetScaffolding, ...overrides },
@@ -316,6 +320,7 @@ describe("Resource Adapter API contracts", () => {
       };
       const anonymous = internalRouter.createCaller({
         authenticatedTeacher: null,
+        allowance: fullAllowance,
         featureFlags: { getEnabledFlags: () => [] },
         sourceDocuments: { getSourceDocument: () => sourceDocument },
         worksheetScaffolding: { ...worksheetScaffolding, prepareExport },
@@ -337,6 +342,7 @@ describe("Resource Adapter API contracts", () => {
           organisationId: "org-123",
           teacherId: "teacher-456",
         },
+        allowance: fullAllowance,
         featureFlags: {
           getEnabledFlags: () => ["feature-flags-smoke-test-enabled"],
         },
@@ -358,6 +364,7 @@ describe("Resource Adapter API contracts", () => {
           organisationId: "org-123",
           teacherId: "teacher-456",
         },
+        allowance: fullAllowance,
         featureFlags: { getEnabledFlags: () => [] },
         sourceDocuments: { getSourceDocument },
         worksheetScaffolding,
@@ -388,6 +395,7 @@ describe("Resource Adapter API contracts", () => {
           organisationId: "org-123",
           teacherId: "teacher-456",
         },
+        allowance: fullAllowance,
         featureFlags: { getEnabledFlags: () => [] },
         sourceDocuments: { getSourceDocument: () => null },
         worksheetScaffolding,
@@ -497,6 +505,7 @@ describe("Resource Adapter API contracts", () => {
     it("rejects an unauthenticated request with UNAUTHORIZED", async () => {
       const caller = internalRouter.createCaller({
         authenticatedTeacher: null,
+        allowance: fullAllowance,
         featureFlags: {
           getEnabledFlags: () => [],
         },

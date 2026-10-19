@@ -9,7 +9,6 @@ import {
   resourceAdapterSourceDocumentRequestSchema,
   supportLevels,
   transformationInputSchema,
-  usageLimitKinds,
   worksheetExportRequestSchema,
   worksheetDownloadAvailabilitySchema,
   type WorksheetExportRequest,
@@ -33,6 +32,7 @@ import {
   type WorksheetScaffoldingDismissRequest,
   type ResourceAdapterSourceDocumentRequest,
   type ResourceAdapterFeatureFlagsResponse,
+  type TeacherAllowance,
   type WorksheetScaffoldingRetrySuggestionsRequest,
   worksheetScaffoldingRetrySuggestionsRequestSchema,
 } from "./internal-contract.js";
@@ -50,6 +50,10 @@ export type ResourceAdapterSourceDocumentService = Readonly<{
     request: ResourceAdapterSourceDocumentRequest,
     target: ResourceAdapterAuthenticatedTeacher,
   ) => Promise<ResourceDocument | null> | ResourceDocument | null;
+}>;
+
+export type TeacherAllowanceService = Readonly<{
+  get: (target: ResourceAdapterAuthenticatedTeacher) => Promise<TeacherAllowance>;
 }>;
 
 export type WorksheetScaffoldingService = Readonly<{
@@ -96,6 +100,7 @@ export type WorksheetScaffoldingService = Readonly<{
 }>;
 /** Internal API context served from `/trpc/internal`. */
 export type ResourceAdapterApiContextInternal = Readonly<{
+  allowance: TeacherAllowanceService;
   authenticatedTeacher: ResourceAdapterAuthenticatedTeacher | null;
   featureFlags: ResourceAdapterFeatureFlagService;
   sourceDocuments: ResourceAdapterSourceDocumentService;
@@ -104,10 +109,20 @@ export type ResourceAdapterApiContextInternal = Readonly<{
 
 const t_internal = initTRPC.context<ResourceAdapterApiContextInternal>().create();
 
+const teacherAllowanceSchema = z.discriminatedUnion("tier", [
+  z.object({ tier: z.literal("full") }),
+  z.object({
+    tier: z.literal("limited"),
+    limit: z.number().check(z.int(), z.positive()),
+    remaining: z.number().check(z.int(), z.nonnegative()),
+    resetsAt: z.iso.datetime(),
+  }),
+]) satisfies z.ZodType<TeacherAllowance>;
+
 const worksheetScaffoldingStateSchema = z.object({
   adaptationId: z.string(),
   modelWorkBlocked: z.nullable(
-    z.object({ kind: z.enum(usageLimitKinds), retryAt: z.iso.datetime() }),
+    z.object({ kind: z.literal("model_jobs_24h"), retryAt: z.iso.datetime() }),
   ),
   resourceDocumentId: z.uuid(),
   downloadAvailability: worksheetDownloadAvailabilitySchema,
@@ -158,6 +173,13 @@ const worksheetScaffoldingEntrySchema = z.discriminatedUnion("outcome", [
       updatedAt: z.string(),
     }),
   }),
+  z.object({
+    outcome: z.literal("usageLimitReached"),
+    usageLimit: z.object({
+      kind: z.literal("adapted_resources_month"),
+      retryAt: z.iso.datetime(),
+    }),
+  }),
 ]) satisfies z.ZodType<WorksheetScaffoldingEntry>;
 
 function requireWorksheetScaffolding<TValue>(value: TValue | null): TValue {
@@ -191,6 +213,11 @@ export const internalAuthenticatedProcedure = t_internal.procedure.use(
 
 /** The unversioned internal API router served from `/trpc/internal`. */
 export const internalRouter = t_internal.router({
+  allowance: t_internal.router({
+    get: internalAuthenticatedProcedure
+      .output(teacherAllowanceSchema)
+      .query(({ ctx }) => ctx.allowance.get(ctx.authenticatedTeacher)),
+  }),
   featureFlags: t_internal.router({
     get: internalAuthenticatedProcedure
       .output(resourceAdapterFeatureFlagsResponseSchema)

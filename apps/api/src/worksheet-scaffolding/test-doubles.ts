@@ -308,10 +308,12 @@ export function repositoryDefaults(): RepositoryResults {
     acceptSuggestion: acceptedSuggestion(),
     createAdaptationWithSourceDocument: {
       adaptationId: ADAPTATION_ID,
+      outcome: "created",
       resourceDocumentId: DOCUMENT_ID,
     },
     replaceAdaptationWithSourceDocument: {
       adaptationId: ADAPTATION_ID,
+      outcome: "created",
       resourceDocumentId: DOCUMENT_ID,
     },
     acceptPendingReview: true,
