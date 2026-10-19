@@ -6,7 +6,7 @@ import { OakMaterialPanel } from "./OakMaterialPanel";
 import { ScenarioLayout } from "../shared/ScenarioLayout";
 import { OwaSlot, owaSlotBadge } from "../shared/OwaSlot";
 import { WorksheetPanel } from "./WorksheetPanel";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
 import { useAdapterLauncher } from "../../_hooks/useAdapterLauncher";
 import type {
   LessonScenario,
@@ -41,8 +41,8 @@ export function LessonScenarioView({
         label="Lesson scenarios"
         selectedId={scenario.id}
       >
-        <article className={styles.lesson}>
-          <p className={styles.eyebrow}>
+        <article className={shared.lesson}>
+          <p className={shared.eyebrow}>
             {scenario.programme.keyStage} · {scenario.programme.subject}
           </p>
           <h1>{lesson.title}</h1>

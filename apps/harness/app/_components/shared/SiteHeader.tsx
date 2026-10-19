@@ -4,7 +4,7 @@ import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 
 import { AccessIndicator } from "./AccessIndicator";
 import { ApiHealthIndicator } from "./ApiHealthIndicator";
-import styles from "../../page.module.css";
+import styles from "./SiteHeader.module.css";
 
 export function SiteHeader() {
   const { isLoaded, isSignedIn } = useAuth();

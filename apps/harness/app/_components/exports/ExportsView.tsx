@@ -9,7 +9,8 @@ import { downloadBlob } from "@oaknational/resource-adapter/internal/downloads";
 import { exportDocx } from "./export-api";
 import { ScenarioSelect } from "../shared/ScenarioSelect";
 import { useKeepViewAs } from "../shared/ViewAs";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
+import styles from "./ExportsView.module.css";
 import type { HarnessView } from "../../scenario-types";
 
 type ExportsViewProps = Extract<HarnessView, { section: "exports" }> &
@@ -73,10 +74,13 @@ export function ExportsView({
   }
 
   return (
-    <article className={styles.smokeTests}>
-      <p className={styles.eyebrow}>Download scenarios</p>
+    <article className={shared.smokeTests}>
+      <p className={shared.eyebrow}>Download scenarios</p>
       <h1>Exports</h1>
-      <nav aria-label="Export mode" className={styles.modeSwitch}>
+      <nav
+        aria-label="Export mode"
+        className={`${shared.modeSwitch} ${styles.exportModes}`}
+      >
         <Link href={viewHref({})} aria-current={!storedDownloads ? "page" : undefined}>
           Generate an export
         </Link>
@@ -106,8 +110,8 @@ export function ExportsView({
             label="Document fixture"
             selectedId={fixtureId}
           />
-          <section aria-labelledby="docx-export-controls" className={styles.controls}>
-            <div className={styles.controlHeader}>
+          <section aria-labelledby="docx-export-controls" className={shared.controls}>
+            <div className={shared.controlHeader}>
               <h2 id="docx-export-controls">DOCX export</h2>
             </div>
             <p>
@@ -134,15 +138,15 @@ export function ExportsView({
                 rel="noreferrer"
               >
                 <span>Install Lexend</span>
-                <span className={styles.visuallyHidden}> (opens in a new tab)</span>
+                <span className={shared.visuallyHidden}> (opens in a new tab)</span>
               </a>{" "}
               to see the intended layout.
             </p>
-            <div className={styles.actionBar}>
-              <fieldset className={styles.primaryActions}>
-                <legend className={styles.visuallyHidden}>Export actions</legend>
+            <div className={shared.actionBar}>
+              <fieldset className={shared.primaryActions}>
+                <legend className={shared.visuallyHidden}>Export actions</legend>
                 <button
-                  className={styles.primaryButton}
+                  className={shared.primaryButton}
                   disabled={loading}
                   onClick={() => void download()}
                   type="button"
@@ -151,7 +155,7 @@ export function ExportsView({
                 </button>
               </fieldset>
             </div>
-            <p aria-live="polite" className={styles.requestStatus} role="status">
+            <p aria-live="polite" className={shared.requestStatus} role="status">
               {downloaded && (
                 <span className={styles.successMessage}>
                   <svg
@@ -175,7 +179,7 @@ export function ExportsView({
               )}
             </p>
             {error !== null && (
-              <p className={styles.errorMessage} role="alert">
+              <p className={shared.errorMessage} role="alert">
                 {error}
               </p>
             )}

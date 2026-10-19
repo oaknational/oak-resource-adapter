@@ -1,5 +1,5 @@
 import type { TransformationStatus } from "@oaknational/resource-adapter-dev-api-contracts";
-import styles from "../../page.module.css";
+import styles from "./status-badge.module.css";
 
 const statusStyles = {
   active: styles.activeStatus,

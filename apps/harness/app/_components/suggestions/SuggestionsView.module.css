@@ -1,0 +1,12 @@
+.agentContext {
+  margin-top: 2.5rem;
+}
+
+.agentContext > h2 {
+  margin-bottom: 0;
+}
+
+.agentContext > p {
+  margin-bottom: 0;
+  max-width: 46rem;
+}

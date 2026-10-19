@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 
 import { roundTripStorage, StorageRoundTripFailed } from "../../harness-api";
 import { SmokeTestPanel } from "./SmokeTestPanel";
-import styles from "../../page.module.css";
+import styles from "./StorageSmokeTest.module.css";
 
 const log = raLogger("harness");
 

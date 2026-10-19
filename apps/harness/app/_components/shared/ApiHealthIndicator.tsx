@@ -4,7 +4,8 @@ import { useId } from "react";
 
 import { useApiHealth } from "../../_hooks/useApiHealth";
 import { useDisclosure } from "../../_hooks/useDisclosure";
-import styles from "../../page.module.css";
+import shared from "./shared.module.css";
+import styles from "./ApiHealthIndicator.module.css";
 
 const labels = {
   checking: "Checking",
@@ -56,7 +57,7 @@ export function ApiHealthIndicator() {
       </button>
       {/* Outside the button: the button role has presentational children, so a
           live region nested inside it is not announced. */}
-      <output aria-atomic="true" className={styles.visuallyHidden}>
+      <output aria-atomic="true" className={shared.visuallyHidden}>
         API: {labels[readiness.status]}
       </output>
       <section

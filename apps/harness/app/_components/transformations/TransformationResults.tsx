@@ -1,5 +1,5 @@
 import type { TransformationWorkbench } from "./useTransformationWorkbench";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
 
 type TransformationResultsProps = Pick<
   TransformationWorkbench,
@@ -17,13 +17,13 @@ export function TransformationResults({
   return (
     <>
       {error !== null && (
-        <p className={styles.errorMessage} role="alert">
+        <p className={shared.errorMessage} role="alert">
           {error}
         </p>
       )}
 
       {preview !== null && (
-        <section className={styles.resultPanel}>
+        <section className={shared.resultPanel}>
           <h2>Prompt preview</h2>
           {preview.warnings.map((warning) => (
             <p key={warning}>{warning}</p>
@@ -47,7 +47,7 @@ export function TransformationResults({
       )}
 
       {result !== null && (
-        <section aria-live="polite" className={styles.resultPanel}>
+        <section aria-live="polite" className={shared.resultPanel}>
           <h2>Run result: {result.run.outcome}</h2>
           {result.warnings.map((warning) => (
             <p key={warning}>{warning}</p>
@@ -55,7 +55,7 @@ export function TransformationResults({
           {result.run.outcome === "TEXT" && <pre>{result.run.text}</pre>}
           {result.run.outcome === "UNUSABLE" && <p>{result.run.reason}</p>}
           {companions.length > 0 && (
-            <details className={styles.markupDetails}>
+            <details className={shared.markupDetails}>
               <summary>
                 {companions.length} companion document
                 {companions.length === 1 ? "" : "s"}

@@ -1,7 +1,8 @@
 import { ResourceDocumentRenderer } from "@oaknational/resource-adapter";
 
 import { ExtractionNotes } from "../shared/ExtractionNotes";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
+import styles from "./WorksheetPanel.module.css";
 import type { LessonScenario } from "../../scenario-types";
 
 const checkDateFormat = new Intl.DateTimeFormat("en-GB", {
@@ -20,9 +21,9 @@ export function WorksheetPanel({ scenario }: Readonly<{ scenario: LessonScenario
 
   return (
     <section aria-labelledby="worksheet-heading" className={styles.worksheet}>
-      <div className={styles.sectionHeadingRow}>
+      <div className={shared.sectionHeadingRow}>
         <div>
-          <p className={styles.eyebrow}>Selected resource</p>
+          <p className={shared.eyebrow}>Selected resource</p>
           <h2 id="worksheet-heading">Worksheet data</h2>
         </div>
         <span className={styles.verifiedBadge}>
@@ -30,7 +31,7 @@ export function WorksheetPanel({ scenario }: Readonly<{ scenario: LessonScenario
         </span>
       </div>
       <p>{scenario.rights}</p>
-      <dl className={styles.documentSummary}>
+      <dl className={shared.documentSummary}>
         <div>
           <dt>Profile</dt>
           <dd>{summary.profile}</dd>
@@ -66,7 +67,7 @@ export function WorksheetPanel({ scenario }: Readonly<{ scenario: LessonScenario
         document={scenario.document}
         label={`Original worksheet: ${summary.title}`}
       />
-      <details className={styles.markupDetails}>
+      <details className={shared.markupDetails}>
         <summary>Browse extracted markup</summary>
         <pre aria-label={`Extracted markup for ${scenario.lesson.title}`}>
           <code>{scenario.markup}</code>

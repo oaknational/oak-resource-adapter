@@ -1,0 +1,51 @@
+/* Always present, so an empty slot reads as "OWA renders nothing here". */
+.owaSlot {
+  background: #ebfbeb;
+  border: 2px solid #222222;
+  border-radius: 0.75rem;
+  margin-top: 2.5rem;
+  padding: clamp(1rem, 4vw, 1.5rem);
+}
+
+.owaSlotHeader {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.owaSlotHeader h2 {
+  margin: 0;
+}
+
+.liveBadge,
+.standInBadge {
+  border: 2px solid #0b5c2e;
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.625rem;
+  vertical-align: middle;
+}
+
+.liveBadge {
+  background: #0b5c2e;
+  color: #ffffff;
+}
+
+.standInBadge {
+  background: #ffffff;
+  border-color: #222222;
+  color: #222222;
+}
+
+.owaSlotContent {
+  border: 2px dashed #6a7b6f;
+  border-radius: 0.5rem;
+  min-height: 7rem;
+  padding: 0.75rem;
+}

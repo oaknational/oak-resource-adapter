@@ -5,7 +5,8 @@ import { SuggestionResults } from "./SuggestionResults";
 import { useSuggestionWorkbench } from "./useSuggestionWorkbench";
 import { ResourceDocumentInspector } from "../shared/ResourceDocumentInspector";
 import { ScenarioLayout } from "../shared/ScenarioLayout";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
+import styles from "./SuggestionsView.module.css";
 import type {
   LessonScenario,
   LessonScenarioNavigationItem,
@@ -33,8 +34,8 @@ export function SuggestionsView({
       label="Suggestion fixtures"
       selectedId={scenario.id}
     >
-      <article className={styles.suggestions}>
-        <p className={styles.eyebrow}>Suggestion-agent tools</p>
+      <article className={shared.suggestions}>
+        <p className={shared.eyebrow}>Suggestion-agent tools</p>
         <h1>Test suggestions</h1>
         <p>
           Preview the rendered prompt and run the suggestion agent directly against the
@@ -42,7 +43,7 @@ export function SuggestionsView({
         </p>
 
         {workbench.catalogueError !== null && (
-          <p className={styles.errorMessage} role="alert">
+          <p className={shared.errorMessage} role="alert">
             {workbench.catalogueError}
           </p>
         )}

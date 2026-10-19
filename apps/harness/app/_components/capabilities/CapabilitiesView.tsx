@@ -13,7 +13,8 @@ import { fetchTransformationCatalogue } from "../transformations/transformation-
 import { readableIdentifier } from "../shared/readable-identifier";
 import { useKeepViewAs } from "../shared/ViewAs";
 import { statusBadgeClass } from "../shared/status-badge";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
+import styles from "./CapabilitiesView.module.css";
 
 function targetLabel(target: TransformationCatalogueItem["target"]): string {
   if (target.scope === "document") {
@@ -59,7 +60,10 @@ function TransformationRow({
         </div>
       </dl>
       {transformation.barriers !== undefined && (
-        <ul aria-label="Barriers addressed" className={styles.tagList}>
+        <ul
+          aria-label="Barriers addressed"
+          className={`${shared.tagList} ${styles.tagList}`}
+        >
           {transformation.barriers.map((barrier) => (
             <li key={barrier}>{readableIdentifier(barrier)}</li>
           ))}
@@ -136,7 +140,7 @@ function Capability({
       >
         <div className={styles.capabilityHeader}>
           <div>
-            <p className={styles.profileKicker}>Product capability</p>
+            <p className={shared.profileKicker}>Product capability</p>
             <h2 id={`capability-${capability.id}`}>{capability.label}</h2>
           </div>
           <span className={styles.resourceBadge}>
@@ -221,8 +225,8 @@ export function CapabilitiesView({ lessonId }: Readonly<{ lessonId: string }>) {
   }, []);
 
   return (
-    <article className={styles.capabilities}>
-      <p className={styles.eyebrow}>Registry browser</p>
+    <article className={shared.capabilities}>
+      <p className={shared.eyebrow}>Registry browser</p>
       <h1>Capabilities</h1>
       <p>
         Browse the product experiences registered with Resource Adapter and the
@@ -230,7 +234,7 @@ export function CapabilitiesView({ lessonId }: Readonly<{ lessonId: string }>) {
       </p>
 
       {error !== null && (
-        <p className={styles.errorMessage} role="alert">
+        <p className={shared.errorMessage} role="alert">
           {error}
         </p>
       )}

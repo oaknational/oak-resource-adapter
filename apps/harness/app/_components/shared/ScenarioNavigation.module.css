@@ -1,0 +1,107 @@
+.scenarioNavigation {
+  border-right: 1px solid #d0d0d0;
+  height: calc(100dvh - var(--harness-chrome-height, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1.5rem 1rem;
+  position: sticky;
+  scrollbar-color: #767676 transparent;
+  scrollbar-width: thin;
+  top: var(--harness-chrome-height, 0px);
+}
+
+/* Safari ignores scrollbar-color; these match it there. */
+.scenarioNavigation::-webkit-scrollbar {
+  width: 0.5rem;
+}
+
+.scenarioNavigation::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scenarioNavigation::-webkit-scrollbar-thumb {
+  background: #767676;
+  border-radius: 0.25rem;
+}
+
+.scenarioNavigationToggle {
+  display: none;
+}
+
+.scenarioNavigation ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.scenarioNavigation a {
+  border-radius: 0.5rem;
+  color: #222222;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  text-decoration: none;
+}
+
+.scenarioNavigation a:hover {
+  background: #ebfbeb;
+}
+
+.scenarioNavigation a[aria-current="page"] {
+  background: #222222;
+  color: #ffffff;
+}
+
+.scenarioNavigation span {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.scenarioNavigation small {
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 60rem) {
+  .scenarioNavigation {
+    border-bottom: 1px solid #d0d0d0;
+    border-right: 0;
+    height: auto;
+    max-height: 60dvh;
+    padding-top: 0;
+    position: static;
+  }
+
+  .scenarioNavigationToggle {
+    align-items: center;
+    background: #ffffff;
+    border: 2px solid #222222;
+    border-radius: 0.375rem;
+    color: #222222;
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-weight: 600;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 1rem;
+    position: sticky;
+    top: 0;
+    width: 100%;
+    z-index: 1;
+  }
+
+  .scenarioNavigation[data-expanded="false"] ul {
+    display: none;
+  }
+
+  .scenarioNavigation[data-expanded="true"] ul {
+    margin-top: 0.75rem;
+  }
+}

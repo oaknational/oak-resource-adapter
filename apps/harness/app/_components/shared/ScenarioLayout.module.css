@@ -1,0 +1,16 @@
+.scenarioLayout {
+  align-items: start;
+  display: grid;
+  grid-template-columns: 18rem minmax(0, 1fr);
+}
+
+.scenarioContent {
+  min-width: 0;
+  padding: clamp(1.5rem, 4vw, 4rem);
+}
+
+@media (max-width: 60rem) {
+  .scenarioLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
