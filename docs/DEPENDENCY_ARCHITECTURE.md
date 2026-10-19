@@ -62,7 +62,9 @@ CI runs the same command. It verifies that:
 - deprecated Node.js core modules or npm packages are not introduced.
 
 `pnpm test:package-artifact` covers what only the packed tarballs can show, including
-the matching fixed-group versions and transitive document dependency above.
+the matching fixed-group versions and transitive document dependency above. It
+also installs the tarballs with the versions OWA's main branch resolves, and
+fails if those miss a published peer range.
 
 There is one documented runtime-cycle exception. Four Drizzle table modules
 form a foreign-key cycle: `adaptations`, `resource-documents`,

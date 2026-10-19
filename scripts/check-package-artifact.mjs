@@ -9,6 +9,7 @@ const temporaryDirectory = await mkdtemp(join(tmpdir(), "resource-adapter-packag
 const zodFreeTemporaryDirectory = await mkdtemp(
   join(tmpdir(), "resource-document-zod-free-"),
 );
+const owaTemporaryDirectory = await mkdtemp(join(tmpdir(), "resource-adapter-owa-"));
 
 // The consumers below sit outside the workspace, so pnpm would otherwise run
 // them with whatever version is on PATH rather than the one CI uses.
@@ -47,6 +48,41 @@ async function installedVersion(packageName, workspacePackage = "ui") {
     "utf8",
   );
   return JSON.parse(manifest).version;
+}
+
+// The versions OWA's main branch resolves, read from the root importer of its
+// lockfile.
+async function owaResolvedVersions(packageNames) {
+  const response = await fetch(
+    "https://raw.githubusercontent.com/oaknational/Oak-Web-Application/main/pnpm-lock.yaml",
+  );
+  if (!response.ok) {
+    throw new Error(`Could not read OWA's lockfile: HTTP ${response.status}.`);
+  }
+  const lines = (await response.text()).split("\n");
+  const versions = {};
+  let packageName;
+
+  for (const line of lines.slice(lines.indexOf("  .:") + 1)) {
+    if (/^ {0,2}\S/.test(line)) {
+      break;
+    }
+    const dependency = /^ {6}'?(.+?)'?:$/.exec(line)?.[1];
+    if (dependency) {
+      packageName = dependency;
+      continue;
+    }
+    const version = /^ {8}version: ([^(\s]+)/.exec(line)?.[1];
+    if (version && packageNames.includes(packageName)) {
+      versions[packageName] = version;
+    }
+  }
+
+  const missing = packageNames.filter((name) => !(name in versions));
+  if (missing.length > 0) {
+    throw new Error(`OWA's lockfile resolves no ${missing.join(", ")}.`);
+  }
+  return versions;
 }
 
 function readPackedManifest(tarball) {
@@ -164,49 +200,77 @@ try {
     }
   }
 
-  await writeFile(
-    join(temporaryDirectory, "package.json"),
-    JSON.stringify(
-      {
-        name: "resource-adapter-artifact-consumer",
-        private: true,
-        type: "module",
-        packageManager,
-        dependencies: {
-          "@oaknational/oak-components": await installedVersion(
-            "@oaknational/oak-components",
-          ),
-          "@oaknational/resource-adapter-contracts": `file:${contractsTarball}`,
-          "@oaknational/resource-adapter": `file:${uiTarball}`,
-          "@oaknational/resource-document": `file:${resourceDocumentTarball}`,
-          "@portabletext/react": await installedVersion("@portabletext/react"),
-          next: await installedVersion("next"),
-          "next-cloudinary": await installedVersion("next-cloudinary"),
-          react: await installedVersion("react"),
-          "react-dom": await installedVersion("react-dom"),
-          "styled-components": await installedVersion("styled-components"),
-          zod: await installedVersion("zod", "contracts"),
+  async function installConsumer(directory, name, peerVersions) {
+    await writeFile(
+      join(directory, "package.json"),
+      JSON.stringify(
+        {
+          name,
+          private: true,
+          type: "module",
+          packageManager,
+          dependencies: {
+            ...peerVersions,
+            "@oaknational/resource-adapter-contracts": `file:${contractsTarball}`,
+            "@oaknational/resource-adapter": `file:${uiTarball}`,
+            "@oaknational/resource-document": `file:${resourceDocumentTarball}`,
+          },
         },
-      },
-      null,
-      2,
-    ),
-  );
+        null,
+        2,
+      ),
+    );
 
-  // The tarballs depend on workspace packages that are not published, so these
-  // overrides have to apply. pnpm 11 ignores the manifest's `pnpm` field. The
-  // root workspace's release-age exclusion does not reach this directory.
-  await writeFile(
-    join(temporaryDirectory, "pnpm-workspace.yaml"),
-    `overrides:
+    // The tarballs depend on workspace packages that are not published, so these
+    // overrides have to apply. pnpm 11 ignores the manifest's `pnpm` field. The
+    // root workspace's release-age exclusion does not reach this directory.
+    //
+    // pnpm installs past an unmet peer range and exits 0 unless peers are
+    // strict. Every peer the packages declare is installed above, so the missing
+    // ones ignored here are third-party peers only a full host supplies.
+    await writeFile(
+      join(directory, "pnpm-workspace.yaml"),
+      `overrides:
   "@oaknational/resource-adapter-contracts": "file:${contractsTarball}"
   "@oaknational/resource-document": "file:${resourceDocumentTarball}"
 minimumReleaseAgeExclude:
   - "@oaknational/*"
+strictPeerDependencies: true
+peerDependencyRules:
+  ignoreMissing:
+    - "*"
 `,
-  );
+    );
 
-  run("pnpm", ["install", "--config.auto-install-peers=false"], temporaryDirectory);
+    run("pnpm", ["install", "--config.auto-install-peers=false"], directory);
+  }
+
+  await installConsumer(temporaryDirectory, "resource-adapter-artifact-consumer", {
+    "@oaknational/oak-components": await installedVersion(
+      "@oaknational/oak-components",
+    ),
+    "@portabletext/react": await installedVersion("@portabletext/react"),
+    next: await installedVersion("next"),
+    "next-cloudinary": await installedVersion("next-cloudinary"),
+    react: await installedVersion("react"),
+    "react-dom": await installedVersion("react-dom"),
+    "styled-components": await installedVersion("styled-components"),
+    zod: await installedVersion("zod", "contracts"),
+  });
+
+  // OWA is the only host, so its versions are the ones the published peer
+  // ranges have to accept.
+  await installConsumer(
+    owaTemporaryDirectory,
+    "resource-adapter-owa-consumer",
+    await owaResolvedVersions([
+      ...new Set(
+        [uiManifest, contractsManifest, resourceDocumentManifest].flatMap((manifest) =>
+          Object.keys(manifest.peerDependencies ?? {}),
+        ),
+      ),
+    ]),
+  );
 
   // Peer, not a dependency: the parsing entries hand out or execute schemas,
   // and zod throws when a schema meets a foreign major. Optional because the
@@ -474,23 +538,25 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
   }
 
   // Server code and unbundled test runners load these without a bundler.
-  for (const file of serverSafeModules.filter(
-    (module) => !reachesOakComponents(module),
-  )) {
-    try {
-      await import(
-        pathToFileURL(
-          join(
-            temporaryDirectory,
-            "node_modules/@oaknational/resource-adapter/dist",
-            file,
-          ),
-        ).href
-      );
-    } catch (error) {
-      throw new Error(`Published ${file} does not load in plain Node.`, {
-        cause: error,
-      });
+  for (const [consumerName, directory] of [
+    ["workspace", temporaryDirectory],
+    ["OWA", owaTemporaryDirectory],
+  ]) {
+    for (const file of serverSafeModules.filter(
+      (module) => !reachesOakComponents(module),
+    )) {
+      try {
+        await import(
+          pathToFileURL(
+            join(directory, "node_modules/@oaknational/resource-adapter/dist", file),
+          ).href
+        );
+      } catch (error) {
+        throw new Error(
+          `Published ${file} does not load in plain Node with ${consumerName} versions.`,
+          { cause: error },
+        );
+      }
     }
   }
 
@@ -499,5 +565,6 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
   await Promise.all([
     rm(temporaryDirectory, { force: true, recursive: true }),
     rm(zodFreeTemporaryDirectory, { force: true, recursive: true }),
+    rm(owaTemporaryDirectory, { force: true, recursive: true }),
   ]);
 }

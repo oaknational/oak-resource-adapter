@@ -44,7 +44,7 @@
     "type-check": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@oaknational/oak-components": "^3.24.0",
+    "@oaknational/oak-components": "^3.22.2",
     "@portabletext/react": ">=4.0.1",
     "next": ">=14.2.12",
     "next-cloudinary": ">=6.16.0",
