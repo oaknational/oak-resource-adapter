@@ -1,5 +1,6 @@
 import {
   documentChangingJobKinds,
+  type TeacherAllowance,
   type UsageLimitReached,
   type WorksheetScaffoldingEntry,
   type WorksheetScaffoldingResumable,
@@ -36,6 +37,7 @@ export type WorkflowState =
   | Readonly<{
       status: "choosing";
       resumable: WorksheetScaffoldingResumable;
+      accessTier: TeacherAllowance["tier"];
       /** Set when starting again was refused, so only carrying on is offered. */
       usageLimit: MonthlyLimitReached | null;
     }>
@@ -115,13 +117,24 @@ function opened(
   state: WorkflowState,
   { declined, entry }: Extract<WorkflowEvent, { type: "opened" }>,
 ): WorkflowState {
+  const accessTier = entry.allowance.tier;
   if (entry.outcome === "resumable") {
-    return { status: "choosing", resumable: entry.resumable, usageLimit: null };
+    return {
+      status: "choosing",
+      resumable: entry.resumable,
+      accessTier,
+      usageLimit: null,
+    };
   }
   if (entry.outcome === "usageLimitReached") {
     return declined === undefined
       ? { status: "monthlyLimitReached", usageLimit: entry.usageLimit, expired: false }
-      : { status: "choosing", resumable: declined, usageLimit: entry.usageLimit };
+      : {
+          status: "choosing",
+          resumable: declined,
+          accessTier,
+          usageLimit: entry.usageLimit,
+        };
   }
   return received(state, entry.state);
 }

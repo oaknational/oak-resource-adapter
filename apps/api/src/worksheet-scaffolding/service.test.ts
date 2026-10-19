@@ -84,6 +84,7 @@ function stubDependencies(
   return {
     access: accessResolving({ tier: "full", inCopyrightRegion: true }),
     adaptedResourcesPerMonth: () => 3,
+    adaptedResourcesSince: vi.fn().mockResolvedValue([]),
     enqueue: vi.fn().mockResolvedValue({ job: generateJob(), outcome: "enqueued" }),
     getLatestJob: vi.fn().mockResolvedValue(null),
     now: () => new Date("2026-10-12T10:00:00.000Z"),
@@ -97,6 +98,14 @@ function stubDependencies(
 
 describe("the monthly allowance when opening worksheet scaffolding", () => {
   const limitReached = { outcome: "usageLimitReached" } as const;
+  const adaptedResources = (count: number) =>
+    vi.fn().mockResolvedValue(
+      Array.from({ length: count }, (_, index) => ({
+        capabilityId: "worksheetScaffolding",
+        lessonSlug: `lesson-${index}`,
+        programmeSlug: "programme",
+      })),
+    );
 
   it("is unlimited for a teacher with full access", async () => {
     const repository = stubRepository();
@@ -137,12 +146,19 @@ describe("the monthly allowance when opening worksheet scaffolding", () => {
     });
     const dependencies = stubDependencies({
       access: accessResolving({ tier: "limited", inCopyrightRegion: true }),
+      adaptedResourcesSince: adaptedResources(3),
       repository,
     });
 
     await expect(
       openWorksheetScaffolding({ lesson }, teacher, dependencies),
     ).resolves.toEqual({
+      allowance: {
+        limit: 3,
+        remaining: 0,
+        resetsAt: "2026-11-01T00:00:00.000Z",
+        tier: "limited",
+      },
       outcome: "usageLimitReached",
       usageLimit: {
         kind: "adapted_resources_month",
@@ -150,6 +166,28 @@ describe("the monthly allowance when opening worksheet scaffolding", () => {
       },
     });
     expect(dependencies.enqueue).not.toHaveBeenCalled();
+  });
+
+  it("reports the allowance left after the new adaptation", async () => {
+    const repository = stubRepository();
+    const dependencies = stubDependencies({
+      access: accessResolving({ tier: "limited", inCopyrightRegion: true }),
+      adaptedResourcesSince: adaptedResources(1),
+      repository,
+    });
+
+    await expect(
+      openWorksheetScaffolding({ lesson }, teacher, dependencies),
+    ).resolves.toMatchObject({
+      allowance: { limit: 3, remaining: 2, tier: "limited" },
+      outcome: "opened",
+    });
+    expect(
+      vi.mocked(dependencies.adaptedResourcesSince).mock.invocationCallOrder[0],
+    ).toBeGreaterThan(
+      vi.mocked(repository.createAdaptationWithSourceDocument).mock
+        .invocationCallOrder[0] ?? Infinity,
+    );
   });
 
   it("admits a teacher granted full access since their cached lookup", async () => {
@@ -229,6 +267,7 @@ describe("opening worksheet scaffolding", () => {
     await expect(
       openWorksheetScaffolding({ lesson }, teacher, dependencies),
     ).resolves.toEqual({
+      allowance: { tier: "full" },
       outcome: "resumable",
       resumable: {
         adaptationId: ADAPTATION_ID,
@@ -239,7 +278,6 @@ describe("opening worksheet scaffolding", () => {
     });
     expect(repository.createAdaptationWithSourceDocument).not.toHaveBeenCalled();
     expect(dependencies.enqueue).not.toHaveBeenCalled();
-    expect(dependencies.access.resolve).not.toHaveBeenCalled();
     expect(dependencies.resolveSourceDocumentLocator).toHaveBeenCalledWith(
       { capabilityId: "worksheetScaffolding", lesson },
       teacher,

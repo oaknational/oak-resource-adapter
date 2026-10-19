@@ -1,5 +1,6 @@
 import type {
   WorksheetScaffoldingEntry,
+  WorksheetScaffoldingEntryOutcome,
   WorksheetScaffoldingOpenRequest,
   WorksheetScaffoldingState,
 } from "@oaknational/resource-adapter-contracts/internal";
@@ -13,7 +14,10 @@ import {
   type WorksheetScaffoldingServiceRepository,
 } from "./dependencies";
 import type { AdaptationAllowance } from "../usage/adaptation-allowance";
-import { adaptationAllowanceFor } from "../usage/allowance-service";
+import {
+  adaptationAllowanceFor,
+  getTeacherAllowance,
+} from "../usage/allowance-service";
 import type { AdaptationCreationResult } from "./repository";
 import { getWorksheetScaffoldingState } from "./service";
 
@@ -65,6 +69,17 @@ export async function openWorksheetScaffolding(
   target: ResourceAdapterAuthenticatedTeacher,
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingEntry | null> {
+  const outcome = await enter(request, target, dependencies);
+  return outcome === null
+    ? null
+    : { ...outcome, allowance: await getTeacherAllowance(target, dependencies) };
+}
+
+async function enter(
+  request: WorksheetScaffoldingOpenRequest,
+  target: ResourceAdapterAuthenticatedTeacher,
+  dependencies: WorksheetScaffoldingDependencies,
+): Promise<WorksheetScaffoldingEntryOutcome | null> {
   const { lesson, replacing } = request;
   const { repository } = dependencies;
 
