@@ -10,6 +10,7 @@ import {
   type TransformationCatalogueItem,
 } from "../transformations/transformation-api";
 import { readableIdentifier } from "../shared/readable-identifier";
+import { useKeepViewAs } from "../shared/ViewAs";
 import { statusBadgeClass } from "../shared/status-badge";
 import styles from "../../page.module.css";
 
@@ -29,6 +30,7 @@ function TransformationRow({
   lessonId: string;
   transformation: TransformationCatalogueItem;
 }>) {
+  const keepViewAs = useKeepViewAs();
   return (
     <li>
       <div className={styles.capabilityTransformationHeading}>
@@ -64,9 +66,11 @@ function TransformationRow({
       )}
       <Link
         className={styles.textLink}
-        href={`/?view=transformations&lesson=${encodeURIComponent(
-          lessonId,
-        )}&selection=${encodeURIComponent(transformation.kind)}`}
+        href={keepViewAs(
+          `/?view=transformations&lesson=${encodeURIComponent(
+            lessonId,
+          )}&selection=${encodeURIComponent(transformation.kind)}`,
+        )}
       >
         Inspect in Transformations
       </Link>
@@ -112,6 +116,7 @@ function Capability({
   catalogue: TransformationCatalogue;
   lessonId: string;
 }>) {
+  const keepViewAs = useKeepViewAs();
   const transformations = capability.transformationKinds.flatMap((kind) => {
     const transformation = catalogue.transformations.find(
       (candidate) => candidate.kind === kind,
@@ -156,9 +161,11 @@ function Capability({
         {capability.suggestionFlowId !== undefined && (
           <div className={styles.capabilityActions}>
             <Link
-              href={`/?view=suggestions&lesson=${encodeURIComponent(
-                lessonId,
-              )}&selection=${encodeURIComponent(capability.suggestionFlowId)}`}
+              href={keepViewAs(
+                `/?view=suggestions&lesson=${encodeURIComponent(
+                  lessonId,
+                )}&selection=${encodeURIComponent(capability.suggestionFlowId)}`,
+              )}
             >
               Open suggestion agent
             </Link>

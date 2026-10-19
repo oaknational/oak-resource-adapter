@@ -5,7 +5,7 @@ import { TransformationControls } from "./TransformationControls";
 import { TransformationDocumentComparison } from "./TransformationDocumentComparison";
 import { TransformationResults } from "./TransformationResults";
 import { useTransformationWorkbench } from "./useTransformationWorkbench";
-import { ScenarioNavigation } from "../shared/ScenarioNavigation";
+import { ScenarioLayout } from "../shared/ScenarioLayout";
 import styles from "../../page.module.css";
 import type {
   LessonScenario,
@@ -24,17 +24,16 @@ export function TransformationsView({
   const workbench = useTransformationWorkbench(scenario, initialKind);
 
   return (
-    <>
-      <ScenarioNavigation
-        hrefFor={(id) => `/?view=transformations&lesson=${id}`}
-        items={scenarioNavigation.map(({ id, keyStage, subject, title }) => ({
-          id,
-          title,
-          detail: `${keyStage} · ${subject}`,
-        }))}
-        label="Transformation fixtures"
-        selectedId={scenario.id}
-      />
+    <ScenarioLayout
+      hrefFor={(id) => `/?view=transformations&lesson=${id}`}
+      items={scenarioNavigation.map(({ id, keyStage, subject, title }) => ({
+        id,
+        title,
+        detail: `${keyStage} · ${subject}`,
+      }))}
+      label="Transformation fixtures"
+      selectedId={scenario.id}
+    >
       <article className={styles.transformations}>
         <p className={styles.eyebrow}>Individual prompt tools</p>
         <h1>Test transformations</h1>
@@ -53,6 +52,6 @@ export function TransformationsView({
         <TransformationDocumentComparison {...workbench} />
         <OakMaterialTable {...workbench} />
       </article>
-    </>
+    </ScenarioLayout>
   );
 }
