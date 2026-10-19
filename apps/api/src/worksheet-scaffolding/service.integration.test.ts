@@ -38,7 +38,8 @@ const lessonReference = {
   programmeSlug: "english-primary-ks2",
 } as const;
 
-const fullAccess = () => Promise.resolve({ tier: "full" } as const);
+const fullAccess = () =>
+  Promise.resolve({ tier: "full", inCopyrightRegion: true } as const);
 const access = { recheck: fullAccess, resolve: fullAccess };
 
 const limitOfOne = createModelJobLimiter({
@@ -164,6 +165,9 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
         })) as typeof enqueueJob,
       getLatestJob: getLatestJobForConcurrencyKey,
       now: () => new Date(),
+      resolveSourceDocumentLocator: () => {
+        throw new Error("These requests do not check lesson eligibility.");
+      },
       readSourceDocument: () => {
         throw new Error("These requests do not read the source document.");
       },

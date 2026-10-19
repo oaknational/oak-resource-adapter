@@ -27,8 +27,8 @@ contract and parsing boundary.
 ## Published document contract
 
 `contracts`, `resource-document` and `ui` are published as a fixed version group.
-The internal API validates source documents against the canonical schema on the
-way out, so the UI takes the document type from `resource-document` rather than
+The internal API validates the documents it returns against the canonical schema
+on the way out, so the UI takes the document type from `resource-document` rather than
 copying a second model or re-parsing documents in the host's bundle. Only the
 package's `schema` entry point exposes Zod; the document types are plain
 TypeScript, so nothing in the UI's published surface obliges a host to resolve

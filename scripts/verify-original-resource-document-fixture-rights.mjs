@@ -1,13 +1,14 @@
 import { pathToFileURL } from "node:url";
 import {
   createOakLessonRepository,
+  createOakLessonRightsReader,
   findLessonResource,
   hasAdaptableRights,
   oakCurriculumConfigFromEnv,
 } from "../packages/curriculum/dist/index.js";
 import { originalResourceDocumentFixtureManifest } from "../packages/original-resource-documents/dist/fixtures.js";
 
-export async function verifyFixtureRights(fixtures, repository) {
+export async function verifyFixtureRights(fixtures, repository, readRights) {
   const oakFixtures = fixtures.filter((entry) => "oakLesson" in entry);
   const failures = [];
   for (const fixture of oakFixtures) {
@@ -19,9 +20,10 @@ export async function verifyFixtureRights(fixtures, repository) {
     if (findLessonResource(lesson, "worksheet") === undefined) {
       failures.push(`${fixture.id}: Oak publishes no worksheet.`);
     }
-    if (!hasAdaptableRights(lesson.maxRestrictions)) {
+    const rights = await readRights(identity);
+    if (rights === null || !hasAdaptableRights(rights)) {
       failures.push(
-        `${fixture.id}: Oak records disallowed restrictions ${JSON.stringify(lesson.maxRestrictions)}.`,
+        `${fixture.id}: Oak records disallowed rights ${JSON.stringify(rights)}.`,
       );
     }
   }
@@ -32,10 +34,11 @@ export async function verifyFixtureRights(fixtures, repository) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const repository = createOakLessonRepository(oakCurriculumConfigFromEnv(process.env));
+  const config = oakCurriculumConfigFromEnv(process.env);
   const count = await verifyFixtureRights(
     originalResourceDocumentFixtureManifest,
-    repository,
+    createOakLessonRepository(config),
+    createOakLessonRightsReader(config),
   );
   console.log(`Verified ${count} Oak worksheet fixtures with adaptable rights.`);
 }

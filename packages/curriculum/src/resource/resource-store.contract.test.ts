@@ -124,10 +124,7 @@ describe("the downloads API resource store", () => {
     );
 
     const lessonWithAnswers = buildLesson({
-      resources: [
-        ...lesson.resources,
-        { type: "worksheet-answers", pdf: null, googleDriveUrl: null },
-      ],
+      resources: [...lesson.resources, { type: "worksheet-answers" }],
     });
 
     await expect(
@@ -140,7 +137,7 @@ describe("the downloads API resource store", () => {
     oakServes(zipOf({ "slide-deck.pptx": deck }));
 
     const lessonWithDeck = buildLesson({
-      resources: [{ type: "slide-deck", pdf: null, googleDriveUrl: null }],
+      resources: [{ type: "slide-deck" }],
     });
 
     await expect(

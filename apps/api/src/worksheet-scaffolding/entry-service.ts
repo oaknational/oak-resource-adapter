@@ -59,6 +59,7 @@ async function createWithinAllowance(
   return rechecked === "unlimited" ? create("unlimited") : created;
 }
 
+/** Lesson entry checks current eligibility; calls by adaptation ID use stored work. */
 export async function openWorksheetScaffolding(
   request: WorksheetScaffoldingOpenRequest,
   target: ResourceAdapterAuthenticatedTeacher,
@@ -66,6 +67,14 @@ export async function openWorksheetScaffolding(
 ): Promise<WorksheetScaffoldingEntry | null> {
   const { lesson, replacing } = request;
   const { repository } = dependencies;
+
+  const locator = await dependencies.resolveSourceDocumentLocator(
+    { capabilityId: CAPABILITY.id, lesson },
+    target,
+  );
+  if (locator === null) {
+    return null;
+  }
 
   if (replacing === undefined) {
     const recentAdaptationsOfLesson = {
@@ -95,17 +104,9 @@ export async function openWorksheetScaffolding(
     }
   }
 
-  const document = await dependencies.readSourceDocument(
-    { capabilityId: CAPABILITY.id, lesson },
-    target,
-  );
-  if (document === null) {
-    return null;
-  }
-
   const adaptationInput = {
     capabilityId: CAPABILITY.id,
-    document,
+    document: await dependencies.readSourceDocument(locator),
     lesson,
     teacherId: target.teacherId,
   };

@@ -34,6 +34,12 @@ const edgeCases = [
     outcome: "The capabilities endpoint returned 1 capabilities.",
     offersCreateMore: true,
   },
+  {
+    id: "copyright-restricted-lesson",
+    heading: "Oak marks the lesson copyright-restricted",
+    outcome: "The capabilities endpoint returned 0 capabilities.",
+    offersCreateMore: false,
+  },
 ] as const;
 
 for (const { heading, id, offersCreateMore, outcome } of edgeCases) {

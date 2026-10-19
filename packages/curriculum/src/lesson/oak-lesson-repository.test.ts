@@ -18,10 +18,12 @@ import {
   contentRow,
   quizRow,
   restrictionLevelsRow,
+  rightsBrowseRow,
+  rightsContentRow,
 } from "./lesson-fixtures.js";
 import {
-  createOakLessonRestrictionReader,
   createOakLessonRepository,
+  createOakLessonRightsReader,
 } from "./oak-lesson-repository.js";
 
 const config = {
@@ -143,7 +145,7 @@ describe("the request the repository makes", () => {
     expect(query).not.toContain("teacher_tips");
   });
 
-  it("asks the lesson-keyed views for published rows only", async () => {
+  it("asks the content view for published rows only", async () => {
     oakResponds({});
 
     await createOakLessonRepository(config).fetch(addingFractions);
@@ -151,7 +153,8 @@ describe("the request the repository makes", () => {
     const [, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
     const { query } = JSON.parse(init.body as string) as { query: string };
     const stateFilters = query.match(/_state: \{ _eq: "published" \}/g) ?? [];
-    expect(stateFilters).toHaveLength(2);
+    expect(stateFilters).toHaveLength(1);
+    expect(query).not.toContain("restrictionLevels");
   });
 });
 
@@ -169,7 +172,6 @@ describe("the lesson the repository returns", () => {
       misconceptions: [],
       outcome: null,
       transcript: null,
-      maxRestrictions: [],
       programme: {
         examBoard: null,
         keyStage: "KS2",
@@ -178,16 +180,7 @@ describe("the lesson the repository returns", () => {
         subjectSlug: "maths",
         tier: null,
       },
-      resources: [
-        {
-          type: "worksheet",
-          pdf: {
-            bucketName: "ingested-assets-example",
-            bucketPath: "LESS-EXAMP-1/worksheet/PDF.pdf",
-          },
-          googleDriveUrl: "https://docs.google.com/presentation/d/example/edit",
-        },
-      ],
+      resources: [{ type: "worksheet" }],
       title: "Adding fractions",
       unit: { slug: "fractions", title: "Fractions" },
     });
@@ -384,24 +377,7 @@ describe("the resources the repository locates", () => {
     const lesson = await createOakLessonRepository(config).fetch(addingFractions);
 
     expect(lesson.resources).toEqual(
-      expect.arrayContaining([
-        {
-          type: "starter-quiz",
-          pdf: {
-            bucketName: "oak-quizzes-example",
-            bucketPath: "LESS-EXAMP-1/starter/questions.pdf",
-          },
-          googleDriveUrl: null,
-        },
-        {
-          type: "exit-quiz-answers",
-          pdf: {
-            bucketName: "oak-quizzes-example",
-            bucketPath: "LESS-EXAMP-1/exit/answers.pdf",
-          },
-          googleDriveUrl: null,
-        },
-      ]),
+      expect.arrayContaining([{ type: "starter-quiz" }, { type: "exit-quiz-answers" }]),
     );
   });
 
@@ -420,7 +396,7 @@ describe("the resources the repository locates", () => {
     ).resolves.toMatchObject({ resources: [] });
   });
 
-  it("carries the Google document when Oak publishes no file", async () => {
+  it("includes a resource published only as a Google document", async () => {
     oakResponds({
       assets: [
         assetsRow({
@@ -436,13 +412,7 @@ describe("the resources the repository locates", () => {
     await expect(
       createOakLessonRepository(config).fetch(addingFractions),
     ).resolves.toMatchObject({
-      resources: [
-        {
-          type: "worksheet",
-          pdf: null,
-          googleDriveUrl: "https://docs.google.com/d/x/edit",
-        },
-      ],
+      resources: [{ type: "worksheet" }],
     });
   });
 
@@ -460,7 +430,7 @@ describe("the resources the repository locates", () => {
     expect((error as Error).cause).toBeInstanceOf(ZodError);
   });
 
-  it("ignores a half-populated file location rather than inventing one", async () => {
+  it("includes a resource with a Google document and an incomplete PDF location", async () => {
     oakResponds({
       assets: [
         assetsRow({
@@ -476,53 +446,7 @@ describe("the resources the repository locates", () => {
 
     await expect(
       createOakLessonRepository(config).fetch(addingFractions),
-    ).resolves.toMatchObject({ resources: [{ type: "worksheet", pdf: null }] });
-  });
-});
-
-describe("the restrictions the repository reports", () => {
-  it("reports the level published against each category of third-party material", async () => {
-    oakResponds({
-      restrictionLevels: [
-        restrictionLevelsRow({
-          tpc_media_max_restriction: "Highly restricted",
-          tpc_works_max_restriction: "OGL compatible",
-        }),
-      ],
-    });
-
-    await expect(
-      createOakLessonRepository(config).fetch(addingFractions),
-    ).resolves.toMatchObject({
-      maxRestrictions: [
-        { category: "media", maxLevel: "highly-restricted" },
-        { category: "works", maxLevel: "ogl-compatible" },
-      ],
-    });
-  });
-
-  it("reads every category Oak publishes a level against", async () => {
-    oakResponds({
-      restrictionLevels: [
-        restrictionLevelsRow({
-          tpc_downloadablefiles_max_restriction: "Restricted",
-          tpc_media_max_restriction: "Highly restricted",
-          tpc_quizimages_max_restriction: "OGL equivalent",
-          tpc_works_max_restriction: "OGL compatible",
-        }),
-      ],
-    });
-
-    await expect(
-      createOakLessonRepository(config).fetch(addingFractions),
-    ).resolves.toMatchObject({
-      maxRestrictions: [
-        { category: "downloadable-files", maxLevel: "restricted" },
-        { category: "media", maxLevel: "highly-restricted" },
-        { category: "quiz-images", maxLevel: "ogl-equivalent" },
-        { category: "works", maxLevel: "ogl-compatible" },
-      ],
-    });
+    ).resolves.toMatchObject({ resources: [{ type: "worksheet" }] });
   });
 });
 
@@ -778,54 +702,209 @@ describe("what reaches the log", () => {
   });
 });
 
-describe("restriction-only reader", () => {
-  it("queries only published restriction columns", async () => {
-    oakResponds({
+function oakRespondsWithRights(data: {
+  browseData?: unknown[];
+  content?: unknown[];
+  restrictionLevels?: unknown[];
+}): void {
+  oakResponds({
+    browseData: [rightsBrowseRow()],
+    content: [rightsContentRow()],
+    ...data,
+  });
+}
+
+const readRights = () => createOakLessonRightsReader(config)(addingFractions);
+
+describe("rights reader", () => {
+  it("queries only the columns it reads, for the lesson in its programme", async () => {
+    oakRespondsWithRights({
       restrictionLevels: [
         restrictionLevelsRow({ tpc_media_max_restriction: "OGL compatible" }),
       ],
     });
-    await expect(
-      createOakLessonRestrictionReader(config)(addingFractions),
-    ).resolves.toEqual([{ category: "media", maxLevel: "ogl-compatible" }]);
+    await expect(readRights()).resolves.toEqual({
+      maxRestrictions: [{ category: "media", maxLevel: "ogl-compatible" }],
+      copyrightRestricted: false,
+      legacyCopyright: false,
+      expired: false,
+      geoRestricted: false,
+    });
     const request = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
-    expect(request.query).toContain('_state: { _eq: "published" }');
-    expect(request.query).not.toContain("browseData");
+    expect(request.query.match(/_state: \{ _eq: "published" \}/g)).toHaveLength(2);
+    expect(request.query).toContain('lesson_data(path: "copyright_content")');
+    expect(request.query).toContain('deprecated_fields(path: "expired")');
     expect(request.query).not.toContain("assets:");
-    expect(request.query).not.toContain("content:");
-    expect(request.variables).toEqual({ lessonSlug: addingFractions.lessonSlug });
+    expect(request.query).not.toContain("programme_fields");
+    expect(request.variables).toEqual(addingFractions);
   });
-  it("accepts absent rows and equivalent duplicates", async () => {
-    oakResponds({ restrictionLevels: [] });
-    await expect(
-      createOakLessonRestrictionReader(config)(addingFractions),
-    ).resolves.toEqual([]);
-    oakResponds({
+  it("reports the level published against each category of third-party material", async () => {
+    oakRespondsWithRights({
+      restrictionLevels: [
+        restrictionLevelsRow({
+          tpc_media_max_restriction: "Highly restricted",
+          tpc_works_max_restriction: "OGL compatible",
+        }),
+      ],
+    });
+
+    await expect(readRights()).resolves.toMatchObject({
+      maxRestrictions: [
+        { category: "media", maxLevel: "highly-restricted" },
+        { category: "works", maxLevel: "ogl-compatible" },
+      ],
+    });
+  });
+
+  it("reads every category Oak publishes a level against", async () => {
+    oakRespondsWithRights({
+      restrictionLevels: [
+        restrictionLevelsRow({
+          tpc_downloadablefiles_max_restriction: "Restricted",
+          tpc_media_max_restriction: "Highly restricted",
+          tpc_quizimages_max_restriction: "OGL equivalent",
+          tpc_works_max_restriction: "OGL compatible",
+        }),
+      ],
+    });
+
+    await expect(readRights()).resolves.toMatchObject({
+      maxRestrictions: [
+        { category: "downloadable-files", maxLevel: "restricted" },
+        { category: "media", maxLevel: "highly-restricted" },
+        { category: "quiz-images", maxLevel: "ogl-equivalent" },
+        { category: "works", maxLevel: "ogl-compatible" },
+      ],
+    });
+  });
+  it.each([
+    [
+      "copyrightRestricted",
+      {
+        browseData: [
+          rightsBrowseRow({ features: { agf__has_copyright_restrictions: true } }),
+        ],
+      },
+    ],
+    [
+      "geoRestricted",
+      { browseData: [rightsBrowseRow({ features: { agf__geo_restricted: true } })] },
+    ],
+    [
+      "legacyCopyright",
+      {
+        browseData: [
+          rightsBrowseRow({
+            copyright_content: [
+              { copyright_info: "This lesson contains copyright material." },
+            ],
+          }),
+        ],
+      },
+    ],
+    ["expired", { content: [rightsContentRow(true)] }],
+  ])("reports %s", async (flag, data) => {
+    oakRespondsWithRights(data);
+    await expect(readRights()).resolves.toMatchObject({ [flag]: true });
+  });
+  it("ignores other copyright notices and absent flags", async () => {
+    oakRespondsWithRights({
+      browseData: [
+        rightsBrowseRow({
+          copyright_content: [{ copyright_info: "info about copyright" }],
+          features: null,
+        }),
+      ],
+    });
+    await expect(readRights()).resolves.toMatchObject({
+      copyrightRestricted: false,
+      legacyCopyright: false,
+      geoRestricted: false,
+    });
+  });
+  it("reports no rights for a lesson Oak does not publish in the programme", async () => {
+    oakRespondsWithRights({ browseData: [] });
+    await expect(readRights()).resolves.toBeNull();
+    oakRespondsWithRights({ content: [] });
+    await expect(readRights()).resolves.toBeNull();
+  });
+  it("accepts absent restriction rows and equivalent duplicates", async () => {
+    oakRespondsWithRights({ restrictionLevels: [] });
+    await expect(readRights()).resolves.toMatchObject({ maxRestrictions: [] });
+    oakRespondsWithRights({
+      browseData: [rightsBrowseRow(), rightsBrowseRow()],
       restrictionLevels: [restrictionLevelsRow(), restrictionLevelsRow()],
     });
-    await expect(
-      createOakLessonRestrictionReader(config)(addingFractions),
-    ).resolves.toEqual([]);
+    await expect(readRights()).resolves.toMatchObject({ maxRestrictions: [] });
   });
   it("rejects conflicting rows", async () => {
-    oakResponds({
+    oakRespondsWithRights({
       restrictionLevels: [
         restrictionLevelsRow(),
         restrictionLevelsRow({ tpc_works_max_restriction: "Restricted" }),
       ],
     });
-    await expect(
-      createOakLessonRestrictionReader(config)(addingFractions),
-    ).rejects.toMatchObject({ code: "ambiguous-identity" });
+    await expect(readRights()).rejects.toMatchObject({ code: "ambiguous-identity" });
+  });
+  it.each([
+    [
+      "copyright flags",
+      {
+        browseData: [
+          rightsBrowseRow(),
+          rightsBrowseRow({ features: { agf__has_copyright_restrictions: true } }),
+        ],
+      },
+    ],
+    [
+      "geo flags",
+      {
+        browseData: [
+          rightsBrowseRow(),
+          rightsBrowseRow({ features: { agf__geo_restricted: true } }),
+        ],
+      },
+    ],
+    [
+      "legacy copyright notices",
+      {
+        browseData: [
+          rightsBrowseRow(),
+          rightsBrowseRow({
+            copyright_content: [
+              { copyright_info: "This lesson contains copyright material." },
+            ],
+          }),
+        ],
+      },
+    ],
+    ["expiry", { content: [rightsContentRow(false), rightsContentRow(true)] }],
+  ])("rejects conflicting %s in either row order", async (_, data) => {
+    oakRespondsWithRights(data);
+    await expect(readRights()).rejects.toMatchObject({ code: "ambiguous-identity" });
+    oakRespondsWithRights(
+      Object.fromEntries(
+        Object.entries(data).map(([key, rows]) => [key, rows.toReversed()]),
+      ),
+    );
+    await expect(readRights()).rejects.toMatchObject({ code: "ambiguous-identity" });
   });
   it("rejects malformed data and upstream failures", async () => {
-    oakResponds({ restrictionLevels: [{}] });
-    await expect(
-      createOakLessonRestrictionReader(config)(addingFractions),
-    ).rejects.toMatchObject({ code: "malformed-response" });
+    oakRespondsWithRights({ restrictionLevels: [{}] });
+    await expect(readRights()).rejects.toMatchObject({ code: "malformed-response" });
+    oakRespondsWithRights({
+      browseData: [
+        rightsBrowseRow({ features: { agf__has_copyright_restrictions: "yes" } }),
+      ],
+    });
+    await expect(readRights()).rejects.toMatchObject({ code: "malformed-response" });
+    oakRespondsWithRights({
+      browseData: [rightsBrowseRow({ features: { agf__geo_restricted: "true" } })],
+    });
+    await expect(readRights()).rejects.toMatchObject({ code: "malformed-response" });
+    oakRespondsWithRights({ content: [rightsContentRow("true")] });
+    await expect(readRights()).rejects.toMatchObject({ code: "malformed-response" });
     oakReturnsStatus(503);
-    await expect(
-      createOakLessonRestrictionReader(config)(addingFractions),
-    ).rejects.toMatchObject({ code: "upstream-unavailable" });
+    await expect(readRights()).rejects.toMatchObject({ code: "upstream-unavailable" });
   });
 });
