@@ -297,7 +297,7 @@ describe("deterministic suggestion catalogue", () => {
           params: { supportLevel: "low" },
           targetBlockId: id,
         },
-        { kind: "scaffold-add-task-vocabulary", params: {}, targetBlockId: id },
+        { kind: "scaffold-add-task-glossary", params: {}, targetBlockId: id },
         { kind: "scaffold-add-sentence-starters", params: {}, targetBlockId: id },
         { kind: "scaffold-add-sentence-frames", params: {}, targetBlockId: id },
       ]),

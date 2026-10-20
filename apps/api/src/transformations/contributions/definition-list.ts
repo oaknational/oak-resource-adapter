@@ -9,14 +9,14 @@ import { contributionExtensions, type ContributionContext } from "./contribution
 import { insertBeneath } from "./place";
 
 const termSchema = z.string().trim().min(1).max(60);
-const definitionSchema = z.string().trim().min(1).max(100);
+const definitionSchema = z.string().trim().min(1).max(200);
 
 /** Terms alone, for a list that names the words without defining them. */
 export const termsOnlySchema = z.strictObject({
   entries: z
     .array(z.strictObject({ term: termSchema }))
     .min(1)
-    .max(6),
+    .max(10),
 });
 
 export function definedTermsSchemaOf(maxEntries: number) {
@@ -28,7 +28,7 @@ export function definedTermsSchemaOf(maxEntries: number) {
   });
 }
 
-export const definedTermsSchema = definedTermsSchemaOf(6);
+export const definedTermsSchema = definedTermsSchemaOf(10);
 
 export type DefinitionListSchema = typeof definedTermsSchema | typeof termsOnlySchema;
 
@@ -50,6 +50,25 @@ function findKeyword(
   );
 }
 
+function escapeRegExp(value: string): string {
+  return value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+}
+
+/**
+ * Fits Oak's wording to "term – definition": drops an opening that restates the
+ * term, and lower-cases an opening article. Other capitals are left alone
+ * because a definition can open with a proper noun ("French -ir verb …").
+ */
+export function tidyKeywordDefinition(keyword: string, description: string): string {
+  const restatement = new RegExp(
+    `^(?:(?:a|an|the)\\s+)?${escapeRegExp(keyword.trim())}\\s+(?:is|are)\\s+`,
+    "i",
+  );
+  const definition = description.trim().replace(restatement, "") || description.trim();
+
+  return definition.replace(/^(A|An|The)\b/, (article) => article.toLowerCase());
+}
+
 /**
  * Oak's definition of a word the lesson teaches wins over the model's, and the
  * entry records that Oak wrote it so a renderer can mark it.
@@ -59,10 +78,12 @@ function toEntry(
   keywords: readonly LessonKeyword[],
 ): DefinitionEntry {
   const keyword = findKeyword(keywords, value.term);
-  const definition =
-    value.definition === undefined
+  const oakDefinition =
+    keyword === undefined
       ? undefined
-      : (keyword?.description ?? value.definition);
+      : tidyKeywordDefinition(keyword.keyword, keyword.description);
+  const definition =
+    value.definition === undefined ? undefined : (oakDefinition ?? value.definition);
 
   return {
     term: text(value.term),

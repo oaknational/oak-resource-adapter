@@ -104,7 +104,7 @@ describe("worksheet scaffolding suggestions", () => {
 
     expect(result.candidates.map(({ kind }) => kind)).toEqual([
       "scaffold-add-word-bank",
-      "scaffold-add-task-vocabulary",
+      "scaffold-add-task-glossary",
       "scaffold-add-prompt-questions",
       "scaffold-add-sentence-starters",
       "scaffold-add-sentence-frames",
@@ -296,7 +296,7 @@ describe("worksheet scaffolding suggestions", () => {
           params: { supportLevel: "low" },
           targetBlockId,
         },
-        { kind: "scaffold-add-task-vocabulary", params: {}, targetBlockId },
+        { kind: "scaffold-add-task-glossary", params: {}, targetBlockId },
         { kind: "scaffold-add-sentence-starters", params: {}, targetBlockId },
         { kind: "scaffold-add-sentence-frames", params: {}, targetBlockId },
       ]),

@@ -5,7 +5,7 @@ import {
 } from "@oaknational/resource-document";
 import { z } from "zod";
 
-import type { ModelInvokerConfig } from "../ai/model-roles";
+import { maxOutputTokens, type ModelInvokerConfig } from "../ai/model-roles";
 import { serialiseResourceDocumentForPrompt } from "../transformations/prompt-input";
 import {
   isRegisteredTransformationKind,
@@ -331,7 +331,10 @@ export async function generateSuggestions(
       ? {}
       : { correlationKey: config.correlationKey }),
     promptTemplateId: preparedPrompt.promptTemplateId,
-    request: { input: preparedPrompt.text },
+    request: {
+      input: preparedPrompt.text,
+      max_output_tokens: maxOutputTokens[flow.role],
+    },
     role: flow.role,
     schema,
     schemaName: "transformation_suggestions",

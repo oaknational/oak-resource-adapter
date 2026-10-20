@@ -7,7 +7,7 @@ import {
   type TextModelOutputResult,
 } from "@oaknational/resource-adapter-ai";
 
-import { modelRoleBindings } from "./model-roles";
+import { maxOutputTokens, modelRoleBindings } from "./model-roles";
 import type { ResourceAdapterModelInvoker } from "./model-roles";
 
 export function createDevModelInvoker(): ResourceAdapterModelInvoker {
@@ -32,7 +32,7 @@ export async function invokeDevSmokeText(
 ): Promise<TextModelOutputResult> {
   return createDevModelInvoker().invokeText({
     correlationKey: "dev-ai-invoke",
-    request: { input, max_output_tokens: 256 },
+    request: { input, max_output_tokens: maxOutputTokens["dev-smoke"] },
     role: "dev-smoke",
   });
 }

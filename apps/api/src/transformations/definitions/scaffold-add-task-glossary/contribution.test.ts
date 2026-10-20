@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { QuestionNode, ResourceDocument } from "@oaknational/resource-document";
 
 import type { ContributionContext } from "../../contributions/contribution";
-import { taskVocabularyContribution } from "./contribution";
+import { taskGlossaryContribution } from "./contribution";
 
 let worksheet: ResourceDocument;
 let question: QuestionNode;
@@ -27,7 +27,7 @@ beforeAll(async () => {
 
 function context(): ContributionContext {
   return {
-    contributionId: "task-vocabulary-1",
+    contributionId: "task-glossary-1",
     document: worksheet,
     material: {
       "lesson.keywords": {
@@ -39,7 +39,7 @@ function context(): ContributionContext {
     },
     params: {},
     targetNode: question,
-    transformationKind: "scaffold-add-task-vocabulary",
+    transformationKind: "scaffold-add-task-glossary",
   };
 }
 
@@ -51,14 +51,14 @@ function addedEntries(document: ResourceDocument) {
   return list?.type === "definitionList" ? list.entries : [];
 }
 
-describe("taskVocabularyContribution", () => {
+describe("taskGlossaryContribution", () => {
   it("defines the task's words beneath it, preferring Oak's own wording", () => {
-    const prepared = taskVocabularyContribution.prepare(context());
+    const prepared = taskGlossaryContribution.prepare(context());
     const [document] = prepared.apply({
       entries: [{ definition: "the model's wording", term: "perspective" }],
     });
 
-    expect(prepared.name).toBe("task_vocabulary");
+    expect(prepared.name).toBe("task_glossary");
     expect(addedEntries(document)).toEqual([
       {
         definition: [{ type: "text", text: "the position a story is told from" }],
@@ -68,20 +68,19 @@ describe("taskVocabularyContribution", () => {
     ]);
   });
 
-  it("refuses a fourth word, beyond which the task has become a reading task", () => {
-    const { schema } = taskVocabularyContribution.prepare(context());
+  it("refuses an eleventh word", () => {
+    const { schema } = taskGlossaryContribution.prepare(context());
     const entry = (term: string) => ({ definition: "a meaning", term });
+    const terms = Array.from({ length: 11 }, (_, index) => `term ${index}`);
 
-    expect(schema.safeParse({ entries: ["a", "b", "c"].map(entry) }).success).toBe(
+    expect(schema.safeParse({ entries: terms.slice(0, 10).map(entry) }).success).toBe(
       true,
     );
-    expect(schema.safeParse({ entries: ["a", "b", "c", "d"].map(entry) }).success).toBe(
-      false,
-    );
+    expect(schema.safeParse({ entries: terms.map(entry) }).success).toBe(false);
   });
 
   it("requires a definition for every word", () => {
-    const { schema } = taskVocabularyContribution.prepare(context());
+    const { schema } = taskGlossaryContribution.prepare(context());
 
     expect(schema.safeParse({ entries: [{ term: "perspective" }] }).success).toBe(
       false,

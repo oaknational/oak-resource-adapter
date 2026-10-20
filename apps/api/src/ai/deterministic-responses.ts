@@ -15,7 +15,7 @@ const offers = {
     params: { supportLevel: "low" },
     reason: "Use a short vocabulary list to support the question.",
   },
-  "scaffold-add-task-vocabulary": {
+  "scaffold-add-task-glossary": {
     params: {},
     reason: "Explain the words the task instruction uses.",
   },

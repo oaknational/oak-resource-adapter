@@ -18,5 +18,7 @@ Do not:
 - increase cognitive load;
 - introduce a strategy different from the method taught in the lesson explanation;
 - give the pupil the answer, or tell them how to answer;
-- duplicate scaffolding the resource already carries.`;
+- duplicate scaffolding the resource already carries.
+
+Always add the scaffold, even when little in the task calls for it: give at least one item, choosing whatever is most useful for this task.`;
 }

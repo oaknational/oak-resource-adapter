@@ -104,7 +104,9 @@ describe("previewDevTransformation", () => {
       }),
     );
 
-    const preview = await previewDevTransformation(command());
+    const preview = await previewDevTransformation(
+      command({ kind: "scaffold-add-sentence-starters", params: {} }),
+    );
 
     expect(model.createInvoker).not.toHaveBeenCalled();
     expect(preview.prompt?.text).toContain("whose eyes we see through");

@@ -71,6 +71,8 @@ describe("sentenceStartersContribution", () => {
     const { schema } = sentenceStartersContribution.prepare(context());
 
     expect(schema.safeParse({ lines: [] }).success).toBe(false);
-    expect(schema.safeParse({ lines: ["a", "b", "c", "d", "e"] }).success).toBe(false);
+    expect(
+      schema.safeParse({ lines: ["a", "b", "c", "d", "e", "f", "g"] }).success,
+    ).toBe(false);
   });
 });
