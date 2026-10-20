@@ -35,7 +35,7 @@ export interface OakLessonFixtureMetadata {
 export type OakWorksheetFixtureEntry = OriginalResourceDocumentFixtureManifestEntry &
   Readonly<{ oakLesson: OakLessonFixtureMetadata }>;
 
-const oakOriginalFileResourceTypes = [
+const oakOriginalFileResourceTypes: readonly string[] = [
   "slide-deck",
   "worksheet",
   "worksheet-answers",
@@ -43,12 +43,15 @@ const oakOriginalFileResourceTypes = [
   "exit-quiz-answers",
   "starter-quiz",
   "starter-quiz-answers",
-] as const;
+];
+
+const oakOriginalFileResourceTypesWithSupplementary =
+  oakOriginalFileResourceTypes.toSpliced(1, 0, "supplementary");
 
 const oakLessonBaseUrl = "https://www.thenational.academy/teachers/lessons";
 const oakRights =
-  "Oak worksheet verified: every recorded third-party material restriction is OGL compatible or OGL equivalent, or no restriction is recorded.";
-const rightsCheckedOn = "2026-09-07";
+  "Oak worksheet verified: every recorded third-party material restriction is OGL compatible or OGL equivalent, or no restriction is recorded, and Oak does not mark the lesson copyright-restricted, legacy copyright or expired.";
+const rightsCheckedOn = "2026-10-13";
 
 function oakWorksheetFixture(
   lesson: Readonly<{
@@ -108,6 +111,19 @@ export const originalResourceDocumentFixtureManifest = [
     profile: "worksheet.v0",
     rights: "Synthetic test content committed under the repository licence.",
   },
+  oakWorksheetFixture({
+    lessonSlug: "actions-to-tackle-climate-change",
+    title: "Actions to tackle climate change",
+    description:
+      "Provisional worksheet excerpt for Oak KS3 Geography; tables and diagrams adapted for parser coverage.",
+    programmeSlug: "geography-secondary-ks3",
+    keyStage: "KS3",
+    keyStageSlug: "ks3",
+    subject: "Geography",
+    subjectSlug: "geography",
+    unitSlug: "weather-and-climate-why-does-our-weather-and-climate-change",
+    unitTitle: "Weather and climate: how do they vary?",
+  }),
   oakWorksheetFixture({
     lessonSlug:
       "explain-how-the-quotient-is-affected-when-the-divisor-is-equal-to-the-dividend",
@@ -173,29 +189,7 @@ export const originalResourceDocumentFixtureManifest = [
     subjectSlug: "french",
     unitSlug: "past-and-present-events-perfect-tense-negation-questions",
     unitTitle: "Past and present events: perfect tense, negation, questions",
-    originalFileResourceTypes: [
-      "slide-deck",
-      "supplementary",
-      "worksheet",
-      "worksheet-answers",
-      "exit-quiz",
-      "exit-quiz-answers",
-      "starter-quiz",
-      "starter-quiz-answers",
-    ],
-  }),
-  oakWorksheetFixture({
-    lessonSlug: "actions-to-tackle-climate-change",
-    title: "Actions to tackle climate change",
-    description:
-      "Provisional worksheet excerpt for Oak KS3 Geography; tables and diagrams adapted for parser coverage.",
-    programmeSlug: "geography-secondary-ks3",
-    keyStage: "KS3",
-    keyStageSlug: "ks3",
-    subject: "Geography",
-    subjectSlug: "geography",
-    unitSlug: "weather-and-climate-why-does-our-weather-and-climate-change",
-    unitTitle: "Weather and climate: how do they vary?",
+    originalFileResourceTypes: oakOriginalFileResourceTypesWithSupplementary,
   }),
   oakWorksheetFixture({
     lessonSlug: "air-resistance-do-and-review",
@@ -210,16 +204,7 @@ export const originalResourceDocumentFixtureManifest = [
     unitSlug: "forces-including-simple-machines",
     unitTitle: "Forces including simple machines",
     contentGuidance: ["Risk assessment required - equipment"],
-    originalFileResourceTypes: [
-      "slide-deck",
-      "supplementary",
-      "worksheet",
-      "worksheet-answers",
-      "exit-quiz",
-      "exit-quiz-answers",
-      "starter-quiz",
-      "starter-quiz-answers",
-    ],
+    originalFileResourceTypes: oakOriginalFileResourceTypesWithSupplementary,
   }),
   oakWorksheetFixture({
     lessonSlug: "the-river-nile",
@@ -261,5 +246,51 @@ export const originalResourceDocumentFixtureManifest = [
     subjectSlug: "music",
     unitSlug: "harmonic-progressions-bass-lines-and-shuffle",
     unitTitle: "Harmonic progressions and bass lines",
+  }),
+  oakWorksheetFixture({
+    lessonSlug: "school-life-singular-verbs-like-choisir-questions-with-qui",
+    title: "School life: singular verbs like 'choisir', questions with 'qui'",
+    description:
+      "Provisional worksheet extraction for Oak KS3 French; tables and diagrams adapted for parser coverage.",
+    programmeSlug: "french-secondary-ks3",
+    keyStage: "KS3",
+    keyStageSlug: "ks3",
+    subject: "French",
+    subjectSlug: "french",
+    unitSlug: "school-life-ir-verbs-in-the-present-uses-of-vous-and-on",
+    unitTitle: "School life: -IR verbs in the present, uses of 'vous' and 'on'",
+    originalFileResourceTypes: oakOriginalFileResourceTypesWithSupplementary,
+  }),
+  oakWorksheetFixture({
+    lessonSlug: "what-greek-myths-can-tell-us-about-ancient-greece",
+    title: "What Greek myths can tell us about Ancient Greece",
+    description:
+      "Provisional worksheet extraction for Oak KS2 History; tables and diagrams adapted for parser coverage.",
+    programmeSlug: "history-primary-ks2",
+    keyStage: "KS2",
+    keyStageSlug: "ks2",
+    subject: "History",
+    subjectSlug: "history",
+    unitSlug: "ancient-greek-civilisation-what-do-we-know-about-ancient-greece",
+    unitTitle: "Ancient Greek civilisation: what do we know about ancient Greece?",
+    contentGuidance: ["Depiction or discussion of sensitive content"],
+  }),
+  oakWorksheetFixture({
+    lessonSlug: "what-we-know-about-ancient-greece",
+    title: "What we know about Ancient Greece",
+    description:
+      "Provisional worksheet extraction for Oak KS2 History; tables adapted for parser coverage.",
+    programmeSlug: "history-primary-ks2",
+    keyStage: "KS2",
+    keyStageSlug: "ks2",
+    subject: "History",
+    subjectSlug: "history",
+    unitSlug: "ancient-greek-civilisation-what-do-we-know-about-ancient-greece",
+    unitTitle: "Ancient Greek civilisation: what do we know about ancient Greece?",
+    contentGuidance: [
+      "Depiction or discussion of discriminatory behaviour",
+      "Depiction or discussion of sensitive content",
+      "Depiction or discussion of violence or suffering",
+    ],
   }),
 ] as const satisfies readonly OriginalResourceDocumentFixtureManifestEntry[];

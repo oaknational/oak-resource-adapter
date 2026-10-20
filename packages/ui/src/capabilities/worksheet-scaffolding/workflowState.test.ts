@@ -46,7 +46,7 @@ function run(...events: WorkflowEvent[]): ReadyWorkflow {
 
 const opened = (state: WorksheetScaffoldingState): WorkflowEvent => ({
   type: "opened",
-  entry: { outcome: "opened", state },
+  entry: { allowance: { tier: "full" }, outcome: "opened", state },
 });
 const received = (state: WorksheetScaffoldingState): WorkflowEvent => ({
   type: "received",

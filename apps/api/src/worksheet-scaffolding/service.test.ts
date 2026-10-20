@@ -36,6 +36,7 @@ import {
   teacher,
 } from "./test-doubles";
 import { ConcurrencyConflictError } from "../jobs/job-repository";
+import type { TeacherAccess } from "../teacher-access/access";
 import { transformationDefinitions } from "../transformations/registry";
 import {
   CONTRIBUTION_EXTENSION_KEY,
@@ -43,6 +44,13 @@ import {
 } from "@oaknational/resource-document";
 
 let worksheet: ResourceDocument;
+
+const sourceLocator = {
+  source: "oak",
+  lessonSlug: lesson.lessonSlug,
+  programmeSlug: lesson.programmeSlug,
+  resourceType: "worksheet",
+} as const;
 
 beforeAll(async () => {
   worksheet = await loadWorksheet();
@@ -63,32 +71,186 @@ function stubRepository(
   } as unknown as WorksheetScaffoldingServiceRepository;
 }
 
+function accessResolving(access: TeacherAccess, refreshed: TeacherAccess = access) {
+  return {
+    recheck: vi.fn().mockResolvedValue(refreshed),
+    resolve: vi.fn().mockResolvedValue(access),
+  };
+}
+
 function stubDependencies(
   overrides: Partial<WorksheetScaffoldingDependencies> = {},
 ): WorksheetScaffoldingDependencies {
   return {
+    access: accessResolving({ tier: "full", inCopyrightRegion: true }),
+    adaptedResourcesPerMonth: () => 3,
+    adaptedResourcesSince: vi.fn().mockResolvedValue([]),
     enqueue: vi.fn().mockResolvedValue({ job: generateJob(), outcome: "enqueued" }),
     getLatestJob: vi.fn().mockResolvedValue(null),
+    now: () => new Date("2026-10-12T10:00:00.000Z"),
     resumableCutoff: () => new Date("2026-01-01T00:00:00.000Z"),
+    resolveSourceDocumentLocator: vi.fn().mockResolvedValue(sourceLocator),
     readSourceDocument: vi.fn().mockResolvedValue(worksheet),
     repository: stubRepository(),
     ...overrides,
   } as unknown as WorksheetScaffoldingDependencies;
 }
 
-describe("opening worksheet scaffolding", () => {
-  it("declines a lesson with no source worksheet", async () => {
+describe("the monthly allowance when opening worksheet scaffolding", () => {
+  const limitReached = { outcome: "usageLimitReached" } as const;
+  const adaptedResources = (count: number) =>
+    vi.fn().mockResolvedValue(
+      Array.from({ length: count }, (_, index) => ({
+        capabilityId: "worksheetScaffolding",
+        lessonSlug: `lesson-${index}`,
+        programmeSlug: "programme",
+      })),
+    );
+
+  it("is unlimited for a teacher with full access", async () => {
+    const repository = stubRepository();
+
+    await openWorksheetScaffolding(
+      { lesson },
+      teacher,
+      stubDependencies({ repository }),
+    );
+
+    expect(repository.createAdaptationWithSourceDocument).toHaveBeenCalledWith(
+      expect.objectContaining({ allowance: "unlimited" }),
+    );
+  });
+
+  it("counts a limited teacher's adaptations from the start of the UK month", async () => {
+    const repository = stubRepository();
+
+    await openWorksheetScaffolding(
+      { lesson },
+      teacher,
+      stubDependencies({
+        access: accessResolving({ tier: "limited", inCopyrightRegion: true }),
+        repository,
+      }),
+    );
+
+    expect(repository.createAdaptationWithSourceDocument).toHaveBeenCalledWith(
+      expect.objectContaining({
+        allowance: { limit: 3, since: new Date("2026-09-30T23:00:00.000Z") },
+      }),
+    );
+  });
+
+  it("refuses until the next UK month once the allowance is used", async () => {
+    const repository = stubRepository({
+      createAdaptationWithSourceDocument: vi.fn().mockResolvedValue(limitReached),
+    });
     const dependencies = stubDependencies({
-      readSourceDocument: vi.fn().mockResolvedValue(null),
+      access: accessResolving({ tier: "limited", inCopyrightRegion: true }),
+      adaptedResourcesSince: adaptedResources(3),
+      repository,
+    });
+
+    await expect(
+      openWorksheetScaffolding({ lesson }, teacher, dependencies),
+    ).resolves.toEqual({
+      allowance: {
+        limit: 3,
+        remaining: 0,
+        resetsAt: "2026-11-01T00:00:00.000Z",
+        tier: "limited",
+      },
+      outcome: "usageLimitReached",
+      usageLimit: {
+        kind: "adapted_resources_month",
+        retryAt: "2026-11-01T00:00:00.000Z",
+      },
+    });
+    expect(dependencies.enqueue).not.toHaveBeenCalled();
+  });
+
+  it("reports the allowance left after the new adaptation", async () => {
+    const repository = stubRepository();
+    const dependencies = stubDependencies({
+      access: accessResolving({ tier: "limited", inCopyrightRegion: true }),
+      adaptedResourcesSince: adaptedResources(1),
+      repository,
+    });
+
+    await expect(
+      openWorksheetScaffolding({ lesson }, teacher, dependencies),
+    ).resolves.toMatchObject({
+      allowance: { limit: 3, remaining: 2, tier: "limited" },
+      outcome: "opened",
+    });
+    expect(
+      vi.mocked(dependencies.adaptedResourcesSince).mock.invocationCallOrder[0],
+    ).toBeGreaterThan(
+      vi.mocked(repository.createAdaptationWithSourceDocument).mock
+        .invocationCallOrder[0] ?? Infinity,
+    );
+  });
+
+  it("admits a teacher granted full access since their cached lookup", async () => {
+    const repository = stubRepository({
+      createAdaptationWithSourceDocument: vi
+        .fn()
+        .mockResolvedValueOnce(limitReached)
+        .mockResolvedValueOnce(repositoryDefaults().createAdaptationWithSourceDocument),
+    });
+    const dependencies = stubDependencies({
+      access: accessResolving(
+        { tier: "limited", inCopyrightRegion: true },
+        { tier: "full", inCopyrightRegion: true },
+      ),
+      repository,
+    });
+
+    await expect(
+      openWorksheetScaffolding({ lesson }, teacher, dependencies),
+    ).resolves.toMatchObject({ outcome: "opened" });
+    expect(repository.createAdaptationWithSourceDocument).toHaveBeenLastCalledWith(
+      expect.objectContaining({ allowance: "unlimited" }),
+    );
+  });
+});
+
+describe("opening worksheet scaffolding", () => {
+  it("declines a lesson the teacher cannot adapt", async () => {
+    const dependencies = stubDependencies({
+      resolveSourceDocumentLocator: vi.fn().mockResolvedValue(null),
     });
 
     await expect(
       openWorksheetScaffolding({ lesson }, teacher, dependencies),
     ).resolves.toBeNull();
+    expect(dependencies.readSourceDocument).not.toHaveBeenCalled();
     expect(dependencies.enqueue).not.toHaveBeenCalled();
   });
 
-  it("offers unfinished work back before creating anything", async () => {
+  it("neither resumes nor reopens work on a lesson that is no longer eligible", async () => {
+    const repository = stubRepository({
+      findResumableAdaptation: vi.fn().mockResolvedValue({
+        id: ADAPTATION_ID,
+        pendingScaffoldCount: 1,
+        scaffoldCount: 2,
+        updatedAt: new Date("2026-02-03T09:00:00.000Z"),
+      }),
+      findReopenableAdaptation: vi.fn().mockResolvedValue({ id: ADAPTATION_ID }),
+    });
+    const dependencies = stubDependencies({
+      resolveSourceDocumentLocator: vi.fn().mockResolvedValue(null),
+      repository,
+    });
+
+    await expect(
+      openWorksheetScaffolding({ lesson }, teacher, dependencies),
+    ).resolves.toBeNull();
+    expect(repository.findResumableAdaptation).not.toHaveBeenCalled();
+    expect(repository.findReopenableAdaptation).not.toHaveBeenCalled();
+    expect(dependencies.readSourceDocument).not.toHaveBeenCalled();
+  });
+
+  it("offers unfinished work even when the current extraction cannot be read", async () => {
     const repository = stubRepository({
       findResumableAdaptation: vi.fn().mockResolvedValue({
         id: ADAPTATION_ID,
@@ -97,11 +259,15 @@ describe("opening worksheet scaffolding", () => {
         updatedAt: new Date("2026-02-03T09:00:00.000Z"),
       }),
     });
-    const dependencies = stubDependencies({ repository });
+    const dependencies = stubDependencies({
+      repository,
+      readSourceDocument: vi.fn().mockRejectedValue(new Error("Unreadable extraction")),
+    });
 
     await expect(
       openWorksheetScaffolding({ lesson }, teacher, dependencies),
     ).resolves.toEqual({
+      allowance: { tier: "full" },
       outcome: "resumable",
       resumable: {
         adaptationId: ADAPTATION_ID,
@@ -112,6 +278,11 @@ describe("opening worksheet scaffolding", () => {
     });
     expect(repository.createAdaptationWithSourceDocument).not.toHaveBeenCalled();
     expect(dependencies.enqueue).not.toHaveBeenCalled();
+    expect(dependencies.resolveSourceDocumentLocator).toHaveBeenCalledWith(
+      { capabilityId: "worksheetScaffolding", lesson },
+      teacher,
+    );
+    expect(dependencies.readSourceDocument).not.toHaveBeenCalled();
   });
 
   it("looks for resumable work as this teacher on this lesson and capability", async () => {
@@ -164,7 +335,7 @@ describe("opening worksheet scaffolding", () => {
   it("does not replace the old work when the new worksheet cannot be read", async () => {
     const repository = stubRepository();
     const dependencies = stubDependencies({
-      readSourceDocument: vi.fn().mockResolvedValue(null),
+      readSourceDocument: vi.fn().mockRejectedValue(new Error("Unreadable extraction")),
       repository,
     });
 
@@ -177,7 +348,7 @@ describe("opening worksheet scaffolding", () => {
         teacher,
         dependencies,
       ),
-    ).resolves.toBeNull();
+    ).rejects.toThrow("Unreadable extraction");
     expect(repository.replaceAdaptationWithSourceDocument).not.toHaveBeenCalled();
   });
 
@@ -187,6 +358,10 @@ describe("opening worksheet scaffolding", () => {
     const entry = await openWorksheetScaffolding({ lesson }, teacher, dependencies);
 
     expect(entry).toMatchObject({ outcome: "opened" });
+    expect(dependencies.resolveSourceDocumentLocator).toHaveBeenCalledTimes(1);
+    expect(dependencies.readSourceDocument).toHaveBeenCalledExactlyOnceWith(
+      sourceLocator,
+    );
     expect(dependencies.enqueue).toHaveBeenCalledWith({
       concurrencyKey: `adaptation:${ADAPTATION_ID}:head:${DOCUMENT_ID}`,
       idempotencyKey: `suggest:${DOCUMENT_ID}`,
@@ -200,12 +375,15 @@ describe("opening worksheet scaffolding", () => {
     });
   });
 
-  it("reopens the latest adaptation with no scaffolds and its stored suggestions", async () => {
+  it("reopens stored suggestions even when the current extraction cannot be read", async () => {
     const repository = stubRepository({
       findReopenableAdaptation: vi.fn().mockResolvedValue({ id: ADAPTATION_ID }),
       listOpenSuggestions: vi.fn().mockResolvedValue([storedSuggestion()]),
     });
-    const dependencies = stubDependencies({ repository });
+    const dependencies = stubDependencies({
+      repository,
+      readSourceDocument: vi.fn().mockRejectedValue(new Error("Unreadable extraction")),
+    });
 
     const entry = await openWorksheetScaffolding({ lesson }, teacher, dependencies);
 
@@ -213,8 +391,8 @@ describe("opening worksheet scaffolding", () => {
       outcome: "reopened",
       state: { adaptationId: ADAPTATION_ID, suggestions: [{ id: SUGGESTION_ID }] },
     });
-    expect(repository.createAdaptationWithSourceDocument).not.toHaveBeenCalled();
     expect(dependencies.readSourceDocument).not.toHaveBeenCalled();
+    expect(repository.createAdaptationWithSourceDocument).not.toHaveBeenCalled();
     expect(dependencies.enqueue).not.toHaveBeenCalled();
   });
 
@@ -263,7 +441,6 @@ describe("opening worksheet scaffolding", () => {
       },
     });
     expect(repository.createAdaptationWithSourceDocument).not.toHaveBeenCalled();
-    expect(dependencies.readSourceDocument).not.toHaveBeenCalled();
     expect(dependencies.enqueue).not.toHaveBeenCalled();
   });
 

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import type { TeacherAccess } from "../teacher-access/access";
 import { createModelJobLimiter, modelJobsPer24hLimit } from "./limiter";
 
 describe("the model jobs per 24 hours limit", () => {
@@ -19,10 +20,22 @@ describe("the model jobs per 24 hours limit", () => {
   });
 });
 
+function accessResolving(...accesses: TeacherAccess[]) {
+  const access = vi.fn<(teacherId: string) => Promise<TeacherAccess>>();
+  for (const value of accesses) {
+    access.mockResolvedValueOnce(value);
+  }
+  return { recheck: access, resolve: access };
+}
+
 describe("the model job limiter", () => {
   it("checks the teacher's usage against the configured limit", async () => {
     const retryAt = vi.fn().mockResolvedValue(null);
-    const limiter = createModelJobLimiter({ limit: () => 7, retryAt });
+    const limiter = createModelJobLimiter({
+      access: accessResolving({ tier: "full", inCopyrightRegion: true }),
+      limit: () => 7,
+      retryAt,
+    });
 
     await expect(limiter.check("user_test_teacher")).resolves.toEqual({
       allowed: true,
@@ -32,6 +45,10 @@ describe("the model job limiter", () => {
 
   it("reports when a teacher at the limit can start work again", async () => {
     const limiter = createModelJobLimiter({
+      access: accessResolving(
+        { tier: "full", inCopyrightRegion: true },
+        { tier: "full", inCopyrightRegion: true },
+      ),
       limit: () => 7,
       retryAt: vi.fn().mockResolvedValue(new Date("2026-02-04T09:00:00.000Z")),
     });
@@ -40,5 +57,41 @@ describe("the model job limiter", () => {
       allowed: false,
       usageLimit: { kind: "model_jobs_24h", retryAt: "2026-02-04T09:00:00.000Z" },
     });
+  });
+
+  it("uses the teacher's override in place of the configured limit", async () => {
+    const retryAt = vi.fn().mockResolvedValue(null);
+    const limiter = createModelJobLimiter({
+      access: accessResolving({
+        tier: "limited",
+        inCopyrightRegion: true,
+        modelJobsPer24h: 250,
+      }),
+      limit: () => 7,
+      retryAt,
+    });
+
+    await limiter.check("user_test_teacher");
+    expect(retryAt).toHaveBeenCalledWith("user_test_teacher", 250);
+  });
+
+  it("looks the teacher up again before refusing", async () => {
+    const retryAt = vi
+      .fn()
+      .mockResolvedValueOnce(new Date("2026-02-04T09:00:00.000Z"))
+      .mockResolvedValueOnce(null);
+    const limiter = createModelJobLimiter({
+      access: accessResolving(
+        { tier: "full", inCopyrightRegion: true },
+        { tier: "full", inCopyrightRegion: true, modelJobsPer24h: 250 },
+      ),
+      limit: () => 7,
+      retryAt,
+    });
+
+    await expect(limiter.check("user_test_teacher")).resolves.toEqual({
+      allowed: true,
+    });
+    expect(retryAt).toHaveBeenLastCalledWith("user_test_teacher", 250);
   });
 });

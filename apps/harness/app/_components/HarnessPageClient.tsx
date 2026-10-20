@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import { CapabilitiesView } from "./capabilities";
 import { EdgeCaseView } from "./edge-cases";
 import { ExportsView } from "./exports/ExportsView";
@@ -17,15 +19,40 @@ export function HarnessPageClient({
   view,
 }: Readonly<{ lessonId: string; view: HarnessView }>) {
   const apiBaseUrl = resolveApiBaseUrl();
+  const chrome = useRef<HTMLDivElement>(null);
+
+  // The sticky sidebar sits under the sticky header, whose height wraps with its content.
+  useEffect(() => {
+    const element = chrome.current;
+    if (!element) {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      document.documentElement.style.setProperty(
+        "--harness-chrome-height",
+        `${element.offsetHeight}px`,
+      );
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  const hasScenarioSidebar = "navigation" in view;
 
   return (
     <>
       <a className={styles.skipLink} href="#main-content">
         Skip to main content
       </a>
-      <SiteHeader />
-      <PrimaryNavigation lessonId={lessonId} section={view.section} />
-      <main className={styles.main} id="main-content">
+      <div className={styles.chrome} ref={chrome}>
+        <SiteHeader />
+        <PrimaryNavigation lessonId={lessonId} section={view.section} />
+      </div>
+      <main
+        className={
+          hasScenarioSidebar ? `${styles.main} ${styles.mainWithSidebar}` : styles.main
+        }
+        id="main-content"
+      >
         {view.section === "capabilities" && <CapabilitiesView lessonId={lessonId} />}
         {view.section === "lessons" && (
           <LessonScenarioView

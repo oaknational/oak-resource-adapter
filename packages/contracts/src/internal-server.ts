@@ -1,15 +1,12 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { resourceDocumentSchema } from "@oaknational/resource-document/schema";
-import type { ResourceDocument } from "@oaknational/resource-document";
 import { z } from "zod";
 
 import type { ResourceAdapterAuthenticatedTeacher } from "./authentication.js";
 import {
   resourceAdapterFeatureFlagsResponseSchema,
-  resourceAdapterSourceDocumentRequestSchema,
   supportLevels,
   transformationInputSchema,
-  usageLimitKinds,
   worksheetExportRequestSchema,
   worksheetDownloadAvailabilitySchema,
   type WorksheetExportRequest,
@@ -31,8 +28,8 @@ import {
   type WorksheetScaffoldingRemoveRequest,
   type WorksheetScaffoldingState,
   type WorksheetScaffoldingDismissRequest,
-  type ResourceAdapterSourceDocumentRequest,
   type ResourceAdapterFeatureFlagsResponse,
+  type TeacherAllowance,
   type WorksheetScaffoldingRetrySuggestionsRequest,
   worksheetScaffoldingRetrySuggestionsRequestSchema,
 } from "./internal-contract.js";
@@ -45,11 +42,8 @@ export type ResourceAdapterFeatureFlagService = Readonly<{
     Promise<ResourceAdapterFeatureFlagsResponse> | ResourceAdapterFeatureFlagsResponse;
 }>;
 
-export type ResourceAdapterSourceDocumentService = Readonly<{
-  getSourceDocument: (
-    request: ResourceAdapterSourceDocumentRequest,
-    target: ResourceAdapterAuthenticatedTeacher,
-  ) => Promise<ResourceDocument | null> | ResourceDocument | null;
+export type TeacherAllowanceService = Readonly<{
+  get: (target: ResourceAdapterAuthenticatedTeacher) => Promise<TeacherAllowance>;
 }>;
 
 export type WorksheetScaffoldingService = Readonly<{
@@ -96,18 +90,28 @@ export type WorksheetScaffoldingService = Readonly<{
 }>;
 /** Internal API context served from `/trpc/internal`. */
 export type ResourceAdapterApiContextInternal = Readonly<{
+  allowance: TeacherAllowanceService;
   authenticatedTeacher: ResourceAdapterAuthenticatedTeacher | null;
   featureFlags: ResourceAdapterFeatureFlagService;
-  sourceDocuments: ResourceAdapterSourceDocumentService;
   worksheetScaffolding: WorksheetScaffoldingService;
 }>;
 
 const t_internal = initTRPC.context<ResourceAdapterApiContextInternal>().create();
 
+const teacherAllowanceSchema = z.discriminatedUnion("tier", [
+  z.object({ tier: z.literal("full") }),
+  z.object({
+    tier: z.literal("limited"),
+    limit: z.number().check(z.int(), z.positive()),
+    remaining: z.number().check(z.int(), z.nonnegative()),
+    resetsAt: z.iso.datetime(),
+  }),
+]) satisfies z.ZodType<TeacherAllowance>;
+
 const worksheetScaffoldingStateSchema = z.object({
   adaptationId: z.string(),
   modelWorkBlocked: z.nullable(
-    z.object({ kind: z.enum(usageLimitKinds), retryAt: z.iso.datetime() }),
+    z.object({ kind: z.literal("model_jobs_24h"), retryAt: z.iso.datetime() }),
   ),
   resourceDocumentId: z.uuid(),
   downloadAvailability: worksheetDownloadAvailabilitySchema,
@@ -147,15 +151,32 @@ const worksheetScaffoldingStateSchema = z.object({
 }) satisfies z.ZodType<WorksheetScaffoldingState>;
 
 const worksheetScaffoldingEntrySchema = z.discriminatedUnion("outcome", [
-  z.object({ outcome: z.literal("opened"), state: worksheetScaffoldingStateSchema }),
-  z.object({ outcome: z.literal("reopened"), state: worksheetScaffoldingStateSchema }),
   z.object({
+    allowance: teacherAllowanceSchema,
+    outcome: z.literal("opened"),
+    state: worksheetScaffoldingStateSchema,
+  }),
+  z.object({
+    allowance: teacherAllowanceSchema,
+    outcome: z.literal("reopened"),
+    state: worksheetScaffoldingStateSchema,
+  }),
+  z.object({
+    allowance: teacherAllowanceSchema,
     outcome: z.literal("resumable"),
     resumable: z.object({
       adaptationId: z.string(),
       pendingScaffoldCount: z.number().check(z.int(), z.nonnegative()),
       scaffoldCount: z.number().check(z.int(), z.nonnegative()),
       updatedAt: z.string(),
+    }),
+  }),
+  z.object({
+    allowance: teacherAllowanceSchema,
+    outcome: z.literal("usageLimitReached"),
+    usageLimit: z.object({
+      kind: z.literal("adapted_resources_month"),
+      retryAt: z.iso.datetime(),
     }),
   }),
 ]) satisfies z.ZodType<WorksheetScaffoldingEntry>;
@@ -191,30 +212,15 @@ export const internalAuthenticatedProcedure = t_internal.procedure.use(
 
 /** The unversioned internal API router served from `/trpc/internal`. */
 export const internalRouter = t_internal.router({
+  allowance: t_internal.router({
+    get: internalAuthenticatedProcedure
+      .output(teacherAllowanceSchema)
+      .query(({ ctx }) => ctx.allowance.get(ctx.authenticatedTeacher)),
+  }),
   featureFlags: t_internal.router({
     get: internalAuthenticatedProcedure
       .output(resourceAdapterFeatureFlagsResponseSchema)
       .query(({ ctx }) => ctx.featureFlags.getEnabledFlags(ctx.authenticatedTeacher)),
-  }),
-  sourceDocuments: t_internal.router({
-    get: internalAuthenticatedProcedure
-      .input(resourceAdapterSourceDocumentRequestSchema)
-      .output(resourceDocumentSchema)
-      .query(async ({ ctx, input }) => {
-        const document = await ctx.sourceDocuments.getSourceDocument(
-          input,
-          ctx.authenticatedTeacher,
-        );
-
-        if (document === null) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "The selected capability has no source document for this lesson.",
-          });
-        }
-
-        return document;
-      }),
   }),
   worksheetScaffolding: t_internal.router({
     prepareExport: internalAuthenticatedProcedure

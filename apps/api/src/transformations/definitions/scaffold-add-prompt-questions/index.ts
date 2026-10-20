@@ -13,17 +13,16 @@ export const addPromptQuestionsTransformation = defineTransformation({
     description:
       "Adds questions that prompt pupils to recall relevant lesson knowledge.",
     useWhen:
-      "Specific declarative, substantive or procedural knowledge has to be recalled to respond to the task, and the task instruction carries no prompts of its own.",
+      "The pupil needs to recall knowledge that is not included in the task instruction or question. A poor response would most likely come from the pupil not retrieving a fact, term or step the task leaves implicit, and the task instruction carries no prompts of its own.",
     avoidWhen:
-      "The task is creative or divergent with no particular knowledge to recall, the instruction already itemises what to include, or the barrier is producing the response rather than recalling what it rests on.",
+      "There is no specific knowledge pupils need to recall, or the task instruction already itemises what to include or supplies bracketed prompts.",
   },
   barriers: ["working-memory", "gaps-in-knowledge"],
   target: { scope: "document" },
   materialRequirements: [
     { key: "lesson.keyLearningPoints", required: true },
     { key: "lesson.slides", required: false },
-    { key: "lesson.transcriptSummary.checksForUnderstanding", required: false },
-    { key: "lesson.transcriptSummary.practiceTasksWithFeedback", required: false },
+    { key: "lesson.transcriptSummary", required: false },
   ],
   outputs: ["revised-resource"],
   isAvailable: notAlreadyApplied(KIND),

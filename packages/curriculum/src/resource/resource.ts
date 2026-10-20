@@ -11,21 +11,8 @@ export type LessonResourceType =
   | "worksheet"
   | "worksheet-answers";
 
-/** An object in Oak's own storage, which is private. Quizzes have their own bucket. */
-export type ResourceFileLocation = Readonly<{
-  bucketName: string;
-  bucketPath: string;
-}>;
-
-/**
- * Oak keeps each resource as a file in its storage and, for everything but the
- * quizzes, as a Google Drive document. Neither is guaranteed: a resource can be
- * published with only one.
- */
 export type LessonResource = Readonly<{
   type: LessonResourceType;
-  pdf: ResourceFileLocation | null;
-  googleDriveUrl: string | null;
 }>;
 
 export type ResourceFile = Readonly<{

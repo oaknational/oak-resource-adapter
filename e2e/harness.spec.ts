@@ -34,6 +34,12 @@ const edgeCases = [
     outcome: "The capabilities endpoint returned 1 capabilities.",
     offersCreateMore: true,
   },
+  {
+    id: "copyright-restricted-lesson",
+    heading: "Oak marks the lesson copyright-restricted",
+    outcome: "The capabilities endpoint returned 0 capabilities.",
+    offersCreateMore: false,
+  },
 ] as const;
 
 for (const { heading, id, offersCreateMore, outcome } of edgeCases) {
@@ -190,6 +196,9 @@ test(
       "Capabilities state: signedOut.",
     );
 
+    await expect(
+      page.getByRole("heading", { name: "What teachers see in OWA", exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole("region", { name: "Sign in to create more with Aila" }),
     ).toHaveCount(0);

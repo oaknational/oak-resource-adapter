@@ -1,5 +1,7 @@
 import type {
   SupportLevel,
+  TeacherAllowance,
+  UsageLimitKind,
   WorksheetScaffoldingJobKind,
 } from "@oaknational/resource-adapter-contracts/internal";
 
@@ -10,6 +12,25 @@ import type { ResourceAdapterErrorHandler } from "./publicTypes.js";
 /** Replaced at build and test time by the `define` in tsup and Vitest config. */
 declare const __RESOURCE_ADAPTER_VERSION__: string;
 
+export type AdaptationRequest =
+  | Readonly<{
+      requestAction:
+        | "open"
+        | "resume"
+        | "apply"
+        | "accept"
+        | "undo"
+        | "dismiss"
+        | "remove"
+        | "poll"
+        | "refresh"
+        | "download";
+    }>
+  | Readonly<{
+      requestAction: "retry";
+      retryTarget: "suggestions" | "transformation";
+    }>;
+
 /**
  * Mirrors the Avo tracking plan. Values are identifiers, enums and counts only;
  * hosts translate property names and add deployment, identity and consent context.
@@ -19,7 +40,8 @@ export type CapabilityAnalyticsEvent =
       name: "Adaptation Started";
       componentType: "resource_adapter_dialog";
       adaptationId: string;
-      startMode: "new" | "resumed";
+      accessTier: TeacherAllowance["tier"];
+      startMode: "new" | "resumed" | "reopened";
     }>
   | Readonly<{
       name: "Adaptation Restart Requested";
@@ -97,28 +119,24 @@ export type CapabilityAnalyticsEvent =
       transformationKind: string;
       supportLevel?: SupportLevel;
     }>
-  | Readonly<{
+  | (Readonly<{
       name: "Adaptation Request Failed";
       componentType: "resource_adapter_dialog";
       adaptationId?: string;
-      requestAction:
-        | "open"
-        | "resume"
-        | "apply"
-        | "accept"
-        | "undo"
-        | "dismiss"
-        | "remove"
-        | "poll"
-        | "refresh"
-        | "download";
-    }>
-  | Readonly<{
-      name: "Adaptation Request Failed";
+    }> &
+      AdaptationRequest)
+  | (Readonly<{
+      name: "Usage Limit Reached";
       componentType: "resource_adapter_dialog";
       adaptationId?: string;
-      requestAction: "retry";
-      retryTarget: "suggestions" | "transformation";
+      limitKind: UsageLimitKind;
+    }> &
+      AdaptationRequest)
+  | Readonly<{
+      name: "Monthly Allowance Displayed";
+      componentType: "resource_adapter_dialog";
+      allowanceLimit: number;
+      allowanceRemaining: number;
     }>
   | Readonly<{
       name: "Resource Adapter Closed";

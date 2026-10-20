@@ -33,7 +33,14 @@ export const wordBankContribution: TransformationContribution = {
     return definePreparedContribution({
       name: `word_bank_${supportLevel}`,
       schema,
-      apply: (output) => applyDefinitionList(context, LEAD, output.entries),
+      apply: (output) =>
+        applyDefinitionList(
+          context,
+          LEAD,
+          output.entries.toSorted((a, b) =>
+            a.term.localeCompare(b.term, "en-GB", { sensitivity: "base" }),
+          ),
+        ),
     });
   },
 };

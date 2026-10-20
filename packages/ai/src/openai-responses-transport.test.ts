@@ -149,6 +149,45 @@ describe("createOpenAIResponsesTransport", () => {
     });
   });
 
+  it("describes bounds to the model rather than enforcing them while decoding", () => {
+    const { transport } = transportFixture();
+
+    const { request } = transport.prepare(invocation, {
+      kind: "STRUCTURED",
+      name: "lines",
+      schema: z.object({
+        lines: z
+          .array(z.string().min(1).max(200))
+          .min(1)
+          .max(6)
+          .describe("Lines in reading order."),
+        maxLength: z.string(),
+      }),
+    });
+
+    expect(request).toMatchObject({
+      text: {
+        format: {
+          schema: {
+            properties: {
+              lines: {
+                description:
+                  "Lines in reading order. At least 1 item. At most 6 items.",
+                items: {
+                  description: "At least 1 character. At most 200 characters.",
+                  type: "string",
+                },
+                type: "array",
+              },
+              maxLength: { type: "string" },
+            },
+          },
+        },
+      },
+    });
+    expect(JSON.stringify(request)).not.toMatch(/"m(ax|in)(Items|Length)":\d/);
+  });
+
   describe("strict schema representability", () => {
     it.each([
       ["nested objects", z.object({ inner: z.object({ a: z.string() }) })],

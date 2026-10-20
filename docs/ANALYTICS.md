@@ -17,22 +17,24 @@ themselves, with the control `ResourceAdapterButton` passes to
 
 ## Events
 
-| Event                            | Fires when                                                                                                                                                |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Resource Adapter Closed          | The teacher dismisses the dialog. Leaving the page does not fire it.                                                                                      |
-| Adaptation Started               | The API confirms a new or resumed adaptation (`startMode`).                                                                                               |
-| Adaptation Restart Requested     | The teacher asks to replace an adaptation. The ID is the old one; the replacement fires Adaptation Started with the new ID.                               |
-| New Suggestions Requested        | The teacher asks for regeneration. Automatic generation has no request event.                                                                             |
-| Suggestions Displayed            | A generation's result renders, including "No scaffolds suggested" as a count of zero: once per generation job per dialog visit, so resuming counts again. |
-| Transformation Requested         | The teacher chooses a suggestion.                                                                                                                         |
-| Transformation Preview Displayed | A generated transformation renders for review: once per attempt per visit. A retry is a new attempt.                                                      |
-| Transformation Review Requested  | The teacher chooses accept, undo or retry (`reviewAction`).                                                                                               |
-| Transformation Reviewed          | The API confirms accept or undo. A successful retry shows as its new preview.                                                                             |
-| Suggestion Dismissal Requested   | The teacher dismisses the suggestions for a target.                                                                                                       |
-| Transformation Removal Requested | The teacher removes an accepted scaffold.                                                                                                                 |
-| Adaptation Request Failed        | A request fails; `requestAction` names it, `retryTarget` says what a retry was for, and no error text is sent.                                            |
-| Adaptation Step Failed           | A failed background job is observed, with its ID and kind but never its failure text.                                                                     |
-| Adapted Resource Downloaded      | The file is handed to the browser's download mechanism, which does not prove it was saved.                                                                |
+| Event                            | Fires when                                                                                                                                                             |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Resource Adapter Closed          | The teacher dismisses the dialog. Leaving the page does not fire it.                                                                                                   |
+| Adaptation Started               | The API confirms a new, resumed or reopened adaptation (`startMode`), with the teacher's `accessTier`.                                                                 |
+| Monthly Allowance Displayed      | A limited teacher's allowance renders: once per value per dialog visit.                                                                                                |
+| Adaptation Restart Requested     | The teacher asks to replace an adaptation. The ID is the old one; the replacement fires Adaptation Started with the new ID.                                            |
+| New Suggestions Requested        | The teacher asks for regeneration. Automatic generation has no request event.                                                                                          |
+| Suggestions Displayed            | A generation's result renders, including "No scaffolds suggested" as a count of zero: once per generation job per dialog visit, so resuming or reopening counts again. |
+| Transformation Requested         | The teacher chooses a suggestion.                                                                                                                                      |
+| Transformation Preview Displayed | A generated transformation renders for review: once per attempt per visit. A retry is a new attempt.                                                                   |
+| Transformation Review Requested  | The teacher chooses accept, undo or retry (`reviewAction`).                                                                                                            |
+| Transformation Reviewed          | The API confirms accept or undo. A successful retry shows as its new preview.                                                                                          |
+| Suggestion Dismissal Requested   | The teacher dismisses the suggestions for a target.                                                                                                                    |
+| Transformation Removal Requested | The teacher removes an accepted scaffold.                                                                                                                              |
+| Adaptation Request Failed        | A request fails; `requestAction` names it, `retryTarget` says what a retry was for, and no error text is sent.                                                         |
+| Adaptation Step Failed           | A failed background job is observed, with its ID and kind but never its failure text.                                                                                  |
+| Usage Limit Reached              | A response refuses a request (`limitKind`, `requestAction`). Refreshing a refused worksheet asks again, so count teachers rather than events.                          |
+| Adapted Resource Downloaded      | The file is handed to the browser's download mechanism, which does not prove it was saved.                                                                             |
 
 Request events measure intent: removal and dismissal claim no outcome when
 their enqueue requests return.

@@ -3,12 +3,20 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   supportLevels,
+  type TeacherAllowance,
   type WorksheetScaffoldingApplyRequest,
   type WorksheetScaffoldingEntry,
+  type WorksheetScaffoldingResumable,
   type WorksheetScaffoldingState,
 } from "@oaknational/resource-adapter-contracts/internal";
 
-import type { CapabilityAnalyticsEvent, TrackAnalyticsEvent } from "../../analytics.js";
+import { getTeacherAllowance } from "../../allowance.js";
+import { scheduleAt } from "../../scheduleAt.js";
+import type {
+  AdaptationRequest,
+  CapabilityAnalyticsEvent,
+  TrackAnalyticsEvent,
+} from "../../analytics.js";
 import { reportToHost } from "../../errors.js";
 import type {
   GetToken,
@@ -51,12 +59,9 @@ type ComponentTypeFor<Name extends CapabilityAnalyticsEvent["name"]> = Extract<
   { name: Name; componentType: string }
 >["componentType"];
 
-type Settled = Readonly<{
-  onSucceeded?: (value: WorksheetScaffoldingState) => void;
-  onFailed?: () => void;
-}>;
+type TrackedRequest = AdaptationRequest & Readonly<{ adaptationId: string }>;
 
-function failedRequest(action: ScaffoldingAction) {
+function requestFor(action: ScaffoldingAction): AdaptationRequest {
   if (action === "retrySuggestions") {
     return { requestAction: "retry", retryTarget: "suggestions" } as const;
   }
@@ -130,8 +135,10 @@ export function useWorksheetScaffolding({
 }>) {
   const [state, dispatchEvent] = useReducer(workflowReducer, { status: "idle" });
   const [openCount, setOpenCount] = useState(0);
+  const [allowance, setAllowance] = useState<TeacherAllowance | null>(null);
   const openRequestRef = useRef<OpenRequest | null>(null);
   const replacingRef = useRef<ReplacementRequest | null>(null);
+  const offeredRef = useRef<WorksheetScaffoldingResumable | null>(null);
   // Responses from before the workflow last (re)opened are dropped.
   const sessionRef = useRef(0);
   // A refresh response is dropped if anything else changed state after it started.
@@ -163,9 +170,15 @@ export function useWorksheetScaffolding({
     [dispatch, onErrorRef],
   );
 
-  const receive = useCallback(
-    (value: WorksheetScaffoldingState) => dispatch({ type: "received", value }),
-    [dispatch],
+  const receivePolled = useCallback(
+    (value: WorksheetScaffoldingState) => {
+      dispatch({ type: "received", value });
+      analytics.observeUsageLimit(value.modelWorkBlocked, {
+        adaptationId: value.adaptationId,
+        requestAction: "poll",
+      });
+    },
+    [analytics, dispatch],
   );
 
   const fetchState = useCallback(
@@ -175,34 +188,56 @@ export function useWorksheetScaffolding({
 
   const settle = useCallback(
     (
-      request: Promise<WorksheetScaffoldingState>,
+      response: Promise<WorksheetScaffoldingState>,
       type: "received" | "resumed",
-      { onSucceeded, onFailed }: Settled = {},
+      request: TrackedRequest,
+      onSucceeded?: (value: WorksheetScaffoldingState) => void,
     ) => {
       const session = sessionRef.current;
-      void request.then(
+      void response.then(
         (value) => {
           if (sessionRef.current !== session) return;
           dispatch({ type, value });
           onSucceeded?.(value);
+          analytics.observeUsageLimit(value.modelWorkBlocked, request);
         },
         (error: unknown) => {
           if (sessionRef.current !== session) return;
-          onFailed?.();
+          trackRef.current({
+            name: "Adaptation Request Failed",
+            componentType: "resource_adapter_dialog",
+            ...request,
+          });
           failWith(error);
         },
       );
     },
-    [dispatch, failWith],
+    [analytics, dispatch, failWith, trackRef],
+  );
+
+  const loadAllowance = useCallback(
+    (isCurrent: () => boolean) => {
+      void getTeacherAllowance(connection).then(
+        (value) => {
+          if (isCurrent()) setAllowance(value);
+        },
+        (error: unknown) => {
+          if (isCurrent()) reportToHost(onErrorRef.current, error);
+        },
+      );
+    },
+    [connection, onErrorRef],
   );
 
   useEffect(() => {
     let cancelled = false;
     sessionRef.current += 1;
+    setAllowance(null);
     if (!isOpen) {
       analytics.resetDisplays();
       openRequestRef.current = null;
       replacingRef.current = null;
+      offeredRef.current = null;
       dispatch({ type: "closed" });
       return;
     }
@@ -224,17 +259,39 @@ export function useWorksheetScaffolding({
     openRequestRef.current = request;
     void request.promise.then(
       (entry) => {
-        // The declined adaptation is abandoned once, so asking to replace it
-        // again would be refused.
-        replacingRef.current = null;
+        if (replacingRef.current === replacing) replacingRef.current = null;
         if (cancelled) return;
-        dispatch({ type: "opened", entry });
-        if (entry.outcome !== "resumable") {
+        const offered = offeredRef.current;
+        if (entry.outcome === "resumable") {
+          offeredRef.current = entry.resumable;
+        } else if (entry.outcome !== "usageLimitReached") {
+          // A refused start-over returns to the offer it declined.
+          offeredRef.current = null;
+        }
+        const declined =
+          offered !== null && offered.adaptationId === replacing?.adaptationId
+            ? offered
+            : null;
+        setAllowance(entry.allowance);
+        dispatch({ type: "opened", entry, ...(declined === null ? {} : { declined }) });
+        if (entry.outcome === "opened" || entry.outcome === "reopened") {
+          const { adaptationId: openedAdaptationId, modelWorkBlocked } = entry.state;
           trackRef.current({
             name: "Adaptation Started",
             componentType: "resource_adapter_dialog",
-            adaptationId: entry.state.adaptationId,
-            startMode: entry.outcome === "opened" ? "new" : "resumed",
+            adaptationId: openedAdaptationId,
+            accessTier: entry.allowance.tier,
+            startMode: entry.outcome === "opened" ? "new" : "reopened",
+          });
+          analytics.observeUsageLimit(modelWorkBlocked, {
+            adaptationId: openedAdaptationId,
+            requestAction: "open",
+          });
+        }
+        if (entry.outcome === "usageLimitReached") {
+          analytics.observeUsageLimit(entry.usageLimit, {
+            requestAction: "open",
+            ...(replacing === null ? {} : { adaptationId: replacing.adaptationId }),
           });
         }
       },
@@ -273,12 +330,30 @@ export function useWorksheetScaffolding({
   // A refused worksheet isn't polled, so this is what lifts the refusal at `retryAt`.
   useEffect(() => {
     if (retryAt === null) return;
-    const timer = setTimeout(
-      () => dispatch({ type: "refusalExpired" }),
-      Math.max(0, Date.parse(retryAt) - Date.now()),
-    );
-    return () => clearTimeout(timer);
+    return scheduleAt(Date.parse(retryAt), () => dispatch({ type: "refusalExpired" }));
   }, [dispatch, retryAt]);
+
+  const monthlyRefusal =
+    state.status === "choosing" ||
+    (state.status === "monthlyLimitReached" && !state.expired)
+      ? state.usageLimit
+      : null;
+  const allowanceResetsAt = allowance?.tier === "limited" ? allowance.resetsAt : null;
+  useEffect(() => {
+    if (!isOpen || allowanceResetsAt === null) return;
+    const session = sessionRef.current;
+    return scheduleAt(Date.parse(allowanceResetsAt), () =>
+      loadAllowance(() => sessionRef.current === session),
+    );
+  }, [allowanceResetsAt, isOpen, loadAllowance]);
+
+  // A new refusal can carry the same retry time as the previous one.
+  useEffect(() => {
+    if (!isOpen || monthlyRefusal === null) return;
+    return scheduleAt(Date.parse(monthlyRefusal.retryAt), () =>
+      dispatch({ type: "monthlyRefusalExpired" }),
+    );
+  }, [dispatch, isOpen, monthlyRefusal]);
 
   useEffect(() => {
     if (!isOpen || ready === null) return;
@@ -309,7 +384,7 @@ export function useWorksheetScaffolding({
         : null,
     jobId: ready?.value.job?.id ?? null,
     fetchState,
-    onFetched: receive,
+    onFetched: receivePolled,
     onFailed: pollFailed,
   });
 
@@ -348,44 +423,33 @@ export function useWorksheetScaffolding({
           suggestionId,
         }),
         "received",
-        {
-          onFailed: () =>
-            trackRef.current({
-              name: "Adaptation Request Failed",
-              componentType: "resource_adapter_dialog",
-              requestAction: "apply",
-              adaptationId: appliedAdaptationId,
-            }),
-        },
+        { requestAction: "apply", adaptationId: appliedAdaptationId },
       );
     },
     [connection, dispatch, ready, settle, trackRef],
   );
 
-  const resume = useCallback(
-    (resumedAdaptationId: string) => {
-      dispatch({ type: "loading" });
-      settle(fetchState(resumedAdaptationId), "resumed", {
-        onSucceeded: (value) => {
-          analytics.ignoreHistoricalJob(value);
-          trackRef.current({
-            name: "Adaptation Started",
-            componentType: "resource_adapter_dialog",
-            adaptationId: value.adaptationId,
-            startMode: "resumed",
-          });
-        },
-        onFailed: () =>
-          trackRef.current({
-            name: "Adaptation Request Failed",
-            componentType: "resource_adapter_dialog",
-            requestAction: "resume",
-            adaptationId: resumedAdaptationId,
-          }),
-      });
-    },
-    [analytics, dispatch, fetchState, settle, trackRef],
-  );
+  const choosing = state.status === "choosing" ? state : null;
+  const resume = useCallback(() => {
+    if (choosing === null) return;
+    const { accessTier, resumable } = choosing;
+    dispatch({ type: "loading" });
+    settle(
+      fetchState(resumable.adaptationId),
+      "resumed",
+      { requestAction: "resume", adaptationId: resumable.adaptationId },
+      (value) => {
+        analytics.ignoreHistoricalJob(value);
+        trackRef.current({
+          name: "Adaptation Started",
+          componentType: "resource_adapter_dialog",
+          adaptationId: value.adaptationId,
+          accessTier,
+          startMode: "resumed",
+        });
+      },
+    );
+  }, [analytics, choosing, dispatch, fetchState, settle, trackRef]);
 
   /**
    * One in-flight action at a time. `select` both guards the action and gathers
@@ -416,18 +480,14 @@ export function useWorksheetScaffolding({
       const succeeded = succeededEvent?.(ready.value) ?? null;
       const actionAdaptationId = ready.value.adaptationId;
       dispatch({ type: "actionStarted" });
-      settle(request({ ...selected, ...connection }), "received", {
-        onSucceeded: () => {
+      settle(
+        request({ ...selected, ...connection }),
+        "received",
+        { ...requestFor(action), adaptationId: actionAdaptationId },
+        () => {
           if (succeeded !== null) trackRef.current(succeeded);
         },
-        onFailed: () =>
-          trackRef.current({
-            name: "Adaptation Request Failed",
-            componentType: "resource_adapter_dialog",
-            ...failedRequest(action),
-            adaptationId: actionAdaptationId,
-          }),
-      });
+      );
     },
     [connection, dispatch, ready, settle, trackRef],
   );
@@ -531,7 +591,12 @@ export function useWorksheetScaffolding({
     const revision = ++revisionRef.current;
     try {
       const value = await fetchState(adaptationId);
-      if (revision === revisionRef.current) dispatch({ type: "refreshed", value });
+      if (revision !== revisionRef.current) return;
+      dispatch({ type: "refreshed", value });
+      analytics.observeUsageLimit(value.modelWorkBlocked, {
+        adaptationId,
+        requestAction: "refresh",
+      });
     } catch (error) {
       if (revision !== revisionRef.current) return;
       trackRef.current({
@@ -542,7 +607,7 @@ export function useWorksheetScaffolding({
       });
       throw error;
     }
-  }, [adaptationId, dispatch, fetchState, trackRef]);
+  }, [adaptationId, analytics, dispatch, fetchState, trackRef]);
 
   const reopen = useCallback((replacingAdaptationId: string | null) => {
     if (replacingAdaptationId !== null) {
@@ -579,8 +644,10 @@ export function useWorksheetScaffolding({
 
   return {
     acceptReview,
+    allowance,
     applySuggestion,
     dismissTarget,
+    observeAllowance: analytics.observeAllowance,
     refresh,
     removeContribution,
     resume,

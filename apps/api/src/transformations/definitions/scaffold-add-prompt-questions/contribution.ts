@@ -18,7 +18,7 @@ const promptQuestionsSchema = z.strictObject({
   questions: z
     .array(z.string().trim().min(1).max(200))
     .min(1)
-    .max(3)
+    .max(10)
     .describe(
       "Pupil-facing recall questions supporting the worksheet as a whole, in use order.",
     ),

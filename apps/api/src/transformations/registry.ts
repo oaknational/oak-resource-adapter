@@ -2,7 +2,7 @@ import { identityTransformation } from "./definitions/identity";
 import { addPromptQuestionsTransformation } from "./definitions/scaffold-add-prompt-questions";
 import { addSentenceFramesTransformation } from "./definitions/scaffold-add-sentence-frames";
 import { addSentenceStartersTransformation } from "./definitions/scaffold-add-sentence-starters";
-import { addTaskVocabularyTransformation } from "./definitions/scaffold-add-task-vocabulary";
+import { addTaskGlossaryTransformation } from "./definitions/scaffold-add-task-glossary";
 import { addWordBankTransformation } from "./definitions/scaffold-add-word-bank";
 import { chunkTasksTransformation } from "./definitions/scaffold-chunk-tasks";
 
@@ -14,7 +14,7 @@ import { chunkTasksTransformation } from "./definitions/scaffold-chunk-tasks";
 export const transformationDefinitions = {
   [identityTransformation.kind]: identityTransformation,
   [addWordBankTransformation.kind]: addWordBankTransformation,
-  [addTaskVocabularyTransformation.kind]: addTaskVocabularyTransformation,
+  [addTaskGlossaryTransformation.kind]: addTaskGlossaryTransformation,
   [addPromptQuestionsTransformation.kind]: addPromptQuestionsTransformation,
   [addSentenceStartersTransformation.kind]: addSentenceStartersTransformation,
   [addSentenceFramesTransformation.kind]: addSentenceFramesTransformation,

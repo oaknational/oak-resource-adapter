@@ -207,6 +207,30 @@ const edgeCaseDefinitions = [
     facts: readUnparseableMarkup,
   },
   {
+    id: "copyright-restricted-lesson",
+    title: "Oak marks the lesson copyright-restricted",
+    summary: "Oak flags the lesson as containing copyright material.",
+    expectation: "Expected: nothing appears",
+    reason:
+      "Oak flags some lessons as containing copyright material. We offer none of them, even when every third-party restriction Oak records would allow reuse, as it does here. We hold no worksheet data for this lesson either, so this case shows the outcome but cannot show the flag alone causing it. The API's tests cover that.",
+    lesson: {
+      lessonSlug: "winsome-pinnock-introduces-leave-taking",
+      programmeSlug: "english-secondary-ks4-aqa",
+      title: "Winsome Pinnock introduces ‘Leave Taking’",
+      subjectSlug: "english",
+      keyStageSlug: "ks4",
+      availableResources: ["worksheet"],
+    },
+    brokenApiPath: false,
+    facts: async (lesson: LessonContext) => {
+      const { facts } = await extractionFacts(lesson);
+      return factsOnly([
+        ...facts,
+        { term: "Oak's flag", value: "agf__has_copyright_restrictions" },
+      ]);
+    },
+  },
+  {
     id: "one-capability-ui",
     title: "One capability is enabled",
     summary: "The launcher has one available teacher action.",

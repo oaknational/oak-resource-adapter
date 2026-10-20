@@ -10,6 +10,8 @@ import {
 import { internalRouter, type WorksheetScaffoldingService } from "./internal-server.js";
 import { hostRouter } from "./server.js";
 
+const fullAllowance = { get: () => Promise.resolve({ tier: "full" } as const) };
+
 const sourceDocument: ResourceDocument = {
   schemaVersion: "0.1",
   id: "oak:worksheet:adding-fractions:pupil",
@@ -221,35 +223,6 @@ describe("Resource Adapter API contracts", () => {
       ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     });
 
-    it("rejects a service document that does not match the schema", async () => {
-      const caller = internalRouter.createCaller({
-        authenticatedTeacher: {
-          organisationId: "org-123",
-          teacherId: "teacher-456",
-        },
-        featureFlags: { getEnabledFlags: () => [] },
-        sourceDocuments: {
-          getSourceDocument: () =>
-            ({ id: "not-a-document" }) as unknown as ResourceDocument,
-        },
-        worksheetScaffolding,
-      });
-
-      await expect(
-        caller.sourceDocuments.get({
-          capabilityId: "worksheetScaffolding",
-          lesson: {
-            lessonSlug: "adding-fractions",
-            programmeSlug: "ks2-maths",
-            title: "Adding fractions",
-            subjectSlug: "maths",
-            keyStageSlug: "ks2",
-            availableResources: ["worksheet"],
-          },
-        }),
-      ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
-    });
-
     it("rejects an unauthenticated request with UNAUTHORIZED", async () => {
       const caller = hostRouter.createCaller({
         apiContractVersion: resourceAdapterApiContractVersion,
@@ -279,11 +252,24 @@ describe("Resource Adapter API contracts", () => {
     ): InternalCaller {
       return internalRouter.createCaller({
         authenticatedTeacher: internalTeacher,
+        allowance: fullAllowance,
         featureFlags: { getEnabledFlags: () => [] },
-        sourceDocuments: { getSourceDocument: () => sourceDocument },
         worksheetScaffolding: { ...worksheetScaffolding, ...overrides },
       });
     }
+
+    it("rejects a service document that does not match the schema", async () => {
+      const caller = callerWithWorksheet({
+        get: async () => ({
+          ...worksheetState,
+          document: { id: "not-a-document" } as unknown as ResourceDocument,
+        }),
+      });
+
+      await expect(
+        caller.worksheetScaffolding.get({ adaptationId }),
+      ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+    });
 
     it("prepares exports with database identity and authenticated ownership", async () => {
       const prepareExport = vi.fn().mockResolvedValue({ artifactId: suggestionId });
@@ -316,8 +302,8 @@ describe("Resource Adapter API contracts", () => {
       };
       const anonymous = internalRouter.createCaller({
         authenticatedTeacher: null,
+        allowance: fullAllowance,
         featureFlags: { getEnabledFlags: () => [] },
-        sourceDocuments: { getSourceDocument: () => sourceDocument },
         worksheetScaffolding: { ...worksheetScaffolding, prepareExport },
       });
       await expect(
@@ -337,11 +323,9 @@ describe("Resource Adapter API contracts", () => {
           organisationId: "org-123",
           teacherId: "teacher-456",
         },
+        allowance: fullAllowance,
         featureFlags: {
           getEnabledFlags: () => ["feature-flags-smoke-test-enabled"],
-        },
-        sourceDocuments: {
-          getSourceDocument: () => sourceDocument,
         },
         worksheetScaffolding,
       });
@@ -349,63 +333,6 @@ describe("Resource Adapter API contracts", () => {
       await expect(caller.featureFlags.get()).resolves.toEqual([
         "feature-flags-smoke-test-enabled",
       ]);
-    });
-
-    it("returns a source document for an eligible capability", async () => {
-      const getSourceDocument = vi.fn(() => sourceDocument);
-      const caller = internalRouter.createCaller({
-        authenticatedTeacher: {
-          organisationId: "org-123",
-          teacherId: "teacher-456",
-        },
-        featureFlags: { getEnabledFlags: () => [] },
-        sourceDocuments: { getSourceDocument },
-        worksheetScaffolding,
-      });
-
-      await expect(
-        caller.sourceDocuments.get({
-          capabilityId: "worksheetScaffolding",
-          lesson: {
-            lessonSlug: "adding-fractions",
-            programmeSlug: "ks2-maths",
-            title: "Adding fractions",
-            subjectSlug: "maths",
-            keyStageSlug: "ks2",
-            availableResources: ["worksheet"],
-          },
-        }),
-      ).resolves.toEqual(sourceDocument);
-      expect(getSourceDocument).toHaveBeenCalledWith(
-        expect.objectContaining({ capabilityId: "worksheetScaffolding" }),
-        { organisationId: "org-123", teacherId: "teacher-456" },
-      );
-    });
-
-    it("returns NOT_FOUND when a capability has no source document", async () => {
-      const caller = internalRouter.createCaller({
-        authenticatedTeacher: {
-          organisationId: "org-123",
-          teacherId: "teacher-456",
-        },
-        featureFlags: { getEnabledFlags: () => [] },
-        sourceDocuments: { getSourceDocument: () => null },
-        worksheetScaffolding,
-      });
-
-      await expect(
-        caller.sourceDocuments.get({
-          capabilityId: "missing",
-          lesson: {
-            lessonSlug: "adding-fractions",
-            programmeSlug: "ks2-maths",
-            title: "Adding fractions",
-            subjectSlug: "maths",
-            keyStageSlug: "ks2",
-            availableResources: ["worksheet"],
-          },
-        }),
-      ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
     it.each([
@@ -497,11 +424,9 @@ describe("Resource Adapter API contracts", () => {
     it("rejects an unauthenticated request with UNAUTHORIZED", async () => {
       const caller = internalRouter.createCaller({
         authenticatedTeacher: null,
+        allowance: fullAllowance,
         featureFlags: {
           getEnabledFlags: () => [],
-        },
-        sourceDocuments: {
-          getSourceDocument: () => null,
         },
         worksheetScaffolding,
       });

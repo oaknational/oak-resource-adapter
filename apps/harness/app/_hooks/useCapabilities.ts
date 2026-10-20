@@ -9,7 +9,7 @@ import {
 } from "@oaknational/resource-adapter";
 import { useAuth } from "@clerk/nextjs";
 import { raLogger } from "@oaknational/resource-adapter-logger";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const log = raLogger("harness");
 
@@ -26,9 +26,11 @@ export type UseCapabilitiesResult = Readonly<{
 export function useCapabilities({
   apiBaseUrl,
   lesson,
+  viewAsSignedOut = false,
 }: Readonly<{
   apiBaseUrl: string;
   lesson: LessonContext;
+  viewAsSignedOut?: boolean;
 }>): UseCapabilitiesResult {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const [capabilities, setCapabilities] = useState<
@@ -37,65 +39,66 @@ export function useCapabilities({
   const [state, setState] = useState<CapabilitiesState>("loading");
   const [hasAvailableCapabilities, setHasAvailableCapabilities] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!isLoaded) {
-      return;
-    }
+  const [attempt, setAttempt] = useState(0);
 
-    if (!isSignedIn) {
+  useEffect(() => {
+    let current = true;
+    const signedOut = !isSignedIn || viewAsSignedOut;
+
+    async function load() {
       setCapabilities([]);
+      setHasAvailableCapabilities(false);
+      setState("loading");
 
-      try {
-        setHasAvailableCapabilities(
-          await getResourceAdapterCapabilityAvailability({ apiBaseUrl, lesson }),
-        );
-      } catch (error: unknown) {
-        // A prompt promising something we cannot confirm is worse than none.
-        setHasAvailableCapabilities(false);
-        log.error(error);
-      }
-
-      setState("signedOut");
-      return;
-    }
-
-    setState("loading");
-    log.info("Loading capabilities for lesson %s", lesson.lessonSlug);
-
-    try {
-      const response = await getResourceAdapterCapabilities({
-        apiBaseUrl,
-        getToken,
-        lesson,
-      });
-
-      setCapabilities(response.capabilities);
-      setHasAvailableCapabilities(response.capabilities.length > 0);
-      setState("ready");
-      log.info("Loaded %d capabilities", response.capabilities.length);
-    } catch (error: unknown) {
-      setCapabilities([]);
-
-      if (error instanceof ResourceAdapterApiError && error.status === 401) {
-        setState("signedOut");
+      if (!isLoaded) {
         return;
       }
 
-      setHasAvailableCapabilities(false);
-
-      log.error(error);
-      setState("error");
+      try {
+        if (signedOut) {
+          const available = await getResourceAdapterCapabilityAvailability({
+            apiBaseUrl,
+            lesson,
+          });
+          if (current) {
+            setHasAvailableCapabilities(available);
+            setState("signedOut");
+          }
+        } else {
+          const response = await getResourceAdapterCapabilities({
+            apiBaseUrl,
+            getToken,
+            lesson,
+          });
+          if (current) {
+            setCapabilities(response.capabilities);
+            setHasAvailableCapabilities(response.capabilities.length > 0);
+            setState("ready");
+          }
+        }
+      } catch (error: unknown) {
+        if (!current) {
+          return;
+        }
+        if (error instanceof ResourceAdapterApiError && error.status === 401) {
+          setState("signedOut");
+          return;
+        }
+        log.error(error);
+        setState(signedOut ? "signedOut" : "error");
+      }
     }
-  }, [apiBaseUrl, getToken, isLoaded, isSignedIn, lesson]);
 
-  useEffect(() => {
     void load();
-  }, [load]);
+    return () => {
+      current = false;
+    };
+  }, [apiBaseUrl, attempt, getToken, isLoaded, isSignedIn, lesson, viewAsSignedOut]);
 
   return {
     capabilities,
     hasAvailableCapabilities,
-    reload: () => void load(),
+    reload: () => setAttempt((value) => value + 1),
     state,
   };
 }

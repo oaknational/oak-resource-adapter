@@ -6,7 +6,7 @@ import type { TransformationDocuments } from "../types";
 import { contributionExtensions, type ContributionContext } from "./contribution";
 import { insertBeneath } from "./place";
 
-const lineSchema = z.string().trim().min(1).max(200);
+const lineSchema = z.string().trim().min(1).max(300);
 
 /** Lines a pupil writes from, such as sentence starters or frames. */
 export function lineListSchemaOf(maxLines: number) {

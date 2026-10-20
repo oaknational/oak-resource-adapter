@@ -98,7 +98,7 @@ function isSupersededRetryFailure(
 async function enqueueUnlessAlreadyRunning(
   enqueue: WorksheetScaffoldingDependencies["enqueue"],
   ...request: Parameters<WorksheetScaffoldingDependencies["enqueue"]>
-): Promise<UsageLimitReached | null> {
+): Promise<UsageLimitReached<"model_jobs_24h"> | null> {
   try {
     const result = await enqueue(...request);
     return result.outcome === "usageLimitReached" ? result.usageLimit : null;

@@ -19,7 +19,12 @@ import {
   recordWorkflowRun,
 } from "../jobs/job-repository";
 import { applySuggestionJob } from "../jobs/suggestions/apply-definition";
-import { createModelJobLimiter, type UsageLimiter } from "../usage/limiter";
+import {
+  createModelJobLimiter,
+  modelJobsPer24hLimit,
+  type UsageLimiter,
+} from "../usage/limiter";
+import { adaptedResourcesSince } from "../usage/adaptation-allowance";
 import { modelJobLimitRetryAt } from "../usage/repository";
 import { adaptationHeadConcurrencyKey } from "./capability";
 import type { WorksheetScaffoldingDependencies } from "./dependencies";
@@ -34,7 +39,12 @@ const lessonReference = {
   programmeSlug: "english-primary-ks2",
 } as const;
 
+const fullAccess = () =>
+  Promise.resolve({ tier: "full", inCopyrightRegion: true } as const);
+const access = { recheck: fullAccess, resolve: fullAccess };
+
 const limitOfOne = createModelJobLimiter({
+  access,
   limit: () => 1,
   retryAt: modelJobLimitRetryAt,
 });
@@ -71,19 +81,23 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
     });
     const teacherId = `integration-${randomUUID()}`;
     teacherIds.push(teacherId);
-    const { adaptationId, resourceDocumentId } =
-      await repository.createAdaptationWithSourceDocument({
-        capabilityId: "worksheetScaffolding",
-        document: worksheet,
-        lesson: {
-          ...lessonReference,
-          availableResources: ["worksheet"],
-          keyStageSlug: "ks2",
-          subjectSlug: "english",
-          title: "Adopting different perspectives",
-        },
-        teacherId,
-      });
+    const created = await repository.createAdaptationWithSourceDocument({
+      allowance: "unlimited",
+      capabilityId: "worksheetScaffolding",
+      document: worksheet,
+      lesson: {
+        ...lessonReference,
+        availableResources: ["worksheet"],
+        keyStageSlug: "ks2",
+        subjectSlug: "english",
+        title: "Adopting different perspectives",
+      },
+      teacherId,
+    });
+    if (created.outcome !== "created") {
+      throw new Error("An unlimited allowance always creates the adaptation.");
+    }
+    const { adaptationId, resourceDocumentId } = created;
     createdAdaptationIds.push(adaptationId);
     return {
       adaptationId,
@@ -132,9 +146,16 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
 
   function dependencies(
     startWorkflow: (jobId: string) => Promise<{ runId: string }>,
-    usage: UsageLimiter = createModelJobLimiter(),
+    usage: UsageLimiter = createModelJobLimiter({
+      access,
+      limit: () => modelJobsPer24hLimit(process.env.USAGE_LIMIT_MODEL_JOBS_PER_24H),
+      retryAt: modelJobLimitRetryAt,
+    }),
   ): WorksheetScaffoldingDependencies {
     return {
+      access,
+      adaptedResourcesPerMonth: () => 3,
+      adaptedResourcesSince,
       enqueue: ((request) =>
         enqueueJob(request, {
           createOrGet: createOrGetJob,
@@ -145,6 +166,10 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
           usage,
         })) as typeof enqueueJob,
       getLatestJob: getLatestJobForConcurrencyKey,
+      now: () => new Date(),
+      resolveSourceDocumentLocator: () => {
+        throw new Error("These requests do not check lesson eligibility.");
+      },
       readSourceDocument: () => {
         throw new Error("These requests do not read the source document.");
       },

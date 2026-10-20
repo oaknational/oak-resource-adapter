@@ -42,7 +42,8 @@ exactly `true`. Until then both workflows skip.
 
 Fork pull requests skip all of it: they hold no repository secrets. Dependabot
 pull requests are skipped explicitly; they read the separate [Dependabot secret
-store](#secrets-the-workflows-use), which holds no Vercel credentials.
+store](#secrets-the-workflows-use), which holds no Vercel credentials. Adding
+the `deploy` label to one runs the workflow as whoever added it.
 
 ## What happens on `main`
 

@@ -19,17 +19,6 @@ export type ResourceAdapterFeatureFlagsResponse = z.infer<
   typeof resourceAdapterFeatureFlagsResponseSchema
 >;
 
-export const resourceAdapterSourceDocumentRequestSchema = z.object({
-  capabilityId: z.string().check(z.minLength(1)),
-  lesson: lessonContextSchema,
-});
-
-export type ResourceAdapterSourceDocumentRequest = z.infer<
-  typeof resourceAdapterSourceDocumentRequestSchema
->;
-
-export type ResourceAdapterSourceDocumentResponse = ResourceDocument;
-
 const internalIdSchema = z.uuid();
 
 /** One scale shared by every transformation, so a teacher can compare across them. */
@@ -136,10 +125,18 @@ export type WorksheetScaffoldingResumable = Readonly<{
  * `reopened` returns the teacher's latest adaptation of the lesson that has no
  * scaffolds in its head, so closing and reopening the dialog keeps its suggestions.
  */
-export type WorksheetScaffoldingEntry =
+export type WorksheetScaffoldingEntryOutcome =
   | Readonly<{ outcome: "opened"; state: WorksheetScaffoldingState }>
   | Readonly<{ outcome: "reopened"; state: WorksheetScaffoldingState }>
-  | Readonly<{ outcome: "resumable"; resumable: WorksheetScaffoldingResumable }>;
+  | Readonly<{ outcome: "resumable"; resumable: WorksheetScaffoldingResumable }>
+  | Readonly<{
+      outcome: "usageLimitReached";
+      usageLimit: UsageLimitReached<"adapted_resources_month">;
+    }>;
+
+/** `allowance` is read after any use the request spent. */
+export type WorksheetScaffoldingEntry = WorksheetScaffoldingEntryOutcome &
+  Readonly<{ allowance: TeacherAllowance }>;
 
 export const transformationInputSchema = z.readonly(
   z.object({
@@ -182,18 +179,25 @@ export type WorksheetExportResult = Readonly<{
   artifactId: string;
 }>;
 
-export const usageLimitKinds = ["model_jobs_24h"] as const;
+export const usageLimitKinds = ["model_jobs_24h", "adapted_resources_month"] as const;
 
-export type UsageLimitReached = Readonly<{
-  kind: (typeof usageLimitKinds)[number];
-  /** Earliest retry time in ISO format; another request can consume the freed allowance. */
-  retryAt: string;
-}>;
+export type UsageLimitKind = (typeof usageLimitKinds)[number];
+
+export type UsageLimitReached<TKind extends UsageLimitKind = UsageLimitKind> =
+  Readonly<{
+    kind: TKind;
+    /** Earliest retry time in ISO format; another request can consume the freed allowance. */
+    retryAt: string;
+  }>;
+
+export type TeacherAllowance =
+  | Readonly<{ tier: "full" }>
+  | Readonly<{ tier: "limited"; limit: number; remaining: number; resetsAt: string }>;
 
 export type WorksheetScaffoldingState = Readonly<{
   adaptationId: string;
   /** A refusal for this request; null does not imply remaining allowance. */
-  modelWorkBlocked: UsageLimitReached | null;
+  modelWorkBlocked: UsageLimitReached<"model_jobs_24h"> | null;
   document: ResourceDocument;
   resourceDocumentId: string;
   downloadAvailability: WorksheetDownloadAvailability;

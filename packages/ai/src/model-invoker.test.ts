@@ -476,6 +476,106 @@ describe("createModelInvoker", () => {
       });
     });
 
+    it.each([
+      ["breaks the schema", { kind: "TEXT", text: '{"value":{"label":42}}' } as const],
+      [
+        "runs to the output cap",
+        { kind: "INCOMPLETE", reason: "MAX_OUTPUT_TOKENS" } as const,
+      ],
+    ])("asks once more when the output %s", async (_case, first) => {
+      const recorder = recorderFixture();
+      const outputs: ModelResponseOutput[] = [
+        first,
+        { kind: "TEXT", text: '{"value":{"label":"ok"}}' },
+      ];
+      const transport = transportFixture(async () => responseFixture(outputs.shift()));
+      const result = await invokerFixture(
+        recorder,
+        transport.transport,
+      ).invokeStructured({
+        request: { input: "Classify" },
+        role: "quick-classifier",
+        schema: z.object({ label: z.string() }),
+        schemaName: "classification",
+      });
+
+      expect(result).toMatchObject({ outcome: "SUCCESS", output: { label: "ok" } });
+      expect(recorder.recordSucceeded).toHaveBeenCalledTimes(2);
+      expect(transport.prepare.mock.calls[0]?.[0].request.input).toBe("Classify");
+      expect(transport.prepare.mock.calls[1]?.[0].request.input).toEqual([
+        { role: "user", content: "Classify" },
+        {
+          role: "developer",
+          content: expect.stringContaining(
+            first.kind === "TEXT" ? '"path":["label"]' : "more concise wording",
+          ),
+        },
+      ]);
+    });
+
+    it("appends retry feedback after the original request", async () => {
+      const recorder = recorderFixture();
+      const transport = transportFixture(async () =>
+        responseFixture({ kind: "TEXT", text: '{"value":{"label":"too long"}}' }),
+      );
+      const request = {
+        input: [{ role: "user" as const, content: "Classify this resource" }],
+        instructions: "Use British English.",
+        max_output_tokens: 600,
+      };
+      await invokerFixture(recorder, transport.transport).invokeStructured({
+        request,
+        role: "quick-classifier",
+        schema: z.object({ label: z.string().max(3) }),
+        schemaName: "classification",
+      });
+
+      expect(request.instructions).toBe("Use British English.");
+      expect(recorder.recordStarted).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          request: expect.objectContaining(request),
+        }),
+      );
+      expect(recorder.recordStarted).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          request: expect.objectContaining({
+            ...request,
+            input: [
+              ...request.input,
+              {
+                role: "developer",
+                content: expect.stringMatching(/"path":\["label"\].*<=3 characters/s),
+              },
+            ],
+          }),
+        }),
+      );
+      expect(transport.execute).toHaveBeenCalledTimes(2);
+    });
+
+    it("fails after a second output also breaks the schema", async () => {
+      const transport = transportFixture(async () =>
+        responseFixture({ kind: "TEXT", text: '{"value":{"label":42}}' }),
+      );
+      const result = await invokerFixture(
+        recorderFixture(),
+        transport.transport,
+      ).invokeStructured({
+        request: { input: "Classify" },
+        role: "quick-classifier",
+        schema: z.object({ label: z.string() }),
+        schemaName: "classification",
+      });
+
+      expect(result).toMatchObject({
+        outcome: "STRUCTURED_OUTPUT_FAILURE",
+        reason: "SCHEMA_MISMATCH",
+      });
+      expect(transport.execute).toHaveBeenCalledTimes(2);
+    });
+
     it("rejects an invalid schema name before preparing or recording", async () => {
       const recorder = recorderFixture();
       const transport = transportFixture();

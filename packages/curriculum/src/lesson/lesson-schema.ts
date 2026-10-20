@@ -1,6 +1,8 @@
 import {
   contentGuidanceSchema,
+  featuresSchema,
   lessonAssetsSchema,
+  lessonDataSchema,
   lessonContentSchema,
   mvLessonRestrictionLevelsSchema,
   programmeFieldsSchema,
@@ -10,11 +12,7 @@ import {
 } from "@oaknational/oak-curriculum-schema";
 import { z } from "zod";
 
-import type {
-  LessonResource,
-  LessonResourceType,
-  ResourceFileLocation,
-} from "../resource/resource.js";
+import type { LessonResource, LessonResourceType } from "../resource/resource.js";
 import type {
   CategoryMaxRestriction,
   LessonKeyword,
@@ -158,13 +156,12 @@ function assetResources(row: AssetsRow, ctx: z.RefinementCtx): LessonResource[] 
       return [];
     }
 
-    const pdf = fileLocation(asset.asset_object?.pdf);
-    const googleDriveUrl =
-      asset.asset_object?.google_drive?.url ??
-      asset.asset_object?.google_slide?.url ??
-      null;
+    const hasPdf = hasFileLocation(asset.asset_object?.pdf);
+    const hasDriveCopy =
+      (asset.asset_object?.google_drive?.url ??
+        asset.asset_object?.google_slide?.url) != null;
 
-    if (pdf === null && googleDriveUrl === null) {
+    if (!hasPdf && !hasDriveCopy) {
       ctx.addIssue({
         code: "custom",
         message: `publishes a ${type} with nowhere to read it from`,
@@ -173,7 +170,7 @@ function assetResources(row: AssetsRow, ctx: z.RefinementCtx): LessonResource[] 
       return [];
     }
 
-    return [{ type, pdf, googleDriveUrl }];
+    return [{ type }];
   });
 }
 
@@ -185,15 +182,13 @@ function quizResources(row: AssetsRow): LessonResource[] {
     }
 
     return [
-      { type: questionsType, pdf: fileLocation(quiz.quiz_object?.quiz?.pdf) },
-      { type: answersType, pdf: fileLocation(quiz.quiz_object?.quiz_answers?.pdf) },
-    ].flatMap(({ type, pdf }) =>
-      pdf === null ? [] : [{ type, pdf, googleDriveUrl: null }],
-    );
+      { type: questionsType, pdf: quiz.quiz_object?.quiz?.pdf },
+      { type: answersType, pdf: quiz.quiz_object?.quiz_answers?.pdf },
+    ].flatMap(({ type, pdf }) => (hasFileLocation(pdf) ? [{ type }] : []));
   });
 }
 
-function fileLocation(
+function hasFileLocation(
   bucket:
     | {
         bucket_name?: string | null | undefined;
@@ -201,11 +196,11 @@ function fileLocation(
       }
     | null
     | undefined,
-): ResourceFileLocation | null {
+): boolean {
   const bucketName = bucket?.bucket_name;
   const bucketPath = bucket?.bucket_path;
 
-  return bucketName == null || bucketPath == null ? null : { bucketName, bucketPath };
+  return bucketName != null && bucketPath != null;
 }
 
 type PublishedRestrictionLevel = z.infer<typeof restrictionLevel>;
@@ -244,3 +239,27 @@ export const restrictionRowSchema = mvLessonRestrictionLevelsSchema
       return level === null ? [] : [{ category, maxLevel: RESTRICTION_LEVELS[level] }];
     }),
   );
+
+/** Matched exactly, as OWA does when it withholds a legacy lesson's downloads. */
+const LEGACY_COPYRIGHT_NOTICE = "This lesson contains copyright material.";
+
+export const rightsBrowseRowSchema = z
+  .object({
+    // The pinned schema predates `agf__has_copyright_restrictions`.
+    features: featuresSchema
+      .pick({ agf__geo_restricted: true })
+      .extend({ agf__has_copyright_restrictions: z.boolean().nullish() })
+      .nullish(),
+    copyright_content: lessonDataSchema.shape.copyright_content.optional(),
+  })
+  .transform(({ features, copyright_content }) => ({
+    copyrightRestricted: features?.agf__has_copyright_restrictions === true,
+    geoRestricted: features?.agf__geo_restricted === true,
+    legacyCopyright: (copyright_content ?? []).some(
+      ({ copyright_info }) => copyright_info === LEGACY_COPYRIGHT_NOTICE,
+    ),
+  }));
+
+export const rightsContentRowSchema = z
+  .object({ expired: z.boolean().nullish() })
+  .transform(({ expired }) => ({ expired: expired === true }));

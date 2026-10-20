@@ -12,7 +12,7 @@ import type {
 } from "@oaknational/resource-adapter-ai";
 import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
 
-import { DEFAULT_TRANSFORMATION_ROLE } from "../ai/model-roles";
+import { DEFAULT_TRANSFORMATION_ROLE, maxOutputTokens } from "../ai/model-roles";
 import type { ModelInvokerConfig } from "../ai/model-roles";
 import { TransformationRequestError } from "./errors";
 import type { OakMaterial } from "../oak-material/material";
@@ -244,13 +244,17 @@ export async function executePreparedTransformation(
   }
 
   const invoker = config.createInvoker();
+  const role = execution.role ?? DEFAULT_TRANSFORMATION_ROLE;
   const invocation = {
     ...(config.correlationKey === undefined
       ? {}
       : { correlationKey: config.correlationKey }),
     promptTemplateId: prepared.preparedPrompt.promptTemplateId,
-    request: { input: prepared.preparedPrompt.text },
-    role: execution.role ?? DEFAULT_TRANSFORMATION_ROLE,
+    request: {
+      input: prepared.preparedPrompt.text,
+      max_output_tokens: maxOutputTokens[role],
+    },
+    role,
     ...(config.signal === undefined ? {} : { signal: config.signal }),
   };
 

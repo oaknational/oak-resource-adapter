@@ -98,7 +98,7 @@ test("generates named scaffolding suggestions when the drawer opens, and keeps t
   const generatedIds = suggestionIds(await generated);
   expect(generatedIds.length).toBeGreaterThan(0);
   for (const name of [
-    "Add a task vocabulary bank",
+    "Add a task glossary",
     "Add sentence starters",
     "Add sentence frames",
   ]) {

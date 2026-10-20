@@ -10,7 +10,7 @@ export const sentenceStartersContribution: TransformationContribution = {
   prepare: (context) =>
     definePreparedContribution({
       name: "sentence_starters",
-      schema: lineListSchemaOf(4),
+      schema: lineListSchemaOf(6),
       apply: (output) => applyLineList(context, LEAD, output.lines),
     }),
 };

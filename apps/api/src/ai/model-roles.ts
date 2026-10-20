@@ -28,6 +28,17 @@ export const modelRoleBindings = defineRoleBindings({
 
 export type ModelRoleName = ModelRole<typeof modelRoleBindings>;
 
+/**
+ * Ends a runaway response. Reasoning tokens count towards it, so each leaves
+ * room well above the longest output the role produces.
+ */
+export const maxOutputTokens = {
+  "dev-smoke": 256,
+  "lesson-transcript-summary": 8_000,
+  "worksheet-scaffold": 6_000,
+  "worksheet-scaffolding-suggester": 6_000,
+} as const satisfies Record<ModelRoleName, number>;
+
 type RebindTransport<TTransport extends string> = {
   [Role in ModelRoleName]: Readonly<{
     model: (typeof modelRoleBindings)[Role]["model"];

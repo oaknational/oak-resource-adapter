@@ -6,7 +6,7 @@ name: Deploy preview
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    types: [opened, reopened, synchronize, labeled]
   push:
     branches: [main]
   workflow_dispatch:
@@ -15,7 +15,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-preview-${{ github.ref }}
+  # Any other label starts a run that skips both jobs. Its own group stops it
+  # cancelling a deployment already in progress.
+  group: deploy-preview-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'deploy' && '-other-label' || '' }}
   # Cancel superseded pull request runs, including mid-migration: the whole
   # pending batch runs in one transaction, so a dropped connection rolls it back
   # and releases the advisory lock, and the next push reapplies it.
@@ -32,12 +34,14 @@ jobs:
   #
   # Fork and Dependabot pull requests hold no repository secrets, so both jobs
   # skip. Skipped rather than guarded step by step, unlike ci.yml's browser
-  # tests, because neither should ever be a required check.
+  # tests, because neither should ever be a required check. Adding the `deploy`
+  # label to a Dependabot pull request runs both as whoever added it.
   migrate:
     name: Database
     if: >-
       vars.ENABLE_VERCEL_DEPLOYMENTS == 'true' &&
       github.actor != 'dependabot[bot]' &&
+      (github.event.action != 'labeled' || github.event.label.name == 'deploy') &&
       (github.event_name != 'pull_request' ||
        github.event.pull_request.head.repo.full_name == github.repository)
     # A called workflow cannot grant itself more than its caller holds, so
@@ -60,6 +64,7 @@ jobs:
     if: >-
       vars.ENABLE_VERCEL_DEPLOYMENTS == 'true' &&
       github.actor != 'dependabot[bot]' &&
+      (github.event.action != 'labeled' || github.event.label.name == 'deploy') &&
       (github.event_name != 'pull_request' ||
        github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
@@ -84,7 +89,7 @@ jobs:
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
       - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -245,15 +250,17 @@ jobs:
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_HARNESS_BYPASS_SECRET }}
         run: pnpm test:e2e:deployment
 
-      # Traces and screenshots live only on the runner, so a failure is
-      # undiagnosable unless they leave with it.
+      # Screenshots and DOM snapshots only. Artifacts on a public repository are
+      # readable by any signed-in GitHub user, and traces, and the HTML report
+      # that embeds them, record the deployment's bypass cookie and the test
+      # user's Clerk session.
       - name: Upload browser test evidence
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: playwright-evidence-deployment
           path: |
-            test-results/
-            playwright-report/
+            test-results/**/*.png
+            test-results/**/error-context.md
           if-no-files-found: warn
           retention-days: 14

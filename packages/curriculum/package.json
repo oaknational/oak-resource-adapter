@@ -25,15 +25,15 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@oaknational/oak-curriculum-schema": "2.16.0",
+    "@oaknational/oak-curriculum-schema": "2.17.0",
     "@oaknational/resource-adapter-logger": "workspace:*",
     "fflate": "^0.8.3",
-    "zod": "^4.6.5"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
-    "@types/node": "^24.19.0",
-    "@vitest/coverage-v8": "^5.0.2",
-    "vite": "^8.3.1",
-    "vitest": "^5.0.2"
+    "@types/node": "^24.19.2",
+    "@vitest/coverage-v8": "^5.0.4",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4"
   }
 }

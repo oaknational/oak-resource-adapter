@@ -29,7 +29,7 @@ function context(document: ResourceDocument = worksheet): ContributionContext {
 }
 
 describe("promptQuestionsContribution", () => {
-  it("requires between one and three non-empty questions", () => {
+  it("requires between one and ten non-empty questions", () => {
     const { schema } = promptQuestionsContribution.prepare(context());
 
     expect(schema.safeParse({ questions: ["What is perspective?"] }).success).toBe(
@@ -38,7 +38,9 @@ describe("promptQuestionsContribution", () => {
     expect(schema.safeParse({ questions: [] }).success).toBe(false);
     expect(schema.safeParse({ questions: [" "] }).success).toBe(false);
     expect(
-      schema.safeParse({ questions: ["One?", "Two?", "Three?", "Four?"] }).success,
+      schema.safeParse({
+        questions: Array.from({ length: 11 }, (_, index) => `${index}?`),
+      }).success,
     ).toBe(false);
   });
 
