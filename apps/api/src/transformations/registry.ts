@@ -3,7 +3,6 @@ import { addPromptQuestionsTransformation } from "./definitions/scaffold-add-pro
 import { addSentenceFramesTransformation } from "./definitions/scaffold-add-sentence-frames";
 import { addSentenceStartersTransformation } from "./definitions/scaffold-add-sentence-starters";
 import { addTaskGlossaryTransformation } from "./definitions/scaffold-add-task-glossary";
-import { retiredTaskVocabularyTransformation } from "./definitions/scaffold-add-task-vocabulary";
 import { addWordBankTransformation } from "./definitions/scaffold-add-word-bank";
 import { chunkTasksTransformation } from "./definitions/scaffold-chunk-tasks";
 
@@ -16,7 +15,6 @@ export const transformationDefinitions = {
   [identityTransformation.kind]: identityTransformation,
   [addWordBankTransformation.kind]: addWordBankTransformation,
   [addTaskGlossaryTransformation.kind]: addTaskGlossaryTransformation,
-  [retiredTaskVocabularyTransformation.kind]: retiredTaskVocabularyTransformation,
   [addPromptQuestionsTransformation.kind]: addPromptQuestionsTransformation,
   [addSentenceStartersTransformation.kind]: addSentenceStartersTransformation,
   [addSentenceFramesTransformation.kind]: addSentenceFramesTransformation,

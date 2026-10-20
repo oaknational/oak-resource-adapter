@@ -43,6 +43,13 @@
       "when": 1791451524220,
       "tag": "0005_jobs_usage_counting",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792503922947,
+      "tag": "0006_retire_task_vocabulary_kind",
+      "breakpoints": true
     }
   ]
 }
