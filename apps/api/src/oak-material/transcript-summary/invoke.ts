@@ -1,4 +1,4 @@
-import type { ResourceAdapterModelInvoker } from "@/ai/model-roles";
+import { maxOutputTokens, type ResourceAdapterModelInvoker } from "@/ai/model-roles";
 import { renderPromptTemplate } from "@oaknational/resource-adapter-ai";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 
@@ -34,6 +34,7 @@ export function createTranscriptSummaryGenerator(
     const result = await invoker.invokeStructured({
       request: {
         input: renderPromptTemplate(transcriptSummaryPrompt, { transcript }),
+        max_output_tokens: maxOutputTokens[TRANSCRIPT_SUMMARY_ROLE],
       },
       role: TRANSCRIPT_SUMMARY_ROLE,
       schema: transcriptSummarySchema,

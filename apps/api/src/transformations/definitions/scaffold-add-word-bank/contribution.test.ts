@@ -87,6 +87,19 @@ describe("wordBankContribution", () => {
     ]);
   });
 
+  it("lists the words alphabetically", () => {
+    const prepared = wordBankContribution.prepare(context("low"));
+    const [document] = prepared.apply({
+      entries: [{ term: "narrator" }, { term: "Arctic" }, { term: "axis" }],
+    });
+
+    expect(addedEntries(document).map(({ term }) => term[0])).toEqual([
+      { type: "text", text: "Arctic" },
+      { type: "text", text: "axis" },
+      { type: "text", text: "narrator" },
+    ]);
+  });
+
   it("refuses a level the definition no longer offers", () => {
     expect(() => wordBankContribution.prepare(context("high"))).toThrow(/high support/);
   });

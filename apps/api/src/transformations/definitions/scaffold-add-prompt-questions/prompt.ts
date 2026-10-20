@@ -10,32 +10,37 @@ export const addPromptQuestionsPrompt = defineTransformationPrompt({
 
 YOUR SCAFFOLD: recall questions
 
-Create a set of questions prompting a pupil to recall the declarative, substantive or procedural knowledge needed to complete the task. The questions may make knowledge that is implicit in the task explicit to the pupil, or prompt them to recall the prerequisite knowledge they need. Do not assume a pupil will know that this knowledge has to be recalled.
+Write a short set of questions that prompt the pupil to recall what they need to complete the task. The questions can make knowledge that is implicit in the task explicit, or remind pupils of knowledge from earlier learning. Do not assume pupils will know what they need to recall.
 
-The set is either knowledge-based or sequence-based, depending on the task. Ask yourself: if a pupil gave a poor or incorrect response, would that primarily be because
+What to prompt:
 
-- they lacked a fact, term or concept, or
-- they missed, mis-ordered or badly executed a step?
+Prompt whatever the task depends on. This can be knowledge, steps, or both:
 
-For the first, prompt the pupil to recall the specific knowledge. For the second, prompt them to recall the correct sequence for completing the skill, process or method.
+- knowledge: facts, terms or concepts the pupil needs to recall;
+- steps: the stages of a skill, process or method, in the right order.
 
-Questions must not tell the pupil what the knowledge is or how to complete the task. Where the resource carries a model answer, the correct knowledge or sequence is usually contained within it.
+To decide which knowledge or steps the task needs, use the resource's teacher answers or the lesson's feedback on this task if they include a model answer. If not, use the explanation and checks for understanding that come before the task, in the learning cycle the task belongs to. If that cycle has nothing relevant, look in the earlier learning cycles.
 
-How to write them:
+Point, don't tell:
 
-- make each question different from the task instruction or question, not a rewording of it;
-- prompt only knowledge directly related to answering the task;
-- use simple present tense, familiar vocabulary and simple syntax, so the question is not itself a load;
-- put one idea in each question;
-- write at most three questions, matching the number to the age of the pupil and what the task asks for.
+A prompt question points the pupil towards the knowledge they need, so the pupil can work it out or recall it. It must not name the knowledge itself. If a word or idea is part of the answer, it must not appear in the question.
 
-Where the lesson's own checks for understanding are given, keep to the knowledge they establish the lesson taught, and let them set the pitch and phrasing a question of this kind takes. Where its practice task and feedback are given, take the sequence from them.
+For "Explain why the plant left in the cupboard grew poorly", the answer depends on the plant having no light. A question that mentions light gives this away. A question that gets the pupil to think about what the cupboard is like lets them work out for themselves that it is dark.
 
-For example, for the task "Explain why the plant left in the cupboard grew poorly": "What do plants need to make their own food?"; "Where does light come from in a classroom?"; "What happens to a plant that does not get enough light?"
+Writing prompt questions:
 
-For the task "Add 3/4 and 2/3": "What do you look at first when you add two fractions?"; "What do you do when the denominators are different?"; "What happens to the numerators once the denominators match?"
+- write one question for each piece of knowledge or step the answer needs;
+- only ever put one idea in each question;
+- make each question different from the task, not a rewording of it;
+- for steps, put the questions in the order of the steps;
+- only use vocabulary, knowledge and methods the task and lesson already use;
+- keep questions no harder to read than the task itself, and use the simple present tense where it fits the subject.
 
-Never state the fact, term or step inside a question, and never introduce vocabulary, knowledge or a strategy the task and lesson do not already use.
+Write as many questions as the pupil needs to complete the task. In a Key Stage 1 resource, write at most three, keep the syntax grammatically simple, use familiar vocabulary, and try to begin each question with "what", "how" or "why".
+
+For example, for the task "Add 3/4 and 2/3": "What do you look at first when you add two fractions?"; "What do you do when the denominators are different?"; "What happens to the numerators once the denominators match?"
+
+Never state the fact, term or step inside a question, and never reword the task and call it a prompt.
 
 {{lessonMaterial}}
 

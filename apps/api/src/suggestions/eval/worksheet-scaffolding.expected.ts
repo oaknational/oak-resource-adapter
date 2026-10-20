@@ -3,7 +3,7 @@ import type { RegisteredTransformationKind } from "../../transformations/registr
 export const NODE_SCAFFOLDS = {
   frames: "scaffold-add-sentence-frames",
   starters: "scaffold-add-sentence-starters",
-  taskVocabulary: "scaffold-add-task-vocabulary",
+  taskGlossary: "scaffold-add-task-glossary",
   wordBank: "scaffold-add-word-bank",
 } as const satisfies Record<string, RegisteredTransformationKind>;
 
@@ -27,8 +27,8 @@ export const worksheetScaffoldingExpectations: readonly WorksheetExpectation[] =
   {
     lessonSlug: "adopting-different-perspectives",
     questions: {
-      "question-1": ["taskVocabulary", "frames"],
-      "question-2": ["taskVocabulary", "frames"],
+      "question-1": ["taskGlossary", "frames"],
+      "question-2": ["taskGlossary", "frames"],
     },
     recallQuestions: false,
   },
@@ -58,7 +58,7 @@ export const worksheetScaffoldingExpectations: readonly WorksheetExpectation[] =
     lessonSlug: "using-trace-tables",
     questions: {
       "question-1": ["wordBank", "frames"],
-      "question-2": ["taskVocabulary"],
+      "question-2": ["taskGlossary"],
     },
     recallQuestions: true,
   },
@@ -66,22 +66,22 @@ export const worksheetScaffoldingExpectations: readonly WorksheetExpectation[] =
     lessonSlug: "accidents-and-emergencies-er-verbs-in-the-perfect-tense-with-etre",
     questions: {
       "question-1": [],
-      "question-2": ["taskVocabulary"],
+      "question-2": ["taskGlossary"],
     },
     recallQuestions: false,
   },
   {
     lessonSlug: "actions-to-tackle-climate-change",
     questions: {
-      "question-1": ["taskVocabulary", "starters"],
-      "question-2": ["taskVocabulary", "frames"],
+      "question-1": ["taskGlossary", "starters"],
+      "question-2": ["taskGlossary", "frames"],
     },
     recallQuestions: true,
   },
   {
     lessonSlug: "air-resistance-do-and-review",
     questions: {
-      "question-1": ["taskVocabulary", "wordBank", "frames"],
+      "question-1": ["taskGlossary", "wordBank", "frames"],
     },
     recallQuestions: false,
   },
@@ -90,22 +90,22 @@ export const worksheetScaffoldingExpectations: readonly WorksheetExpectation[] =
     questions: {
       "question-1": [],
       "question-2": ["starters"],
-      "question-3": ["taskVocabulary", "frames"],
+      "question-3": ["taskGlossary", "frames"],
     },
     recallQuestions: true,
   },
   {
     lessonSlug: "adrenaline-thyroxine-and-negative-feedback",
     questions: {
-      "question-1": ["taskVocabulary", "wordBank", "starters"],
-      "question-2": ["taskVocabulary", "starters"],
+      "question-1": ["taskGlossary", "wordBank", "starters"],
+      "question-2": ["taskGlossary", "starters"],
     },
     recallQuestions: true,
   },
   {
     lessonSlug: "adding-rhythmic-variation-to-ground-bass",
     questions: {
-      "question-1": ["taskVocabulary"],
+      "question-1": ["taskGlossary"],
     },
     recallQuestions: true,
   },

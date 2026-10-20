@@ -13,9 +13,9 @@ export const addWordBankTransformation = defineTransformation({
     description:
       "Adds the vocabulary a pupil needs for one question, with optional definitions.",
     useWhen:
-      "A correct response has to use specific subject vocabulary, such as the lesson keywords, that the task does not itself supply.",
+      "The pupil is expected to write or say an answer, and a good answer would use subject-specific words, lesson keywords or naming nouns that the task instruction does not already give them. If the resource has a model answer, check it: subject words in the model answer that are not in the question are a strong signal to offer this scaffold. If there is no model answer, check the lesson's key learning points.",
     avoidWhen:
-      "The task sets no specific vocabulary for the answer, already supplies the words, asks pupils to define or recall the words themselves, or is practical or divergent.",
+      "The response is a single word, number, label or selection; a good answer needs no particular vocabulary; the words needed already appear in the task, a word bank or a labelled diagram on the page; or the task asks pupils to define or explain the meaning of those words.",
   },
   barriers: ["working-memory", "gaps-in-knowledge"],
   supportLevels: [
@@ -36,6 +36,7 @@ export const addWordBankTransformation = defineTransformation({
     { key: "lesson.keywords", required: false },
     { key: "lesson.keyLearningPoints", required: false },
     { key: "lesson.misconceptions", required: false },
+    { key: "lesson.transcriptSummary", required: false },
   ],
   outputs: ["revised-resource"],
   isAvailable: notAlreadyAppliedToTarget(KIND),

@@ -10,36 +10,28 @@ export const addSentenceStartersPrompt = defineTransformationPrompt({
 
 YOUR SCAFFOLD: sentence starters
 
-Create a set of sentence starters that give a pupil the syntactic beginning of an oral or written sentence, which they then complete to express a particular idea or language function. The pupil still supplies the content.
+Give the pupil the opening clause of their answer, so they start in the right register and syntax for the subject. A starter helps the pupil get going. It is not a comprehension scaffold. From that point on, the content and thinking are the pupil's own.
 
-A starter scaffolds entry: it gets the pupil into the right register and syntax for the first clause. It does not change the task or lower the outcome. The barrier here is getting the response out in the right form, not working out what the answer is.
+Use the task's command word, such as describe, suggest, predict, give a reason, explain or compare, to decide which starter to write.
 
-Write a starter when:
+If a task has a part that isn't written, such as drawing, making or performing, only write a starter for a part that needs a sentence.
 
-- the task requires a written or spoken response;
-- its command word is one of describe, suggest, predict, or explain in a single step.
+Writing starters:
 
-Do not write one for:
+- write one starter for each part of the task the pupil answers separately (for example, parts a and b), and do not offer alternatives for the same part;
+- write one clause only, and stop where the pupil's own thinking starts;
+- match the command word: for example, "The Romans built roads across Britain because…" for explain, "I predict that…" for predict, "One reason is…" for give a reason, and "The Romans built roads across Britain, but…" for compare;
+- use simple grammar and words from the task, and do not add new vocabulary.
 
-- a task that is not a written or spoken production task;
-- a task whose command word is one of state, name, identify, label, calculate, or match, where the response is a word, number or selection;
-- a task where the barrier is missing knowledge rather than expression.
-
-Where the command word is infer, evaluate, assess, discuss, analyse, or explain across several steps, the task needs sentence frames instead.
-
-How to write one:
-
-- write one clause, not a whole sentence;
-- stop at the point where the pupil's own thinking starts;
-- match the command word in the task;
-- use simple grammar, and the vocabulary of the task and the lesson rather than new vocabulary;
-- give one starter per required response, unless the response has more than one part, and at most four in total.
-
-A starter only begins the sentence. It does not lay out the whole sentence with gaps for a pupil to fill in: that is a frame, and a different scaffold.
+In a Key Stage 1 resource, keep starters short and use words pupils can read with their phonics.
 
 For example, for the task "Describe what happens to the particles when the water is heated": "When the water is heated, the particles…" The starter sets the register and the syntax, then stops at the point where the science begins.
 
-Never supply any part of the answer, and never run past the first clause into the pupil's own thinking.
+Never:
+
+- write a starter that lowers the difficulty of the task;
+- include any part of the answer, including a direction, choice or prediction the pupil should make;
+- write a frame: no full sentence with gaps, and nothing after the point where the pupil starts writing.
 
 {{lessonMaterial}}
 

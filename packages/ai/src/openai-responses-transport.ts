@@ -31,12 +31,59 @@ export type OpenAIResponsesTransportConfig = Readonly<{
   client: Pick<OpenAI, "responses">;
 }>;
 
+const count = (limit: number, unit: string) =>
+  `${limit} ${unit}${limit === 1 ? "" : "s"}`;
+
+const DECODING_BOUNDS = {
+  maxItems: (limit: number) => `At most ${count(limit, "item")}.`,
+  maxLength: (limit: number) => `At most ${count(limit, "character")}.`,
+  minItems: (limit: number) => `At least ${count(limit, "item")}.`,
+  minLength: (limit: number) => `At least ${count(limit, "character")}.`,
+} as const;
+
+function isDecodingBound(key: string): key is keyof typeof DECODING_BOUNDS {
+  return Object.hasOwn(DECODING_BOUNDS, key);
+}
+
+/**
+ * Strict mode enforces bounds while decoding. An upper bound cuts a value short
+ * mid-word and it still validates; a lower bound the model cannot meet, such as
+ * one item in a list it would leave empty, makes it pad with whitespace until
+ * the call times out. The model is told each bound in the field's description
+ * instead, and the invoker checks it with zod.
+ */
+function boundsAsDescriptions(schema: unknown): unknown {
+  if (Array.isArray(schema)) {
+    return schema.map(boundsAsDescriptions);
+  }
+  if (schema === null || typeof schema !== "object") {
+    return schema;
+  }
+  const notes: string[] = [];
+  const kept = Object.entries(schema).flatMap(([key, value]): [string, unknown][] => {
+    if (isDecodingBound(key) && typeof value === "number") {
+      notes.push(DECODING_BOUNDS[key](value));
+      return [];
+    }
+    return [[key, boundsAsDescriptions(value)]];
+  });
+  const node: Record<string, unknown> = Object.fromEntries(kept);
+  if (notes.length > 0) {
+    node.description = [node.description, ...notes]
+      .filter((part) => typeof part === "string")
+      .join(" ");
+  }
+  return node;
+}
+
 /** Uses the SDK as the source of truth for OpenAI's strict JSON Schema subset. */
 function structuredFormat(
   output: Extract<ModelOutputRequirement, { kind: "STRUCTURED" }>,
 ): NonNullable<ResponseTextConfig["format"]> {
   try {
-    return zodTextFormat(output.schema, output.name);
+    const format = zodTextFormat(output.schema, output.name);
+    format.schema = boundsAsDescriptions(format.schema) as typeof format.schema;
+    return format;
   } catch (error) {
     throw new ModelInvocationError({
       cause: error,

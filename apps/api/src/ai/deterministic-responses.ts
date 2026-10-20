@@ -15,7 +15,7 @@ const offers = {
     params: { supportLevel: "low" },
     reason: "Use a short vocabulary list to support the question.",
   },
-  "scaffold-add-task-vocabulary": {
+  "scaffold-add-task-glossary": {
     params: {},
     reason: "Explain the words the task instruction uses.",
   },
@@ -48,7 +48,7 @@ const scaffoldResponses: Readonly<Record<string, JsonValue>> = {
   word_bank_mid: {
     entries: [{ term: vocabulary.term, definition: vocabulary.definition }],
   },
-  task_vocabulary: {
+  task_glossary: {
     entries: [{ term: vocabulary.term, definition: vocabulary.definition }],
   },
   prompt_questions: {

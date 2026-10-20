@@ -99,6 +99,14 @@ outcomes. Operational failures throw `ModelInvocationError`; its stable `code`
 and derived `retryable` flag are safe to handle outside the package, while raw
 provider details remain on `cause`.
 
+A `SCHEMA_MISMATCH`, or an output that reaches `max_output_tokens`, gets one
+retry before its outcome is returned, with the failure fed back as a separate
+message so the prompt cache still applies. Each attempt is its own
+`model_invocations` row, and `meta` describes the last. The OpenAI transport
+describes length and item limits to the model instead of enforcing them while
+generating, because strict mode cuts long values short and pads with whitespace
+when it can't meet a minimum.
+
 Every convenience-method result carries `meta`: the invocation ID to join against
 `model_invocations`, plus the provider response ID and usage where available.
 Structured responses

@@ -193,6 +193,24 @@ async function interpretStructuredOutput<TSchema extends z.ZodType>(
   };
 }
 
+/**
+ * In its own message after the original input: the prompt cache matches whole
+ * messages, so feedback joined to the input text would miss it.
+ */
+function withRetryFeedback<TRequest extends Pick<ModelInvocationRequest, "input">>(
+  request: TRequest,
+  feedback: string,
+): TRequest {
+  const original =
+    typeof request.input === "string"
+      ? [{ role: "user" as const, content: request.input }]
+      : (request.input ?? []);
+  return {
+    ...request,
+    input: [...original, { role: "developer" as const, content: feedback }],
+  };
+}
+
 const STRUCTURED_OUTPUT_NAME = /^[A-Za-z0-9_-]{1,64}$/;
 
 export function createModelInvoker<const TBindings extends RoleBindings>(
@@ -401,15 +419,39 @@ export function createModelInvoker<const TBindings extends RoleBindings>(
 
       // Wrapped so any schema, including a primitive or a union, reaches the
       // provider as the object root that structured output modes require.
-      const { meta, outcome } = await invokeWithOutput(
-        params,
-        {
-          kind: "STRUCTURED",
-          name: params.schemaName,
-          schema: z.object({ value: params.schema }),
-        },
-        (response) => interpretStructuredOutput(params.schema, response),
-      );
+      const attempt = (request = params.request) =>
+        invokeWithOutput(
+          { ...params, request },
+          {
+            kind: "STRUCTURED",
+            name: params.schemaName,
+            schema: z.object({ value: params.schema }),
+          },
+          (response) => interpretStructuredOutput(params.schema, response),
+        );
+
+      // Bounds are described to the model rather than enforced while decoding,
+      // so an output that breaks one, or runs away to the output cap, gets a
+      // second sample before failing.
+      let { meta, outcome } = await attempt();
+      if (
+        (outcome.outcome === "STRUCTURED_OUTPUT_FAILURE" &&
+          outcome.reason === "SCHEMA_MISMATCH") ||
+        (outcome.outcome === "INCOMPLETE" && outcome.reason === "MAX_OUTPUT_TOKENS")
+      ) {
+        const feedback =
+          outcome.outcome === "STRUCTURED_OUTPUT_FAILURE"
+            ? `The previous response failed schema validation. Generate a new complete response that satisfies the schema. Correct these validation issues (paths are relative to the output value):\n${JSON.stringify(
+                outcome.issues.slice(0, 5).map(({ path, message }) => ({
+                  path,
+                  message,
+                })),
+              )}`
+            : "The previous response reached the output token limit before completing. Generate a new complete response with more concise wording, while satisfying the schema and the original task.";
+        ({ meta, outcome } = await attempt(
+          withRetryFeedback(params.request, feedback),
+        ));
+      }
       return { ...outcome, meta };
     },
 
