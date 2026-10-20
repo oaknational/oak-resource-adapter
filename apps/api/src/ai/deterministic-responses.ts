@@ -48,7 +48,7 @@ const scaffoldResponses: Readonly<Record<string, JsonValue>> = {
   word_bank_mid: {
     entries: [{ term: vocabulary.term, definition: vocabulary.definition }],
   },
-  task_vocabulary: {
+  task_glossary: {
     entries: [{ term: vocabulary.term, definition: vocabulary.definition }],
   },
   prompt_questions: {

@@ -444,6 +444,34 @@ describe("deterministic transformation contributions", () => {
     },
   );
 
+  it("applies the real task glossary contract", async () => {
+    const document = documentFor();
+    const [question] = getResourceNodesByType(document, "question");
+    if (!question) throw new Error("The fixture needs a question");
+    const config = setup();
+    const kind = "scaffold-add-task-glossary";
+    const contributionId = "task-glossary";
+    const run = await executeTransformation(
+      transformationDefinitions[kind],
+      { document, contributionId, targetBlockId: question.id, params: {} },
+      config,
+    );
+    const revised = contributedDocument(run, contributionId, kind);
+    expect(
+      getResourceNodesByType(revised, "definitionList").find(
+        ({ id }) => id === `${contributionId}-vocabulary`,
+      )?.entries,
+    ).toEqual([
+      {
+        term: [{ type: "text", text: "compare" }],
+        definition: [
+          { type: "text", text: "Identify what is the same and what is different." },
+        ],
+      },
+    ]);
+    expectValidRecording(config.recorder, "task_glossary");
+  });
+
   it.each(["ks1", "ks2", "ks3", "ks4"])(
     "applies chunk steps using the real %s schema",
     async (keyStage) => {

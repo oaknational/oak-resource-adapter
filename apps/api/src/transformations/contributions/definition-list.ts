@@ -61,7 +61,7 @@ function escapeRegExp(value: string): string {
  */
 export function tidyKeywordDefinition(keyword: string, description: string): string {
   const restatement = new RegExp(
-    `^(?:(?:a|an|the)\\s+)?${escapeRegExp(keyword.trim())}\\s+(?:is|are)\\s+`,
+    String.raw`^(?:(?:a|an|the)\s+)?${escapeRegExp(keyword.trim())}\s+(?:is|are)\s+`,
     "i",
   );
   const definition = description.trim().replace(restatement, "") || description.trim();

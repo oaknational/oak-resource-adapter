@@ -38,8 +38,9 @@ describe("promptQuestionsContribution", () => {
     expect(schema.safeParse({ questions: [] }).success).toBe(false);
     expect(schema.safeParse({ questions: [" "] }).success).toBe(false);
     expect(
-      schema.safeParse({ questions: Array.from({ length: 11 }, (_, i) => `${i}?`) })
-        .success,
+      schema.safeParse({
+        questions: Array.from({ length: 11 }, (_, index) => `${index}?`),
+      }).success,
     ).toBe(false);
   });
 
