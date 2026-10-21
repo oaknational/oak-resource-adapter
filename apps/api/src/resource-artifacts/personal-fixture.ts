@@ -109,8 +109,9 @@ export async function personalFixture(
       !metadata.md5Hash
     )
       throw new Error("Invalid fixture metadata");
-    let artifactId = row?.id;
+    let artifactId: string;
     if (row) {
+      artifactId = row.id;
       await tx
         .update(resourceArtifacts)
         .set({ byteSize, checksum: metadata.md5Hash })

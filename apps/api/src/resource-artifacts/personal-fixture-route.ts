@@ -1,3 +1,4 @@
+import type { ArtifactDownloadFixture } from "@oaknational/resource-adapter-dev-api-contracts";
 import type { NextRequest } from "next/server";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { requestAuthenticator } from "../authentication";
@@ -48,17 +49,15 @@ export async function personalFixtureRoute(request: NextRequest) {
       );
     if (!["GET", "POST", "DELETE"].includes(request.method))
       return new Response(null, { status: 405, headers });
-    return Response.json(
-      {
-        ...(await personalFixture(
-          teacher.teacherId,
-          request.method as "GET" | "POST" | "DELETE",
-          environment,
-        )),
+    const fixture: ArtifactDownloadFixture = {
+      ...(await personalFixture(
+        teacher.teacherId,
+        request.method as "GET" | "POST" | "DELETE",
         environment,
-      },
-      { headers },
-    );
+      )),
+      environment,
+    };
+    return Response.json(fixture, { headers });
   } catch (error) {
     raLogger("internal-api").error(error, { report: true });
     return Response.json(

@@ -8,7 +8,7 @@ import {
 } from "@oaknational/resource-adapter-original-resource-documents/fixtures";
 import { describe, expect, it } from "vitest";
 
-import { createDevModelInvoker } from "../../ai/dev-invoker";
+import { createOpenAIModelInvoker } from "../../ai/dev-invoker";
 import { resolveApplicationMaterial } from "../../transformations/application-material-resolver";
 import { worksheetScaffoldingSuggestionFlow } from "../definitions/worksheet-scaffolding";
 import { generateSuggestions, suggestionMaterialRequirements } from "../service";
@@ -72,13 +72,13 @@ async function runWorksheet(manifest: OakWorksheetFixtureEntry): Promise<
   const { material, warnings } = await resolveApplicationMaterial(
     suggestionMaterialRequirements(worksheetScaffoldingSuggestionFlow),
     lesson,
-    createDevModelInvoker,
+    createOpenAIModelInvoker,
   );
   const runs = await Promise.all(
     Array.from({ length: RUNS }, () =>
       generateSuggestions(worksheetScaffoldingSuggestionFlow, document, [], {
         correlationKey: `suggestion-eval-${manifest.id}`,
-        createInvoker: createDevModelInvoker,
+        createInvoker: createOpenAIModelInvoker,
         material,
       }),
     ),

@@ -20,11 +20,18 @@
     "dev": "tsc --project tsconfig.build.json --watch",
     "lint": "eslint src --max-warnings=0",
     "lint:fix": "eslint src --fix",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@oaknational/resource-adapter-contracts": "workspace:*",
     "@oaknational/resource-document": "workspace:*",
     "zod": "^4.6.6"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^5.0.4",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4"
   }
 }

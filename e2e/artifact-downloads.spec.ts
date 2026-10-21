@@ -1,4 +1,5 @@
 import { buffer } from "node:stream/consumers";
+import type { ArtifactDownloadFixture } from "@oaknational/resource-adapter-dev-api-contracts";
 import { expect, test } from "@playwright/test";
 import { signIn } from "./helpers.js";
 
@@ -116,7 +117,12 @@ test(
     try {
       await page.route("**/adapter-proxy/dev/artifact-download-fixture", (request) =>
         request.fulfill({
-          json: { artifactId: null, ready: false, stored: false, environment: "local" },
+          json: {
+            artifactId: null,
+            ready: false,
+            stored: false,
+            environment: "local",
+          } satisfies ArtifactDownloadFixture,
         }),
       );
       await signIn(page);
@@ -154,7 +160,7 @@ test(
             ready: stored,
             artifactId: stored ? id : null,
             environment: "staging",
-          },
+          } satisfies ArtifactDownloadFixture,
         });
       },
     );

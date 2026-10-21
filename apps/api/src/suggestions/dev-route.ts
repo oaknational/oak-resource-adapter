@@ -1,4 +1,5 @@
 import { isModelInvocationError } from "@oaknational/resource-adapter-ai";
+import { suggestionCommandSchema } from "@oaknational/resource-adapter-dev-api-contracts";
 import {
   parseResourceDocument,
   ResourceDocumentParseError,
@@ -8,27 +9,8 @@ import { z } from "zod";
 
 import { SuggestionRequestError, type DevSuggestionCommand } from "./dev-service";
 
-const appliedTransformationSchema = z.strictObject({
-  contributionId: z.string().trim().min(1).max(200).optional(),
-  kind: z.string().trim().min(1),
-  params: z.record(z.string(), z.unknown()),
-  targetBlockId: z.string().trim().min(1).max(256).optional(),
-});
-
-const lessonIdentitySchema = z.strictObject({
-  lessonSlug: z.string().trim().min(1),
-  programmeSlug: z.string().trim().min(1),
-});
-
-const commandSchema = z.strictObject({
-  appliedTransformations: z.array(appliedTransformationSchema).default([]),
-  document: z.unknown(),
-  flowId: z.string().trim().min(1).max(200),
-  lesson: lessonIdentitySchema.optional(),
-});
-
 export function parseDevSuggestionCommand(input: unknown): DevSuggestionCommand {
-  const parsed = commandSchema.parse(input);
+  const parsed = suggestionCommandSchema.parse(input);
   return { ...parsed, document: parseResourceDocument(parsed.document) };
 }
 

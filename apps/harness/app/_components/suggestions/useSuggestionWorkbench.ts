@@ -3,21 +3,24 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { preferredSelection } from "../shared/preferred-selection";
+import type {
+  SuggestionCommand,
+  SuggestionFlow,
+  SuggestionPreview,
+  SuggestionRunResponse,
+} from "@oaknational/resource-adapter-dev-api-contracts";
+
 import {
   fetchSuggestionCatalogue,
   previewSuggestions,
   runSuggestions,
-  type SuggestionCommand,
-  type SuggestionFlow,
-  type SuggestionPreviewResponse,
-  type SuggestionRunResponse,
 } from "./suggestion-api";
 import type { LessonScenario } from "../../scenario-types";
 
 export type SuggestionRequestState = "idle" | "preview" | "run";
 
 type CompletedSuggestionRequest =
-  | Readonly<{ action: "preview"; value: SuggestionPreviewResponse }>
+  | Readonly<{ action: "preview"; value: SuggestionPreview }>
   | Readonly<{ action: "run"; value: SuggestionRunResponse }>;
 
 async function requestSuggestions(
@@ -41,7 +44,7 @@ export function useSuggestionWorkbench(
   // the user has since made.
   const requestedFlowIdRef = useRef(initialFlowId);
   const [catalogueError, setCatalogueError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<SuggestionPreviewResponse | null>(null);
+  const [preview, setPreview] = useState<SuggestionPreview | null>(null);
   const [result, setResult] = useState<SuggestionRunResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [requestState, setRequestState] = useState<SuggestionRequestState>("idle");

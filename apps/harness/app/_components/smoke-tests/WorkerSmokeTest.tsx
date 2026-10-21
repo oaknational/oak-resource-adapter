@@ -3,7 +3,9 @@
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { useCallback, useEffect, useState } from "react";
 
-import { createTestJob, readTestJob, type TestJobResponse } from "../../harness-api";
+import type { JobResponse } from "@oaknational/resource-adapter-dev-api-contracts";
+
+import { createTestJob, readTestJob } from "../../harness-api";
 import { SmokeTestPanel } from "./SmokeTestPanel";
 
 const log = raLogger("harness");
@@ -13,12 +15,12 @@ const statusLabels = {
   queued: "Queued",
   running: "Running",
   succeeded: "Succeeded",
-} as const satisfies Record<TestJobResponse["status"], string>;
+} as const satisfies Record<JobResponse["status"], string>;
 
 const pollIntervalMs = 500;
 
 export function WorkerSmokeTest() {
-  const [job, setJob] = useState<TestJobResponse | null>(null);
+  const [job, setJob] = useState<JobResponse | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
