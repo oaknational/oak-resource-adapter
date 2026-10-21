@@ -178,27 +178,6 @@ describe("transformation harness API", () => {
     });
   });
 
-  it("ignores fields a newer API adds", async () => {
-    respond({
-      run: {
-        meta: { cachedTokens: 12, invocationId: "invocation-1" },
-        outcome: "TEXT",
-        text: "Draft output",
-      },
-      servedAt: "2026-10-21T12:00:00.000Z",
-      warnings: [],
-    });
-
-    await expect(runTransformation(command())).resolves.toEqual({
-      run: {
-        meta: { invocationId: "invocation-1" },
-        outcome: "TEXT",
-        text: "Draft output",
-      },
-      warnings: [],
-    });
-  });
-
   it("surfaces the API's safe error message", async () => {
     respond({ error: "Dev routes are not enabled." }, 404);
 

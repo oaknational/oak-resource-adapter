@@ -7,10 +7,16 @@ import {
   type TextModelOutputResult,
 } from "@oaknational/resource-adapter-ai";
 
+import { createConfiguredModelInvoker } from "./configured-invoker";
 import { maxOutputTokens, modelRoleBindings } from "./model-roles";
 import type { ResourceAdapterModelInvoker } from "./model-roles";
 
 export function createDevModelInvoker(): ResourceAdapterModelInvoker {
+  return createConfiguredModelInvoker(createConsoleInvocationRecorder);
+}
+
+/** Always OpenAI, whatever `MODEL_TRANSPORT` says: for checks that mean nothing against canned responses. */
+export function createOpenAIModelInvoker(): ResourceAdapterModelInvoker {
   if (!process.env.OPENAI_API_KEY) {
     throw new ModelInvocationError({
       code: "INVALID_CONFIGURATION",
@@ -30,7 +36,7 @@ export function createDevModelInvoker(): ResourceAdapterModelInvoker {
 export async function invokeDevSmokeText(
   input: string,
 ): Promise<TextModelOutputResult> {
-  return createDevModelInvoker().invokeText({
+  return createOpenAIModelInvoker().invokeText({
     correlationKey: "dev-ai-invoke",
     request: { input, max_output_tokens: maxOutputTokens["dev-smoke"] },
     role: "dev-smoke",

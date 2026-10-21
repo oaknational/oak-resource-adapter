@@ -2,18 +2,12 @@ import {
   CurriculumError,
   type LessonIdentity,
 } from "@oaknational/resource-adapter-curriculum";
+import { oakMaterialRequestSchema } from "@oaknational/resource-adapter-dev-api-contracts";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-const requestSchema = z.strictObject({
-  lesson: z.strictObject({
-    lessonSlug: z.string().trim().min(1),
-    programmeSlug: z.string().trim().min(1),
-  }),
-});
-
 export function parseDevLessonMaterialIdentity(input: unknown): LessonIdentity {
-  return requestSchema.parse(input).lesson;
+  return oakMaterialRequestSchema.parse(input).lesson;
 }
 
 export function devLessonMaterialErrorResponse(

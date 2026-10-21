@@ -195,15 +195,16 @@ compatible gateway client. It defaults `store` to `false`; callers using
 
 The application constructs the `OpenAI` client and passes it to the transport.
 `new OpenAI()` reads `OPENAI_API_KEY` from the environment, which Terraform sets
-in every deployed target. The application invoker and the
+in every deployed target. The application invoker, the dev routes' invoker and the
 [readiness endpoint](DEVELOPMENT.md#api-readiness) share configuration validation;
 an absent or blank key fails with `INVALID_CONFIGURATION` unless deterministic
 transport is explicitly selected. Readiness does not authenticate with the provider.
 A live smoke test exists as
 `pnpm --filter @oaknational/resource-adapter-ai smoke:openai` to be run by hand
 only. For a manual end-to-end check, the
-dev-gated `POST /dev/ai/invoke` route runs one invocation, demonstrated by the
-harness page's "Model invocation test" section.
+dev-gated `POST /dev/ai/invoke` route runs one OpenAI invocation whatever
+`MODEL_TRANSPORT` selects, demonstrated by the harness page's "Model invocation
+test" section.
 
 Threat detection and response moderation belong in orchestration around this
 boundary, not inside the transport.

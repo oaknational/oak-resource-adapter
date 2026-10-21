@@ -2,9 +2,9 @@ import { getResourceNodeById } from "@oaknational/resource-document";
 
 import type { SuggestionWorkbench } from "./useSuggestionWorkbench";
 import type {
-  SuggestionPreviewResponse,
+  SuggestionPreview,
   SuggestionRunResponse,
-} from "./suggestion-api";
+} from "@oaknational/resource-adapter-dev-api-contracts";
 import { readableIdentifier } from "../shared/readable-identifier";
 import { resourceNodeLabel } from "../shared/resource-node-label";
 import styles from "../../page.module.css";
@@ -15,7 +15,7 @@ type SuggestionResultsProps = Pick<
   "error" | "preview" | "result"
 > &
   Readonly<{ document: ResourceDocument }>;
-type SuggestionCandidate = SuggestionPreviewResponse["candidates"][number];
+type SuggestionCandidate = SuggestionPreview["candidates"][number];
 
 function nodeLabel(document: ResourceDocument, blockId: string): string {
   const node = getResourceNodeById(document, blockId);

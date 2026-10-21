@@ -1,3 +1,4 @@
+import type { StorageRoundTripResponse } from "@oaknational/resource-adapter-dev-api-contracts";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import {
   ArtifactStorageRoundTripError,
@@ -34,29 +35,29 @@ export async function POST(request: NextRequest): Promise<Response> {
   headers.set("Cache-Control", "no-store");
   const environment = storageEnvironment();
 
+  let body: StorageRoundTripResponse;
   try {
-    return Response.json(
-      { status: "ok", environment, ...(await roundTripArtifactStorage(environment)) },
-      { headers },
-    );
+    body = {
+      status: "ok",
+      environment,
+      ...(await roundTripArtifactStorage(environment)),
+    };
   } catch (error) {
     log.error(error, { report: true });
 
-    return Response.json(
-      {
-        status: "failed",
-        environment,
-        message: error instanceof Error ? error.message : "Unknown failure.",
-        ...(error instanceof ArtifactStorageRoundTripError
-          ? {
-              bucket: error.bucket,
-              cleanupMessage: error.cleanupMessage,
-              federated: error.federated,
-              key: error.key,
-            }
-          : {}),
-      },
-      { headers },
-    );
+    body = {
+      status: "failed",
+      environment,
+      message: error instanceof Error ? error.message : "Unknown failure.",
+      ...(error instanceof ArtifactStorageRoundTripError
+        ? {
+            bucket: error.bucket,
+            cleanupMessage: error.cleanupMessage,
+            federated: error.federated,
+            key: error.key,
+          }
+        : {}),
+    };
   }
+  return Response.json(body, { headers });
 }

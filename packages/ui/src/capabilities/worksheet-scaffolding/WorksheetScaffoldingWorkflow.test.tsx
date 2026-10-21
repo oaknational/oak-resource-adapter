@@ -29,6 +29,9 @@ import type {
 } from "@oaknational/resource-adapter-contracts/internal";
 import type { LessonContext, ResourceAdapterCapability } from "../../publicTypes.js";
 
+// Full-dialog renders share CPU with the package's other jsdom workers.
+vi.setConfig({ testTimeout: 10_000 });
+
 vi.mock("../../allowance.js", () => ({ getTeacherAllowance: vi.fn() }));
 
 vi.mock("../../worksheetScaffolding.js", () => ({

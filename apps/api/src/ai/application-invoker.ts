@@ -1,43 +1,14 @@
-import OpenAI from "openai";
-import {
-  createDatabaseInvocationRecorder,
-  createDeterministicModelTransport,
-  createModelInvoker,
-  createOpenAIResponsesTransport,
-} from "@oaknational/resource-adapter-ai";
+import { createDatabaseInvocationRecorder } from "@oaknational/resource-adapter-ai";
 
-import { resolveDeterministicResponse } from "./deterministic-responses";
-import { resolveModelTransport } from "./model-configuration";
-import {
-  modelRoleBindings,
-  rebindModelRoles,
-  type ResourceAdapterModelInvoker,
-} from "./model-roles";
+import { createConfiguredModelInvoker } from "./configured-invoker";
+import type { ResourceAdapterModelInvoker } from "./model-roles";
 
 export function createApplicationModelInvoker(
   transformationAttemptId: string,
   teacherId: string,
 ): ResourceAdapterModelInvoker {
-  const transport = resolveModelTransport();
-  if (transport === "deterministic") {
-    return createModelInvoker({
-      recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
-      roleBindings: rebindModelRoles("deterministic"),
-      transports: {
-        deterministic: createDeterministicModelTransport({
-          resolve: resolveDeterministicResponse,
-        }),
-      },
-      userId: teacherId,
-    });
-  }
-
-  return createModelInvoker({
-    recorder: createDatabaseInvocationRecorder({ transformationAttemptId }),
-    roleBindings: modelRoleBindings,
-    transports: {
-      openai: createOpenAIResponsesTransport({ client: new OpenAI() }),
-    },
-    userId: teacherId,
-  });
+  return createConfiguredModelInvoker(
+    () => createDatabaseInvocationRecorder({ transformationAttemptId }),
+    teacherId,
+  );
 }
