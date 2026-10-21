@@ -359,9 +359,6 @@ jobs:
             exit 1
           fi
 
-      # Screenshots, DOM snapshots and the run log only. Artifacts on a public
-      # repository are readable by any signed-in GitHub user, and traces, and
-      # the HTML report that embeds them, record the test user's Clerk session.
       - name: Upload browser test evidence
         if: failure() && env.CLERK_SECRET_KEY != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
