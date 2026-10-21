@@ -143,6 +143,22 @@ and run without Google credentials. Locally, after `gcloud auth application-defa
 login`, run `pnpm test:integration --filter=@oaknational/resource-adapter-storage`
 from the repository root to load the bucket setting from `.env`.
 
+## Reading a failed browser-test run
+
+A failed browser-test job uploads `playwright-evidence` (CI) or
+`playwright-evidence-deployment` (deployment). It holds each failing test's
+screenshot and `error-context.md`, a snapshot of the page at the failing step;
+CI's also holds `browser-tests.log`. Download it from the run's summary page or
+with `gh run download <run-id> --name <artifact>`.
+
+Traces and the HTML report are not uploaded, because they record session cookies
+and artifacts on a public repository are readable by any signed-in GitHub user.
+For the network view, reproduce the failure locally with
+`E2E_BUILT_SERVERS=1 pnpm test:e2e`, or a deployment failure with
+`E2E_BASE_URL=<harness-url> pnpm test:e2e:deployment` (see
+[testing a deployed candidate](#testing-a-deployed-candidate)), and open the
+trace it writes locally with `pnpm exec playwright show-trace test-results/<test>/trace.zip`.
+
 ## Sonar issues
 
 CI fails on any open Sonar issue, not only on a failed quality gate: a pull
