@@ -359,16 +359,14 @@ jobs:
             exit 1
           fi
 
-      # Traces and screenshots live only on the runner, so a failure is
-      # undiagnosable unless they leave with it.
       - name: Upload browser test evidence
         if: failure() && env.CLERK_SECRET_KEY != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: playwright-evidence
           path: |
-            test-results/
-            playwright-report/
+            test-results/**/*.png
+            test-results/**/error-context.md
             browser-tests.log
           if-no-files-found: warn
           retention-days: 14

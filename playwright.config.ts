@@ -73,7 +73,7 @@ export default defineConfig({
     {
       name: "setup",
       testMatch: /global\.setup\.ts/,
-      // Its requests carry the bypass secret, and CI uploads failure traces.
+      // Its requests carry the bypass secret.
       use: { ...devices["Desktop Chrome"], trace: "off" },
     },
     {
