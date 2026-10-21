@@ -1,7 +1,7 @@
 import type {
   OakMaterialSummary,
   TransformationCatalogueItem,
-} from "./transformation-api";
+} from "@oaknational/resource-adapter-dev-api-contracts";
 
 export type OakMaterialUsage = Readonly<{
   part: OakMaterialSummary;

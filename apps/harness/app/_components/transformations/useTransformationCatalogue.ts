@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 
 import { preferredSelection } from "../shared/preferred-selection";
-import {
-  fetchTransformationCatalogue,
-  type OakMaterialSummary,
-  type TransformationCatalogueItem,
-} from "./transformation-api";
+import type {
+  OakMaterialSummary,
+  TransformationCatalogueItem,
+} from "@oaknational/resource-adapter-dev-api-contracts";
+
+import { fetchTransformationCatalogue } from "./transformation-api";
 
 function orderedCatalogue(
   catalogue: readonly TransformationCatalogueItem[],

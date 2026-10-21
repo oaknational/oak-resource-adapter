@@ -1,5 +1,6 @@
 import type { PromptTemplate } from "@oaknational/resource-adapter-ai";
 import type { TransformationInput } from "@oaknational/resource-adapter-contracts/internal";
+import type { TransformationStatus } from "@oaknational/resource-adapter-dev-api-contracts";
 import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
 import type { z } from "zod";
 
@@ -8,7 +9,7 @@ import type { TransformationContribution } from "./contributions/contribution";
 import type { OakMaterialRequirement } from "../oak-material/material";
 import type { SupportLevel, SupportLevelOptions } from "./support-level";
 
-export type TransformationStatus = "active" | "draft" | "retired";
+export type { TransformationStatus };
 
 /** What a transformation reads and changes. Node types also drive target pickers. */
 export type TransformationTarget =
@@ -127,30 +128,12 @@ export type TransformationDefinition<
   target: TTarget;
 }>;
 
-/** A requirement as a listing sees it, including whether it can be met yet. */
-export type TransformationMaterialSummary = Readonly<{
-  available: boolean;
-  key: string;
-  label: string;
-  required: boolean;
-  unavailableBecause?: string | undefined;
-}>;
-
-/** A serialisable projection used by product listings and development tooling. */
-export type TransformationCatalogueItem = Readonly<{
+export type AvailableTransformation = Readonly<{
   barriers?: readonly PupilBarrier[] | undefined;
-  execution: "deterministic" | "structured-model" | "text-model";
   inputs?: readonly TransformationInput[] | undefined;
   kind: string;
   label: string;
-  materialRequirements: readonly TransformationMaterialSummary[];
   outputs: TransformationOutputs;
-  status: TransformationStatus;
   suggestion: TransformationSuggestionGuidance;
   target: TransformationTarget;
 }>;
-
-export type AvailableTransformation = Omit<
-  TransformationCatalogueItem,
-  "execution" | "materialRequirements" | "status"
->;

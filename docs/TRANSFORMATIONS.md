@@ -248,7 +248,8 @@ The harness catalogue, prompt preview and synchronous run endpoints live under
 `/dev/transformations` and are hidden unless development routes are enabled. The
 catalogue carries the Oak material catalogue too, which the harness renders as a
 table of what a prompt can be given, the heading each part appears under, and
-which transformations ask for it.
+which transformations ask for it. The endpoints' request and response schemas
+live in `packages/dev-api-contracts`, which the API and the harness both use.
 They do not create adaptations, jobs or database documents. The harness can use
 an output as the next in-memory input, undo it, or reset the fixture, while the
 same application preparation and execution services remain available to the

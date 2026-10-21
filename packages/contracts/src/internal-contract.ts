@@ -10,6 +10,9 @@ import { lessonContextSchema } from "./v1.js";
  * with their inferred types, in this module. Server contexts, service
  * boundaries, and routers belong in `internal-server.ts`; host-facing
  * versioned contracts belong in `v1.ts`.
+ *
+ * `ui` imports this module, so it ships in OWA's bundle: it uses `zod/mini`,
+ * and dev-only schemas belong in `dev-api-contracts`.
  */
 export const resourceAdapterFeatureFlagsResponseSchema = z.readonly(
   z.array(z.string().check(z.minLength(1))),

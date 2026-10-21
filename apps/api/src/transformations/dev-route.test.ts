@@ -120,6 +120,15 @@ describe("development transformation routes", () => {
     expect(service.preview).not.toHaveBeenCalled();
   });
 
+  it("rejects a field it does not recognise before calling the service", async () => {
+    const response = await postPreview(
+      request("/dev/transformations/preview", { ...command(), targetBlock: "q-1" }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(service.preview).not.toHaveBeenCalled();
+  });
+
   it("returns request errors as bad requests", async () => {
     service.preview.mockRejectedValue(
       new TransformationRequestError("The target node is invalid."),

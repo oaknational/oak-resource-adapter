@@ -22,6 +22,7 @@
     "@oaknational/resource-adapter-contracts": "workspace:*",
     "@oaknational/resource-adapter-curriculum": "workspace:*",
     "@oaknational/resource-adapter-db": "workspace:*",
+    "@oaknational/resource-adapter-dev-api-contracts": "workspace:*",
     "@oaknational/resource-adapter-logger": "workspace:*",
     "@oaknational/resource-adapter-original-resource-documents": "workspace:*",
     "@oaknational/resource-adapter-storage": "workspace:*",

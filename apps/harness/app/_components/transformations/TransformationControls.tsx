@@ -1,8 +1,7 @@
 import { resourceNodeLabel } from "../shared/resource-node-label";
-import {
-  supportLevelInputOf,
-  type TransformationCatalogueItem,
-} from "./transformation-api";
+import type { TransformationCatalogueItem } from "@oaknational/resource-adapter-dev-api-contracts";
+
+import { supportLevelInputOf } from "./transformation-api";
 import type { TransformationWorkbench } from "./useTransformationWorkbench";
 import { readableIdentifier } from "../shared/readable-identifier";
 import { statusBadgeClass } from "../shared/status-badge";

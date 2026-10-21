@@ -1,4 +1,5 @@
 import { isModelInvocationError } from "@oaknational/resource-adapter-ai";
+import { transformationCommandSchema } from "@oaknational/resource-adapter-dev-api-contracts";
 import {
   parseResourceDocument,
   ResourceDocumentParseError,
@@ -9,24 +10,10 @@ import { z } from "zod";
 import type { RegisteredTransformationCommand } from "./application-service";
 import { TransformationDependencyError, TransformationRequestError } from "./errors";
 
-const lessonIdentitySchema = z.strictObject({
-  lessonSlug: z.string().trim().min(1),
-  programmeSlug: z.string().trim().min(1),
-});
-
-const commandSchema = z.strictObject({
-  contributionId: z.string().trim().min(1).max(200).optional(),
-  document: z.unknown(),
-  kind: z.string().trim().min(1),
-  lesson: lessonIdentitySchema.optional(),
-  params: z.unknown().optional(),
-  targetBlockId: z.string().trim().min(1).max(256).optional(),
-});
-
 export function parseDevTransformationCommand(
   input: unknown,
 ): RegisteredTransformationCommand {
-  const parsed = commandSchema.parse(input);
+  const parsed = transformationCommandSchema.parse(input);
   return { ...parsed, document: parseResourceDocument(parsed.document) };
 }
 
