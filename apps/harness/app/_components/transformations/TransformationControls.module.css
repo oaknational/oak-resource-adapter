@@ -1,0 +1,67 @@
+.transformationProfile {
+  border-bottom: 1px solid #c7c7c7;
+  border-top: 1px solid #c7c7c7;
+  margin-top: 1rem;
+  padding: 1.25rem 0;
+}
+
+.profileIntroduction {
+  max-width: 46rem;
+}
+
+.profileIntroduction h3,
+.expectedOutput h4,
+.barrierSummary h4 {
+  margin: 0;
+}
+
+.profileIntroduction > p:last-child,
+.expectedOutput p {
+  line-height: 1.55;
+  margin: 0.5rem 0 0;
+}
+
+.expectedOutput {
+  align-items: start;
+  background: #ebfbeb;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1.5fr) minmax(14rem, 1fr);
+  margin-top: 1.25rem;
+  padding: 1rem;
+}
+
+.outputFacts {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.outputFacts > div {
+  border-left: 3px solid #31693d;
+  padding-left: 0.75rem;
+}
+
+.outputFacts dt {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.outputFacts dd {
+  margin: 0.25rem 0 0;
+}
+
+.barrierSummary {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 48rem) {
+  .expectedOutput {
+    grid-template-columns: 1fr;
+  }
+}

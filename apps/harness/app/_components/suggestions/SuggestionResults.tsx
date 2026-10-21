@@ -7,7 +7,8 @@ import type {
 } from "./suggestion-api";
 import { readableIdentifier } from "../shared/readable-identifier";
 import { resourceNodeLabel } from "../shared/resource-node-label";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
+import styles from "./SuggestionResults.module.css";
 import type { ResourceDocument } from "@oaknational/resource-document";
 
 type SuggestionResultsProps = Pick<
@@ -69,14 +70,14 @@ export function SuggestionResults({
   return (
     <>
       {error !== null && (
-        <p className={styles.errorMessage} role="alert">
+        <p className={shared.errorMessage} role="alert">
           {error}
         </p>
       )}
 
       {preview !== null && (
-        <section className={styles.resultPanel}>
-          <p className={styles.profileKicker}>Prepared agent input</p>
+        <section className={shared.resultPanel}>
+          <p className={shared.profileKicker}>Prepared agent input</p>
           <h2>Choices available to the agent</h2>
           <p>
             {preview.candidates.length} transformation
@@ -94,12 +95,12 @@ export function SuggestionResults({
                   <p className={styles.candidateDescription}>
                     {candidate.suggestion.description}
                   </p>
-                  <div className={styles.guidanceGrid}>
-                    <div className={styles.useGuidance}>
+                  <div className={shared.guidanceGrid}>
+                    <div className={shared.useGuidance}>
                       <h4>Use when</h4>
                       <p>{candidate.suggestion.useWhen}</p>
                     </div>
-                    <div className={styles.avoidGuidance}>
+                    <div className={shared.avoidGuidance}>
                       <h4>Avoid when</h4>
                       <p>{candidate.suggestion.avoidWhen}</p>
                     </div>
@@ -128,7 +129,10 @@ export function SuggestionResults({
                     </div>
                   ))}
                   {candidate.barriers !== undefined && (
-                    <ul aria-label="Barriers addressed" className={styles.tagList}>
+                    <ul
+                      aria-label="Barriers addressed"
+                      className={`${shared.tagList} ${styles.tagList}`}
+                    >
                       {candidate.barriers.map((barrier) => (
                         <li key={barrier}>{readableIdentifier(barrier)}</li>
                       ))}
@@ -138,7 +142,7 @@ export function SuggestionResults({
               ))}
             </ul>
           )}
-          <details className={styles.markupDetails}>
+          <details className={shared.markupDetails}>
             <summary>Exact prompt sent to the agent</summary>
             <p>
               <code>{preview.prompt.identifier}</code>
@@ -153,7 +157,7 @@ export function SuggestionResults({
       )}
 
       {result !== null && (
-        <section aria-live="polite" className={styles.resultPanel}>
+        <section aria-live="polite" className={shared.resultPanel}>
           <h2>Suggestion result</h2>
           {result.suggestions.length === 0 ? (
             <p>The agent returned no suggestions for this fixture.</p>
@@ -164,7 +168,7 @@ export function SuggestionResults({
                   className={styles.suggestionCard}
                   key={`${suggestion.kind}:${suggestion.targetBlockId ?? "document"}:${index}`}
                 >
-                  <p className={styles.profileKicker}>Agent recommendation</p>
+                  <p className={shared.profileKicker}>Agent recommendation</p>
                   <h3>{suggestion.label}</h3>
                   <p className={styles.suggestionReason}>{suggestion.reason}</p>
                   <dl>
@@ -182,7 +186,7 @@ export function SuggestionResults({
                       </div>
                     ))}
                   </dl>
-                  <details className={styles.markupDetails}>
+                  <details className={shared.markupDetails}>
                     <summary>Technical details</summary>
                     <p>
                       <code>{suggestion.kind}</code>

@@ -1,0 +1,26 @@
+.statusBadge {
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.375rem 0.625rem;
+  text-transform: capitalize;
+}
+
+.activeStatus {
+  background: #ebfbeb;
+  border: 1px solid #31693d;
+  color: #183f20;
+}
+
+.draftStatus {
+  background: #fff7cc;
+  border: 1px solid #8a6200;
+  color: #453100;
+}
+
+.retiredStatus {
+  background: #f4f4f4;
+  border: 1px solid #767676;
+  color: #3f3f3f;
+}

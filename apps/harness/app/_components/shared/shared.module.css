@@ -1,0 +1,418 @@
+/* [tabindex] covers the scroll regions that are focusable only for WCAG 2.1.1. */
+.main :is(a, button, select, summary, [tabindex]):focus-visible {
+  outline: 3px solid #0d24c4;
+  outline-offset: 3px;
+}
+
+.main {
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: clamp(1.5rem, 4vw, 4rem);
+  width: 100%;
+}
+
+.modeSwitch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.modeSwitch a {
+  border: 2px solid #222222;
+  border-radius: 0.375rem;
+  color: #222222;
+  font-weight: 600;
+  min-height: 2.75rem;
+  padding: 0.625rem 1rem;
+  text-decoration: none;
+}
+
+.modeSwitch a[aria-current="page"] {
+  background: #222222;
+  color: #ffffff;
+}
+
+.modeSwitch a:hover:not([aria-current="page"]) {
+  background: #ebfbeb;
+}
+
+.scenarioSelectControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.lesson,
+.capabilities,
+.smokeTests,
+.suggestions,
+.transformations {
+  margin: 0 auto;
+  max-width: 62rem;
+  width: 100%;
+}
+
+.lesson h1,
+.lesson h2,
+.capabilities h1,
+.capabilities h2,
+.capabilities h3,
+.capabilities h4,
+.smokeTests h1,
+.smokeTests h2,
+.suggestions h1,
+.suggestions h2,
+.suggestions h3,
+.transformations h1,
+.transformations h2,
+.transformations h3 {
+  font-weight: 600;
+}
+
+.lesson h1,
+.capabilities h1,
+.smokeTests h1,
+.suggestions h1,
+.transformations h1 {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  line-height: 1.1;
+  margin: 0.5rem 0 1rem;
+  overflow-wrap: anywhere;
+}
+
+.controls,
+.resultPanel {
+  border: 2px solid #222222;
+  border-radius: 0.75rem;
+  margin-top: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.resultPanel h2 {
+  margin-top: 0;
+}
+
+.controlHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.controlHeader h2 {
+  margin: 0;
+}
+
+.controlGrid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+.controlGrid label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  gap: 0.375rem;
+}
+
+.controlGrid select {
+  background: #ffffff;
+  border: 2px solid #222222;
+  border-radius: 0.25rem;
+  color: #222222;
+  font: inherit;
+  min-height: 2.75rem;
+  padding: 0.5rem;
+}
+
+.definitionMeta,
+.primaryActions,
+.historyActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.requestStatus {
+  margin: 0;
+  min-height: 1.5rem;
+}
+
+.primaryActions,
+.historyActions {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.definitionMeta {
+  color: #4a4a4a;
+  font-size: 0.875rem;
+  margin: 0.75rem 0 0;
+}
+
+.definitionMeta code {
+  overflow-wrap: anywhere;
+}
+
+.guidanceGrid h4 {
+  margin: 0;
+}
+
+.guidanceGrid p {
+  line-height: 1.55;
+  margin: 0.5rem 0 0;
+}
+
+.profileKicker {
+  color: #4a4a4a;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.375rem;
+  text-transform: uppercase;
+}
+
+.guidanceGrid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 1.25rem;
+}
+
+.useGuidance,
+.avoidGuidance {
+  border-left: 0.375rem solid;
+  padding: 0.25rem 0 0.25rem 1rem;
+}
+
+.useGuidance {
+  border-color: #16803a;
+}
+
+.avoidGuidance {
+  border-color: #b1044b;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tagList li {
+  background: #fff7cc;
+  border: 1px solid #8a6200;
+  border-radius: 999px;
+  color: #453100;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.25rem 0.625rem;
+}
+
+.actionBar {
+  align-items: center;
+  border-top: 1px solid #c7c7c7;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.primaryActions button,
+.historyActions button,
+.scenarioSelectControls button,
+.resultPanel button {
+  background: #ffffff;
+  border: 2px solid #222222;
+  border-radius: 0.25rem;
+  color: #222222;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+}
+
+.primaryActions .primaryButton,
+.scenarioSelectControls .primaryButton {
+  background: #222222;
+  color: #ffffff;
+}
+
+.primaryActions button:hover:not(:disabled),
+.historyActions button:hover:not(:disabled),
+.scenarioSelectControls button:hover:not(:disabled),
+.resultPanel button:hover:not(:disabled) {
+  background: #ebfbeb;
+  color: #222222;
+}
+
+.primaryActions button:disabled,
+.historyActions button:disabled,
+.scenarioSelectControls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.errorMessage {
+  background: #f5e9f2;
+  border-left: 4px solid #b1044b;
+  padding: 0.75rem 1rem;
+}
+
+.artifactFeedback:not(:empty) {
+  margin-top: 0.75rem;
+}
+
+.resultPanel section {
+  max-height: 32rem;
+  overflow: auto;
+}
+
+.resultPanel pre {
+  background: #222222;
+  color: #ffffff;
+  margin: 0;
+  padding: 1rem;
+  white-space: pre-wrap;
+}
+
+.lesson h2 {
+  margin-top: 2.5rem;
+}
+
+.lesson a {
+  color: #0d24c4;
+  font-weight: 600;
+}
+
+.eyebrow {
+  font-weight: 600;
+  margin: 0;
+}
+
+.metadataGrid,
+.documentSummary {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 1rem 0;
+}
+
+.metadataGrid > div,
+.documentSummary > div {
+  border-left: 4px solid #222222;
+  padding: 0.25rem 0.75rem;
+}
+
+.metadataGrid dt,
+.documentSummary dt {
+  font-weight: 600;
+}
+
+.metadataGrid dd,
+.documentSummary dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.sectionHeadingRow {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.documentSummary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.markupDetails {
+  border-top: 2px solid #222222;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+}
+
+.markupDetails summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 2.75rem;
+  padding: 0.625rem 0;
+}
+
+.markupDetails pre {
+  background: #222222;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0.75rem 0 0;
+  overflow-wrap: anywhere;
+  padding: 1rem;
+  white-space: pre-wrap;
+}
+
+.workerTestButton {
+  background: #ffffff;
+  border: 2px solid #222222;
+  border-radius: 0.25rem;
+  color: #222222;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+}
+
+.workerTestButton:hover:not(:disabled) {
+  background: #ebfbeb;
+}
+
+.workerTestButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 48rem) {
+  .documentSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 36rem) {
+  .metadataGrid,
+  .documentSummary,
+  .guidanceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actionBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .primaryActions button,
+  .historyActions button {
+    flex: 1;
+  }
+}
+
+.visuallyHidden {
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}

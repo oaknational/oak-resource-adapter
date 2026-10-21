@@ -9,7 +9,8 @@ import { useEffect, useId, useState } from "react";
 
 import { useDisclosure } from "../../_hooks/useDisclosure";
 import { resolveApiBaseUrl } from "../../harness-api";
-import styles from "../../page.module.css";
+import indicator from "./ApiHealthIndicator.module.css";
+import styles from "./AccessIndicator.module.css";
 
 function clerkInstance(publishableKey: string | undefined): string {
   if (publishableKey?.startsWith("pk_live_")) return "production";
@@ -20,9 +21,9 @@ function clerkInstance(publishableKey: string | undefined): string {
 const instance = clerkInstance(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
 const DISPLAY = {
-  error: { className: styles.unavailable, label: "Unavailable" },
-  loaded: { className: styles.limited, label: "Limited" },
-  loading: { className: styles.checking, label: "Checking" },
+  error: { className: indicator.unavailable, label: "Unavailable" },
+  loaded: { className: indicator.limited, label: "Limited" },
+  loading: { className: indicator.checking, label: "Checking" },
 } as const;
 
 export function AccessIndicator() {
@@ -87,23 +88,23 @@ function AccountAccessIndicator({
       <button
         aria-controls={panelId}
         aria-expanded={isOpen}
-        className={`${styles.apiHealth} ${className}`}
+        className={`${indicator.apiHealth} ${className}`}
         onClick={togglePanel}
         ref={buttonRef}
         type="button"
       >
-        <span aria-hidden="true" className={styles.healthDot} />
+        <span aria-hidden="true" className={indicator.healthDot} />
         Access: {label}
       </button>
       <section
         aria-labelledby={headingId}
-        className={styles.apiHealthPanel}
+        className={indicator.apiHealthPanel}
         hidden={!isOpen}
         id={panelId}
       >
-        <div className={styles.apiHealthPanelHeader}>
+        <div className={indicator.apiHealthPanelHeader}>
           <h2 id={headingId}>ORA access</h2>
-          <span className={`${styles.healthBadge} ${className}`}>{label}</span>
+          <span className={`${indicator.healthBadge} ${className}`}>{label}</span>
         </div>
         {status === "loading" ? (
           <p>

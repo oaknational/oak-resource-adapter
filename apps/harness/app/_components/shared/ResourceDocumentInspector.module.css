@@ -1,0 +1,53 @@
+.documentInspector {
+  border: 2px solid #222222;
+  border-radius: 0.75rem;
+  margin-top: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.documentInspector h3 {
+  margin-top: 0;
+}
+
+.documentInspector section {
+  max-height: 32rem;
+  overflow: auto;
+}
+
+.documentInspector ol {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+}
+
+.documentInspector li {
+  border-left: 4px solid #aaaaaa;
+  padding: 0.5rem 0.75rem;
+}
+
+.documentInspector li p {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.documentInspector li small {
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.documentInspector .added {
+  background: #ebfbeb;
+  border-color: #16803a;
+}
+
+.documentInspector .changed {
+  background: #fff7cc;
+  border-color: #9f7200;
+}
+
+.documentInspector .removed {
+  background: #f5e9f2;
+  border-color: #b1044b;
+}

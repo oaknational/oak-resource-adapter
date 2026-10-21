@@ -6,7 +6,7 @@ import { TransformationDocumentComparison } from "./TransformationDocumentCompar
 import { TransformationResults } from "./TransformationResults";
 import { useTransformationWorkbench } from "./useTransformationWorkbench";
 import { ScenarioLayout } from "../shared/ScenarioLayout";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
 import type {
   LessonScenario,
   LessonScenarioNavigationItem,
@@ -34,15 +34,15 @@ export function TransformationsView({
       label="Transformation fixtures"
       selectedId={scenario.id}
     >
-      <article className={styles.transformations}>
-        <p className={styles.eyebrow}>Individual prompt tools</p>
+      <article className={shared.transformations}>
+        <p className={shared.eyebrow}>Individual prompt tools</p>
         <h1>Test transformations</h1>
         <p>
           Preview prompts and run transformations directly against the selected fixture.
         </p>
 
         {workbench.catalogueError !== null && (
-          <p className={styles.errorMessage} role="alert">
+          <p className={shared.errorMessage} role="alert">
             {workbench.catalogueError}
           </p>
         )}

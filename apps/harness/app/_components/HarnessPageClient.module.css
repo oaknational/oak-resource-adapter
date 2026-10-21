@@ -1,0 +1,48 @@
+.skipLink {
+  background: #222222;
+  clip-path: inset(50%);
+  color: #ffffff;
+  height: 1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.skipLink:focus {
+  clip-path: none;
+  display: block;
+  height: auto;
+  left: 50%;
+  max-width: calc(100vw - 2rem);
+  overflow: visible;
+  padding: 0.75rem 1rem;
+  position: fixed;
+  text-align: center;
+  text-decoration: underline;
+  top: 0.5rem;
+  transform: translateX(-50%);
+  white-space: normal;
+  width: max-content;
+  z-index: 2;
+}
+
+/* The sidebar docks to the viewport edge, so these pages leave the centred column. */
+.mainWithSidebar {
+  max-width: none;
+  padding: 0;
+}
+
+.chrome {
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+@media (max-width: 60rem) {
+  .chrome {
+    position: static;
+  }
+}

@@ -2,7 +2,8 @@
 
 import { useId, type ReactNode } from "react";
 
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
+import styles from "./SmokeTestPanel.module.css";
 
 type SmokeTestPanelProps = Readonly<{
   buttonLabel: string;
@@ -28,7 +29,7 @@ export function SmokeTestPanel({
       <h2 id={headingId}>{heading}</h2>
       <div className={styles.workerTestControls}>
         <button
-          className={styles.workerTestButton}
+          className={shared.workerTestButton}
           disabled={disabled}
           onClick={onRun}
           type="button"

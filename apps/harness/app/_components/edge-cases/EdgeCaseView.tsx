@@ -9,7 +9,7 @@ import { CreateMorePanel } from "../shared/CreateMorePanel";
 import { ExtractionNotes } from "../shared/ExtractionNotes";
 import { ScenarioLayout } from "../shared/ScenarioLayout";
 import { OwaSlot, owaSlotBadge } from "../shared/OwaSlot";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
 import { useAdapterLauncher } from "../../_hooks/useAdapterLauncher";
 import type { EdgeCase, EdgeCaseNavigationItem } from "../../scenario-types";
 
@@ -78,8 +78,8 @@ export function EdgeCaseView({
         label="Edge cases"
         selectedId={edgeCase.id}
       >
-        <article className={styles.lesson}>
-          <p className={styles.eyebrow}>{edgeCase.expectation}</p>
+        <article className={shared.lesson}>
+          <p className={shared.eyebrow}>{edgeCase.expectation}</p>
           <h1>{edgeCase.title}</h1>
           <p>{edgeCase.reason}</p>
 
@@ -119,7 +119,7 @@ export function EdgeCaseView({
           <section aria-labelledby="details-heading">
             <h2 id="details-heading">Details</h2>
             <p data-testid="capability-outcome">{capabilityOutcome}</p>
-            <dl className={styles.metadataGrid}>
+            <dl className={shared.metadataGrid}>
               {edgeCase.facts.map((fact) => (
                 <div key={fact.term}>
                   <dt>{fact.term}</dt>

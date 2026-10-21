@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import styles from "../../page.module.css";
+import shared from "./shared.module.css";
+import styles from "./ScenarioSelect.module.css";
 import { useKeepViewAs } from "./ViewAs";
 import type { ScenarioNavigationItem } from "./ScenarioNavigation";
 
@@ -31,7 +32,7 @@ export function ScenarioSelect({
   return (
     <div className={styles.scenarioSelect}>
       <label htmlFor={id}>{label}</label>
-      <div className={styles.scenarioSelectControls}>
+      <div className={shared.scenarioSelectControls}>
         <select
           id={id}
           value={choice}
@@ -50,7 +51,7 @@ export function ScenarioSelect({
           ))}
         </select>
         <button
-          className={styles.primaryButton}
+          className={shared.primaryButton}
           type="button"
           disabled={choice === selectedId}
           onClick={() => router.push(keepViewAs(hrefFor(choice)))}

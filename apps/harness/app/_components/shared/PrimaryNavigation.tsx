@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import { useKeepViewAs } from "./ViewAs";
-import styles from "../../page.module.css";
+import styles from "./PrimaryNavigation.module.css";
 import type { HarnessSection } from "../../scenario-types";
 
 export function PrimaryNavigation({
