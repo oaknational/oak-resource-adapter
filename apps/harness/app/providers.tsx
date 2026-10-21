@@ -8,13 +8,16 @@ import {
 import type { ReactNode } from "react";
 
 import { useHarnessAnalyticsIdentity } from "./_hooks/useHarnessAnalytics";
+import { StyledComponentsRegistry } from "./styled-components-registry";
 
 export function HarnessProviders({ children }: Readonly<{ children: ReactNode }>) {
   useHarnessAnalyticsIdentity();
   return (
-    <OakThemeProvider theme={oakDefaultTheme}>
-      <OakGlobalStyle />
-      {children}
-    </OakThemeProvider>
+    <StyledComponentsRegistry>
+      <OakThemeProvider theme={oakDefaultTheme}>
+        <OakGlobalStyle />
+        {children}
+      </OakThemeProvider>
+    </StyledComponentsRegistry>
   );
 }

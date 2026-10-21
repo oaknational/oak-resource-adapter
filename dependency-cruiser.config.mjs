@@ -6,6 +6,7 @@ const workspaceUnits = {
     "packages/contracts",
     "packages/curriculum",
     "packages/db",
+    "packages/dev-api-contracts",
     "packages/logger",
     "packages/moderation",
     "packages/original-resource-documents",
@@ -13,6 +14,7 @@ const workspaceUnits = {
     "packages/storage",
   ],
   "apps/harness": [
+    "packages/dev-api-contracts",
     "packages/logger",
     "packages/original-resource-documents",
     "packages/resource-document",
@@ -22,6 +24,7 @@ const workspaceUnits = {
   "packages/contracts": ["packages/resource-document"],
   "packages/curriculum": ["packages/logger"],
   "packages/db": ["packages/logger"],
+  "packages/dev-api-contracts": ["packages/contracts", "packages/resource-document"],
   "packages/logger": [],
   "packages/moderation": ["packages/logger"],
   "packages/original-resource-documents": ["packages/resource-document"],

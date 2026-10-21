@@ -1,4 +1,9 @@
 import { renderPromptTemplate } from "@oaknational/resource-adapter-ai";
+import type {
+  TransformationCatalogue,
+  TransformationPreview,
+  TransformationRunResponse,
+} from "@oaknational/resource-adapter-dev-api-contracts";
 
 import { createDevModelInvoker } from "../ai/dev-invoker";
 import { capabilityDefinitions } from "../capabilities/registry";
@@ -18,7 +23,7 @@ const prepareWithoutPersistence: PreparePrompt = ({ template, variables }) =>
     text: renderPromptTemplate(template, variables),
   });
 
-export function getDevTransformationCatalogue() {
+export function getDevTransformationCatalogue(): TransformationCatalogue {
   return {
     capabilities: Object.values(capabilityDefinitions).map(
       ({ id, label, resourceType, suggestionFlowId, transformationKinds }) => ({
@@ -34,7 +39,9 @@ export function getDevTransformationCatalogue() {
   };
 }
 
-export function previewDevTransformation(command: RegisteredTransformationCommand) {
+export function previewDevTransformation(
+  command: RegisteredTransformationCommand,
+): Promise<TransformationPreview> {
   return previewRegisteredTransformation(command, {
     createInvoker: createDevModelInvoker,
     prepare: prepareWithoutPersistence,
@@ -42,7 +49,9 @@ export function previewDevTransformation(command: RegisteredTransformationComman
   });
 }
 
-export function runDevTransformation(command: RegisteredTransformationCommand) {
+export function runDevTransformation(
+  command: RegisteredTransformationCommand,
+): Promise<TransformationRunResponse> {
   return executeRegisteredTransformation(command, {
     createInvoker: createDevModelInvoker,
     prepare: prepareWithoutPersistence,

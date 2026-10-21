@@ -6,20 +6,21 @@ and apps must not import one another.
 
 The approved workspace edges are:
 
-| Unit                                   | May depend on                                                                                                                |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `apps/api`                             | `ai`, `contracts`, `curriculum`, `db`, `logger`, `moderation`, `original-resource-documents`, `resource-document`, `storage` |
-| `apps/harness`                         | `logger`, `original-resource-documents`, `resource-document`, `ui`                                                           |
-| `packages/ai`                          | `db`, `logger`, `resource-document`                                                                                          |
-| `packages/contracts`                   | `resource-document`                                                                                                          |
-| `packages/curriculum`                  | `logger`                                                                                                                     |
-| `packages/db`                          | `logger`                                                                                                                     |
-| `packages/logger`                      | no workspace package                                                                                                         |
-| `packages/moderation`                  | `logger`                                                                                                                     |
-| `packages/original-resource-documents` | `resource-document`                                                                                                          |
-| `packages/resource-document`           | no workspace package                                                                                                         |
-| `packages/storage`                     | no workspace package                                                                                                         |
-| `packages/ui`                          | `contracts`, `resource-document`                                                                                             |
+| Unit                                   | May depend on                                                                                                                                     |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/api`                             | `ai`, `contracts`, `curriculum`, `db`, `dev-api-contracts`, `logger`, `moderation`, `original-resource-documents`, `resource-document`, `storage` |
+| `apps/harness`                         | `dev-api-contracts`, `logger`, `original-resource-documents`, `resource-document`, `ui`                                                           |
+| `packages/ai`                          | `db`, `logger`, `resource-document`                                                                                                               |
+| `packages/contracts`                   | `resource-document`                                                                                                                               |
+| `packages/curriculum`                  | `logger`                                                                                                                                          |
+| `packages/db`                          | `logger`                                                                                                                                          |
+| `packages/dev-api-contracts`           | `contracts`, `resource-document`                                                                                                                  |
+| `packages/logger`                      | no workspace package                                                                                                                              |
+| `packages/moderation`                  | `logger`                                                                                                                                          |
+| `packages/original-resource-documents` | `resource-document`                                                                                                                               |
+| `packages/resource-document`           | no workspace package                                                                                                                              |
+| `packages/storage`                     | no workspace package                                                                                                                              |
+| `packages/ui`                          | `contracts`, `resource-document`                                                                                                                  |
 
 This is an allowlist, not a requirement to introduce every edge. In particular,
 `resource-document` is application-agnostic: ORA owns persistence,
@@ -41,6 +42,13 @@ Consumers use package exports rather than internal files. The dependency check
 derives each allowed entry point from the package's `exports` map, so adding a
 new public subpath is a deliberate manifest change. Package code may still use
 its own internal modules.
+
+## Dev API contracts
+
+`dev-api-contracts` holds the wire schemas for the `/dev` routes the harness
+calls. It is private and stays out of `contracts`: anything in a published
+package becomes surface OWA installs, and unused schemas in a module `ui`
+imports still reach OWA's bundle.
 
 ## Enforcement
 

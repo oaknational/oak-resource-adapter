@@ -1,4 +1,5 @@
 import type { LessonIdentity } from "@oaknational/resource-adapter-curriculum";
+import type { TransformationPreview } from "@oaknational/resource-adapter-dev-api-contracts";
 
 import { TransformationRequestError } from "./errors";
 import {
@@ -13,7 +14,6 @@ import {
 import type { OakMaterial, OakMaterialRequirement } from "../oak-material/material";
 import { isRegisteredTransformationKind, transformationDefinitions } from "./registry";
 import { executionType } from "./service";
-import type { TransformationStatus } from "./types";
 
 import type { ResourceAdapterModelInvoker } from "@/ai/model-roles";
 
@@ -77,17 +77,6 @@ export async function prepareRegisteredTransformation(
 
   return { prepared, warnings: resolution.warnings };
 }
-
-export type TransformationPreview = Readonly<{
-  execution: "deterministic" | "structured-model" | "text-model";
-  kind: string;
-  prompt: null | Readonly<{
-    identifier: string;
-    text: string;
-  }>;
-  status: TransformationStatus;
-  warnings: readonly string[];
-}>;
 
 export async function previewRegisteredTransformation(
   command: RegisteredTransformationCommand,

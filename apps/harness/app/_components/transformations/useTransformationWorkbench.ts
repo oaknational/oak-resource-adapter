@@ -3,12 +3,15 @@
 import { walkResourceDocument } from "@oaknational/resource-document";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import type {
+  TransformationPreview,
+  TransformationRunResponse,
+} from "@oaknational/resource-adapter-dev-api-contracts";
+
 import {
   previewTransformation,
   runTransformation,
   supportLevelInputOf,
-  type TransformationPreviewResponse,
-  type TransformationRunResponse,
 } from "./transformation-api";
 import { useTransformationCatalogue } from "./useTransformationCatalogue";
 import type { LessonScenario } from "../../scenario-types";
@@ -25,7 +28,7 @@ export function useTransformationWorkbench(
   const [targetBlockId, setTargetBlockId] = useState("");
   const [currentDocument, setCurrentDocument] = useState(scenario.document);
   const [history, setHistory] = useState<readonly ResourceDocument[]>([]);
-  const [preview, setPreview] = useState<TransformationPreviewResponse | null>(null);
+  const [preview, setPreview] = useState<TransformationPreview | null>(null);
   const [result, setResult] = useState<TransformationRunResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [requestState, setRequestState] = useState<TransformationRequestState>("idle");

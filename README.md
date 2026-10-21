@@ -30,6 +30,7 @@ Vercel Workflow.
 | [`packages/ai`](packages/ai)                                                   | Model invocation, behind roles rather than named models                  |
 | [`packages/db`](packages/db)                                                   | The Drizzle schema, migrations and database client                       |
 | [`packages/storage`](packages/storage)                                         | Writes generated files to a private Cloud Storage bucket                 |
+| [`packages/dev-api-contracts`](packages/dev-api-contracts)                     | Wire schemas for the dev API, shared by the API and harness              |
 | [`packages/logger`](packages/logger)                                           | The shared logger                                                        |
 
 ## Getting started

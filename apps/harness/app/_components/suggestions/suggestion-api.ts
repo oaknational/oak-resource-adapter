@@ -1,12 +1,12 @@
-import { z } from "zod";
-
-import { adapterProxyPath, readApiResponse } from "../../harness-api";
 import {
   suggestionGuidanceSchema,
   targetSchema,
   transformationInputSchema,
   transformationOutputsSchema,
-} from "../shared/catalogue-schemas";
+} from "@oaknational/resource-adapter-dev-api-contracts";
+import { z } from "zod";
+
+import { adapterProxyPath, readApiResponse } from "../../harness-api";
 import type { ResourceDocument } from "@oaknational/resource-document";
 import type { LessonScenario } from "../../scenario-types";
 
