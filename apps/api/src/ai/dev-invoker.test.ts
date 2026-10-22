@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ModelInvocationError } from "@oaknational/resource-adapter-ai";
 
 import { createDevModelInvoker, invokeDevSmokeText } from "./dev-invoker";
@@ -88,9 +88,12 @@ describe("invokeDevSmokeText", () => {
 });
 
 describe("createDevModelInvoker", () => {
+  beforeEach(() => {
+    vi.mocked(OpenAI).mockClear();
+  });
+
   afterEach(() => {
     vi.unstubAllEnvs();
-    vi.mocked(OpenAI).mockClear();
   });
 
   it("follows the deterministic transport without an OpenAI client", () => {
