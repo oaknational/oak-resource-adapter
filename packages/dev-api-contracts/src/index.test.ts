@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { ResourceDocument } from "@oaknational/resource-document";
 import type { z } from "zod";
 
 import {
@@ -65,6 +66,30 @@ function withOneUnknownField(value: unknown): unknown[] {
     ),
   ];
 }
+
+const resourceDocument: ResourceDocument = {
+  schemaVersion: "0.1",
+  id: "oak:worksheet:adding-fractions:pupil",
+  profile: "worksheet.v0",
+  language: "en-GB",
+  metadata: { title: "Adding fractions" },
+  content: [],
+  answers: [],
+  assets: [],
+  provenance: {
+    source: { system: "oak", id: "adding-fractions" },
+    producer: { name: "test", version: "1" },
+  },
+  diagnostics: [],
+};
+
+const appliedRun = {
+  run: {
+    outcome: "APPLIED",
+    outputs: [{ document: resourceDocument, purpose: "revised-resource" }],
+  },
+  warnings: [],
+};
 
 const lesson = {
   lessonSlug: "adopting-different-perspectives",
@@ -167,6 +192,7 @@ const responses: ReadonlyArray<readonly [string, z.ZodType, unknown]> = [
       warnings: [],
     },
   ],
+  ["applied transformation run", transformationRunResponseSchema, appliedRun],
   ["suggestion catalogue", suggestionCatalogueSchema, { flows: [suggestionFlow] }],
   [
     "suggestion preview",
@@ -310,6 +336,22 @@ describe("dev API responses", () => {
       expect(schema.parse(withUnknownFields(response))).toEqual(response);
     },
   );
+
+  it("rejects a resource document field it does not recognise", () => {
+    const run = {
+      ...appliedRun.run,
+      outputs: [
+        {
+          document: { ...resourceDocument, ...unknownField },
+          purpose: "revised-resource",
+        },
+      ],
+    };
+
+    expect(
+      transformationRunResponseSchema.safeParse({ ...appliedRun, run }).success,
+    ).toBe(false);
+  });
 });
 
 describe("dev API requests", () => {
