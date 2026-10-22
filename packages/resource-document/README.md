@@ -6,12 +6,12 @@ traversal and extraction-markup conversion.
 
 ## Entry points
 
-| Import                                  | Contains                                       | Needs Zod |
-| --------------------------------------- | ---------------------------------------------- | --------- |
-| `@oaknational/resource-document`        | Document types, traversal and invariants       | No        |
-| `@oaknational/resource-document/parse`  | Canonical JSON parsing and parse errors        | Yes       |
-| `@oaknational/resource-document/schema` | The Zod schema objects, to validate or compose | Yes       |
-| `@oaknational/resource-document/markup` | Extraction-markup conversion                   | Yes       |
+| Import                                  | Contains                                                        | Needs Zod |
+| --------------------------------------- | --------------------------------------------------------------- | --------- |
+| `@oaknational/resource-document`        | Document types, traversal, invariants and plain-text flattening | No        |
+| `@oaknational/resource-document/parse`  | Canonical JSON parsing and parse errors                         | Yes       |
+| `@oaknational/resource-document/schema` | The Zod schema objects, to validate or compose                  | Yes       |
+| `@oaknational/resource-document/markup` | Extraction-markup conversion                                    | Yes       |
 
 The document types and root runtime helpers are Zod-free, so a consumer that
 only needs the shape or traversal resolves nothing from Zod — which is why the

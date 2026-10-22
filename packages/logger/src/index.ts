@@ -15,7 +15,8 @@ export type LoggerKey =
   | "curriculum"
   | "feature-flags"
   | "harness"
-  | "internal-api";
+  | "internal-api"
+  | "moderation";
 
 /**
  * A pluggable error reporter (e.g. `Sentry.captureException`). The logger stays

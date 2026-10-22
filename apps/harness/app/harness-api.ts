@@ -239,3 +239,38 @@ export async function invokeModel(): Promise<ModelInvocationResponse> {
 
   return readApiJson(response, modelInvocationResponseSchema, "a model invocation");
 }
+
+const moderationSmokeResponseSchema = z.object({
+  outcome: z.enum(["FAILED", "FLAGGED", "PASSED"]),
+  flaggedCategories: z.array(z.string()),
+  unrecognisedCategories: z.array(z.string()),
+  promptVersion: z.string().nullable(),
+  reason: z.string().nullable(),
+});
+
+export type ModerationSmokeCase = "expected-pass" | "expected-flag";
+export type ModerationSmokeResponse = z.infer<typeof moderationSmokeResponseSchema>;
+
+export async function moderateContent(
+  smokeCase: ModerationSmokeCase,
+): Promise<ModerationSmokeResponse> {
+  const response = await fetch(`${adapterProxyPath}/dev/moderation/moderate`, {
+    body: JSON.stringify({ case: smokeCase }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+
+  if (response.status === 404) {
+    throw new Error("Dev routes are not enabled on the API.");
+  }
+
+  if (response.status === 503) {
+    throw new Error("The API has no moderation service URL configured.");
+  }
+
+  if (!response.ok) {
+    throw new Error(`The API returned HTTP ${response.status}.`);
+  }
+
+  return readApiJson(response, moderationSmokeResponseSchema, "a moderation result");
+}

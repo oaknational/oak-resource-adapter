@@ -6,18 +6,20 @@ and apps must not import one another.
 
 The approved workspace edges are:
 
-| Unit                                   | May depend on                                                                                       |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `apps/api`                             | `ai`, `contracts`, `curriculum`, `db`, `logger`, `original-resource-documents`, `resource-document` |
-| `apps/harness`                         | `logger`, `original-resource-documents`, `resource-document`, `ui`                                  |
-| `packages/ai`                          | `db`, `logger`, `resource-document`                                                                 |
-| `packages/contracts`                   | `resource-document`                                                                                 |
-| `packages/curriculum`                  | `logger`                                                                                            |
-| `packages/db`                          | `logger`                                                                                            |
-| `packages/logger`                      | no workspace package                                                                                |
-| `packages/original-resource-documents` | `resource-document`                                                                                 |
-| `packages/resource-document`           | no workspace package                                                                                |
-| `packages/ui`                          | `contracts`, `resource-document`                                                                    |
+| Unit                                   | May depend on                                                                                                                |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `apps/api`                             | `ai`, `contracts`, `curriculum`, `db`, `logger`, `moderation`, `original-resource-documents`, `resource-document`, `storage` |
+| `apps/harness`                         | `logger`, `original-resource-documents`, `resource-document`, `ui`                                                           |
+| `packages/ai`                          | `db`, `logger`, `resource-document`                                                                                          |
+| `packages/contracts`                   | `resource-document`                                                                                                          |
+| `packages/curriculum`                  | `logger`                                                                                                                     |
+| `packages/db`                          | `logger`                                                                                                                     |
+| `packages/logger`                      | no workspace package                                                                                                         |
+| `packages/moderation`                  | `logger`                                                                                                                     |
+| `packages/original-resource-documents` | `resource-document`                                                                                                          |
+| `packages/resource-document`           | no workspace package                                                                                                         |
+| `packages/storage`                     | no workspace package                                                                                                         |
+| `packages/ui`                          | `contracts`, `resource-document`                                                                                             |
 
 This is an allowlist, not a requirement to introduce every edge. In particular,
 `resource-document` is application-agnostic: ORA owns persistence,
