@@ -1,155 +1,24 @@
-import { resourceDocumentSchema } from "@oaknational/resource-document/schema";
-import { z } from "zod";
+import {
+  transformationCatalogueSchema,
+  transformationPreviewSchema,
+  transformationRunResponseSchema,
+  type TransformationCatalogue,
+  type TransformationCatalogueItem,
+  type TransformationCommand,
+} from "@oaknational/resource-adapter-dev-api-contracts";
+import type { z } from "zod";
 
 import { adapterProxyPath, readApiResponse } from "../../harness-api";
-import {
-  suggestionGuidanceSchema,
-  targetSchema,
-  transformationInputSchema,
-  transformationOutputsSchema,
-} from "../shared/catalogue-schemas";
-import type { LessonScenario } from "../../scenario-types";
-import type { ResourceDocument } from "@oaknational/resource-document";
-
-const materialRequirementSchema = z.strictObject({
-  available: z.boolean(),
-  key: z.string(),
-  label: z.string(),
-  required: z.boolean(),
-  unavailableBecause: z.string().optional(),
-});
-
-const transformationStatusSchema = z.enum(["active", "draft", "retired"]);
-
-export type TransformationStatus = z.infer<typeof transformationStatusSchema>;
-
-const transformationCatalogueItemSchema = z.strictObject({
-  barriers: z.array(z.string()).optional(),
-  execution: z.enum(["deterministic", "structured-model", "text-model"]),
-  inputs: z.array(transformationInputSchema).optional(),
-  kind: z.string(),
-  label: z.string(),
-  materialRequirements: z.array(materialRequirementSchema),
-  outputs: transformationOutputsSchema,
-  status: transformationStatusSchema,
-  suggestion: suggestionGuidanceSchema,
-  target: targetSchema,
-});
-
-const oakMaterialSchema = z.strictObject({
-  available: z.boolean(),
-  key: z.string(),
-  label: z.string(),
-  promptHeading: z.string(),
-  unavailableBecause: z.string().optional(),
-});
-
-export type OakMaterialSummary = z.infer<typeof oakMaterialSchema>;
-
-const capabilityCatalogueItemSchema = z.strictObject({
-  id: z.string(),
-  label: z.string(),
-  resourceType: z.string(),
-  suggestionFlowId: z.string().optional(),
-  transformationKinds: z.array(z.string()),
-});
-
-export type CapabilityCatalogueItem = z.infer<typeof capabilityCatalogueItemSchema>;
-
-const catalogueResponseSchema = z.strictObject({
-  capabilities: z.array(capabilityCatalogueItemSchema),
-  material: z.array(oakMaterialSchema),
-  transformations: z.array(transformationCatalogueItemSchema),
-});
-
-export type TransformationCatalogue = z.infer<typeof catalogueResponseSchema>;
-
-export type TransformationCatalogueItem = z.infer<
-  typeof transformationCatalogueItemSchema
->;
 
 export function supportLevelInputOf(item: TransformationCatalogueItem | undefined) {
   return item?.inputs?.find(({ id }) => id === "supportLevel");
 }
 
-const previewResponseSchema = z.strictObject({
-  execution: z.enum(["deterministic", "structured-model", "text-model"]),
-  kind: z.string(),
-  prompt: z
-    .strictObject({
-      identifier: z.string(),
-      text: z.string(),
-    })
-    .nullable(),
-  status: transformationStatusSchema,
-  warnings: z.array(z.string()),
-});
-
-export type TransformationPreviewResponse = z.infer<typeof previewResponseSchema>;
-
-const invocationMetaSchema = z.strictObject({
-  invocationId: z.string(),
-  providerResponseId: z.string().optional(),
-  usage: z
-    .strictObject({
-      inputTokens: z.number(),
-      outputTokens: z.number(),
-      totalTokens: z.number(),
-    })
-    .optional(),
-});
-
-const transformationRunSchema = z.discriminatedUnion("outcome", [
-  z.strictObject({
-    meta: invocationMetaSchema.optional(),
-    outcome: z.literal("APPLIED"),
-    outputs: z
-      .array(
-        z.strictObject({
-          document: resourceDocumentSchema,
-          purpose: z.enum(["companion-document", "revised-resource"]),
-        }),
-      )
-      .min(1),
-  }),
-  z.strictObject({
-    meta: invocationMetaSchema,
-    outcome: z.literal("TEXT"),
-    text: z.string(),
-  }),
-  z.strictObject({
-    meta: invocationMetaSchema,
-    outcome: z.literal("UNUSABLE"),
-    reason: z.enum([
-      "INCOMPLETE",
-      "OUTPUT_MISSING",
-      "REFUSAL",
-      "STRUCTURED_OUTPUT_FAILURE",
-    ]),
-  }),
-]);
-
-const runResponseSchema = z.strictObject({
-  run: transformationRunSchema,
-  warnings: z.array(z.string()),
-});
-
-export type TransformationRunResponse = z.infer<typeof runResponseSchema>;
-
-export type TransformationCommand = Readonly<{
-  contributionId?: string | undefined;
-  document: ResourceDocument;
-  kind: string;
-  lesson: Pick<LessonScenario["lesson"], "lessonSlug" | "programmeSlug">;
-  params: Record<string, unknown>;
-  targetBlockId?: string | undefined;
-}>;
-
 export async function fetchTransformationCatalogue(): Promise<TransformationCatalogue> {
   const response = await fetch(`${adapterProxyPath}/dev/transformations/catalogue`);
   return readApiResponse(
     response,
-    catalogueResponseSchema,
+    transformationCatalogueSchema,
     "a transformation catalogue",
   );
 }
@@ -173,12 +42,12 @@ export function previewTransformation(
   command: TransformationCommand,
   signal?: AbortSignal,
 ) {
-  return postTransformation("preview", command, previewResponseSchema, signal);
+  return postTransformation("preview", command, transformationPreviewSchema, signal);
 }
 
 export function runTransformation(
   command: TransformationCommand,
   signal?: AbortSignal,
 ) {
-  return postTransformation("run", command, runResponseSchema, signal);
+  return postTransformation("run", command, transformationRunResponseSchema, signal);
 }

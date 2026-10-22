@@ -1,15 +1,10 @@
 import { downloadFilename } from "@oaknational/resource-adapter/internal/downloads";
+import type { DocxExportRequest } from "@oaknational/resource-adapter-dev-api-contracts";
 
 import { adapterProxyPath, readApiError } from "../../harness-api";
-import type { ResourceDocument } from "@oaknational/resource-document";
-
-export type DocxExportCommand = Readonly<{
-  document: ResourceDocument;
-  embedFigures: boolean;
-}>;
 
 export async function exportDocx(
-  command: DocxExportCommand,
+  command: DocxExportRequest,
   signal?: AbortSignal,
 ): Promise<Readonly<{ blob: Blob; filename: string }>> {
   const response = await fetch(`${adapterProxyPath}/dev/exports/docx`, {

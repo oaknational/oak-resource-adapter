@@ -1,16 +1,11 @@
+import { docxExportRequestSchema } from "@oaknational/resource-adapter-dev-api-contracts";
 import type { ResourceDocument } from "@oaknational/resource-document";
 import { parseResourceDocument } from "@oaknational/resource-document/parse";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 import { ExportLimitError } from "./limits";
 
 const maxBodyBytes = 2 * 1024 * 1024;
-
-const commandSchema = z.strictObject({
-  document: z.unknown(),
-  embedFigures: z.boolean().default(true),
-});
 
 class ExportBodyTooLargeError extends Error {}
 
@@ -54,7 +49,7 @@ export async function readDevExportCommand(request: Request): Promise<{
 }> {
   const body = await readBoundedBody(request);
   try {
-    const parsed = commandSchema.parse(JSON.parse(body));
+    const parsed = docxExportRequestSchema.parse(JSON.parse(body));
     return {
       document: parseResourceDocument(parsed.document),
       embedFigures: parsed.embedFigures,

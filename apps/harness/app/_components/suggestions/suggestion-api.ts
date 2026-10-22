@@ -1,81 +1,19 @@
-import { z } from "zod";
+import {
+  suggestionCatalogueSchema,
+  suggestionPreviewSchema,
+  suggestionRunResponseSchema,
+  type SuggestionCatalogue,
+  type SuggestionCommand,
+} from "@oaknational/resource-adapter-dev-api-contracts";
+import type { z } from "zod";
 
 import { adapterProxyPath, readApiResponse } from "../../harness-api";
-import {
-  suggestionGuidanceSchema,
-  targetSchema,
-  transformationInputSchema,
-  transformationOutputsSchema,
-} from "../shared/catalogue-schemas";
-import type { ResourceDocument } from "@oaknational/resource-document";
-import type { LessonScenario } from "../../scenario-types";
-
-const flowSchema = z.strictObject({
-  capabilityId: z.string(),
-  id: z.string(),
-  label: z.string(),
-  maxSuggestions: z.number().int().positive(),
-  role: z.string(),
-  transformationKinds: z.array(z.string()),
-});
-
-const candidateSchema = z.strictObject({
-  barriers: z.array(z.string()).optional(),
-  eligibleTargets: z.discriminatedUnion("scope", [
-    z.strictObject({ scope: z.literal("document") }),
-    z.strictObject({
-      blockIds: z.array(z.string()).min(1),
-      scope: z.literal("node"),
-    }),
-  ]),
-  inputs: z.array(transformationInputSchema).optional(),
-  kind: z.string(),
-  label: z.string(),
-  outputs: transformationOutputsSchema,
-  suggestion: suggestionGuidanceSchema,
-  target: targetSchema,
-});
-
-const catalogueResponseSchema = z.strictObject({ flows: z.array(flowSchema) });
-
-const previewResponseSchema = z.strictObject({
-  candidates: z.array(candidateSchema),
-  flow: flowSchema,
-  prompt: z.strictObject({
-    identifier: z.string(),
-    text: z.string(),
-  }),
-});
-
-const suggestionSchema = z.strictObject({
-  kind: z.string(),
-  label: z.string(),
-  params: z.record(z.string(), z.unknown()),
-  reason: z.string(),
-  targetBlockId: z.string().nullable(),
-});
-
-const runResponseSchema = z.strictObject({
-  flowId: z.string(),
-  suggestions: z.array(suggestionSchema),
-});
-
-export type SuggestionCatalogue = z.infer<typeof catalogueResponseSchema>;
-export type SuggestionFlow = z.infer<typeof flowSchema>;
-export type SuggestionPreviewResponse = z.infer<typeof previewResponseSchema>;
-export type SuggestionRunResponse = z.infer<typeof runResponseSchema>;
-
-export type SuggestionCommand = Readonly<{
-  document: ResourceDocument;
-  flowId: string;
-  lesson: Pick<LessonScenario["lesson"], "lessonSlug" | "programmeSlug">;
-}>;
 
 export async function fetchSuggestionCatalogue(): Promise<SuggestionCatalogue> {
   const response = await fetch(`${adapterProxyPath}/dev/suggestions/catalogue`);
   return readApiResponse(
     response,
-    catalogueResponseSchema,
+    suggestionCatalogueSchema,
     "a suggestion-flow catalogue",
   );
 }
@@ -96,9 +34,9 @@ async function postSuggestion<TSchema extends z.ZodType>(
 }
 
 export function previewSuggestions(command: SuggestionCommand, signal?: AbortSignal) {
-  return postSuggestion("preview", command, previewResponseSchema, signal);
+  return postSuggestion("preview", command, suggestionPreviewSchema, signal);
 }
 
 export function runSuggestions(command: SuggestionCommand, signal?: AbortSignal) {
-  return postSuggestion("run", command, runResponseSchema, signal);
+  return postSuggestion("run", command, suggestionRunResponseSchema, signal);
 }

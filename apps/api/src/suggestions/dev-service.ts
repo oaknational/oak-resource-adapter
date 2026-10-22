@@ -1,5 +1,11 @@
 import { renderPromptTemplate } from "@oaknational/resource-adapter-ai";
 import type { LessonIdentity } from "@oaknational/resource-adapter-curriculum";
+import type {
+  SuggestionCatalogue,
+  SuggestionFlow,
+  SuggestionPreview,
+  SuggestionRunResponse,
+} from "@oaknational/resource-adapter-dev-api-contracts";
 import type { ResourceDocument } from "@oaknational/resource-document";
 
 import { createDevModelInvoker } from "../ai/dev-invoker";
@@ -41,7 +47,7 @@ function resolveFlow(flowId: string) {
   return flow;
 }
 
-function describeFlow(flow: ReturnType<typeof resolveFlow>) {
+function describeFlow(flow: ReturnType<typeof resolveFlow>): SuggestionFlow {
   return {
     capabilityId: flow.capabilityId,
     id: flow.id,
@@ -52,7 +58,7 @@ function describeFlow(flow: ReturnType<typeof resolveFlow>) {
   };
 }
 
-export function getDevSuggestionCatalogue() {
+export function getDevSuggestionCatalogue(): SuggestionCatalogue {
   return {
     flows: Object.values(suggestionFlowDefinitions).map(describeFlow),
   };
@@ -70,7 +76,9 @@ async function materialFor(
   return material;
 }
 
-export async function previewDevSuggestionFlow(command: DevSuggestionCommand) {
+export async function previewDevSuggestionFlow(
+  command: DevSuggestionCommand,
+): Promise<SuggestionPreview> {
   const flow = resolveFlow(command.flowId);
   const { candidates, preparedPrompt } = await prepareSuggestionFlow(
     flow,
@@ -90,7 +98,9 @@ export async function previewDevSuggestionFlow(command: DevSuggestionCommand) {
   };
 }
 
-export async function runDevSuggestionFlow(command: DevSuggestionCommand) {
+export async function runDevSuggestionFlow(
+  command: DevSuggestionCommand,
+): Promise<SuggestionRunResponse> {
   const flow = resolveFlow(command.flowId);
   const suggestions = await generateSuggestions(
     flow,

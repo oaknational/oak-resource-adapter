@@ -1,4 +1,4 @@
-import type { TransformationStatus } from "../transformations/transformation-api";
+import type { TransformationStatus } from "@oaknational/resource-adapter-dev-api-contracts";
 import styles from "../../page.module.css";
 
 const statusStyles = {

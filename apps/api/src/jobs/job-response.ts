@@ -1,6 +1,7 @@
 import type { Job } from "@oaknational/resource-adapter-db";
+import type { JobResponse } from "@oaknational/resource-adapter-dev-api-contracts";
 
-export function toJobResponse(job: Job) {
+export function toJobResponse(job: Job): JobResponse {
   return {
     completedAt: job.completedAt?.toISOString() ?? null,
     createdAt: job.createdAt.toISOString(),

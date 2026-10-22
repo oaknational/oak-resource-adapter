@@ -4,7 +4,7 @@ import { oakMaterialUsage } from "./oak-material-usage";
 import type {
   OakMaterialSummary,
   TransformationCatalogueItem,
-} from "./transformation-api";
+} from "@oaknational/resource-adapter-dev-api-contracts";
 
 const keywords: OakMaterialSummary = {
   available: true,

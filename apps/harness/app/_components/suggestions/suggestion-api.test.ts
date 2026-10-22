@@ -1,11 +1,11 @@
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
+import type { SuggestionCommand } from "@oaknational/resource-adapter-dev-api-contracts";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
   fetchSuggestionCatalogue,
   previewSuggestions,
   runSuggestions,
-  type SuggestionCommand,
 } from "./suggestion-api";
 import type { ResourceDocument } from "@oaknational/resource-document";
 

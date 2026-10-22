@@ -1,3 +1,4 @@
+import { testJobRequestSchema } from "@oaknational/resource-adapter-dev-api-contracts";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
@@ -7,15 +8,10 @@ import {
   devRouteNotFound,
   devRoutesEnabled,
 } from "@/dev-routes";
-import { idempotencyKeySchema } from "@/jobs/domain";
 import { enqueueJob } from "@/jobs/enqueue-job";
 import { IdempotencyConflictError } from "@/jobs/job-repository";
 import { toJobResponse } from "@/jobs/job-response";
 import { testEchoJob } from "@/jobs/test-echo/definition";
-
-const requestSchema = testEchoJob.input.extend({
-  idempotencyKey: idempotencyKeySchema.optional(),
-});
 
 const allowedMethods = "POST, OPTIONS";
 
@@ -30,7 +26,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   const headers = getCorsHeaders(request, allowedMethods);
 
   try {
-    const body = requestSchema.parse(await request.json());
+    const body = testJobRequestSchema.parse(await request.json());
     const result = await enqueueJob({
       idempotencyKey: body.idempotencyKey ?? crypto.randomUUID(),
       input: { message: body.message },

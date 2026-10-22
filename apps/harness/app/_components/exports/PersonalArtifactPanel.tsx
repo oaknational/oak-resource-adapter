@@ -2,17 +2,14 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { adapterProxyPath } from "../../harness-api";
+import {
+  artifactDownloadFixtureSchema,
+  type ArtifactDownloadFixture,
+} from "@oaknational/resource-adapter-dev-api-contracts";
+import { adapterProxyPath, readApiJson } from "../../harness-api";
 import { downloadArtifactFile } from "./artifact-api";
 import { downloadBlob } from "@oaknational/resource-adapter/internal/downloads";
 import styles from "../../page.module.css";
-
-type Fixture = {
-  artifactId: string | null;
-  stored: boolean;
-  ready: boolean;
-  environment: "local" | "preview" | "staging";
-};
 
 type FixtureAction = "GET" | "POST" | "DELETE" | "download";
 
@@ -21,7 +18,7 @@ async function performFixtureAction(
   artifactId: string | null | undefined,
   token: string,
   signal: AbortSignal,
-): Promise<Fixture | undefined> {
+): Promise<ArtifactDownloadFixture | undefined> {
   if (action === "download") {
     if (!artifactId) throw new Error("Refresh the fixture status before downloading.");
     const result = await downloadArtifactFile(artifactId, token, signal);
@@ -42,13 +39,13 @@ async function performFixtureAction(
     throw new Error(
       "Could not update your fixture. Check API access, then refresh its status.",
     );
-  return response.json();
+  return readApiJson(response, artifactDownloadFixtureSchema, "a download fixture");
 }
 
 function fixtureStatus(
   signedIn: boolean | undefined,
   busy: boolean,
-  fixture: Fixture | null,
+  fixture: ArtifactDownloadFixture | null,
 ) {
   if (!signedIn) return "Sign in to manage your download fixture.";
   if (busy) return "Working…";
@@ -64,7 +61,7 @@ function fixtureStatus(
 function fixtureStatusState(
   busy: boolean,
   error: string | null,
-  fixture: Fixture | null,
+  fixture: ArtifactDownloadFixture | null,
 ) {
   if (busy) return "working";
   if (error) return "attention";
@@ -83,7 +80,7 @@ const statusIcons = {
 
 export function PersonalArtifactPanel() {
   const { getToken, isSignedIn, userId } = useAuth();
-  const [fixture, setFixture] = useState<Fixture | null>(null);
+  const [fixture, setFixture] = useState<ArtifactDownloadFixture | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
