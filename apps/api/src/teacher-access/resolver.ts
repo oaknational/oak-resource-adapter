@@ -1,7 +1,7 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 
-import { teacherAccessFromMetadata, type TeacherAccess } from "./access";
+import { teacherAccessFromClerkUser, type TeacherAccess } from "./access";
 
 export type TeacherAccessResolver = Readonly<{
   resolve: (teacherId: string) => Promise<TeacherAccess>;
@@ -17,7 +17,7 @@ type LookUp = (teacherId: string) => Promise<TeacherAccess>;
 export const lookUpTeacherAccessInClerk: LookUp = async (teacherId) => {
   try {
     const user = await (await clerkClient()).users.getUser(teacherId);
-    return teacherAccessFromMetadata(user.privateMetadata);
+    return teacherAccessFromClerkUser(user);
   } catch (error) {
     throw new Error("The teacher's access could not be looked up.", { cause: error });
   }
