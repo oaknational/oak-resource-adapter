@@ -18,57 +18,18 @@ updates:
       prefix: chore
       include: scope
     ignore:
-      # @types/node tracks .nvmrc (Node 24).
+      # @types/node tracks the Node major in package.json engines.
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
       # Tracks OWA's major; v8 needs React 19 and OWA is on React 18.
       - dependency-name: "@portabletext/react"
         update-types: ["version-update:semver-major"]
     groups:
-      # The connector pins its own google-auth-library major and the two
-      # exchange auth client types, so a split bump fails to compile. Majors are
-      # grouped here for that reason.
-      google-cloud-sql:
-        patterns:
-          - "@google-cloud/cloud-sql-connector"
-          - google-auth-library
-        update-types: [major, minor, patch]
-      # Vitest and its coverage provider must use matching versions, including majors.
-      vitest:
-        patterns:
-          - vitest
-          - "@vitest/*"
-        update-types: [major, minor, patch]
-      # First matching group wins. Keep React types with React in production.
-      dev-tooling:
-        patterns:
-          - eslint
-          - "@eslint/*"
-          - typescript-eslint
-          - globals
-          - prettier
-          - vite
-          - "@testing-library/*"
-          - jsdom
-          - typescript
-          - "@typescript/native"
-          - turbo
-          - husky
-          - "@commitlint/*"
-          - dependency-cruiser
-          - tsup
-          - "@playwright/test"
-          - dotenv-cli
-          - vercel
-          - "@changesets/cli"
-          - "@types/*"
-        exclude-patterns:
-          - "@types/react"
-          - "@types/react-dom"
-        update-types: [minor, patch]
-      # drizzle-kit generates what drizzle-orm consumes: do not move
-      # drizzle-kit into dev-tooling.
-      production:
+      # Majors arrive as separate PRs, which splits two pairs that must move
+      # together: vitest with @vitest/*, and @google-cloud/cloud-sql-connector
+      # with google-auth-library. Push the partner's bump onto one PR and close
+      # the other.
+      npm:
         patterns: ["*"]
         update-types: [minor, patch]
 
