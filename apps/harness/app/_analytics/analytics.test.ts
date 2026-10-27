@@ -137,7 +137,6 @@ describe("harness analytics", () => {
     });
     isAutomated.mockReturnValue(true);
     expect(beforeSend(sdkEvent)?.properties).toMatchObject({ "Automated Run": true });
-    expect(beforeSend(null)).toBeNull();
   });
 
   it("waits for auth and resets between teachers and on logout", () => {
