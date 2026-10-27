@@ -107,7 +107,7 @@ jobs:
         env:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
         run: |
-          args=(--yes --target="$VERCEL_TARGET" --token="$VERCEL_TOKEN")
+          args=(--yes --environment="$VERCEL_TARGET" --token="$VERCEL_TOKEN")
           if [ "$VERCEL_TARGET" != "staging" ]; then
             args+=(--no-wait)
           fi
@@ -127,7 +127,7 @@ jobs:
           API_URL: ${{ steps.api.outputs.url }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_HARNESS }}
         run: |
-          url="$(pnpm exec vercel deploy --yes --target="$VERCEL_TARGET" --token="$VERCEL_TOKEN" \
+          url="$(pnpm exec vercel deploy --yes --environment="$VERCEL_TARGET" --token="$VERCEL_TOKEN" \
             --env "RESOURCE_ADAPTER_API_ORIGIN=$API_URL" \
             --env "RESOURCE_ADAPTER_API_BYPASS_SECRET=$API_BYPASS_SECRET")"
           echo "url=$url" >> "$GITHUB_OUTPUT"
