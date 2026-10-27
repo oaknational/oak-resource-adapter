@@ -18,7 +18,7 @@
     "access": "public"
   },
   "engines": {
-    "node": "24.x"
+    "node": ">=24.22.1 <25"
   },
   "exports": {
     ".": {
