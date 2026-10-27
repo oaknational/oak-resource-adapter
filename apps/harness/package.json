@@ -21,13 +21,13 @@
     "@oaknational/resource-adapter-original-resource-documents": "workspace:*",
     "@oaknational/resource-document": "workspace:*",
     "@portabletext/react": "^4.0.3",
-    "next": "^16.4.1",
+    "next": "^16.4.2",
     "next-cloudinary": "^6.19.3",
-    "posthog-js": "^1.438.7",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "styled-components": "^6.5.3",
-    "zod": "^4.6.6"
+    "posthog-js": "^1.438.12",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "styled-components": "^6.6.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
