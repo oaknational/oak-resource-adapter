@@ -2,6 +2,8 @@ packages:
   - apps/*
   - packages/*
 
+engineStrict: true
+
 # 7 days, in minutes; must match the Dependabot cooldown exactly.
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
