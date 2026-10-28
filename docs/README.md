@@ -45,3 +45,5 @@ How the service works:
   retired, and why they control rollout rather than authorisation.
 - [Model invocation](MODEL_INVOCATION.md): how generation code reaches an AI
   model without naming one, through roles, transports and recorders.
+- [Moderation](MODERATION.md): how ORA calls the Oak AI Moderation Service,
+  what each outcome means, and the local setup it needs.
