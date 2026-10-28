@@ -14,20 +14,20 @@
     "type-check": "next typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.9.14",
+    "@clerk/nextjs": "^7.9.17",
     "@oaknational/oak-components": "^3.24.0",
     "@oaknational/resource-adapter": "workspace:*",
     "@oaknational/resource-adapter-logger": "workspace:*",
     "@oaknational/resource-adapter-original-resource-documents": "workspace:*",
     "@oaknational/resource-document": "workspace:*",
     "@portabletext/react": "^4.0.3",
-    "next": "^16.4.0",
+    "next": "^16.4.2",
     "next-cloudinary": "^6.19.3",
-    "posthog-js": "^1.438.7",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "styled-components": "^6.5.3",
-    "zod": "^4.6.6"
+    "posthog-js": "^1.438.12",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "styled-components": "^6.6.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
@@ -36,6 +36,6 @@
     "dotenv-cli": "^11.0.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vite": "^8.3.4",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.5"
   }
 }

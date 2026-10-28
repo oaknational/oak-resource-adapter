@@ -26,12 +26,12 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^8.4.0",
-    "@vercel/oidc": "^4.0.0"
+    "@vercel/oidc": "^4.0.1"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
-    "@vitest/coverage-v8": "^5.0.4",
+    "@vitest/coverage-v8": "^5.0.5",
     "vite": "^8.3.4",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.5"
   }
 }

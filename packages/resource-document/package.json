@@ -18,7 +18,7 @@
     "access": "public"
   },
   "engines": {
-    "node": "24.x"
+    "node": ">=24.22.1 <25"
   },
   "exports": {
     ".": {
@@ -66,14 +66,14 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.19.2",
-    "@vitest/coverage-v8": "^5.0.4",
-    "eslint": "^10.12.0",
+    "@vitest/coverage-v8": "^5.0.5",
+    "eslint": "^10.13.0",
     "globals": "^17.13.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "typescript-eslint": "^8.71.1",
+    "typescript-eslint": "^8.72.0",
     "vite": "^8.3.4",
-    "vitest": "^5.0.4",
-    "zod": "^4.6.6"
+    "vitest": "^5.0.5",
+    "zod": "^4.6.7"
   },
   "peerDependenciesMeta": {
     "zod": {

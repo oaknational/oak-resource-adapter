@@ -63,7 +63,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: .nvmrc
+          node-version-file: package.json
           cache: pnpm
 
       # pnpm publish uses npm; trusted publishing requires npm >= 11.5.1.

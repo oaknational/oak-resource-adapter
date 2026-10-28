@@ -110,18 +110,15 @@ export function createHarnessAnalytics(
         person_profiles: "identified_only",
         // PostHog otherwise drops WebDriver events before before_send can tag them.
         opt_out_useragent_filter: true,
-        before_send: (event) =>
-          event === null
-            ? null
-            : {
-                ...event,
-                properties: {
-                  ...event.properties,
-                  Environment: config.environment,
-                  Release: config.release,
-                  "Automated Run": config.isAutomated(),
-                },
-              },
+        before_send: (event) => ({
+          ...event,
+          properties: {
+            ...event.properties,
+            Environment: config.environment,
+            Release: config.release,
+            "Automated Run": config.isAutomated(),
+          },
+        }),
       });
       initialised = true;
     }
