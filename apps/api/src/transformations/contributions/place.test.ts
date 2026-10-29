@@ -1,4 +1,7 @@
-import { getResourceNodeById } from "@oaknational/resource-document";
+import {
+  getResourceNodesByType,
+  getResourceNodeById,
+} from "@oaknational/resource-document";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -8,7 +11,7 @@ import type {
   ResourceNode,
 } from "@oaknational/resource-document";
 
-import { insertBefore, insertBeneath } from "./place";
+import { insertAtStart, insertBefore, insertBeneath } from "./place";
 
 let worksheet: ResourceDocument;
 let question: QuestionNode;
@@ -26,9 +29,7 @@ beforeAll(async () => {
     programmeSlug: "english-primary-ks2",
     resourceType: "worksheet",
   });
-  const first = worksheet.content.find(
-    (node): node is QuestionNode => node.type === "question",
-  );
+  const first = getResourceNodesByType(worksheet, "question")[0];
   if (first === undefined) {
     throw new Error("The fixture has no question.");
   }
@@ -52,7 +53,7 @@ describe("insertBeneath", () => {
   it("places the scaffold inside its target, before the space a pupil writes in", () => {
     const placed = insertBeneath(worksheet, scaffold, question.id);
     const children =
-      placed.content.find((node): node is QuestionNode => node.id === question.id)
+      getResourceNodesByType(placed, "question").find((node) => node.id === question.id)
         ?.children ?? [];
     const responseSpace = children.findIndex((node) => node.type === "responseSpace");
 
@@ -115,8 +116,8 @@ describe("insertBeneath", () => {
 
 describe("insertBefore", () => {
   it("places a contribution immediately before a top-level target", () => {
-    const placed = insertBefore(worksheet, scaffold, question.id);
-    const targetIndex = placed.content.findIndex((node) => node.id === question.id);
+    const placed = insertBefore(worksheet, scaffold, "task-b");
+    const targetIndex = placed.content.findIndex((node) => node.id === "task-b");
 
     expect(placed.content[targetIndex - 1]).toBe(scaffold);
   });
@@ -146,6 +147,41 @@ describe("insertBefore", () => {
   it("refuses a target the document does not contain", () => {
     expect(() => insertBefore(worksheet, scaffold, "not-a-node")).toThrow(
       /not in the document's content/,
+    );
+  });
+});
+
+describe("insertAtStart", () => {
+  const heading: ResourceNode = {
+    id: "task-heading",
+    type: "heading",
+    level: 2,
+    content: [{ type: "text", text: "Task A" }],
+  };
+
+  function taskWith(children: ResourceNode[]): ResourceDocument {
+    return { ...worksheet, content: [{ id: "task", type: "task", children }] };
+  }
+
+  it("leads the target's children after its heading", () => {
+    const placed = insertAtStart(taskWith([heading, question]), scaffold, "task");
+
+    expect(getResourceNodeById(placed, "task")).toMatchObject({
+      children: [heading, scaffold, question],
+    });
+  });
+
+  it("leads a target that has no heading", () => {
+    const placed = insertAtStart(taskWith([question]), scaffold, "task");
+
+    expect(getResourceNodeById(placed, "task")).toMatchObject({
+      children: [scaffold, question],
+    });
+  });
+
+  it("refuses a target that holds no children", () => {
+    expect(() => insertAtStart(taskWith([heading]), scaffold, "task-heading")).toThrow(
+      /has no children to lead/,
     );
   });
 });

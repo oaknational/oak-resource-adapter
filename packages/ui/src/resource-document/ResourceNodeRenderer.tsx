@@ -12,6 +12,7 @@ import { parseColor } from "@oaknational/oak-components";
 import { styled } from "styled-components";
 
 import { InlineContentRenderer } from "./InlineContentRenderer.js";
+import { TaskAccordion } from "./TaskAccordion.js";
 
 const ContentSection = styled.section`
   display: flex;
@@ -250,18 +251,21 @@ function Heading({
 
 /** Slots a capability fills in while the teacher works on the document. */
 export type ResourceDocumentDecorations = Readonly<{
-  /** Placed after a node, or inside a question above its response space. */
+  /**
+   * Placed after a node, inside a question above its response space, or at the
+   * start of a task.
+   */
   renderAfterNode?: ((node: ResourceNode) => ReactNode) | undefined;
   /** Placed inside the frame marking content one contribution added. */
   renderContributionControls?: ((contributionId: string) => ReactNode) | undefined;
 }>;
 
 /**
- * A question places its own trailing slot above its response space, so the list
- * must not place it a second time after the whole question.
+ * Questions and tasks place their own trailing slot, so the list must not place
+ * it a second time after the whole node.
  */
 function placesOwnTrailingSlot(node: ResourceNode): boolean {
-  return node.type === "question";
+  return node.type === "question" || node.type === "task";
 }
 
 export function ResourceNodeListRenderer({
@@ -379,6 +383,35 @@ export function ResourceNodeRenderer({
           />
         </ContentSection>
       );
+    case resourceVocabulary.nodes.task.nodeType: {
+      const [heading, ...rest] = node.children;
+      const leadingSlot = decorations?.renderAfterNode?.(node);
+      const parentContributionId = contributionIdOf(node.extensions);
+
+      return heading?.type === "heading" ? (
+        <TaskAccordion title={heading.content}>
+          {leadingSlot}
+          <ResourceNodeListRenderer
+            assets={assets}
+            decorations={decorations}
+            nodes={rest}
+            parentContributionId={parentContributionId}
+            parentHeadingLevel={4}
+          />
+        </TaskAccordion>
+      ) : (
+        <ContentSection>
+          {leadingSlot}
+          <ResourceNodeListRenderer
+            assets={assets}
+            decorations={decorations}
+            nodes={node.children}
+            parentContributionId={parentContributionId}
+            parentHeadingLevel={parentHeadingLevel}
+          />
+        </ContentSection>
+      );
+    }
     case resourceVocabulary.nodes.heading.nodeType:
       return (
         <Heading level={headingLevel(node.level)}>

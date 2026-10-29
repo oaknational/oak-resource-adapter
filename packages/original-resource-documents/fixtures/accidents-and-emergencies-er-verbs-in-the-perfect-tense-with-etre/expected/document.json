@@ -16,295 +16,307 @@
     },
     {
       "id": "task-b",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task B: Learning accidents and emergencies vocabulary"
-        }
-      ]
-    },
-    {
-      "id": "question-1",
-      "type": "question",
-      "label": "B1",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-parle-comment-dit-on-en-anglais",
-          "type": "paragraph",
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Parle. Comment dit-on en anglais ?"
+              "text": "Task B: Learning accidents and emergencies vocabulary"
             }
           ]
         },
         {
-          "id": "vocabulary",
-          "type": "table",
-          "role": "translation",
-          "header": [
+          "id": "question-1",
+          "type": "question",
+          "label": "B1",
+          "children": [
             {
-              "kind": "content",
+              "id": "unstable:paragraph-parle-comment-dit-on-en-anglais",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "Français"
+                  "text": "Parle. Comment dit-on en anglais ?"
                 }
               ]
             },
             {
-              "kind": "content",
-              "content": [
+              "id": "vocabulary",
+              "type": "table",
+              "role": "translation",
+              "header": [
                 {
-                  "type": "text",
-                  "text": "Anglais"
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Français"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Anglais"
+                    }
+                  ]
                 }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "l’urgence"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "l’après-midi"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "le doigt"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "le corps"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "retourner"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "tomber"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
               ]
             }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "l’urgence"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "l’après-midi"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "le doigt"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "le corps"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "retourner"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "tomber"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ]
           ]
         }
       ]
     },
     {
       "id": "task-c",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task C: Practising plural forms of the perfect tense"
-        }
-      ]
-    },
-    {
-      "id": "question-2",
-      "type": "question",
-      "label": "C3",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-cris-les-phrases-avec-les-adverbes",
-          "type": "paragraph",
+          "id": "task-c-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Écris les phrases avec les adverbes."
+              "text": "Task C: Practising plural forms of the perfect tense"
             }
           ]
         },
         {
-          "id": "adverbs",
-          "type": "table",
-          "role": "sentence-completion",
-          "header": [
+          "id": "question-2",
+          "type": "question",
+          "label": "C3",
+          "children": [
             {
-              "kind": "content",
+              "id": "unstable:paragraph-cris-les-phrases-avec-les-adverbes",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "Phrase"
+                  "text": "Écris les phrases avec les adverbes."
                 }
               ]
             },
             {
-              "kind": "content",
-              "content": [
+              "id": "adverbs",
+              "type": "table",
+              "role": "sentence-completion",
+              "header": [
                 {
-                  "type": "text",
-                  "text": "Adverbe"
-                }
-              ]
-            },
-            {
-              "kind": "content",
-              "content": [
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Phrase"
+                    }
+                  ]
+                },
                 {
-                  "type": "text",
-                  "text": "Réponse"
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Adverbe"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Réponse"
+                    }
+                  ]
                 }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Elles sont tombées."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "dehors"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Ils sont montés sur la table."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "facilement"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Ils sont restés à la maison."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "tristement"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Elles sont arrivées."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "déjà"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
               ]
             }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Elles sont tombées."
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "dehors"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Ils sont montés sur la table."
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "facilement"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Ils sont restés à la maison."
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "tristement"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Elles sont arrivées."
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "déjà"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ]
           ]
         }
       ]

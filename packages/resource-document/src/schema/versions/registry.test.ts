@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { CURRENT_SCHEMA_VERSION, parseResourceDocumentWithInfo } from "../../parse.js";
 import { resourceDocumentSchema } from "../current.js";
+import { resourceVocabulary } from "../../vocabulary.js";
 import { schemaVersionPattern } from "../../versioning.js";
 import { resourceDocumentSchemaVersions } from "./registry.js";
 
@@ -29,6 +30,25 @@ describe("resource document schema versions", () => {
     );
     expect(new Set(order).size).toBe(order.length);
     expect(schemas[CURRENT_SCHEMA_VERSION]).toBe(resourceDocumentSchema);
+  });
+
+  it("covers every node type in the current version's frozen documents", () => {
+    const types = new Set<unknown>();
+    const collect = (value: unknown): void => {
+      if (Array.isArray(value)) {
+        value.forEach(collect);
+      } else if (typeof value === "object" && value !== null) {
+        if ("type" in value) types.add(value.type);
+        Object.values(value).forEach(collect);
+      }
+    };
+    frozenDocuments
+      .filter(({ version }) => version === CURRENT_SCHEMA_VERSION)
+      .forEach(({ input }) => collect(input));
+
+    expect(
+      Object.keys(resourceVocabulary.nodes).filter((type) => !types.has(type)),
+    ).toEqual([]);
   });
 
   it("has a frozen document for every version", () => {

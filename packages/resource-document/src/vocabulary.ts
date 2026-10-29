@@ -15,6 +15,7 @@ type NodeVocabulary = {
 export const resourceVocabulary = {
   nodes: {
     section: { nodeType: "section", directives: ["oak-section"], takesChildren: true },
+    task: { nodeType: "task", directives: ["oak-task"], takesChildren: true },
     heading: { nodeType: "heading", directives: ["oak-heading"], takesChildren: false },
     paragraph: {
       nodeType: "paragraph",
@@ -65,6 +66,13 @@ export const resourceVocabulary = {
 };
 
 export type ResourceNodeType = keyof typeof resourceVocabulary.nodes;
+
+export function resourceDirectiveNames(): readonly ResourceDirectiveName[] {
+  return [
+    ...Object.values(resourceVocabulary.nodes).flatMap(({ directives }) => directives),
+    resourceVocabulary.annotations.answer.directive,
+  ];
+}
 export type ResourceDirectiveName =
   | (typeof resourceVocabulary.nodes)[ResourceNodeType]["directives"][number]
   | typeof resourceVocabulary.annotations.answer.directive;

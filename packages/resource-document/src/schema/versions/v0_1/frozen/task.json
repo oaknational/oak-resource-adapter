@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "0.1",
+  "id": "frozen-0.1-task",
+  "profile": "worksheet.v0",
+  "language": "en-GB",
+  "metadata": { "title": "A worksheet in tasks" },
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [{ "type": "text", "text": "Forces" }]
+    },
+    {
+      "id": "task-a",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [{ "type": "text", "text": "Task A: Weight" }]
+        },
+        {
+          "id": "recall-1",
+          "type": "section",
+          "extensions": { "oak:contribution": "transformation-1" },
+          "children": [
+            {
+              "id": "recall-1-question",
+              "type": "question",
+              "label": "1",
+              "extensions": { "oak:contribution": "transformation-1" },
+              "children": [
+                {
+                  "id": "recall-1-question-text",
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "What pulls an object towards the Earth?"
+                    }
+                  ],
+                  "extensions": { "oak:contribution": "transformation-1" }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "question-1",
+          "type": "question",
+          "label": "1",
+          "children": [
+            {
+              "id": "question-1-text",
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "text": "Calculate the weight of a 2 kg mass." }
+              ]
+            },
+            { "id": "response-1", "type": "responseSpace", "kind": "lines", "lines": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task",
+      "type": "task",
+      "children": [
+        {
+          "id": "question-2",
+          "type": "question",
+          "label": "2",
+          "children": [
+            {
+              "id": "question-2-text",
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "text": "Name the force that slows a parachute." }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "answers": [
+    {
+      "id": "answer-1",
+      "targetId": "response-1",
+      "placement": "replace-response",
+      "content": [
+        {
+          "id": "answer-1-content",
+          "type": "paragraph",
+          "content": [{ "type": "text", "text": "19.6 N" }]
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "provenance": {
+    "source": { "system": "frozen-fixture", "id": "frozen-0.1-task" },
+    "producer": { "name": "resource-document", "version": "0.1.0" }
+  },
+  "diagnostics": []
+}

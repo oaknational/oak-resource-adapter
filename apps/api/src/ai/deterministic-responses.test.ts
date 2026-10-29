@@ -10,6 +10,7 @@ import {
 } from "@oaknational/resource-adapter-original-resource-documents/fixtures";
 import {
   CONTRIBUTION_EXTENSION_KEY,
+  getResourceNodeById,
   getResourceNodesByType,
   walkResourceDocument,
   type ResourceDocument,
@@ -133,7 +134,7 @@ describe("deterministic suggestion catalogue", () => {
     async ({ id }) => {
       const document = documentFor(id);
       const config = setup();
-      const { candidates, preparedPrompt } = await prepareSuggestionFlow(
+      const { alwaysOffered, candidates, preparedPrompt } = await prepareSuggestionFlow(
         flow,
         document,
         [],
@@ -141,6 +142,11 @@ describe("deterministic suggestion catalogue", () => {
         prepare,
       );
       expect(candidates.length).toBeGreaterThan(0);
+      const offered = alwaysOffered.flatMap(({ kind, eligibleTargets }) =>
+        (eligibleTargets.scope === "document" ? [null] : eligibleTargets.blockIds).map(
+          (targetBlockId) => ({ kind, targetBlockId }),
+        ),
+      );
       const [first, second] = await Promise.all([
         generateSuggestions(flow, document, [], config),
         generateSuggestions(flow, document, [], config),
@@ -163,7 +169,7 @@ describe("deterministic suggestion catalogue", () => {
         if (targetBlockId !== undefined) expected.push({ kind, targetBlockId });
       }
       expect(first.map(({ kind, targetBlockId }) => ({ kind, targetBlockId }))).toEqual(
-        expected.slice(0, flow.maxSuggestions),
+        [...offered, ...expected.slice(0, flow.maxSuggestions)],
       );
       expectValidRecording(config.recorder, "transformation_suggestions");
       expect(config.recorder.recordStarted).toHaveBeenCalledTimes(2);
@@ -225,7 +231,6 @@ describe("deterministic suggestion catalogue", () => {
   );
 
   it.each([
-    { kind: "scaffold-add-prompt-questions", targets: 0 },
     { kind: "scaffold-add-word-bank", targets: 1 },
     { kind: "scaffold-add-word-bank", targets: 2 },
   ] as const)(
@@ -247,9 +252,7 @@ describe("deterministic suggestion catalogue", () => {
       expect(candidates).toHaveLength(1);
       await expect(
         generateSuggestions(singleKind, document, [], config),
-      ).resolves.toMatchObject([
-        { kind, targetBlockId: targets === 0 ? null : questions[0]?.id },
-      ]);
+      ).resolves.toMatchObject([{ kind, targetBlockId: questions[0]?.id }]);
       expectValidRecording(config.recorder, "transformation_suggestions");
     },
   );
@@ -272,7 +275,7 @@ describe("deterministic suggestion catalogue", () => {
           .array(
             z.union([
               candidate("scaffold-add-word-bank", z.literal("only-target")),
-              candidate("scaffold-add-prompt-questions", z.null()),
+              candidate("scaffold-add-task-glossary", z.null()),
             ]),
           )
           .max(1),
@@ -287,10 +290,14 @@ describe("deterministic suggestion catalogue", () => {
     expectValidRecording(config.recorder, "transformation_suggestions");
   });
 
-  it("skips invocation when all document and question targets are already applied", async () => {
+  it("skips invocation when all task and question targets are already applied", async () => {
     const document = documentFor();
     const applied = [
-      { kind: "scaffold-add-prompt-questions", params: {} },
+      ...getResourceNodesByType(document, "task").map(({ id }) => ({
+        kind: "scaffold-add-prompt-questions",
+        params: {},
+        targetBlockId: id,
+      })),
       ...getResourceNodesByType(document, "question").flatMap(({ id }) => [
         {
           kind: "scaffold-add-word-bank",
@@ -536,14 +543,17 @@ describe("deterministic transformation contributions", () => {
     },
   );
 
-  it("requires Oak learning material and applies attributed recall questions at the start of the body", async () => {
+  it("requires Oak learning material and applies attributed recall questions after the task heading", async () => {
     const document = documentFor();
+    const [task] = getResourceNodesByType(document, "task");
+    if (task === undefined) throw new Error("The fixture has no task.");
     const kind = "scaffold-add-prompt-questions";
     const config = setup();
     const request = {
       document,
       contributionId: "recall",
       params: {},
+      targetBlockId: task.id,
     };
     await expect(
       executeTransformation(transformationDefinitions[kind], request, config),
@@ -556,9 +566,13 @@ describe("deterministic transformation contributions", () => {
       { ...request, material },
       config,
     );
-    const revised = contributedDocument(run, "recall", kind);
-    expect(revised.content[0]).toEqual(document.content[0]);
-    expect(revised.content[1]).toMatchObject({
+    const revised = getResourceNodeById(
+      contributedDocument(run, "recall", kind),
+      task.id,
+    );
+    if (revised?.type !== "task") throw new Error("The task is missing.");
+    expect(revised.children[0]).toEqual(task.children[0]);
+    expect(revised.children[1]).toMatchObject({
       id: "recall-prompt-questions",
       type: "section",
       children: [
@@ -587,7 +601,7 @@ describe("deterministic transformation contributions", () => {
         },
       ],
     });
-    expect(revised.content.slice(2)).toEqual(document.content.slice(1));
+    expect(revised.children.slice(2)).toEqual(task.children.slice(1));
     expect(config.recorder.recordStarted.mock.calls[0]?.[0].request).toMatchObject({
       request: { input: expect.stringContaining(keyLearningPoints) },
     });

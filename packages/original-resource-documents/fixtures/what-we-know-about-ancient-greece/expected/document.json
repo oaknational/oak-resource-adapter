@@ -16,224 +16,236 @@
     },
     {
       "id": "task-a",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task A: What do we know about Ancient Greece?"
-        }
-      ]
-    },
-    {
-      "id": "question-1",
-      "type": "question",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-write-a-list-of-things-that-were-similar-and-different",
-          "type": "paragraph",
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Write a list of things that were similar and different about the city-states of Ancient Greece. Some have been written for you."
+              "text": "Task A: What do we know about Ancient Greece?"
             }
           ]
         },
         {
-          "id": "similarities-and-differences",
-          "type": "table",
-          "role": "comparison",
-          "header": [
+          "id": "question-1",
+          "type": "question",
+          "children": [
             {
-              "kind": "content",
+              "id": "unstable:paragraph-write-a-list-of-things-that-were-similar-and-different",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "Similar things"
+                  "text": "Write a list of things that were similar and different about the city-states of Ancient Greece. Some have been written for you."
                 }
               ]
             },
             {
-              "kind": "content",
-              "content": [
+              "id": "similarities-and-differences",
+              "type": "table",
+              "role": "comparison",
+              "header": [
                 {
-                  "type": "text",
-                  "text": "Different things"
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Similar things"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Different things"
+                    }
+                  ]
                 }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Ancient Greeks sometimes owned enslaved people"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "The city-states were not the same sizes"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
               ]
             }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Ancient Greeks sometimes owned enslaved people"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "The city-states were not the same sizes"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ]
           ]
         }
       ]
     },
     {
       "id": "task-b",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task B: How do we know about Ancient Greece?"
-        }
-      ]
-    },
-    {
-      "id": "task-b-instruction",
-      "layout": {
-        "keepWithNext": true
-      },
-      "type": "callout",
-      "role": "instruction",
-      "content": [
-        {
-          "type": "text",
-          "text": "It is your turn to be a historian."
-        }
-      ]
-    },
-    {
-      "id": "question-2",
-      "type": "question",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-write-your-own-account-of-what-life-was-like-in-ancien",
-          "type": "paragraph",
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Write your own account of what life was like in Ancient Greece."
+              "text": "Task B: How do we know about Ancient Greece?"
             }
           ]
         },
         {
-          "id": "writing-tips",
-          "type": "table",
-          "role": "writing-tips",
-          "header": [
+          "id": "task-b-instruction",
+          "layout": {
+            "keepWithNext": true
+          },
+          "type": "callout",
+          "role": "instruction",
+          "content": [
             {
-              "kind": "content",
+              "type": "text",
+              "text": "It is your turn to be a historian."
+            }
+          ]
+        },
+        {
+          "id": "question-2",
+          "type": "question",
+          "children": [
+            {
+              "id": "unstable:paragraph-write-your-own-account-of-what-life-was-like-in-ancien",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "Writing tips"
+                  "text": "Write your own account of what life was like in Ancient Greece."
                 }
               ]
+            },
+            {
+              "id": "writing-tips",
+              "type": "table",
+              "role": "writing-tips",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Writing tips"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "use evidence to support your account"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "use keywords about Ancient Greece"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "write about Ancient Greek similarities and differences"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "write neatly and proofread your work when you finish"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            },
+            {
+              "id": "question-2-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 16
             }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "use evidence to support your account"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "use keywords about Ancient Greece"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "write about Ancient Greek similarities and differences"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "write neatly and proofread your work when you finish"
-                  }
-                ]
-              }
-            ]
           ]
-        },
-        {
-          "id": "question-2-response",
-          "type": "responseSpace",
-          "kind": "lines",
-          "lines": 16
         }
       ]
     }

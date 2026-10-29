@@ -1,3 +1,4 @@
+import { getResourceNodesByType } from "@oaknational/resource-document";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import type { NextRequest } from "next/server";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -48,7 +49,7 @@ function command() {
       programmeSlug: "english-primary-ks2",
     },
     params: { supportLevel: "low" },
-    targetBlockId: worksheet.content.find((node) => node.type === "question")?.id,
+    targetBlockId: getResourceNodesByType(worksheet, "question")[0]?.id,
   };
 }
 

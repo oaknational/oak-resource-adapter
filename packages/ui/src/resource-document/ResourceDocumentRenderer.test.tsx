@@ -3,7 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { OakThemeProvider, oakDefaultTheme } from "@oaknational/oak-components";
 import { describe, expect, it } from "vitest";
-import type { ResourceDocument } from "@oaknational/resource-document";
+import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
 
 import { ResourceDocumentRenderer } from "./ResourceDocumentRenderer.js";
 
@@ -195,33 +195,45 @@ describe("ResourceDocumentRenderer", () => {
         document.content[0]!,
         {
           id: "task-a",
-          type: "heading",
-          level: 2,
-          content: [{ type: "text", text: "Task A" }],
-        },
-        {
-          id: "question-1",
-          type: "question",
-          label: "1",
-          children: [],
-        },
-        {
-          id: "question-2",
-          type: "question",
-          label: "2",
-          children: [],
+          type: "task",
+          children: [
+            {
+              id: "task-a-heading",
+              type: "heading",
+              level: 2,
+              content: [{ type: "text", text: "Task A" }],
+            },
+            {
+              id: "question-1",
+              type: "question",
+              label: "1",
+              children: [],
+            },
+            {
+              id: "question-2",
+              type: "question",
+              label: "2",
+              children: [],
+            },
+          ],
         },
         {
           id: "task-b",
-          type: "heading",
-          level: 2,
-          content: [{ type: "text", text: "Task B" }],
-        },
-        {
-          id: "question-3",
-          type: "question",
-          label: "3",
-          children: [],
+          type: "task",
+          children: [
+            {
+              id: "task-b-heading",
+              type: "heading",
+              level: 2,
+              content: [{ type: "text", text: "Task B" }],
+            },
+            {
+              id: "question-3",
+              type: "question",
+              label: "3",
+              children: [],
+            },
+          ],
         },
       ],
       diagnostics: [],
@@ -276,6 +288,65 @@ describe("ResourceDocumentRenderer", () => {
 
     expect(taskAToggle).toHaveAttribute("aria-expanded", "true");
     expect(taskARegion).toBeVisible();
+  });
+
+  it("places a task's slot at the start of the task, with or without a heading", () => {
+    const question = (id: string): ResourceNode => ({
+      id,
+      type: "question",
+      label: id,
+      children: [],
+    });
+    render(
+      <OakThemeProvider theme={oakDefaultTheme}>
+        <ResourceDocumentRenderer
+          decorations={{
+            renderAfterNode: (node) =>
+              node.type === "task" ? <p>{`Suggestions for ${node.id}`}</p> : null,
+          }}
+          document={{
+            ...document,
+            content: [
+              {
+                id: "titled",
+                type: "task",
+                children: [
+                  {
+                    id: "titled-heading",
+                    type: "heading",
+                    level: 2,
+                    content: [{ type: "text", text: "Task A" }],
+                  },
+                  question("question-1"),
+                ],
+              },
+              {
+                id: "untitled",
+                type: "task",
+                children: [question("question-2")],
+              },
+            ],
+            diagnostics: [],
+          }}
+        />
+      </OakThemeProvider>,
+    );
+
+    const region = screen.getByRole("region", { name: "Task A" });
+    const [titledQuestion, untitledQuestion] = screen.getAllByRole("heading", {
+      name: /Question/,
+    });
+    expect(
+      within(region)
+        .getByText("Suggestions for titled")
+        .compareDocumentPosition(titledQuestion!),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(
+      screen
+        .getByText("Suggestions for untitled")
+        .compareDocumentPosition(untitledQuestion!),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.getAllByText(/Suggestions for/)).toHaveLength(2);
   });
 
   it("speaks maths markup it cannot render as symbols", () => {

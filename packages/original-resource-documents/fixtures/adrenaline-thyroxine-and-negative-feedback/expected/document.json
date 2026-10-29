@@ -16,146 +16,158 @@
     },
     {
       "id": "task-a",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task A: Adrenaline and its effects on the body"
-        }
-      ]
-    },
-    {
-      "id": "question-1",
-      "type": "question",
-      "label": "3",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-complete-the-table-to-show-the-effects-adrenaline-has-",
-          "type": "paragraph",
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Complete the table to show the effects adrenaline has on the body."
+              "text": "Task A: Adrenaline and its effects on the body"
             }
           ]
         },
         {
-          "id": "adrenaline-effects",
-          "type": "table",
-          "role": "explanation",
-          "header": [
+          "id": "question-1",
+          "type": "question",
+          "label": "3",
+          "children": [
             {
-              "kind": "content",
+              "id": "unstable:paragraph-complete-the-table-to-show-the-effects-adrenaline-has-",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "Part of the body affected"
+                  "text": "Complete the table to show the effects adrenaline has on the body."
                 }
               ]
             },
             {
-              "kind": "content",
-              "content": [
+              "id": "adrenaline-effects",
+              "type": "table",
+              "role": "explanation",
+              "header": [
                 {
-                  "type": "text",
-                  "text": "Description of the response it causes"
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Part of the body affected"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Description of the response it causes"
+                    }
+                  ]
                 }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Breathing and heart rate"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Pupils"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Liver and muscle cells"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Digestive system and muscles"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
               ]
             }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Breathing and heart rate"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Pupils"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Liver and muscle cells"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Digestive system and muscles"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ]
           ]
         }
       ]
     },
     {
       "id": "task-b",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task B: Negative feedback"
-        }
-      ]
-    },
-    {
-      "id": "question-2",
-      "type": "question",
-      "label": "1",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-andeep-says-negative-feedback-is-only-used-in-the-body",
-          "type": "paragraph",
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Andeep says: “Negative feedback is only used in the body when certain conditions increase. The body detects this increase and then decreases levels, reversing the change.” What is correct and what has he misunderstood?"
+              "text": "Task B: Negative feedback"
             }
           ]
         },
         {
-          "id": "feedback-response",
-          "type": "responseSpace",
-          "kind": "lines",
-          "lines": 5
+          "id": "question-2",
+          "type": "question",
+          "label": "1",
+          "children": [
+            {
+              "id": "unstable:paragraph-andeep-says-negative-feedback-is-only-used-in-the-body",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Andeep says: “Negative feedback is only used in the body when certain conditions increase. The body detects this increase and then decreases levels, reversing the change.” What is correct and what has he misunderstood?"
+                }
+              ]
+            },
+            {
+              "id": "feedback-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 5
+            }
+          ]
         }
       ]
     }

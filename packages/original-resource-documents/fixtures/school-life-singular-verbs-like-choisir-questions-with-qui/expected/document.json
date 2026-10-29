@@ -16,2451 +16,2469 @@
     },
     {
       "id": "task-a",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task A: Practising the SSC [y]"
-        }
-      ]
-    },
-    {
-      "id": "question-a1",
-      "type": "question",
-      "label": "A1",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-parle-coute-et-r-p-te-1-6",
-          "type": "paragraph",
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Parle, écoute et répète 1-6."
+              "text": "Task A: Practising the SSC [y]"
             }
           ]
         },
         {
-          "id": "unstable:paragraph-dis-les-mots-en-anglais-et-en-fran-ais",
-          "type": "paragraph",
-          "content": [
+          "id": "question-a1",
+          "type": "question",
+          "label": "A1",
+          "children": [
             {
-              "type": "text",
-              "text": "Dis les mots en anglais et en français."
-            }
-          ]
-        },
-        {
-          "id": "unstable:paragraph-puis-coute-et-r-p-te-les-mots-en-fran-ais",
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "Puis, écoute et répète les mots en français."
-            }
-          ]
-        },
-        {
-          "id": "ssc-words",
-          "type": "table",
-          "role": "pronunciation",
-          "header": [
-            {
-              "kind": "empty"
-            },
-            {
-              "kind": "content",
+              "id": "unstable:paragraph-parle-coute-et-r-p-te-1-6",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "anglais"
+                  "text": "Parle, écoute et répète 1-6."
                 }
               ]
             },
             {
-              "kind": "content",
+              "id": "unstable:paragraph-dis-les-mots-en-anglais-et-en-fran-ais",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "français"
+                  "text": "Dis les mots en anglais et en français."
                 }
               ]
+            },
+            {
+              "id": "unstable:paragraph-puis-coute-et-r-p-te-les-mots-en-fran-ais",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Puis, écoute et répète les mots en français."
+                }
+              ]
+            },
+            {
+              "id": "ssc-words",
+              "type": "table",
+              "role": "pronunciation",
+              "header": [
+                {
+                  "kind": "empty"
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "anglais"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "français"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Syrian"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "syrien"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "anonymous"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "anonyme"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "3"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "system"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "système"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "4"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Pythagoras"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Pythagore"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "5"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "myth"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "mythe"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "6"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "cycling"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "cyclisme"
+                      }
+                    ]
+                  }
+                ]
+              ]
             }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "1"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Syrian"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "syrien"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "2"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "anonymous"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "anonyme"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "3"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "system"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "système"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "4"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Pythagoras"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Pythagore"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "5"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "myth"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "mythe"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "6"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "cycling"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "cyclisme"
-                  }
-                ]
-              }
-            ]
           ]
         }
       ]
     },
     {
       "id": "task-b",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task B: Learning vocabulary for school life"
-        }
-      ]
-    },
-    {
-      "id": "question-b1",
-      "type": "question",
-      "label": "B1",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-coute-et-cris-a-j-comment-dit-on-en-fran-ais",
-          "type": "paragraph",
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Écoute et écris a-j. Comment dit-on en français ?"
+              "text": "Task B: Learning vocabulary for school life"
             }
           ]
         },
         {
-          "id": "b1-word-list",
-          "type": "table",
-          "role": "word-bank",
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "a. to choose"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "b. to define ✓"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "c. to fill"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "d. to pass (an exam)"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "e. exercise book"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "f. high school"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "g. exam"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "h. mark"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "i. so, well, then"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "j. gap, blank"
-                  }
-                ]
-              }
-            ]
-          ]
-        },
-        {
-          "id": "b1-answers",
-          "type": "table",
-          "role": "listening-response",
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "1"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "b. définir"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "2"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "3"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "4"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "5"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "6"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "7"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "8"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "9"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "10"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "id": "question-b2",
-      "type": "question",
-      "label": "B2",
-      "children": [
-        {
-          "id": "unstable:paragraph-lis-1-6-en-anglais-puis-trouve-les-bon-verbes-et-les-b",
-          "type": "paragraph",
-          "content": [
+          "id": "question-b1",
+          "type": "question",
+          "label": "B1",
+          "children": [
             {
-              "type": "text",
-              "text": "Lis 1-6 en anglais, puis trouve les bon verbes et les bons noms pour traduire en français."
+              "id": "unstable:paragraph-coute-et-cris-a-j-comment-dit-on-en-fran-ais",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Écoute et écris a-j. Comment dit-on en français ?"
+                }
+              ]
+            },
+            {
+              "id": "b1-word-list",
+              "type": "table",
+              "role": "word-bank",
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "a. to choose"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "b. to define ✓"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "c. to fill"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "d. to pass (an exam)"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "e. exercise book"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "f. high school"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "g. exam"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "h. mark"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "i. so, well, then"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "j. gap, blank"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            },
+            {
+              "id": "b1-answers",
+              "type": "table",
+              "role": "listening-response",
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "b. définir"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "3"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "4"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "5"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "6"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "7"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "8"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "9"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "10"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
             }
           ]
         },
         {
-          "id": "unstable:paragraph-madame-chevrolet-alors-aujourd-hui-nous-allons",
-          "type": "paragraph",
-          "content": [
+          "id": "question-b2",
+          "type": "question",
+          "label": "B2",
+          "children": [
             {
-              "type": "text",
-              "text": "Madame Chevrolet : Alors, aujourd’hui nous allons …"
+              "id": "unstable:paragraph-lis-1-6-en-anglais-puis-trouve-les-bon-verbes-et-les-b",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Lis 1-6 en anglais, puis trouve les bon verbes et les bons noms pour traduire en français."
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-madame-chevrolet-alors-aujourd-hui-nous-allons",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Madame Chevrolet : Alors, aujourd’hui nous allons …"
+                }
+              ]
+            },
+            {
+              "id": "b2-word-bank",
+              "type": "table",
+              "role": "word-bank",
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "sortir"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "définir"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "réussir"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "des notes"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "donner"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "nos cahiers"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "choisir"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "remplir"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "les blancs"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "un examen"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "un lycée"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "les mots"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            },
+            {
+              "id": "b2-translations",
+              "type": "table",
+              "role": "translation",
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… to take out our exercise books."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… sortir nos cahiers."
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… to give marks."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "3"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… to define the words."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "4"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… fill the gaps."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "5"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… to pass an exam."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "6"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… choose a college"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
             }
-          ]
-        },
-        {
-          "id": "b2-word-bank",
-          "type": "table",
-          "role": "word-bank",
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "sortir"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "définir"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "réussir"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "des notes"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "donner"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "nos cahiers"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "choisir"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "remplir"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "les blancs"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "un examen"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "un lycée"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "les mots"
-                  }
-                ]
-              }
-            ]
-          ]
-        },
-        {
-          "id": "b2-translations",
-          "type": "table",
-          "role": "translation",
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "1"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… to take out our exercise books."
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… sortir nos cahiers."
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "2"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… to give marks."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "3"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… to define the words."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "4"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… fill the gaps."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "5"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… to pass an exam."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "6"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… choose a college"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ]
           ]
         }
       ]
     },
     {
       "id": "task-c",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task C: Using verbs like ‘choisir’ to talk about school"
-        }
-      ]
-    },
-    {
-      "id": "question-c1a",
-      "type": "question",
-      "label": "C1a",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-lis-et-cris-1-8",
-          "type": "paragraph",
+          "id": "task-c-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Lis et écris 1-8."
+              "text": "Task C: Using verbs like ‘choisir’ to talk about school"
             }
           ]
         },
         {
-          "id": "unstable:paragraph-l-a-crit-un-texte-sur-la-vie-au-coll-ge-elle-parle-de-",
-          "type": "paragraph",
-          "content": [
+          "id": "question-c1a",
+          "type": "question",
+          "label": "C1a",
+          "children": [
             {
-              "type": "text",
-              "text": "Léa écrit un texte sur la vie au collège. Elle parle de qui ? Elle écrit je (Léa) ou il (Amir) ?"
-            }
-          ]
-        },
-        {
-          "id": "c1a-sentences",
-          "type": "table",
-          "role": "sentence-sort",
-          "header": [
-            {
-              "kind": "empty"
-            },
-            {
-              "kind": "content",
+              "id": "unstable:paragraph-lis-et-cris-1-8",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "Phrase"
+                  "text": "Lis et écris 1-8."
                 }
               ]
             },
             {
-              "kind": "content",
+              "id": "unstable:paragraph-l-a-crit-un-texte-sur-la-vie-au-coll-ge-elle-parle-de-",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "Léa (je)"
+                  "text": "Léa écrit un texte sur la vie au collège. Elle parle de qui ? Elle écrit je (Léa) ou il (Amir) ?"
                 }
               ]
             },
             {
-              "kind": "content",
-              "content": [
+              "id": "c1a-sentences",
+              "type": "table",
+              "role": "sentence-sort",
+              "header": [
                 {
-                  "type": "text",
-                  "text": "Amir (il)"
+                  "kind": "empty"
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Phrase"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Léa (je)"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Amir (il)"
+                    }
+                  ]
                 }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Il remplit les blancs en allemand."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "empty"
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "✓"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… définit le vocabulaire important."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "3"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… réussis l’examen avec une très bonne note."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "4"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… réussit l’examen de piano."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "5"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… choisis un cahier de maths."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "6"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… remplis le verre pour Madame Chevrolet."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "7"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… choisit un sandwich pour son déjeuner."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "8"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "… définis des mots anglais difficiles."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
               ]
             }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "1"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Il remplit les blancs en allemand."
-                  }
-                ]
-              },
-              {
-                "kind": "empty"
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "✓"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "2"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… définit le vocabulaire important."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "3"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… réussis l’examen avec une très bonne note."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "4"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… réussit l’examen de piano."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "5"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… choisis un cahier de maths."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "6"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… remplis le verre pour Madame Chevrolet."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "7"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… choisit un sandwich pour son déjeuner."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "8"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "… définis des mots anglais difficiles."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "id": "question-c1b",
-      "type": "question",
-      "label": "C1b",
-      "children": [
-        {
-          "id": "unstable:paragraph-traduis-en-anglais-1-8",
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "Traduis en anglais 1-8."
-            }
           ]
         },
         {
-          "id": "c1b-translations",
-          "type": "table",
-          "role": "translation",
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "1"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Il remplit les blancs en allemand."
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "He fills the blanks in German."
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "2"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Il définit le vocabulaire important."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "3"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Je réussis l’examen avec une très bonne note."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "4"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Il réussit l’examen de piano."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "5"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Je choisis un cahier de maths."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "6"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Je remplis le verre pour Madame Chevrolet."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "7"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Il choisit un sandwich pour son déjeuner."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "8"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Je définis des mots anglais difficiles."
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "id": "question-c2",
-      "type": "question",
-      "label": "C2",
-      "children": [
-        {
-          "id": "unstable:paragraph-coute-et-regarde-1-7",
-          "type": "paragraph",
-          "content": [
+          "id": "question-c1b",
+          "type": "question",
+          "label": "C1b",
+          "children": [
             {
-              "type": "text",
-              "text": "Écoute et regarde 1-7."
-            }
-          ]
-        },
-        {
-          "id": "unstable:paragraph-maintenant-antoine-parle-sur-la-vie-au-coll-ge-il-parl",
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "Maintenant, Antoine parle sur la vie au collège. Il parle de qui ? Je (Antoine) ou elle (Léa) ?"
-            }
-          ]
-        },
-        {
-          "id": "unstable:paragraph-cris-le-verbe-en-fran-ais",
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "Écris le verbe en français."
-            }
-          ]
-        },
-        {
-          "id": "c2-listening",
-          "type": "table",
-          "role": "listening-response",
-          "header": [
-            {
-              "kind": "empty"
-            },
-            {
-              "kind": "content",
+              "id": "unstable:paragraph-traduis-en-anglais-1-8",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "Qui ?"
+                  "text": "Traduis en anglais 1-8."
                 }
               ]
             },
             {
-              "kind": "content",
+              "id": "c1b-translations",
+              "type": "table",
+              "role": "translation",
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Il remplit les blancs en allemand."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "He fills the blanks in German."
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Il définit le vocabulaire important."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "3"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Je réussis l’examen avec une très bonne note."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "4"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Il réussit l’examen de piano."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "5"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Je choisis un cahier de maths."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "6"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Je remplis le verre pour Madame Chevrolet."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "7"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Il choisit un sandwich pour son déjeuner."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "8"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Je définis des mots anglais difficiles."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "question-c2",
+          "type": "question",
+          "label": "C2",
+          "children": [
+            {
+              "id": "unstable:paragraph-coute-et-regarde-1-7",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "Verbe"
+                  "text": "Écoute et regarde 1-7."
                 }
               ]
-            }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "1"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Léa (elle) ou Antoine (je)"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "2"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Antoine (je) ou Léa (elle)"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "3"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Léa (elle) ou Antoine (je)"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "4"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Antoine (je) ou Léa (elle)"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "5"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Antoine (je) ou Léa (elle)"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "6"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Léa (elle) ou Antoine (je)"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "7"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Antoine (je) ou Léa (elle)"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "id": "question-c3",
-      "type": "question",
-      "label": "C3",
-      "children": [
-        {
-          "id": "unstable:paragraph-lis-et-remplis-les-blancs-en-fran-ais-1-34",
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "Lis et remplis les blancs en français 1-34."
-            }
-          ]
-        },
-        {
-          "id": "c3-marking",
-          "type": "callout",
-          "role": "note",
-          "content": [
-            {
-              "type": "text",
-              "text": "One point for a partially-correct word, and a second point for a word that is spelled correctly and, for nouns, has the right gender."
-            }
-          ]
-        },
-        {
-          "id": "c3-verbs",
-          "type": "table",
-          "role": "word-completion",
-          "header": [
-            {
-              "kind": "empty"
             },
             {
-              "kind": "content",
+              "id": "unstable:paragraph-maintenant-antoine-parle-sur-la-vie-au-coll-ge-il-parl",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "verbes"
+                  "text": "Maintenant, Antoine parle sur la vie au collège. Il parle de qui ? Je (Antoine) ou elle (Léa) ?"
                 }
               ]
-            }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "1"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "écouter"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "2"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "éc____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "3"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "pa____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "4"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "li__"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "5"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "tr________"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "6"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "ét_____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "7"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "co________"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "8"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "ap_______"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "9"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "tr_____"
-                  }
-                ]
-              }
-            ]
-          ]
-        },
-        {
-          "id": "c3-adjectives",
-          "type": "table",
-          "role": "word-completion",
-          "header": [
-            {
-              "kind": "empty"
             },
             {
-              "kind": "content",
+              "id": "unstable:paragraph-cris-le-verbe-en-fran-ais",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "adjectifs"
+                  "text": "Écris le verbe en français."
                 }
               ]
-            }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "10"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "im_______"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "11"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "in_________"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "12"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "in_________"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "13"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "st____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "14"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "tr_________"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "15"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "fa____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "16"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "di_______"
-                  }
-                ]
-              }
-            ]
-          ]
-        },
-        {
-          "id": "c3-nouns",
-          "type": "table",
-          "role": "word-completion",
-          "header": [
-            {
-              "kind": "empty"
             },
             {
-              "kind": "content",
+              "id": "c2-listening",
+              "type": "table",
+              "role": "listening-response",
+              "header": [
+                {
+                  "kind": "empty"
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Qui ?"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Verbe"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Léa (elle) ou Antoine (je)"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Antoine (je) ou Léa (elle)"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "3"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Léa (elle) ou Antoine (je)"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "4"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Antoine (je) ou Léa (elle)"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "5"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Antoine (je) ou Léa (elle)"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "6"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Léa (elle) ou Antoine (je)"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "7"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Antoine (je) ou Léa (elle)"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "question-c3",
+          "type": "question",
+          "label": "C3",
+          "children": [
+            {
+              "id": "unstable:paragraph-lis-et-remplis-les-blancs-en-fran-ais-1-34",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "noms"
+                  "text": "Lis et remplis les blancs en français 1-34."
+                }
+              ]
+            },
+            {
+              "id": "c3-marking",
+              "type": "callout",
+              "role": "note",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "One point for a partially-correct word, and a second point for a word that is spelled correctly and, for nouns, has the right gender."
+                }
+              ]
+            },
+            {
+              "id": "c3-verbs",
+              "type": "table",
+              "role": "word-completion",
+              "header": [
+                {
+                  "kind": "empty"
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "verbes"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "écouter"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "éc____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "3"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "pa____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "4"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "li__"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "5"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "tr________"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "6"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "ét_____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "7"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "co________"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "8"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "ap_______"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "9"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "tr_____"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            },
+            {
+              "id": "c3-adjectives",
+              "type": "table",
+              "role": "word-completion",
+              "header": [
+                {
+                  "kind": "empty"
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "adjectifs"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "10"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "im_______"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "11"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "in_________"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "12"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "in_________"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "13"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "st____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "14"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "tr_________"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "15"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "fa____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "16"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "di_______"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            },
+            {
+              "id": "c3-nouns",
+              "type": "table",
+              "role": "word-completion",
+              "header": [
+                {
+                  "kind": "empty"
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "noms"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "17"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "le bu____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "18"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "le co_____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "19"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "le dé______"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "20"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "le di_______"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "21"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "le mo_"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "22"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "le pr________"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "23"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "le pr____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "24"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "le pr______"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "25"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "le sp___"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "26"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "la la____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "27"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "la ma_____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "28"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "la mu_____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "29"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "la ph____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "30"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "la ré_____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "31"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "la sc_____"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "32"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "la so______"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "33"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "l’ac______"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "34"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "l’al______"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "question-c4",
+          "type": "question",
+          "label": "C4",
+          "children": [
+            {
+              "id": "unstable:paragraph-travaille-avec-un-ou-une-partenaire-lis-le-premier-tex",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Travaille avec un ou une partenaire. Lis le premier texte d’Amir. Personne A pose cinq questions avec ‘qui’. Personne B répond. Then swap roles for Léa’s text!"
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-amir-la-vie-au-coll-ge-est-tr-s-bien-dans-ma-famille-o",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Amir : ‘La vie au collège est très bien. Dans ma famille, on aime des langues étrangères ! Je choisis l’anglais et Léa choisit l’anglais et l’allemand aussi."
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-a-izzy-1-qui-choisit-l-anglais",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "A (Izzy) : 1. Qui choisit l’anglais ?"
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-b-sam-i-see-we-re-using-the-highlighted-text-to-help-f",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "B (Sam) : I see! we’re using the highlighted text to help form the ‘who’ questions."
                 }
               ]
             }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "17"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "le bu____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "18"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "le co_____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "19"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "le dé______"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "20"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "le di_______"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "21"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "le mo_"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "22"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "le pr________"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "23"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "le pr____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "24"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "le pr______"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "25"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "le sp___"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "26"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "la la____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "27"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "la ma_____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "28"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "la mu_____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "29"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "la ph____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "30"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "la ré_____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "31"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "la sc_____"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "32"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "la so______"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "33"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "l’ac______"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "34"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "l’al______"
-                  }
-                ]
-              }
-            ]
           ]
-        }
-      ]
-    },
-    {
-      "id": "question-c4",
-      "type": "question",
-      "label": "C4",
-      "children": [
+        },
         {
-          "id": "unstable:paragraph-travaille-avec-un-ou-une-partenaire-lis-le-premier-tex",
-          "type": "paragraph",
-          "content": [
+          "id": "question-c4a",
+          "type": "question",
+          "label": "C4a",
+          "children": [
             {
-              "type": "text",
-              "text": "Travaille avec un ou une partenaire. Lis le premier texte d’Amir. Personne A pose cinq questions avec ‘qui’. Personne B répond. Then swap roles for Léa’s text!"
+              "id": "unstable:paragraph-travaille-avec-un-ou-une-partenaire-lisez-le-premier-t",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Travaille avec un ou une partenaire. Lisez le premier texte d’Amir. Personne A pose cinq questions ‘qui’. Personne B répond."
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-amir-la-vie-au-coll-ge-est-tr-s-bien-dans-ma-famille-o-2",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Amir : ‘La vie au collège est très bien. Dans ma famille, on aime des langues étrangères ! Je choisis l’anglais et Léa choisit l’anglais et l’allemand aussi. Aujourd’hui je définis les mots difficiles en anglais. J’ai des bonnes notes en anglais ! Léa définit le vocabulaire allemand. Souvent je remplis les blancs mais je préfère écrire des phrases complètes. Léa réussit l’examen de guitare. Elle adore la musique. Je veux jouer d’un instrument aussi !’"
+                }
+              ]
             }
           ]
         },
         {
-          "id": "unstable:paragraph-amir-la-vie-au-coll-ge-est-tr-s-bien-dans-ma-famille-o",
-          "type": "paragraph",
-          "content": [
+          "id": "question-c4b",
+          "type": "question",
+          "label": "C4b",
+          "children": [
             {
-              "type": "text",
-              "text": "Amir : ‘La vie au collège est très bien. Dans ma famille, on aime des langues étrangères ! Je choisis l’anglais et Léa choisit l’anglais et l’allemand aussi."
-            }
-          ]
-        },
-        {
-          "id": "unstable:paragraph-a-izzy-1-qui-choisit-l-anglais",
-          "type": "paragraph",
-          "content": [
+              "id": "unstable:paragraph-travaille-avec-un-ou-une-partenaire-lisez-le-deuxi-me-",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Travaille avec un ou une partenaire. Lisez le deuxième texte de Léa. Personne B pose cinq questions avec ‘qui’. Personne A répond."
+                }
+              ]
+            },
             {
-              "type": "text",
-              "text": "A (Izzy) : 1. Qui choisit l’anglais ?"
-            }
-          ]
-        },
-        {
-          "id": "unstable:paragraph-b-sam-i-see-we-re-using-the-highlighted-text-to-help-f",
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "B (Sam) : I see! we’re using the highlighted text to help form the ‘who’ questions."
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "question-c4a",
-      "type": "question",
-      "label": "C4a",
-      "children": [
-        {
-          "id": "unstable:paragraph-travaille-avec-un-ou-une-partenaire-lisez-le-premier-t",
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "Travaille avec un ou une partenaire. Lisez le premier texte d’Amir. Personne A pose cinq questions ‘qui’. Personne B répond."
-            }
-          ]
-        },
-        {
-          "id": "unstable:paragraph-amir-la-vie-au-coll-ge-est-tr-s-bien-dans-ma-famille-o-2",
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "Amir : ‘La vie au collège est très bien. Dans ma famille, on aime des langues étrangères ! Je choisis l’anglais et Léa choisit l’anglais et l’allemand aussi. Aujourd’hui je définis les mots difficiles en anglais. J’ai des bonnes notes en anglais ! Léa définit le vocabulaire allemand. Souvent je remplis les blancs mais je préfère écrire des phrases complètes. Léa réussit l’examen de guitare. Elle adore la musique. Je veux jouer d’un instrument aussi !’"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "question-c4b",
-      "type": "question",
-      "label": "C4b",
-      "children": [
-        {
-          "id": "unstable:paragraph-travaille-avec-un-ou-une-partenaire-lisez-le-deuxi-me-",
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "Travaille avec un ou une partenaire. Lisez le deuxième texte de Léa. Personne B pose cinq questions avec ‘qui’. Personne A répond."
-            }
-          ]
-        },
-        {
-          "id": "unstable:paragraph-l-a-la-vie-au-coll-ge-est-assez-bien-dans-ma-famille-o",
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "Léa : ‘La vie au collège est assez bien. Dans ma famille, on n’aime pas beaucoup faire du sport, mais je choisis le foot et Amir choisit la pétanque. En ce moment je définis les mots pour réussir l’examen d’anglais. En allemand, je remplis mon cahier avec le vocabulaire important. Amir est intelligent - il réussit les examens difficiles. Il remplit son cahier de maths avec les réponses aux problèmes difficiles. Il adore les maths – c’est bizarre !’"
+              "id": "unstable:paragraph-l-a-la-vie-au-coll-ge-est-assez-bien-dans-ma-famille-o",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Léa : ‘La vie au collège est assez bien. Dans ma famille, on n’aime pas beaucoup faire du sport, mais je choisis le foot et Amir choisit la pétanque. En ce moment je définis les mots pour réussir l’examen d’anglais. En allemand, je remplis mon cahier avec le vocabulaire important. Amir est intelligent - il réussit les examens difficiles. Il remplit son cahier de maths avec les réponses aux problèmes difficiles. Il adore les maths – c’est bizarre !’"
+                }
+              ]
             }
           ]
         }

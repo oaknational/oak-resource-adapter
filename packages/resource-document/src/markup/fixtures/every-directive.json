@@ -68,63 +68,69 @@
       ]
     },
     {
-      "id": "practice",
-      "layout": {
-        "keepWithNext": true,
-        "breakBefore": "page"
-      },
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Practice"
-        }
-      ]
-    },
-    {
-      "id": "section",
-      "layout": {
-        "preferredWidth": "full"
-      },
-      "extensions": {
-        "oak:example": true
-      },
-      "type": "section",
+      "id": "task",
+      "type": "task",
       "children": [
         {
-          "id": "question-1",
+          "id": "practice",
           "layout": {
-            "keepTogether": true
+            "keepWithNext": true,
+            "breakBefore": "page"
           },
-          "type": "question",
-          "label": "1",
-          "marks": 2,
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Practice"
+            }
+          ]
+        },
+        {
+          "id": "section",
+          "layout": {
+            "preferredWidth": "full"
+          },
+          "extensions": {
+            "oak:example": true
+          },
+          "type": "section",
           "children": [
             {
-              "id": "question-1-text",
-              "type": "paragraph",
-              "content": [
+              "id": "question-1",
+              "layout": {
+                "keepTogether": true
+              },
+              "type": "question",
+              "label": "1",
+              "marks": 2,
+              "children": [
                 {
-                  "type": "text",
-                  "text": "What is "
+                  "id": "question-1-text",
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "What is "
+                    },
+                    {
+                      "type": "math",
+                      "value": "\\frac{1}{2} + \\frac{1}{4}",
+                      "display": false
+                    },
+                    {
+                      "type": "text",
+                      "text": "?"
+                    }
+                  ]
                 },
                 {
-                  "type": "math",
-                  "value": "\\frac{1}{2} + \\frac{1}{4}",
-                  "display": false
-                },
-                {
-                  "type": "text",
-                  "text": "?"
+                  "id": "question-1-space",
+                  "type": "responseSpace",
+                  "kind": "lines",
+                  "lines": 3
                 }
               ]
-            },
-            {
-              "id": "question-1-space",
-              "type": "responseSpace",
-              "kind": "lines",
-              "lines": 3
             }
           ]
         }
@@ -156,6 +162,121 @@
       "type": "codeBlock",
       "language": "python",
       "source": "total = 1/2 + 1/4"
+    },
+    {
+      "id": "table",
+      "type": "table",
+      "role": "table",
+      "header": [
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "Fraction"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "Decimal"
+            }
+          ]
+        }
+      ],
+      "rows": [
+        [
+          {
+            "kind": "content",
+            "content": [
+              {
+                "type": "text",
+                "text": "1/2"
+              }
+            ]
+          },
+          {
+            "kind": "answer"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "ions",
+      "type": "table",
+      "role": "ions",
+      "rows": [
+        [
+          {
+            "kind": "content",
+            "content": [
+              {
+                "type": "text",
+                "text": "Na"
+              }
+            ]
+          },
+          {
+            "kind": "empty"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rhythm",
+      "type": "table",
+      "role": "rhythm",
+      "header": [
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "Beat"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "1"
+            }
+          ]
+        },
+        {
+          "kind": "content",
+          "content": [
+            {
+              "type": "text",
+              "text": "2"
+            }
+          ]
+        }
+      ],
+      "rows": [
+        [
+          {
+            "kind": "content",
+            "content": [
+              {
+                "type": "text",
+                "text": "Clap"
+              }
+            ]
+          },
+          {
+            "kind": "answer"
+          },
+          {
+            "kind": "empty"
+          }
+        ]
+      ]
     },
     {
       "id": "chart",

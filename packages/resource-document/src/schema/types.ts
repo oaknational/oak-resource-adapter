@@ -38,6 +38,7 @@ export type {
   SectionNode,
   SourceMap,
   SourceRegion,
+  TaskNode,
   TextRun,
   UnsupportedNode,
   WorksheetDocument,

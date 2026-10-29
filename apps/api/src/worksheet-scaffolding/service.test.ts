@@ -39,6 +39,7 @@ import { ConcurrencyConflictError } from "../jobs/job-repository";
 import type { TeacherAccess } from "../teacher-access/access";
 import { transformationDefinitions } from "../transformations/registry";
 import {
+  getResourceNodesByType,
   CONTRIBUTION_EXTENSION_KEY,
   type ResourceDocument,
 } from "@oaknational/resource-document";
@@ -1317,7 +1318,7 @@ describe("reviewing an applied scaffold", () => {
   });
 
   it("records that no scaffold is required at an existing target", async () => {
-    const question = worksheet.content.find((node) => node.type === "question");
+    const question = getResourceNodesByType(worksheet, "question")[0];
     if (question === undefined) {
       throw new Error("The worksheet fixture needs a question.");
     }
