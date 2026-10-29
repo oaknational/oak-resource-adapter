@@ -16,244 +16,256 @@
     },
     {
       "id": "task-b",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task B: The tresillo and habanera rhythms"
-        }
-      ]
-    },
-    {
-      "id": "question-1",
-      "type": "question",
-      "label": "1",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-how-are-the-tresillo-and-habanera-similar",
-          "type": "paragraph",
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "How are the tresillo and habanera similar?"
+              "text": "Task B: The tresillo and habanera rhythms"
             }
           ]
         },
         {
-          "id": "comparison",
-          "type": "responseSpace",
-          "kind": "lines",
-          "lines": 4
+          "id": "question-1",
+          "type": "question",
+          "label": "1",
+          "children": [
+            {
+              "id": "unstable:paragraph-how-are-the-tresillo-and-habanera-similar",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "How are the tresillo and habanera similar?"
+                }
+              ]
+            },
+            {
+              "id": "comparison",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 4
+            }
+          ]
         }
       ]
     },
     {
       "id": "task-c",
-      "type": "heading",
-      "level": 2,
-      "content": [
+      "type": "task",
+      "children": [
         {
-          "type": "text",
-          "text": "Task C: Adding new rhythms to our ground bass"
-        }
-      ]
-    },
-    {
-      "id": "ground-bass-instruction",
-      "layout": {
-        "keepWithNext": true
-      },
-      "type": "callout",
-      "role": "instruction",
-      "content": [
-        {
-          "type": "text",
-          "text": "Use the correct notes from your ground bass. Play them in a tresillo rhythm, then a habanera rhythm. Maintain fluency and the correct rhythm when changing notes."
-        }
-      ]
-    },
-    {
-      "id": "example-notes",
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "Example ground bass pattern: C G F G F G A B."
-        }
-      ]
-    },
-    {
-      "id": "grid-instruction",
-      "layout": {
-        "keepWithNext": true
-      },
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "Use this planning grid to record your rhythmic variations."
-        }
-      ]
-    },
-    {
-      "id": "ground-bass-rhythm-grid",
-      "type": "table",
-      "role": "rhythm",
-      "header": [
-        {
-          "kind": "content",
+          "id": "task-c-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Variation"
+              "text": "Task C: Adding new rhythms to our ground bass"
             }
           ]
         },
         {
-          "kind": "content",
+          "id": "ground-bass-instruction",
+          "layout": {
+            "keepWithNext": true
+          },
+          "type": "callout",
+          "role": "instruction",
           "content": [
             {
               "type": "text",
-              "text": "1"
+              "text": "Use the correct notes from your ground bass. Play them in a tresillo rhythm, then a habanera rhythm. Maintain fluency and the correct rhythm when changing notes."
             }
           ]
         },
         {
-          "kind": "content",
+          "id": "example-notes",
+          "type": "paragraph",
           "content": [
             {
               "type": "text",
-              "text": "and"
+              "text": "Example ground bass pattern: C G F G F G A B."
             }
           ]
         },
         {
-          "kind": "content",
+          "id": "grid-instruction",
+          "layout": {
+            "keepWithNext": true
+          },
+          "type": "paragraph",
           "content": [
             {
               "type": "text",
-              "text": "2"
+              "text": "Use this planning grid to record your rhythmic variations."
             }
           ]
         },
         {
-          "kind": "content",
-          "content": [
+          "id": "ground-bass-rhythm-grid",
+          "type": "table",
+          "role": "rhythm",
+          "header": [
             {
-              "type": "text",
-              "text": "and"
-            }
-          ]
-        },
-        {
-          "kind": "content",
-          "content": [
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Variation"
+                }
+              ]
+            },
             {
-              "type": "text",
-              "text": "3"
-            }
-          ]
-        },
-        {
-          "kind": "content",
-          "content": [
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "1"
+                }
+              ]
+            },
             {
-              "type": "text",
-              "text": "and"
-            }
-          ]
-        },
-        {
-          "kind": "content",
-          "content": [
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "and"
+                }
+              ]
+            },
             {
-              "type": "text",
-              "text": "4"
-            }
-          ]
-        },
-        {
-          "kind": "content",
-          "content": [
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "2"
+                }
+              ]
+            },
             {
-              "type": "text",
-              "text": "and"
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "and"
+                }
+              ]
+            },
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "3"
+                }
+              ]
+            },
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "and"
+                }
+              ]
+            },
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "4"
+                }
+              ]
+            },
+            {
+              "kind": "content",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "and"
+                }
+              ]
             }
-          ]
-        }
-      ],
-      "rows": [
-        [
-          {
-            "kind": "content",
-            "content": [
+          ],
+          "rows": [
+            [
               {
-                "type": "text",
-                "text": "Tresillo"
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Tresillo"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Habanera"
+                  }
+                ]
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
+              },
+              {
+                "kind": "answer"
               }
             ]
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          }
-        ],
-        [
-          {
-            "kind": "content",
-            "content": [
-              {
-                "type": "text",
-                "text": "Habanera"
-              }
-            ]
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          },
-          {
-            "kind": "answer"
-          }
-        ]
+          ]
+        }
       ]
     }
   ],

@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { expect, it } from "vitest";
 import { vocabularyHandoffTable } from "./vocabulary-handoff.js";
-import { resourceVocabulary } from "./vocabulary.js";
+import { resourceDirectiveNames } from "./vocabulary.js";
 
 it("keeps the extraction handoff table in agreement with the vocabulary", async () => {
   const handoff = await readFile(
@@ -26,9 +26,6 @@ it("keeps the extraction handoff table in agreement with the vocabulary", async 
 });
 
 it("assigns each directive to exactly one output", () => {
-  const directives = [
-    ...Object.values(resourceVocabulary.nodes).flatMap(({ directives }) => directives),
-    resourceVocabulary.annotations.answer.directive,
-  ];
+  const directives = resourceDirectiveNames();
   expect(new Set(directives).size).toBe(directives.length);
 });

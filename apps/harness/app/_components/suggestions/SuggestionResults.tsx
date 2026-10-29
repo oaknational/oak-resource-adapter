@@ -7,6 +7,7 @@ import type {
 } from "@oaknational/resource-adapter-dev-api-contracts";
 import { readableIdentifier } from "../shared/readable-identifier";
 import { resourceNodeLabel } from "../shared/resource-node-label";
+import { SuggestionGuidance } from "../shared/SuggestionGuidance";
 import shared from "../shared/shared.module.css";
 import styles from "./SuggestionResults.module.css";
 import type { ResourceDocument } from "@oaknational/resource-document";
@@ -95,16 +96,7 @@ export function SuggestionResults({
                   <p className={styles.candidateDescription}>
                     {candidate.suggestion.description}
                   </p>
-                  <div className={shared.guidanceGrid}>
-                    <div className={shared.useGuidance}>
-                      <h4>Use when</h4>
-                      <p>{candidate.suggestion.useWhen}</p>
-                    </div>
-                    <div className={shared.avoidGuidance}>
-                      <h4>Avoid when</h4>
-                      <p>{candidate.suggestion.avoidWhen}</p>
-                    </div>
-                  </div>
+                  <SuggestionGuidance guidance={candidate.suggestion} />
                   <div className={styles.eligibleTargets}>
                     <strong id={`${candidate.kind}-placement`}>
                       Eligible placement

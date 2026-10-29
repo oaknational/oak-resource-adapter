@@ -5,6 +5,7 @@ import { supportLevelInputOf } from "./transformation-api";
 import type { TransformationWorkbench } from "./useTransformationWorkbench";
 import { readableIdentifier } from "../shared/readable-identifier";
 import { statusBadgeClass } from "../shared/status-badge";
+import { SuggestionGuidance } from "../shared/SuggestionGuidance";
 import shared from "../shared/shared.module.css";
 import styles from "./TransformationControls.module.css";
 
@@ -169,16 +170,7 @@ export function TransformationControls({
             <p>{selected.suggestion.description}</p>
           </div>
 
-          <div className={shared.guidanceGrid}>
-            <div className={shared.useGuidance}>
-              <h4>Use when</h4>
-              <p>{selected.suggestion.useWhen}</p>
-            </div>
-            <div className={shared.avoidGuidance}>
-              <h4>Avoid when</h4>
-              <p>{selected.suggestion.avoidWhen}</p>
-            </div>
-          </div>
+          <SuggestionGuidance guidance={selected.suggestion} />
 
           <div className={styles.expectedOutput}>
             <div>

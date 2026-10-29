@@ -13,8 +13,10 @@ import {
 } from "../transformations/registry";
 import { evaluateTransformations } from "../transformations/service";
 import type {
+  AlwaysOfferedSuggestionGuidance,
   AppliedTransformationSummary,
   AvailableTransformation,
+  ChosenSuggestionGuidance,
   TransformationDefinition,
 } from "../transformations/types";
 import {
@@ -35,7 +37,9 @@ type RawSuggestion = Readonly<{
 }>;
 
 type SuggestionPreparation = Readonly<{
-  candidates: readonly SuggestionCandidate[];
+  alwaysOffered: readonly AlwaysOfferedCandidate[];
+  /** What the agent chooses between. */
+  candidates: readonly ChosenCandidate[];
   preparedPrompt: PreparedPrompt;
 }>;
 
@@ -45,6 +49,22 @@ export type EligibleSuggestionTargets =
 
 export type SuggestionCandidate = AvailableTransformation &
   Readonly<{ eligibleTargets: EligibleSuggestionTargets }>;
+
+type AlwaysOfferedCandidate = SuggestionCandidate &
+  Readonly<{ suggestion: AlwaysOfferedSuggestionGuidance }>;
+
+type ChosenCandidate = SuggestionCandidate &
+  Readonly<{ suggestion: ChosenSuggestionGuidance }>;
+
+function isAlwaysOffered(
+  candidate: SuggestionCandidate,
+): candidate is AlwaysOfferedCandidate {
+  return "offer" in candidate.suggestion;
+}
+
+function isChosen(candidate: SuggestionCandidate): candidate is ChosenCandidate {
+  return !isAlwaysOffered(candidate);
+}
 
 export type PrepareSuggestionPrompt = typeof preparePrompt;
 
@@ -111,7 +131,7 @@ export function suggestionMaterialRequirements(
   return [...requirements].map(([key, isRequired]) => ({ key, required: isRequired }));
 }
 
-function renderCandidates(candidates: readonly SuggestionCandidate[]): string {
+function renderCandidates(candidates: readonly ChosenCandidate[]): string {
   return candidates
     .map((candidate) => {
       const target =
@@ -230,17 +250,22 @@ export async function prepareSuggestionFlow(
       ),
     )
     .filter((candidate): candidate is SuggestionCandidate => candidate !== null);
+  const chosen = candidates.filter(isChosen);
   const preparedPrompt = await prepare({
     template: flow.prompt,
     variables: {
       document: serialiseResourceDocumentForPrompt(document),
       lesson: suggestionLessonPart(document, flow.materialRequirements, material),
       pedagogy: suggestionPedagogyPart(),
-      transformations: renderCandidates(candidates),
+      transformations: renderCandidates(chosen),
     },
   });
 
-  return { candidates, preparedPrompt };
+  return {
+    alwaysOffered: candidates.filter(isAlwaysOffered),
+    candidates: chosen,
+    preparedPrompt,
+  };
 }
 
 /**
@@ -291,6 +316,25 @@ function validatedSuggestion(
   };
 }
 
+function offeredAtEveryTarget(
+  candidate: AlwaysOfferedCandidate,
+): readonly TransformationSuggestion[] {
+  if (!isRegisteredTransformationKind(candidate.kind)) {
+    throw new Error(`Unknown transformation ${candidate.kind}.`);
+  }
+  const { kind, label, eligibleTargets, suggestion } = candidate;
+  const targets =
+    eligibleTargets.scope === "document" ? [null] : eligibleTargets.blockIds;
+
+  return targets.map((targetBlockId) => ({
+    kind,
+    label,
+    params: {},
+    reason: suggestion.reason,
+    targetBlockId,
+  }));
+}
+
 /** Suggestions arrive most useful first, so the earlier of an overlapping pair is kept. */
 function overlaps(earlier: TransformationSuggestion, later: TransformationSuggestion) {
   return (
@@ -312,15 +356,16 @@ export async function generateSuggestions(
   }> &
     ModelInvokerConfig,
 ): Promise<readonly TransformationSuggestion[]> {
-  const { candidates, preparedPrompt } = await prepareSuggestionFlow(
+  const { alwaysOffered, candidates, preparedPrompt } = await prepareSuggestionFlow(
     flow,
     document,
     appliedTransformations,
     config.material,
     config.prepare,
   );
+  const kept: TransformationSuggestion[] = alwaysOffered.flatMap(offeredAtEveryTarget);
   if (candidates.length === 0) {
-    return [];
+    return kept;
   }
 
   const schema = z.strictObject({
@@ -344,7 +389,6 @@ export async function generateSuggestions(
     throw new Error(`Suggestion generation ended with ${result.outcome}.`);
   }
 
-  const kept: TransformationSuggestion[] = [];
   for (const raw of result.output.suggestions) {
     const suggestion = validatedSuggestion(
       raw,

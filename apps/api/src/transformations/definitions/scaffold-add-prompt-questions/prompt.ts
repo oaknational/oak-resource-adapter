@@ -46,5 +46,9 @@ Never state the fact, term or step inside a question, and never reword the task 
 
 THE RESOURCE
 
-{{document}}`,
+{{document}}
+
+THE TASK TO SUPPORT
+
+{{block}}`,
 });

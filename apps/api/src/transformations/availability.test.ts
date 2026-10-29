@@ -3,13 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import type { ResourceDocument } from "@oaknational/resource-document";
 
-import {
-  all,
-  always,
-  disabled,
-  notAlreadyApplied,
-  notAlreadyAppliedToTarget,
-} from "./availability";
+import { all, always, disabled, notAlreadyAppliedToTarget } from "./availability";
 
 import type { TransformationAvailabilityContext } from "./types";
 
@@ -54,18 +48,6 @@ describe("all", () => {
 
   it("offers the kind when given no rules", () => {
     expect(all()(contextFor())).toBe(true);
-  });
-});
-
-describe("notAlreadyApplied", () => {
-  it("withdraws a kind the adaptation has already applied", () => {
-    expect(notAlreadyApplied("identity")(contextFor(["identity"]))).toBe(false);
-  });
-
-  it("ignores other applied kinds", () => {
-    expect(notAlreadyApplied("identity")(contextFor(["scaffold-add-word-bank"]))).toBe(
-      true,
-    );
   });
 });
 

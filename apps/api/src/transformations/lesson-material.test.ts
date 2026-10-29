@@ -1,3 +1,7 @@
+import {
+  getResourceNodeById,
+  getResourceNodesByType,
+} from "@oaknational/resource-document";
 import { definePromptTemplate } from "@oaknational/resource-adapter-ai";
 import {
   buildLesson,
@@ -89,9 +93,7 @@ beforeAll(async () => {
     ...identity,
     resourceType: "worksheet",
   });
-  const [question] = worksheet.content.filter(
-    (node): node is QuestionNode => node.type === "question",
-  );
+  const [question] = getResourceNodesByType(worksheet, "question");
 
   if (question === undefined) {
     throw new Error("The worksheet fixture no longer has a top-level question.");
@@ -217,9 +219,7 @@ describe("a lesson's keywords reaching a transformation", () => {
 
     const scaffold =
       run.outcome === "APPLIED"
-        ? run.outputs[0].document.content
-            .flatMap((node) => (node.type === "question" ? node.children : []))
-            .find((node) => node.id === "contribution-1-vocabulary")
+        ? getResourceNodeById(run.outputs[0].document, "contribution-1-vocabulary")
         : undefined;
 
     expect(scaffold).toMatchObject({

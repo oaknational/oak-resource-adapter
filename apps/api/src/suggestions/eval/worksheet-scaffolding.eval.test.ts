@@ -10,12 +10,12 @@ import { describe, expect, it } from "vitest";
 
 import { createOpenAIModelInvoker } from "../../ai/dev-invoker";
 import { resolveApplicationMaterial } from "../../transformations/application-material-resolver";
+import { transformationDefinitions } from "../../transformations/registry";
 import { worksheetScaffoldingSuggestionFlow } from "../definitions/worksheet-scaffolding";
 import { generateSuggestions, suggestionMaterialRequirements } from "../service";
 import type { TransformationSuggestion } from "../types";
 import {
   NODE_SCAFFOLDS,
-  RECALL_QUESTIONS,
   worksheetScaffoldingExpectations,
   type WorksheetExpectation,
 } from "./worksheet-scaffolding.expected";
@@ -35,7 +35,7 @@ type CellResult = Cell & Readonly<{ reasons: readonly string[]; suggestedIn: num
 
 function expectedCells(expectation: WorksheetExpectation): Cell[] {
   const { lessonSlug } = expectation;
-  const nodeCells = Object.entries(expectation.questions).flatMap(([target, wanted]) =>
+  return Object.entries(expectation.questions).flatMap(([target, wanted]) =>
     Object.entries(NODE_SCAFFOLDS).map(([scaffold, kind]) => ({
       expected: wanted.includes(scaffold as keyof typeof NODE_SCAFFOLDS),
       kind,
@@ -43,15 +43,10 @@ function expectedCells(expectation: WorksheetExpectation): Cell[] {
       target,
     })),
   );
-  return [
-    ...nodeCells,
-    {
-      expected: expectation.recallQuestions,
-      kind: RECALL_QUESTIONS,
-      lessonSlug,
-      target: "document",
-    },
-  ];
+}
+
+function chosenByAgent({ kind }: TransformationSuggestion): boolean {
+  return !("offer" in transformationDefinitions[kind].suggestion);
 }
 
 async function runWorksheet(manifest: OakWorksheetFixtureEntry): Promise<
@@ -75,12 +70,14 @@ async function runWorksheet(manifest: OakWorksheetFixtureEntry): Promise<
     createOpenAIModelInvoker,
   );
   const runs = await Promise.all(
-    Array.from({ length: RUNS }, () =>
-      generateSuggestions(worksheetScaffoldingSuggestionFlow, document, [], {
-        correlationKey: `suggestion-eval-${manifest.id}`,
-        createInvoker: createOpenAIModelInvoker,
-        material,
-      }),
+    Array.from({ length: RUNS }, async () =>
+      (
+        await generateSuggestions(worksheetScaffoldingSuggestionFlow, document, [], {
+          correlationKey: `suggestion-eval-${manifest.id}`,
+          createInvoker: createOpenAIModelInvoker,
+          material,
+        })
+      ).filter(chosenByAgent),
     ),
   );
   return { runs, warnings };
@@ -144,8 +141,7 @@ function score(
 }
 
 function summarise(results: readonly CellResult[]) {
-  const kinds = [...Object.values(NODE_SCAFFOLDS), RECALL_QUESTIONS];
-  return kinds.map((kind) => {
+  return Object.values(NODE_SCAFFOLDS).map((kind) => {
     const ofKind = results.filter((cell) => cell.kind === kind);
     const wanted = ofKind.filter(({ expected }) => expected);
     const unwanted = ofKind.filter(({ expected }) => !expected);

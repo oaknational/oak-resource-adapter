@@ -66,5 +66,11 @@ export function resourceNodeLabel(node: ResourceNode): string {
       return node.accessibleText ?? node.description;
     case "section":
       return `${node.children.length} child nodes`;
+    case "task": {
+      const [heading] = node.children;
+      return heading?.type === "heading"
+        ? inlineText(heading.content)
+        : `Task ${node.id}`;
+    }
   }
 }

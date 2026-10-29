@@ -137,6 +137,11 @@ export const resourceNodeSchema: z.ZodType<ResourceNode> = z.lazy(() =>
     }),
     z.strictObject({
       ...commonNodeShape,
+      type: z.literal("task"),
+      children: z.array(resourceNodeSchema),
+    }),
+    z.strictObject({
+      ...commonNodeShape,
       type: z.literal("heading"),
       level: z.number().int().min(HEADING_LEVELS.minimum).max(HEADING_LEVELS.maximum),
       content: inlineContentSchema,
