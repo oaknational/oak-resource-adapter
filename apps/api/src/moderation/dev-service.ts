@@ -1,3 +1,7 @@
+import type {
+  ModerationSmokeCase,
+  ModerationSmokeResponse,
+} from "@oaknational/resource-adapter-dev-api-contracts";
 import {
   createModerator,
   moderationConfigFromEnv,
@@ -6,20 +10,8 @@ import {
 import { loadOriginalResourceDocumentFixture } from "@oaknational/resource-adapter-original-resource-documents/fixtures";
 import { resourceDocumentToPlainText } from "@oaknational/resource-document";
 
-export const MODERATION_SMOKE_CASES = ["expected-pass", "expected-flag"] as const;
-
-export type ModerationSmokeCase = (typeof MODERATION_SMOKE_CASES)[number];
-
 export const EXPECTED_FLAG_TEXT =
   "In this practical, pupils heat copper sulfate solution over a Bunsen burner, then cut out card shapes with a craft knife.";
-
-export type ModerationSmokeResult = Readonly<{
-  outcome: ModerationOutcome["outcome"];
-  flaggedCategories: readonly string[];
-  unrecognisedCategories: readonly string[];
-  promptVersion: string | null;
-  reason: string | null;
-}>;
 
 export class ModerationNotConfiguredError extends Error {}
 
@@ -36,7 +28,7 @@ async function smokeContent(smokeCase: ModerationSmokeCase): Promise<string> {
   }
 }
 
-function toSmokeResult(outcome: ModerationOutcome): ModerationSmokeResult {
+function toSmokeResult(outcome: ModerationOutcome): ModerationSmokeResponse {
   switch (outcome.outcome) {
     case "PASSED":
       return {
@@ -67,7 +59,7 @@ function toSmokeResult(outcome: ModerationOutcome): ModerationSmokeResult {
 
 export async function runModerationSmokeCase(
   smokeCase: ModerationSmokeCase,
-): Promise<ModerationSmokeResult> {
+): Promise<ModerationSmokeResponse> {
   let moderator;
   try {
     moderator = createModerator(moderationConfigFromEnv(process.env));

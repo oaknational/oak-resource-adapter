@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import {
-  fetchTransformationCatalogue,
-  type CapabilityCatalogueItem,
-  type TransformationCatalogue,
-  type TransformationCatalogueItem,
-} from "../transformations/transformation-api";
+import type {
+  CapabilityCatalogueItem,
+  TransformationCatalogue,
+  TransformationCatalogueItem,
+} from "@oaknational/resource-adapter-dev-api-contracts";
+
+import { fetchTransformationCatalogue } from "../transformations/transformation-api";
 import { readableIdentifier } from "../shared/readable-identifier";
 import { useKeepViewAs } from "../shared/ViewAs";
 import { statusBadgeClass } from "../shared/status-badge";

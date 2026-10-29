@@ -2,7 +2,7 @@
 
 import { useOakMaterial, type OakMaterialState } from "./useOakMaterial";
 import styles from "../../page.module.css";
-import type { OakMaterialPart } from "./oak-material-api";
+import type { OakMaterialPart } from "@oaknational/resource-adapter-dev-api-contracts";
 import type { LessonScenario } from "../../scenario-types";
 
 const actionLabels: Record<OakMaterialState, string> = {

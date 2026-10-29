@@ -1,3 +1,18 @@
+import {
+  jobResponseSchema,
+  modelInvocationResponseSchema,
+  moderationSmokeResponseSchema,
+  storageRoundTripResponseSchema,
+  type JobResponse,
+  type ModelInvocationRequest,
+  type ModelInvocationResponse,
+  type ModerationSmokeCase,
+  type ModerationSmokeRequest,
+  type ModerationSmokeResponse,
+  type StorageRoundTripFailure,
+  type StorageRoundTripSuccess,
+  type TestJobRequest,
+} from "@oaknational/resource-adapter-dev-api-contracts";
 import { z } from "zod";
 
 export const adapterProxyPath = "/adapter-proxy";
@@ -44,25 +59,7 @@ const readinessResponseSchema = z
 
 export type ApiReadiness = z.infer<typeof readinessResponseSchema>;
 
-const testJobResponseSchema = z.object({
-  // The dev routes are not a contract, so a field the harness only displays is
-  // read leniently rather than failing the whole response.
-  failure: z.object({ message: z.string() }).nullable().catch(null),
-  id: z.string(),
-  status: z.enum(["failed", "queued", "running", "succeeded"]),
-});
-
-export type TestJobResponse = z.infer<typeof testJobResponseSchema>;
-
-const modelInvocationResponseSchema = z.object({
-  outcome: z.enum(["INCOMPLETE", "OUTPUT_MISSING", "REFUSAL", "SUCCESS"]),
-  outputText: z.string().nullable().catch(null),
-  usage: z.object({ outputTokens: z.number() }).nullable().catch(null),
-});
-
-export type ModelInvocationResponse = z.infer<typeof modelInvocationResponseSchema>;
-
-async function readApiJson<TSchema extends z.ZodType>(
+export async function readApiJson<TSchema extends z.ZodType>(
   response: Response,
   schema: TSchema,
   what: string,
@@ -130,9 +127,10 @@ export async function fetchApiReadiness(signal: AbortSignal): Promise<ApiReadine
   return readiness;
 }
 
-export async function createTestJob(): Promise<TestJobResponse> {
+export async function createTestJob(): Promise<JobResponse> {
+  const request: TestJobRequest = { message: "Hello from the harness" };
   const response = await fetch(`${adapterProxyPath}/dev/jobs/test-echo`, {
-    body: JSON.stringify({ message: "Hello from the harness" }),
+    body: JSON.stringify(request),
     headers: { "Content-Type": "application/json" },
     method: "POST",
   });
@@ -141,43 +139,21 @@ export async function createTestJob(): Promise<TestJobResponse> {
     throw new Error(`The API returned HTTP ${response.status}.`);
   }
 
-  return readApiJson(response, testJobResponseSchema, "a test job");
+  return readApiJson(response, jobResponseSchema, "a test job");
 }
 
 export async function readTestJob(
   id: string,
   signal: AbortSignal,
-): Promise<TestJobResponse> {
+): Promise<JobResponse> {
   const response = await fetch(`${adapterProxyPath}/dev/jobs/${id}`, { signal });
 
   if (!response.ok) {
     throw new Error(`The API returned HTTP ${response.status}.`);
   }
 
-  return readApiJson(response, testJobResponseSchema, "a test job");
+  return readApiJson(response, jobResponseSchema, "a test job");
 }
-
-const storageRoundTripResponseSchema = z.object({
-  bucket: z.string(),
-  byteSize: z.number(),
-  environment: z.string(),
-  federated: z.boolean(),
-  key: z.string(),
-  status: z.literal("ok"),
-});
-
-export type StorageRoundTripResponse = z.infer<typeof storageRoundTripResponseSchema>;
-
-const storageFailureSchema = z.object({
-  status: z.literal("failed"),
-  bucket: z.string().nullable().catch(null),
-  cleanupMessage: z.string().nullable().catch(null),
-  federated: z.boolean().nullable().catch(null),
-  key: z.string().nullable().catch(null),
-  message: z.string().trim().min(1),
-});
-
-export type StorageRoundTripFailure = z.infer<typeof storageFailureSchema>;
 
 export class StorageRoundTripFailed extends Error {
   readonly failure: StorageRoundTripFailure;
@@ -189,7 +165,7 @@ export class StorageRoundTripFailed extends Error {
   }
 }
 
-export async function roundTripStorage(): Promise<StorageRoundTripResponse> {
+export async function roundTripStorage(): Promise<StorageRoundTripSuccess> {
   const response = await fetch(`${adapterProxyPath}/dev/storage/roundtrip`, {
     method: "POST",
   });
@@ -202,25 +178,23 @@ export async function roundTripStorage(): Promise<StorageRoundTripResponse> {
     throw new Error(`The API returned HTTP ${response.status}.`);
   }
 
-  const body: unknown = await response.json().catch(() => null);
-  const failure = storageFailureSchema.safeParse(body);
+  const roundTrip = await readApiJson(
+    response,
+    storageRoundTripResponseSchema,
+    "a storage round trip",
+  );
 
-  if (failure.success) {
-    throw new StorageRoundTripFailed(failure.data);
+  if (roundTrip.status === "failed") {
+    throw new StorageRoundTripFailed(roundTrip);
   }
 
-  const success = storageRoundTripResponseSchema.safeParse(body);
-
-  if (!success.success) {
-    throw new Error("The API returned a storage round trip in an unrecognised shape.");
-  }
-
-  return success.data;
+  return roundTrip;
 }
 
 export async function invokeModel(): Promise<ModelInvocationResponse> {
+  const request: ModelInvocationRequest = { input: "Reply with the single word: pong" };
   const response = await fetch(`${adapterProxyPath}/dev/ai/invoke`, {
-    body: JSON.stringify({ input: "Reply with the single word: pong" }),
+    body: JSON.stringify(request),
     headers: { "Content-Type": "application/json" },
     method: "POST",
   });
@@ -240,22 +214,12 @@ export async function invokeModel(): Promise<ModelInvocationResponse> {
   return readApiJson(response, modelInvocationResponseSchema, "a model invocation");
 }
 
-const moderationSmokeResponseSchema = z.object({
-  outcome: z.enum(["FAILED", "FLAGGED", "PASSED"]),
-  flaggedCategories: z.array(z.string()),
-  unrecognisedCategories: z.array(z.string()),
-  promptVersion: z.string().nullable(),
-  reason: z.string().nullable(),
-});
-
-export type ModerationSmokeCase = "expected-pass" | "expected-flag";
-export type ModerationSmokeResponse = z.infer<typeof moderationSmokeResponseSchema>;
-
 export async function moderateContent(
   smokeCase: ModerationSmokeCase,
 ): Promise<ModerationSmokeResponse> {
+  const request: ModerationSmokeRequest = { case: smokeCase };
   const response = await fetch(`${adapterProxyPath}/dev/moderation/moderate`, {
-    body: JSON.stringify({ case: smokeCase }),
+    body: JSON.stringify(request),
     headers: { "Content-Type": "application/json" },
     method: "POST",
   });

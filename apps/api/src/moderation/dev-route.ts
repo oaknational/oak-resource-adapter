@@ -1,17 +1,14 @@
+import {
+  moderationSmokeRequestSchema,
+  type ModerationSmokeCase,
+} from "@oaknational/resource-adapter-dev-api-contracts";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import {
-  MODERATION_SMOKE_CASES,
-  ModerationNotConfiguredError,
-  type ModerationSmokeCase,
-} from "./dev-service";
-
-// A fixed set of committed inputs, never free text: dev routes are open on Preview and staging.
-const requestSchema = z.strictObject({ case: z.enum(MODERATION_SMOKE_CASES) });
+import { ModerationNotConfiguredError } from "./dev-service";
 
 export function parseModerationSmokeCase(input: unknown): ModerationSmokeCase {
-  return requestSchema.parse(input).case;
+  return moderationSmokeRequestSchema.parse(input).case;
 }
 
 export function moderationSmokeErrorResponse(

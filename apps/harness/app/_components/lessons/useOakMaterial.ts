@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { fetchOakMaterial, type OakMaterialPart } from "./oak-material-api";
+import type { OakMaterialPart } from "@oaknational/resource-adapter-dev-api-contracts";
+
+import { fetchOakMaterial } from "./oak-material-api";
 import type { LessonScenario } from "../../scenario-types";
 
 export type OakMaterialState = "error" | "idle" | "loading" | "ready";

@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import OpenAI from "openai";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ModelInvocationError } from "@oaknational/resource-adapter-ai";
 
-import { invokeDevSmokeText } from "./dev-invoker";
+import { createDevModelInvoker, invokeDevSmokeText } from "./dev-invoker";
 
 const { createMock } = vi.hoisted(() => ({ createMock: vi.fn() }));
 
@@ -72,5 +73,35 @@ describe("invokeDevSmokeText", () => {
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
     expect(createMock.mock.calls[0]?.[0]).not.toHaveProperty("safety_identifier");
+  });
+
+  it("reaches OpenAI even when the deterministic transport is selected", async () => {
+    vi.stubEnv("MODEL_TRANSPORT", "deterministic");
+    vi.stubEnv("OPENAI_API_KEY", "sk-test");
+    createMock.mockResolvedValue(responseFixture());
+
+    await expect(invokeDevSmokeText("ping")).resolves.toMatchObject({
+      outcome: "SUCCESS",
+    });
+    expect(createMock).toHaveBeenCalledOnce();
+  });
+});
+
+describe("createDevModelInvoker", () => {
+  beforeEach(() => {
+    vi.mocked(OpenAI).mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("follows the deterministic transport without an OpenAI client", () => {
+    vi.stubEnv("MODEL_TRANSPORT", "deterministic");
+    vi.stubEnv("OPENAI_API_KEY", "");
+
+    createDevModelInvoker();
+
+    expect(OpenAI).not.toHaveBeenCalled();
   });
 });

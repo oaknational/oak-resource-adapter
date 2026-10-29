@@ -1,5 +1,6 @@
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import { buildLesson } from "@oaknational/resource-adapter-curriculum";
+import { transformationCatalogueSchema } from "@oaknational/resource-adapter-dev-api-contracts";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { worksheetScaffoldingCapability } from "../capabilities/definitions/worksheet-scaffolding";
@@ -80,6 +81,12 @@ describe("getDevTransformationCatalogue", () => {
 
     expect(catalogue.transformations.length).toBeGreaterThan(0);
     expect(catalogue.material.map(({ key }) => key)).toContain("lesson.keywords");
+  });
+
+  it("serves every registered transformation in the shape the harness reads", () => {
+    const served: unknown = JSON.parse(JSON.stringify(getDevTransformationCatalogue()));
+
+    expect(() => transformationCatalogueSchema.parse(served)).not.toThrow();
   });
 
   it("shows which transformations each capability configures", () => {

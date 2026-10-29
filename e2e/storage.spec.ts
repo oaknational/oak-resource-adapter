@@ -1,3 +1,7 @@
+import type {
+  StorageRoundTripFailure,
+  StorageRoundTripSuccess,
+} from "@oaknational/resource-adapter-dev-api-contracts";
 import { expect, test, type Page } from "@playwright/test";
 
 // @deployment-safe criteria: docs/DEVELOPMENT.md, "Testing a deployed candidate".
@@ -11,7 +15,7 @@ const success = {
   federated: true,
   key: "preview/_round-trip/test/probe.txt",
   status: "ok",
-};
+} satisfies StorageRoundTripSuccess;
 
 function panel(page: Page) {
   return page.getByRole("region", { name: "Artifact storage test" });
@@ -132,11 +136,12 @@ test.describe("mocked artifact storage", { tag: "@deployment-safe" }, () => {
             json: {
               status: "failed",
               bucket: success.bucket,
+              environment: success.environment,
               key: success.key,
               federated: true,
               message: "Read denied",
               cleanupMessage: "Delete denied",
-            },
+            } satisfies StorageRoundTripFailure,
           })
         : route.fulfill({ json: success });
     });
@@ -171,11 +176,12 @@ test.describe("mocked artifact storage", { tag: "@deployment-safe" }, () => {
         json: {
           status: "failed",
           bucket: success.bucket,
+          environment: success.environment,
           key: success.key,
           federated: true,
           message: "Wrote and read back the object, but cleanup failed.",
           cleanupMessage: "Delete denied",
-        },
+        } satisfies StorageRoundTripFailure,
       }),
     );
     await page.goto("/?view=smoke-tests");
@@ -217,7 +223,11 @@ test.describe("mocked artifact storage", { tag: "@deployment-safe" }, () => {
     {
       name: "a failure without storage context",
       status: 200,
-      body: { status: "failed", message: "Storage is not configured." },
+      body: {
+        status: "failed",
+        environment: "preview",
+        message: "Storage is not configured.",
+      } satisfies StorageRoundTripFailure,
       message: "Storage is not configured.",
     },
     {

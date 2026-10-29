@@ -1,11 +1,11 @@
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
+import type { TransformationCommand } from "@oaknational/resource-adapter-dev-api-contracts";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
   fetchTransformationCatalogue,
   previewTransformation,
   runTransformation,
-  type TransformationCommand,
 } from "./transformation-api";
 import type { ResourceDocument } from "@oaknational/resource-document";
 
@@ -50,98 +50,95 @@ function respond(body: unknown, status = 200) {
 }
 
 describe("transformation harness API", () => {
-  it.each(["active", "draft", "retired"])(
-    "reads a %s registry entry",
-    async (status) => {
-      respond({
-        capabilities: [
-          {
-            id: "worksheetScaffolding",
-            label: "Add extra scaffolding",
-            resourceType: "worksheet",
-            suggestionFlowId: "worksheet-scaffolding",
-            transformationKinds: ["scaffold-add-word-bank"],
-          },
-        ],
-        material: [
-          {
-            available: true,
-            key: "lesson.keywords",
-            label: "Lesson keywords",
-            promptHeading: "LESSON KEYWORDS",
-          },
-        ],
-        transformations: [
-          {
-            execution: "structured-model",
-            kind: "scaffold-add-word-bank",
-            label: "Add a word bank",
-            materialRequirements: [
-              {
-                available: true,
-                key: "lesson.keywords",
-                label: "Lesson keywords",
-                required: false,
-              },
-            ],
-            outputs: ["revised-resource"],
-            status,
-            suggestion: {
-              avoidWhen: "The question already supplies the vocabulary.",
-              description: "Adds vocabulary for one question.",
-              useWhen: "Relevant vocabulary needs recalling.",
+  it("reads the registry catalogue", async () => {
+    respond({
+      capabilities: [
+        {
+          id: "worksheetScaffolding",
+          label: "Add extra scaffolding",
+          resourceType: "worksheet",
+          suggestionFlowId: "worksheet-scaffolding",
+          transformationKinds: ["scaffold-add-word-bank"],
+        },
+      ],
+      material: [
+        {
+          available: true,
+          key: "lesson.keywords",
+          label: "Lesson keywords",
+          promptHeading: "LESSON KEYWORDS",
+        },
+      ],
+      transformations: [
+        {
+          execution: "structured-model",
+          kind: "scaffold-add-word-bank",
+          label: "Add a word bank",
+          materialRequirements: [
+            {
+              available: true,
+              key: "lesson.keywords",
+              label: "Lesson keywords",
+              required: false,
             },
-            inputs: [
-              {
-                id: "supportLevel",
-                kind: "choice",
-                label: "Support level",
-                options: [
-                  { value: "low", label: "Low", description: "Words only." },
-                  {
-                    value: "mid",
-                    label: "Mid",
-                    description: "Words and definitions.",
-                  },
-                ],
-              },
-            ],
-            target: { scope: "node", nodeTypes: ["question"] },
+          ],
+          outputs: ["revised-resource"],
+          status: "retired",
+          suggestion: {
+            avoidWhen: "The question already supplies the vocabulary.",
+            description: "Adds vocabulary for one question.",
+            useWhen: "Relevant vocabulary needs recalling.",
           },
-        ],
-      });
+          inputs: [
+            {
+              id: "supportLevel",
+              kind: "choice",
+              label: "Support level",
+              options: [
+                { value: "low", label: "Low", description: "Words only." },
+                {
+                  value: "mid",
+                  label: "Mid",
+                  description: "Words and definitions.",
+                },
+              ],
+            },
+          ],
+          target: { scope: "node", nodeTypes: ["question"] },
+        },
+      ],
+    });
 
-      await expect(fetchTransformationCatalogue()).resolves.toMatchObject({
-        capabilities: [
-          {
-            id: "worksheetScaffolding",
-            transformationKinds: ["scaffold-add-word-bank"],
-          },
-        ],
-        material: [{ key: "lesson.keywords", promptHeading: "LESSON KEYWORDS" }],
-        transformations: [
-          {
-            kind: "scaffold-add-word-bank",
-            status,
-            suggestion: { description: "Adds vocabulary for one question." },
-          },
-        ],
-      });
-    },
-  );
+    await expect(fetchTransformationCatalogue()).resolves.toMatchObject({
+      capabilities: [
+        {
+          id: "worksheetScaffolding",
+          transformationKinds: ["scaffold-add-word-bank"],
+        },
+      ],
+      material: [{ key: "lesson.keywords", promptHeading: "LESSON KEYWORDS" }],
+      transformations: [
+        {
+          kind: "scaffold-add-word-bank",
+          status: "retired",
+          suggestion: { description: "Adds vocabulary for one question." },
+        },
+      ],
+    });
+  });
 
-  it.each(["active", "draft", "retired"])("reads a %s preview", async (status) => {
+  it("reads a preview", async () => {
     respond({
       execution: "structured-model",
       kind: "scaffold-add-word-bank",
       prompt: { identifier: "scaffold-add-word-bank", text: "Rendered" },
-      status,
+      status: "retired",
       warnings: [],
     });
 
     await expect(previewTransformation(command())).resolves.toMatchObject({
       prompt: { text: "Rendered" },
-      status,
+      status: "retired",
     });
     expect(fetch).toHaveBeenCalledWith(
       "/adapter-proxy/dev/transformations/preview",

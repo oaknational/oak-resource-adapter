@@ -1,3 +1,4 @@
+import type { TransformationCatalogueItem } from "@oaknational/resource-adapter-dev-api-contracts";
 import {
   getResourceNodeById,
   getResourceNodesByType,
@@ -9,7 +10,6 @@ import { transformationDefinitions } from "./registry";
 import type {
   AvailableTransformation,
   TransformationAvailabilityContext,
-  TransformationCatalogueItem,
   TransformationDefinition,
 } from "./types";
 
