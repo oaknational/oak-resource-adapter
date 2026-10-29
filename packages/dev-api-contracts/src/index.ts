@@ -6,6 +6,7 @@
 export * from "./ai.js";
 export * from "./exports.js";
 export * from "./jobs.js";
+export * from "./moderation.js";
 export * from "./oak-material.js";
 export * from "./storage.js";
 export * from "./suggestions.js";

@@ -1,10 +1,14 @@
 import {
   jobResponseSchema,
   modelInvocationResponseSchema,
+  moderationSmokeResponseSchema,
   storageRoundTripResponseSchema,
   type JobResponse,
   type ModelInvocationRequest,
   type ModelInvocationResponse,
+  type ModerationSmokeCase,
+  type ModerationSmokeRequest,
+  type ModerationSmokeResponse,
   type StorageRoundTripFailure,
   type StorageRoundTripSuccess,
   type TestJobRequest,
@@ -210,22 +214,12 @@ export async function invokeModel(): Promise<ModelInvocationResponse> {
   return readApiJson(response, modelInvocationResponseSchema, "a model invocation");
 }
 
-const moderationSmokeResponseSchema = z.object({
-  outcome: z.enum(["FAILED", "FLAGGED", "PASSED"]),
-  flaggedCategories: z.array(z.string()),
-  unrecognisedCategories: z.array(z.string()),
-  promptVersion: z.string().nullable(),
-  reason: z.string().nullable(),
-});
-
-export type ModerationSmokeCase = "expected-pass" | "expected-flag";
-export type ModerationSmokeResponse = z.infer<typeof moderationSmokeResponseSchema>;
-
 export async function moderateContent(
   smokeCase: ModerationSmokeCase,
 ): Promise<ModerationSmokeResponse> {
+  const request: ModerationSmokeRequest = { case: smokeCase };
   const response = await fetch(`${adapterProxyPath}/dev/moderation/moderate`, {
-    body: JSON.stringify({ case: smokeCase }),
+    body: JSON.stringify(request),
     headers: { "Content-Type": "application/json" },
     method: "POST",
   });

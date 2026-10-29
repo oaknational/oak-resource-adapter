@@ -8,6 +8,8 @@ import {
   jobResponseSchema,
   modelInvocationRequestSchema,
   modelInvocationResponseSchema,
+  moderationSmokeRequestSchema,
+  moderationSmokeResponseSchema,
   oakMaterialRequestSchema,
   oakMaterialResponseSchema,
   storageRoundTripResponseSchema,
@@ -286,6 +288,17 @@ const responses: ReadonlyArray<readonly [string, z.ZodType, unknown]> = [
     artifactDownloadFixtureSchema,
     { artifactId: "artifact-1", environment: "local", ready: true, stored: true },
   ],
+  [
+    "moderation smoke result",
+    moderationSmokeResponseSchema,
+    {
+      flaggedCategories: ["l/physical-activity-and-safety"],
+      outcome: "FLAGGED",
+      promptVersion: "v1",
+      reason: null,
+      unrecognisedCategories: [],
+    },
+  ],
 ];
 
 const requests: ReadonlyArray<readonly [string, z.ZodType, unknown]> = [
@@ -327,6 +340,7 @@ const requests: ReadonlyArray<readonly [string, z.ZodType, unknown]> = [
     docxExportRequestSchema,
     { document: {}, embedFigures: false },
   ],
+  ["moderation smoke request", moderationSmokeRequestSchema, { case: "expected-flag" }],
 ];
 
 describe("dev API responses", () => {

@@ -1,13 +1,13 @@
 "use client";
 
+import type {
+  ModerationSmokeCase,
+  ModerationSmokeResponse,
+} from "@oaknational/resource-adapter-dev-api-contracts";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { useCallback, useState } from "react";
 
-import {
-  moderateContent,
-  type ModerationSmokeCase,
-  type ModerationSmokeResponse,
-} from "../../harness-api";
+import { moderateContent } from "../../harness-api";
 import { SmokeTestPanel } from "./SmokeTestPanel";
 
 const log = raLogger("harness");
