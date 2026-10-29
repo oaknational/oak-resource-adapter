@@ -29,7 +29,7 @@ import { assertExportLimits } from "./limits";
 import { readableMathText } from "./math-text";
 import {
   calloutLabel,
-  introducedByPrompt,
+  keptWithFollowingContent,
   missingImageText,
   questionHeading,
   responseSpaceLayout,
@@ -414,7 +414,7 @@ interface RenderContext {
   loader: ImageLoader | undefined;
   enclosingQuestionLevel: number;
   parentHeading: number;
-  insideQuestion: boolean;
+  keptWithFollowing: ReadonlySet<ResourceNode>;
   // Shared so a break after the last child of a section reaches the next sibling.
   pendingPageBreak: { value: boolean };
 }
@@ -439,19 +439,12 @@ async function renderNodes(
 ): Promise<Block[]> {
   const blocks: Block[] = [];
   let currentHeading = context.parentHeading;
-  for (const [index, node] of nodes.entries()) {
-    const next = nodes[index + 1];
-    const keepWithFollowingContent =
-      context.insideQuestion &&
-      next !== undefined &&
-      introducedByPrompt(next) &&
-      node.layout?.breakAfter !== "page" &&
-      next.layout?.breakBefore !== "page";
+  for (const node of nodes) {
     if (node.layout?.breakBefore === "page") context.pendingPageBreak.value = true;
     const rendered = await renderNode(
       node,
       { ...context, parentHeading: currentHeading },
-      keepWithFollowingContent,
+      context.keptWithFollowing.has(node),
     );
     // Containers consume the pending break at their first rendered descendant.
     blocks.push(
@@ -510,30 +503,32 @@ async function renderNode(
           ...context,
           enclosingQuestionLevel: questionLevel,
           parentHeading: questionLevel,
-          insideQuestion: true,
+          keptWithFollowing: keptWithFollowingContent(node),
         })),
       ];
     }
-    case "definitionList":
+    case "definitionList": {
+      const chained = keepNext ? { keepNext: true } : {};
       return [
         ...(node.lead ? inlineParagraphs(node.lead, paragraphOptions) : []),
         ...node.entries.flatMap((entry) => [
           ...inlineParagraphs(
             entry.term,
-            { keepNext: Boolean(entry.definition || entry.example) },
+            { keepNext: keepNext || Boolean(entry.definition || entry.example) },
             { bold: true },
           ),
           ...(entry.definition
-            ? inlineParagraphs(entry.definition, { indent: { left: 240 } })
+            ? inlineParagraphs(entry.definition, { indent: { left: 240 }, ...chained })
             : []),
           ...(entry.example
             ? inlineParagraphs(
                 [{ type: "text", text: "Example: " }, ...entry.example],
-                { indent: { left: 240 } },
+                { indent: { left: 240 }, ...chained },
               )
             : []),
         ]),
       ];
+    }
     case "responseSpace":
       return responseSpace(node, keepNext);
     case "figure":
@@ -581,7 +576,7 @@ export async function generateDocx(
     loader,
     enclosingQuestionLevel: 0,
     parentHeading: 0,
-    insideQuestion: false,
+    keptWithFollowing: new Set(),
     pendingPageBreak: { value: false },
   });
   const file = new Document({

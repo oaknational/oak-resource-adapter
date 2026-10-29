@@ -1,4 +1,5 @@
 import { loadOriginalResourceDocumentFixture } from "@oaknational/resource-adapter-original-resource-documents/fixtures";
+import { walkResourceDocument } from "@oaknational/resource-document";
 import type {
   Asset,
   InlineContent,
@@ -10,6 +11,12 @@ import { XMLParser } from "fast-xml-parser";
 import { SyntaxValidator } from "fast-xml-validator";
 import { strFromU8, unzipSync } from "fflate";
 import { afterEach, beforeAll, beforeEach, expect, vi } from "vitest";
+
+import type { TransformationContribution } from "../transformations/contributions/contribution";
+import { sentenceStartersContribution } from "../transformations/definitions/scaffold-add-sentence-starters/contribution";
+import { wordBankContribution } from "../transformations/definitions/scaffold-add-word-bank/contribution";
+import { chunkTasksContribution } from "../transformations/definitions/scaffold-chunk-tasks/contribution";
+import type { SupportLevel } from "../transformations/support-level";
 
 export interface XmlNode {
   [name: string]: XmlNode[] | Record<string, string> | string | undefined;
@@ -172,6 +179,64 @@ export function expectRowHeight(row: XmlNode, height: number) {
     "w:val": String(height),
     "w:hRule": "atLeast",
   });
+}
+
+type ScaffoldKind =
+  "scaffold-chunk-tasks" | "scaffold-add-sentence-starters" | "scaffold-add-word-bank";
+
+const scaffolds: Readonly<
+  Record<
+    ScaffoldKind,
+    Readonly<{
+      contribution: TransformationContribution;
+      output: unknown;
+      supportLevel?: SupportLevel;
+    }>
+  >
+> = {
+  "scaffold-chunk-tasks": {
+    contribution: chunkTasksContribution,
+    output: {
+      steps: [
+        "Find beryllium in Group 2 of the periodic table.",
+        "Write its electronic configuration, 2,2.",
+        "Remove its two outer electrons.",
+        "Draw the ion in square brackets with its 2+ charge.",
+      ],
+    },
+  },
+  "scaffold-add-sentence-starters": {
+    contribution: sentenceStartersContribution,
+    output: { lines: ["Metals form positive ions because", "This means that"] },
+  },
+  "scaffold-add-word-bank": {
+    contribution: wordBankContribution,
+    output: { entries: [{ term: "ion" }, { term: "electron" }] },
+    supportLevel: "low",
+  },
+};
+
+/** Adds a scaffold to a question using the same code the app uses. */
+export function withScaffold(
+  document: ResourceDocument,
+  questionId: string,
+  kind: ScaffoldKind,
+): ResourceDocument {
+  const targetNode = Array.from(walkResourceDocument(document)).find(
+    (node) => node.id === questionId,
+  );
+  if (targetNode === undefined) throw new Error(`No node ${questionId} to scaffold.`);
+  const { contribution, output, supportLevel } = scaffolds[kind];
+  const prepared = contribution.prepare({
+    contributionId: `${kind}-${questionId}`,
+    document,
+    material: {},
+    params: {},
+    supportLevel,
+    targetNode,
+    transformationKind: kind,
+  });
+  return parseResourceDocument(prepared.apply(prepared.schema.parse(output))[0]);
 }
 
 /** The checked-in worksheet the synthetic document builders start from. */
