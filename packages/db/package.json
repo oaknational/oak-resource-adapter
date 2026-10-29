@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@google-cloud/cloud-sql-connector": "^1.12.1",
-    "@vercel/oidc": "^4.0.1",
+    "@vercel/oidc": "^4.0.3",
     "dotenv": "^18.0.8",
     "drizzle-orm": "^0.45.4",
     "google-auth-library": "^11.3.1",
@@ -42,7 +42,7 @@
     "@types/pg": "^8.23.1",
     "@vitest/coverage-v8": "^5.0.5",
     "drizzle-kit": "^0.31.11",
-    "vite": "^8.3.4",
+    "vite": "^8.3.5",
     "vitest": "^5.0.5"
   }
 }
