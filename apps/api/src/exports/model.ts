@@ -61,11 +61,51 @@ export function responseSpaceLayout(
 }
 
 /** Content a question prompt introduces, and should not be separated from. */
-export function introducedByPrompt(node: ResourceNode): boolean {
+function introducedByPrompt(node: ResourceNode): boolean {
   return (
     node.type === "responseSpace" ||
     node.type === "table" ||
     node.type === "figure" ||
     node.type === "codeBlock"
   );
+}
+
+type Leaf = { node: ResourceNode; breakAfter: boolean };
+
+/** A question's content in reading order through its sections, with its page breaks. */
+function leavesOf(nodes: readonly ResourceNode[], leaves: Leaf[] = []): Leaf[] {
+  const breakAfterLast = () => {
+    const last = leaves.at(-1);
+    if (last) last.breakAfter = true;
+  };
+  for (const node of nodes) {
+    if (node.layout?.breakBefore === "page") breakAfterLast();
+    if (node.type === "section") leavesOf(node.children, leaves);
+    else leaves.push({ node, breakAfter: false });
+    if (node.layout?.breakAfter === "page") breakAfterLast();
+  }
+  return leaves;
+}
+
+/**
+ * An answer space never sticks to the next part, or every part of a
+ * multi-part question would be held on one page.
+ */
+export function keptWithFollowingContent(
+  question: Extract<ResourceNode, { type: "question" }>,
+): ReadonlySet<ResourceNode> {
+  const leaves = leavesOf(question.children);
+  const kept = new Set<ResourceNode>();
+  let followingKept = false;
+  for (let index = leaves.length - 1; index >= 0; index -= 1) {
+    const { node, breakAfter } = leaves[index]!;
+    const next = leaves[index + 1]?.node;
+    const keep: boolean =
+      next !== undefined &&
+      !breakAfter &&
+      (introducedByPrompt(next) || (node.type !== "responseSpace" && followingKept));
+    if (keep) kept.add(node);
+    followingKept = keep;
+  }
+  return kept;
 }
