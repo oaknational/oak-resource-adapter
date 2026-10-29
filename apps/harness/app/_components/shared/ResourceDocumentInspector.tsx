@@ -1,7 +1,8 @@
 import { walkResourceDocument } from "@oaknational/resource-document";
 
 import { resourceNodeLabel } from "./resource-node-label";
-import styles from "../../page.module.css";
+import shared from "./shared.module.css";
+import styles from "./ResourceDocumentInspector.module.css";
 import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
 
 type NodeChange = "added" | "changed" | "removed" | "unchanged";
@@ -63,7 +64,7 @@ export function ResourceDocumentInspector({
           );
         })}
       </ol>
-      <details className={styles.markupDetails}>
+      <details className={shared.markupDetails}>
         <summary>Raw document JSON</summary>
         {/* Focusable so a keyboard can scroll it, which WCAG 2.1.1 requires. */}
         <section aria-label={`${label} as JSON`} tabIndex={0}>

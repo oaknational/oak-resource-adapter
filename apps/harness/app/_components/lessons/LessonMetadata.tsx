@@ -1,11 +1,12 @@
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
+import styles from "./LessonMetadata.module.css";
 import type { LessonScenario } from "../../scenario-types";
 
 export function LessonMetadata({ scenario }: Readonly<{ scenario: LessonScenario }>) {
   return (
     <section aria-labelledby="lesson-metadata-heading">
       <h2 id="lesson-metadata-heading">Lesson metadata</h2>
-      <dl className={styles.metadataGrid}>
+      <dl className={shared.metadataGrid}>
         <div>
           <dt>Unit</dt>
           <dd>{scenario.unit.title}</dd>
@@ -43,7 +44,7 @@ export function LessonMetadata({ scenario }: Readonly<{ scenario: LessonScenario
                   <span className={hasExtraction ? styles.matchedResource : undefined}>
                     {resourceType}
                     {hasExtraction && (
-                      <span className={styles.visuallyHidden}> (data held)</span>
+                      <span className={shared.visuallyHidden}> (data held)</span>
                     )}
                   </span>
                 </span>

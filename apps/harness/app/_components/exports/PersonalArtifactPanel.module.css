@@ -1,0 +1,38 @@
+.fixtureStatus {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin-top: 1rem;
+}
+
+.fixtureStatusBadge {
+  align-items: center;
+  background: #f4f4f4;
+  border: 1px solid #c7c7c7;
+  border-radius: 0.5rem;
+  color: #444444;
+  display: inline-flex;
+  font-size: 0.875rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  line-height: 1.5;
+  padding: 0.5rem 0.75rem;
+}
+
+.fixtureStatusBadge svg {
+  flex-shrink: 0;
+}
+
+.fixtureStatusBadge[data-state="ready"] {
+  background: #ebfbeb;
+  border-color: #31693d;
+  color: #183f20;
+}
+
+.fixtureStatusBadge[data-state="attention"],
+.fixtureStatusBadge[data-state="working"] {
+  background: #fff7cc;
+  border-color: #8a6200;
+  color: #453100;
+}

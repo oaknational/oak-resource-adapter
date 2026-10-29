@@ -9,7 +9,8 @@ import {
 import { adapterProxyPath, readApiJson } from "../../harness-api";
 import { downloadArtifactFile } from "./artifact-api";
 import { downloadBlob } from "@oaknational/resource-adapter/internal/downloads";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
+import styles from "./PersonalArtifactPanel.module.css";
 
 type FixtureAction = "GET" | "POST" | "DELETE" | "download";
 
@@ -140,14 +141,14 @@ export function PersonalArtifactPanel() {
   const statusState = fixtureStatusState(busy, error, fixture);
 
   return (
-    <section className={styles.controls} aria-labelledby="personal-fixture-heading">
+    <section className={shared.controls} aria-labelledby="personal-fixture-heading">
       <h2 id="personal-fixture-heading">Your download fixture</h2>
       <p>
         Create a DOCX owned by your account, download it, then delete it when you have
         finished testing.
       </p>
       {fixture && (
-        <p className={styles.artifactFeedback}>
+        <p className={shared.artifactFeedback}>
           Environment: <strong>{fixture.environment}</strong>
         </p>
       )}
@@ -171,11 +172,11 @@ export function PersonalArtifactPanel() {
         </span>
         {message && <span>{message}</span>}
       </div>
-      <div className={styles.actionBar}>
-        <fieldset className={styles.primaryActions} disabled={!isSignedIn || busy}>
-          <legend className={styles.visuallyHidden}>Your fixture actions</legend>
+      <div className={shared.actionBar}>
+        <fieldset className={shared.primaryActions} disabled={!isSignedIn || busy}>
+          <legend className={shared.visuallyHidden}>Your fixture actions</legend>
           <button
-            className={styles.primaryButton}
+            className={shared.primaryButton}
             type="button"
             disabled={fixture?.ready}
             onClick={() => void run("POST")}
@@ -183,7 +184,7 @@ export function PersonalArtifactPanel() {
             Create my fixture
           </button>
           <button
-            className={styles.primaryButton}
+            className={shared.primaryButton}
             type="button"
             disabled={!fixture?.ready}
             onClick={() => void run("download", fixture?.artifactId)}
@@ -191,7 +192,7 @@ export function PersonalArtifactPanel() {
             Download my DOCX
           </button>
           <button
-            className={styles.primaryButton}
+            className={shared.primaryButton}
             type="button"
             disabled={!fixture || (!fixture.stored && !fixture.artifactId)}
             onClick={() => void run("DELETE")}
@@ -199,7 +200,7 @@ export function PersonalArtifactPanel() {
             Delete my fixture
           </button>
           <button
-            className={styles.primaryButton}
+            className={shared.primaryButton}
             type="button"
             onClick={() => void run("GET")}
           >
@@ -208,7 +209,7 @@ export function PersonalArtifactPanel() {
         </fieldset>
       </div>
       {error && (
-        <p role="alert" className={styles.errorMessage}>
+        <p role="alert" className={shared.errorMessage}>
           {error}
         </p>
       )}

@@ -1,0 +1,47 @@
+.primaryNavigation {
+  background: #ebfbeb;
+  border-bottom: 1px solid #222222;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem clamp(1rem, 5vw, 4rem) 0;
+}
+
+.primaryNavigation a {
+  align-items: center;
+  border: 2px solid transparent;
+  border-bottom: 0;
+  color: #222222;
+  display: inline-flex;
+  font-weight: 600;
+  min-height: 2.75rem;
+  padding: 0.625rem 1rem;
+  text-decoration: none;
+}
+
+.primaryNavigation a[aria-current="page"] {
+  background: #ffffff;
+  border-color: #222222;
+  margin-bottom: -1px;
+}
+
+.primaryNavigation a:focus-visible {
+  outline: 3px solid #0d24c4;
+  outline-offset: 3px;
+}
+
+@media (max-width: 36rem) {
+  .primaryNavigation {
+    overflow-x: auto;
+    overflow-y: hidden;
+    overflow-wrap: normal;
+    scroll-snap-type: x proximity;
+  }
+
+  .primaryNavigation a {
+    flex: 0 0 auto;
+    justify-content: center;
+    scroll-snap-align: start;
+    text-align: center;
+    white-space: nowrap;
+  }
+}

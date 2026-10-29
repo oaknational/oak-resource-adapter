@@ -11,7 +11,8 @@ import { SmokeTestsView } from "./smoke-tests";
 import { SuggestionsView } from "./suggestions";
 import { TransformationsView } from "./transformations";
 import { resolveApiBaseUrl } from "../harness-api";
-import styles from "../page.module.css";
+import shared from "./shared/shared.module.css";
+import styles from "./HarnessPageClient.module.css";
 import type { HarnessView } from "../scenario-types";
 
 export function HarnessPageClient({
@@ -49,7 +50,7 @@ export function HarnessPageClient({
       </div>
       <main
         className={
-          hasScenarioSidebar ? `${styles.main} ${styles.mainWithSidebar}` : styles.main
+          hasScenarioSidebar ? `${shared.main} ${styles.mainWithSidebar}` : shared.main
         }
         id="main-content"
       >

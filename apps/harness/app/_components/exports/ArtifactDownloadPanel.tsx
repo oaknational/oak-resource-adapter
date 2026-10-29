@@ -4,7 +4,8 @@ import { useAuth } from "@clerk/nextjs";
 import { useEffect, useRef, useState } from "react";
 import { downloadArtifactFile } from "./artifact-api";
 import { downloadBlob } from "@oaknational/resource-adapter/internal/downloads";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
+import styles from "./ArtifactDownloadPanel.module.css";
 
 export function ArtifactDownloadPanel({
   artifactId,
@@ -48,7 +49,7 @@ export function ArtifactDownloadPanel({
   }
 
   return (
-    <section aria-labelledby="artifact-download-heading" className={styles.controls}>
+    <section aria-labelledby="artifact-download-heading" className={shared.controls}>
       <h2 id="artifact-download-heading">
         {isShared ? "Shared download fixture" : "Stored download"}
       </h2>
@@ -73,11 +74,11 @@ export function ArtifactDownloadPanel({
         </p>
       )}
       {!isSignedIn && <p>Sign in using the account menu to download this file.</p>}
-      <div className={styles.actionBar}>
-        <fieldset className={styles.primaryActions}>
-          <legend className={styles.visuallyHidden}>Stored download</legend>
+      <div className={shared.actionBar}>
+        <fieldset className={shared.primaryActions}>
+          <legend className={shared.visuallyHidden}>Stored download</legend>
           <button
-            className={styles.primaryButton}
+            className={shared.primaryButton}
             type="button"
             disabled={!artifactId || !isSignedIn || loading}
             onClick={() => void download()}
@@ -86,11 +87,11 @@ export function ArtifactDownloadPanel({
           </button>
         </fieldset>
       </div>
-      <p role="status" aria-live="polite" className={styles.artifactFeedback}>
+      <p role="status" aria-live="polite" className={shared.artifactFeedback}>
         {status}
       </p>
       {error && (
-        <p role="alert" className={`${styles.errorMessage} ${styles.artifactFeedback}`}>
+        <p role="alert" className={`${shared.errorMessage} ${shared.artifactFeedback}`}>
           {error}
         </p>
       )}

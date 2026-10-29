@@ -5,7 +5,8 @@ import { supportLevelInputOf } from "./transformation-api";
 import type { TransformationWorkbench } from "./useTransformationWorkbench";
 import { readableIdentifier } from "../shared/readable-identifier";
 import { statusBadgeClass } from "../shared/status-badge";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
+import styles from "./TransformationControls.module.css";
 
 type TransformationControlsProps = Pick<
   TransformationWorkbench,
@@ -83,15 +84,15 @@ export function TransformationControls({
     ({ value }) => value === supportLevel,
   );
   return (
-    <section aria-labelledby="transformation-controls" className={styles.controls}>
-      <div className={styles.controlHeader}>
+    <section aria-labelledby="transformation-controls" className={shared.controls}>
+      <div className={shared.controlHeader}>
         <h2 id="transformation-controls">Transformation</h2>
         {selected !== undefined && (
           <span className={statusBadgeClass(selected.status)}>{selected.status}</span>
         )}
       </div>
 
-      <div className={styles.controlGrid}>
+      <div className={shared.controlGrid}>
         <label>
           <span>Definition</span>
           <select
@@ -151,7 +152,7 @@ export function TransformationControls({
       </div>
 
       {selected !== undefined && (
-        <p className={styles.definitionMeta}>
+        <p className={shared.definitionMeta}>
           <span>{executionLabel(selected.execution)}</span>
           <code>{selected.kind}</code>
         </p>
@@ -163,17 +164,17 @@ export function TransformationControls({
           className={styles.transformationProfile}
         >
           <div className={styles.profileIntroduction}>
-            <p className={styles.profileKicker}>What this transformation does</p>
+            <p className={shared.profileKicker}>What this transformation does</p>
             <h3 id="selected-transformation-profile">{selected.label}</h3>
             <p>{selected.suggestion.description}</p>
           </div>
 
-          <div className={styles.guidanceGrid}>
-            <div className={styles.useGuidance}>
+          <div className={shared.guidanceGrid}>
+            <div className={shared.useGuidance}>
               <h4>Use when</h4>
               <p>{selected.suggestion.useWhen}</p>
             </div>
-            <div className={styles.avoidGuidance}>
+            <div className={shared.avoidGuidance}>
               <h4>Avoid when</h4>
               <p>{selected.suggestion.avoidWhen}</p>
             </div>
@@ -181,7 +182,7 @@ export function TransformationControls({
 
           <div className={styles.expectedOutput}>
             <div>
-              <p className={styles.profileKicker}>Expected pupil-facing result</p>
+              <p className={shared.profileKicker}>Expected pupil-facing result</p>
               <h4>
                 {selectedLevel === undefined
                   ? selected.label
@@ -204,7 +205,7 @@ export function TransformationControls({
           {selected.barriers !== undefined && (
             <div className={styles.barrierSummary}>
               <h4>Barriers addressed</h4>
-              <ul className={styles.tagList}>
+              <ul className={shared.tagList}>
                 {selected.barriers.map((barrier) => (
                   <li key={barrier}>{readableIdentifier(barrier)}</li>
                 ))}
@@ -215,7 +216,7 @@ export function TransformationControls({
       )}
 
       {unmetMaterial.length > 0 && (
-        <output className={styles.errorMessage}>
+        <output className={shared.errorMessage}>
           {unmetMaterial
             .map(({ label, unavailableBecause }) =>
               `${label} is required but unavailable. ${unavailableBecause ?? ""}`.trim(),
@@ -224,11 +225,11 @@ export function TransformationControls({
         </output>
       )}
 
-      <div className={styles.actionBar}>
-        <fieldset className={styles.primaryActions}>
-          <legend className={styles.visuallyHidden}>Transformation actions</legend>
+      <div className={shared.actionBar}>
+        <fieldset className={shared.primaryActions}>
+          <legend className={shared.visuallyHidden}>Transformation actions</legend>
           <button
-            className={styles.primaryButton}
+            className={shared.primaryButton}
             disabled={!canSubmit || requestState !== "idle"}
             onClick={() => void runSelected()}
             type="button"
@@ -243,8 +244,8 @@ export function TransformationControls({
             {requestState === "preview" ? "Preparing…" : "Preview prompt"}
           </button>
         </fieldset>
-        <fieldset className={styles.historyActions}>
-          <legend className={styles.visuallyHidden}>Document history</legend>
+        <fieldset className={shared.historyActions}>
+          <legend className={shared.visuallyHidden}>Document history</legend>
           <button disabled={historyDepth === 0} onClick={undo} type="button">
             Undo
           </button>

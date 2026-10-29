@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { useKeepViewAs } from "./ViewAs";
-import styles from "../../page.module.css";
+import styles from "./ScenarioNavigation.module.css";
 
 export type ScenarioNavigationItem = Readonly<{
   id: string;

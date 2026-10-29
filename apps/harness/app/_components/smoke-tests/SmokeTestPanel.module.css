@@ -1,0 +1,22 @@
+.workerTest {
+  border: 1px solid #222222;
+  border-radius: 0.75rem;
+  margin-top: 2rem;
+  padding: 1rem;
+}
+
+.workerTest h2 {
+  font-size: 1.125rem;
+  margin: 0 0 0.75rem;
+}
+
+.workerTestControls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.workerTestStatus {
+  margin: 0;
+}

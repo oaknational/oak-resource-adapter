@@ -1,0 +1,38 @@
+.scenarioSelect {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  min-width: 0;
+}
+
+.scenarioSelect label {
+  font-weight: 600;
+}
+
+.scenarioSelect select {
+  background: #ffffff;
+  border: 2px solid #222222;
+  border-radius: 0.375rem;
+  color: #222222;
+  flex: 1 1 16rem;
+  font: inherit;
+  min-height: 2.75rem;
+  min-width: 0;
+  padding: 0.625rem;
+}
+
+.selectedScenario {
+  margin-top: 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.selectedScenario h2 {
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+
+.selectedScenario p {
+  color: #555555;
+  font-size: 0.8125rem;
+  margin-top: 0.25rem;
+}

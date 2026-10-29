@@ -1,5 +1,6 @@
 import type { SuggestionWorkbench } from "./useSuggestionWorkbench";
-import styles from "../../page.module.css";
+import shared from "../shared/shared.module.css";
+import styles from "./SuggestionControls.module.css";
 
 type SuggestionControlsProps = Pick<
   SuggestionWorkbench,
@@ -31,11 +32,11 @@ export function SuggestionControls({
   const requestMessage = requestMessages[requestState];
 
   return (
-    <section aria-labelledby="suggestion-controls" className={styles.controls}>
-      <div className={styles.controlHeader}>
+    <section aria-labelledby="suggestion-controls" className={shared.controls}>
+      <div className={shared.controlHeader}>
         <h2 id="suggestion-controls">Suggestion flow</h2>
       </div>
-      <div className={styles.controlGrid}>
+      <div className={shared.controlGrid}>
         <label>
           <span>Flow</span>
           <select
@@ -53,24 +54,24 @@ export function SuggestionControls({
       </div>
       {selectedFlow !== undefined && (
         <div className={styles.flowSummary}>
-          <p className={styles.profileKicker}>What the agent is deciding</p>
+          <p className={shared.profileKicker}>What the agent is deciding</p>
           <h3>{selectedFlow.label}</h3>
           <p>
             Reviews this worksheet and can recommend up to {selectedFlow.maxSuggestions}{" "}
             suitable changes from {selectedFlow.transformationKinds.length} available
             transformations.
           </p>
-          <p className={styles.definitionMeta}>
+          <p className={shared.definitionMeta}>
             <code>{selectedFlow.id}</code>
             <code>{selectedFlow.role}</code>
           </p>
         </div>
       )}
-      <div className={styles.actionBar}>
-        <fieldset className={styles.primaryActions}>
-          <legend className={styles.visuallyHidden}>Suggestion actions</legend>
+      <div className={shared.actionBar}>
+        <fieldset className={shared.primaryActions}>
+          <legend className={shared.visuallyHidden}>Suggestion actions</legend>
           <button
-            className={styles.primaryButton}
+            className={shared.primaryButton}
             disabled={!canSubmit || requestState !== "idle"}
             onClick={() => void runSelected()}
             type="button"
@@ -85,7 +86,7 @@ export function SuggestionControls({
             {requestState === "preview" ? "Preparing…" : "Preview prompt"}
           </button>
         </fieldset>
-        <p aria-live="polite" className={styles.requestStatus} role="status">
+        <p aria-live="polite" className={shared.requestStatus} role="status">
           {requestMessage}
         </p>
       </div>
