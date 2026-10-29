@@ -5,10 +5,10 @@
   "description": "Oak National Academy Resource Adapter",
   "license": "MIT",
   "type": "module",
-  "packageManager": "pnpm@10.32.1",
+  "packageManager": "pnpm@11.28.7",
   "engines": {
     "node": ">=24.22.1 <25",
-    "pnpm": ">=10"
+    "pnpm": ">=11"
   },
   "scripts": {
     "access:grant": "node --env-file-if-exists=.env apps/api/scripts/access-grant.mjs",
@@ -74,13 +74,5 @@
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-eslint": "^8.72.0",
     "vercel": "64.7.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/engines",
-      "esbuild",
-      "prisma",
-      "sharp"
-    ]
   }
 }
