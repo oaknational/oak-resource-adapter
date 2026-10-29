@@ -8,3 +8,13 @@ engineStrict: true
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - "@oaknational/*"
+
+autoInstallPeers: false
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  "@swc/core": false
+  cbor-extract: false
+  core-js: false
+  protobufjs: false

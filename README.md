@@ -35,7 +35,7 @@ Vercel Workflow.
 
 ## Getting started
 
-You need Node.js 24.22.1 or a later 24.x, pnpm 10 or later, a local PostgreSQL,
+You need Node.js 24.22.1 or a later 24.x, pnpm 11 or later, a local PostgreSQL,
 and the [Doppler CLI](https://docs.doppler.com/docs/install-cli) signed in with
 access to the `oak-resource-adapter` project.
 
