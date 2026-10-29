@@ -1,3 +1,4 @@
+import { getResourceNodesByType } from "@oaknational/resource-document";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -20,9 +21,7 @@ beforeAll(async () => {
     programmeSlug: "english-primary-ks2",
     resourceType: "worksheet",
   });
-  const first = worksheet.content.find(
-    (node): node is QuestionNode => node.type === "question",
-  );
+  const first = getResourceNodesByType(worksheet, "question")[0];
   if (first === undefined) {
     throw new Error("The fixture has no question.");
   }
@@ -91,8 +90,8 @@ describe("chunkTasksContribution", () => {
       steps: ["1. Plan the scene", "Step 2: Write the scene"],
     });
     const [document] = prepared.apply(output);
-    const transformedQuestion = document.content.find(
-      (node): node is QuestionNode => node.id === question.id,
+    const transformedQuestion = getResourceNodesByType(document, "question").find(
+      (node) => node.id === question.id,
     );
     const section = transformedQuestion?.children.find(
       (node): node is SectionNode => node.type === "section",

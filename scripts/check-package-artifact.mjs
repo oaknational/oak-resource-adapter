@@ -469,6 +469,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "ResourceAdapterDialog.js",
     "ResourceAdapterErrorBoundary.js",
     "resource-document/ResourceDocumentRenderer.js",
+    "resource-document/TaskAccordion.js",
     "capabilities/workflowRegistry.js",
     "capabilities/worksheet-scaffolding/WorksheetScaffoldingWorkflow.js",
     "capabilities/worksheet-scaffolding/WorksheetDownload.js",

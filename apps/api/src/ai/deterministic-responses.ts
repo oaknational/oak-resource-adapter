@@ -19,10 +19,6 @@ const offers = {
     params: {},
     reason: "Explain the words the task instruction uses.",
   },
-  "scaffold-add-prompt-questions": {
-    params: {},
-    reason: "Recall earlier learning before starting the worksheet.",
-  },
   "scaffold-add-sentence-starters": {
     params: {},
     reason: "Open the first clause of the written response.",

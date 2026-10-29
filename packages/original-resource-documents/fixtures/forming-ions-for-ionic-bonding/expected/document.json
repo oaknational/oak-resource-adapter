@@ -16,216 +16,222 @@
     },
     {
       "id": "task-a",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task A: Forming positively charged ions"
-        }
-      ]
-    },
-    {
-      "id": "question-1",
-      "type": "question",
-      "label": "1",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-use-a-periodic-table-to-complete-the-table",
-          "type": "paragraph",
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Use a periodic table to complete the table."
+              "text": "Task A: Forming positively charged ions"
             }
           ]
         },
         {
-          "id": "positive-ion-table",
-          "type": "table",
-          "role": "ions",
-          "header": [
+          "id": "question-1",
+          "type": "question",
+          "label": "1",
+          "children": [
             {
-              "kind": "content",
+              "id": "unstable:paragraph-use-a-periodic-table-to-complete-the-table",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "metal"
+                  "text": "Use a periodic table to complete the table."
                 }
               ]
             },
             {
-              "kind": "content",
-              "content": [
+              "id": "positive-ion-table",
+              "type": "table",
+              "role": "ions",
+              "header": [
                 {
-                  "type": "text",
-                  "text": "charge"
-                }
-              ]
-            },
-            {
-              "kind": "content",
-              "content": [
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "metal"
+                    }
+                  ]
+                },
                 {
-                  "type": "text",
-                  "text": "metal ion"
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "charge"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "metal ion"
+                    }
+                  ]
                 }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "sodium"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "1+"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Na+"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "calcium"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "magnesium"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "aluminium"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "potassium"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
               ]
-            }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "sodium"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "1+"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Na+"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "calcium"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "magnesium"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "aluminium"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "potassium"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "id": "question-2",
-      "type": "question",
-      "label": "2",
-      "children": [
-        {
-          "id": "unstable:paragraph-why-do-metals-form-positively-charged-ions-also-called",
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "Why do metals form positively charged ions, also called cations?"
-            }
-          ]
-        },
-        {
-          "id": "question-2-response",
-          "type": "responseSpace",
-          "kind": "lines",
-          "lines": 5
-        }
-      ]
-    },
-    {
-      "id": "question-3",
-      "type": "question",
-      "label": "3",
-      "children": [
-        {
-          "id": "unstable:paragraph-beryllium-be-is-in-group-2-of-the-periodic-table-draw-",
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "Beryllium, Be, is in Group 2 of the periodic table. Draw the electronic configuration of a beryllium ion, "
-            },
-            {
-              "type": "math",
-              "value": "Be^{2+}",
-              "display": false
-            },
-            {
-              "type": "text",
-              "text": "."
             }
           ]
         },
         {
-          "id": "question-3-response",
-          "type": "responseSpace",
-          "kind": "box"
+          "id": "question-2",
+          "type": "question",
+          "label": "2",
+          "children": [
+            {
+              "id": "unstable:paragraph-why-do-metals-form-positively-charged-ions-also-called",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Why do metals form positively charged ions, also called cations?"
+                }
+              ]
+            },
+            {
+              "id": "question-2-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 5
+            }
+          ]
+        },
+        {
+          "id": "question-3",
+          "type": "question",
+          "label": "3",
+          "children": [
+            {
+              "id": "unstable:paragraph-beryllium-be-is-in-group-2-of-the-periodic-table-draw-",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Beryllium, Be, is in Group 2 of the periodic table. Draw the electronic configuration of a beryllium ion, "
+                },
+                {
+                  "type": "math",
+                  "value": "Be^{2+}",
+                  "display": false
+                },
+                {
+                  "type": "text",
+                  "text": "."
+                }
+              ]
+            },
+            {
+              "id": "question-3-response",
+              "type": "responseSpace",
+              "kind": "box"
+            }
+          ]
         }
       ]
     }

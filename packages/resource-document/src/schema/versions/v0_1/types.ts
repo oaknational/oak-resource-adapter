@@ -52,6 +52,12 @@ export interface SectionNode extends ResourceNodeBase {
   children: ResourceNode[];
 }
 
+/** One practice task: usually its heading, then the content that belongs to it. */
+export interface TaskNode extends ResourceNodeBase {
+  type: "task";
+  children: ResourceNode[];
+}
+
 export interface HeadingNode extends ResourceNodeBase {
   type: "heading";
   level: number;
@@ -138,6 +144,7 @@ export type ResourceNode =
   | TableNode
   | CodeBlockNode
   | SectionNode
+  | TaskNode
   | HeadingNode
   | ParagraphNode
   | CalloutNode

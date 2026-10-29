@@ -27,7 +27,34 @@ const material = {
 let worksheet: ResourceDocument;
 let questionId: string;
 let questionIds: readonly string[];
+let taskIds: readonly string[];
 let paragraphId: string;
+
+const RECALL = "scaffold-add-prompt-questions";
+
+/** Offered at every task ahead of anything the agent chooses. */
+function recallOffers(targetBlockIds: readonly string[] = taskIds) {
+  return targetBlockIds.map((targetBlockId) => ({
+    kind: RECALL,
+    label: "Add recall questions",
+    params: {},
+    reason: "Prompt pupils to recall what they need before they start this task.",
+    targetBlockId,
+  }));
+}
+
+function questionScaffoldsApplied() {
+  return questionIds.flatMap((targetBlockId) => [
+    {
+      kind: "scaffold-add-word-bank",
+      params: { supportLevel: "low" },
+      targetBlockId,
+    },
+    { kind: "scaffold-add-task-glossary", params: {}, targetBlockId },
+    { kind: "scaffold-add-sentence-starters", params: {}, targetBlockId },
+    { kind: "scaffold-add-sentence-frames", params: {}, targetBlockId },
+  ]);
+}
 
 const prepare = vi.fn(({ template, variables }) =>
   Promise.resolve({
@@ -79,7 +106,7 @@ beforeAll(async () => {
     programmeSlug: "english-primary-ks2",
     resourceType: "worksheet",
   });
-  const question = worksheet.content.find((node) => node.type === "question");
+  const question = getResourceNodesByType(worksheet, "question")[0];
   const paragraph =
     question?.type === "question"
       ? question.children.find((node) => node.type === "paragraph")
@@ -89,6 +116,7 @@ beforeAll(async () => {
   }
   questionId = question.id;
   questionIds = getResourceNodesByType(worksheet, "question").map(({ id }) => id);
+  taskIds = getResourceNodesByType(worksheet, "task").map(({ id }) => id);
   paragraphId = paragraph.id;
 });
 
@@ -105,16 +133,36 @@ describe("worksheet scaffolding suggestions", () => {
     expect(result.candidates.map(({ kind }) => kind)).toEqual([
       "scaffold-add-word-bank",
       "scaffold-add-task-glossary",
-      "scaffold-add-prompt-questions",
       "scaffold-add-sentence-starters",
       "scaffold-add-sentence-frames",
     ]);
+    expect(result.alwaysOffered.map(({ kind }) => kind)).toEqual([RECALL]);
     expect(result.candidates[0]?.eligibleTargets).toEqual({
       blockIds: questionIds,
       scope: "node",
     });
     expect(result.preparedPrompt.text).toContain("one of these eligible node IDs:");
     expect(result.preparedPrompt.text).not.toContain("scaffold-chunk-tasks");
+    expect(result.preparedPrompt.text).not.toContain(RECALL);
+  });
+
+  it("offers recall questions at every task without asking the agent", async () => {
+    const createInvoker = vi.fn(() => invokerWith({ suggestions: [] }));
+    const [applied, ...remaining] = taskIds;
+
+    await expect(
+      generateSuggestions(
+        worksheetScaffoldingSuggestionFlow,
+        worksheet,
+        [
+          ...questionScaffoldsApplied(),
+          { kind: RECALL, params: {}, targetBlockId: applied },
+        ],
+        { createInvoker, material, prepare },
+      ),
+    ).resolves.toEqual(recallOffers(remaining));
+    expect(remaining.length).toBeGreaterThan(0);
+    expect(createInvoker).not.toHaveBeenCalled();
   });
 
   it("offers each node transformation only for targets where it remains valid", async () => {
@@ -159,6 +207,23 @@ describe("worksheet scaffolding suggestions", () => {
     });
   });
 
+  it("keeps offering recall questions at the tasks a teacher has not dismissed", async () => {
+    const [dismissed, ...remaining] = taskIds;
+    if (dismissed === undefined) {
+      throw new Error("The fixture needs a task.");
+    }
+
+    await expect(
+      generateSuggestions(
+        worksheetScaffoldingSuggestionFlow,
+        dismissTransformationsAt(worksheet, dismissed),
+        questionScaffoldsApplied(),
+        { createInvoker: () => invokerWith({ suggestions: [] }), material, prepare },
+      ),
+    ).resolves.toEqual(recallOffers(remaining));
+    expect(remaining.length).toBeGreaterThan(0);
+  });
+
   it("returns validated parameters with a target and teacher-facing reason", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
@@ -177,6 +242,7 @@ describe("worksheet scaffolding suggestions", () => {
         prepare,
       }),
     ).resolves.toEqual([
+      ...recallOffers(),
       {
         kind: "scaffold-add-word-bank",
         label: "Add a word bank",
@@ -204,7 +270,7 @@ describe("worksheet scaffolding suggestions", () => {
           }),
         prepare,
       }),
-    ).resolves.toEqual([]);
+    ).resolves.toEqual(recallOffers());
   });
 
   it("keeps the usable suggestions when one of them is unavailable", async () => {
@@ -230,7 +296,7 @@ describe("worksheet scaffolding suggestions", () => {
           }),
         prepare,
       }),
-    ).resolves.toMatchObject([{ targetBlockId: questionId }]);
+    ).resolves.toMatchObject([...recallOffers(), { targetBlockId: questionId }]);
   });
 
   it("keeps the first of two offers of the same change for one target", async () => {
@@ -252,7 +318,7 @@ describe("worksheet scaffolding suggestions", () => {
           }),
         prepare,
       }),
-    ).resolves.toMatchObject([{ reason: "The first reason." }]);
+    ).resolves.toMatchObject([...recallOffers(), { reason: "The first reason." }]);
   });
 
   it("drops an already-used target even if an invoker bypasses its target enum", async () => {
@@ -283,23 +349,14 @@ describe("worksheet scaffolding suggestions", () => {
           prepare,
         },
       ),
-    ).resolves.toEqual([]);
+    ).resolves.toEqual(recallOffers());
   });
 
   it("returns no suggestions without invoking the model when every target is used", async () => {
     const createInvoker = vi.fn(() => invokerWith({ suggestions: [] }));
     const appliedTransformations = [
-      { kind: "scaffold-add-prompt-questions", params: {} },
-      ...questionIds.flatMap((targetBlockId) => [
-        {
-          kind: "scaffold-add-word-bank",
-          params: { supportLevel: "low" },
-          targetBlockId,
-        },
-        { kind: "scaffold-add-task-glossary", params: {}, targetBlockId },
-        { kind: "scaffold-add-sentence-starters", params: {}, targetBlockId },
-        { kind: "scaffold-add-sentence-frames", params: {}, targetBlockId },
-      ]),
+      ...taskIds.map((targetBlockId) => ({ kind: RECALL, params: {}, targetBlockId })),
+      ...questionScaffoldsApplied(),
     ];
 
     await expect(
@@ -320,7 +377,7 @@ describe("worksheet scaffolding suggestions", () => {
         createInvoker: () => invokerWith({ suggestions: [] }),
         prepare,
       }),
-    ).resolves.toEqual([]);
+    ).resolves.toEqual(recallOffers());
   });
 
   it("does not mistake an unsuccessful model response for no suggestions", async () => {
@@ -342,9 +399,7 @@ describe("worksheet scaffolding suggestions", () => {
       prepare,
     );
 
-    expect(result.candidates.map(({ kind }) => kind)).not.toContain(
-      "scaffold-add-prompt-questions",
-    );
+    expect(result.alwaysOffered).toEqual([]);
   });
 
   it("resolves the flow's material and every candidate's required material", () => {
@@ -395,6 +450,9 @@ describe("worksheet scaffolding suggestions", () => {
       },
     );
 
-    expect(result.map(({ kind }) => kind)).toEqual(["scaffold-add-sentence-starters"]);
+    expect(result.map(({ kind }) => kind)).toEqual([
+      ...recallOffers().map(({ kind }) => kind),
+      "scaffold-add-sentence-starters",
+    ]);
   });
 });

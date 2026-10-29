@@ -1,12 +1,18 @@
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import type { ResourceDocument, SectionNode } from "@oaknational/resource-document";
+import {
+  getResourceNodeById,
+  getResourceNodesByType,
+  type ResourceDocument,
+  type TaskNode,
+} from "@oaknational/resource-document";
 
 import type { ContributionContext } from "../../contributions/contribution";
 import { promptQuestionsContribution } from "./contribution";
 
 let worksheet: ResourceDocument;
+let task: TaskNode;
 
 beforeAll(async () => {
   worksheet = await originalResourceDocuments.get({
@@ -15,15 +21,20 @@ beforeAll(async () => {
     programmeSlug: "english-primary-ks2",
     resourceType: "worksheet",
   });
+  const [first] = getResourceNodesByType(worksheet, "task");
+  if (first === undefined) {
+    throw new Error("The fixture has no task.");
+  }
+  task = first;
 });
 
-function context(document: ResourceDocument = worksheet): ContributionContext {
+function context(): ContributionContext {
   return {
     contributionId: "prompt-questions-1",
-    document,
+    document: worksheet,
     material: {},
-    params: { supportLevel: "low" },
-    supportLevel: "low",
+    params: {},
+    targetNode: task,
     transformationKind: "scaffold-add-prompt-questions",
   };
 }
@@ -44,17 +55,20 @@ describe("promptQuestionsContribution", () => {
     ).toBe(false);
   });
 
-  it("starts the added section with the fixed lead and attributed questions", () => {
+  it("starts the task with the fixed lead and attributed questions", () => {
     const prepared = promptQuestionsContribution.prepare(context());
     const [document] = prepared.apply({
       questions: ["What is perspective?", "Which tense should you use?"],
     });
-    const section = document.content[1] as SectionNode;
+    const revised = getResourceNodeById(document, task.id);
+    if (revised?.type !== "task") {
+      throw new Error("The task is missing.");
+    }
 
     expect(prepared.name).toBe("prompt_questions");
-    expect(document.content[0]).toBe(worksheet.content[0]);
-    expect(document.content.slice(2)).toEqual(worksheet.content.slice(1));
-    expect(section).toMatchObject({
+    expect(revised.children[0]).toBe(task.children[0]);
+    expect(revised.children.slice(2)).toEqual(task.children.slice(1));
+    expect(revised.children[1]).toMatchObject({
       id: "prompt-questions-1-prompt-questions",
       type: "section",
       extensions: {
@@ -93,24 +107,11 @@ describe("promptQuestionsContribution", () => {
         },
       ],
     });
-    expect(worksheet.content).toHaveLength(document.content.length - 1);
   });
 
-  it("uses the first position when the document has no leading title", () => {
-    const withoutTitle = { ...worksheet, content: worksheet.content.slice(1) };
-    const prepared = promptQuestionsContribution.prepare(context(withoutTitle));
-    const [document] = prepared.apply({ questions: ["What is perspective?"] });
-
-    expect(document.content[0]?.id).toBe("prompt-questions-1-prompt-questions");
-    expect(document.content.slice(1)).toEqual(withoutTitle.content);
-  });
-
-  it("places support after a title when the document has no body yet", () => {
-    const titleOnly = { ...worksheet, content: worksheet.content.slice(0, 1) };
-    const prepared = promptQuestionsContribution.prepare(context(titleOnly));
-    const [document] = prepared.apply({ questions: ["What is perspective?"] });
-
-    expect(document.content[0]).toBe(titleOnly.content[0]);
-    expect(document.content[1]?.id).toBe("prompt-questions-1-prompt-questions");
+  it("needs the task it supports", () => {
+    expect(() =>
+      promptQuestionsContribution.prepare({ ...context(), targetNode: undefined }),
+    ).toThrow(/needs the task it supports/);
   });
 });

@@ -6,7 +6,7 @@ import {
   contributionExtensions,
   definePreparedContribution,
 } from "../../contributions/contribution";
-import { insertAtStartOfBody } from "../../contributions/place";
+import { insertAtStart } from "../../contributions/place";
 import type {
   ContributionContext,
   TransformationContribution,
@@ -19,9 +19,7 @@ const promptQuestionsSchema = z.strictObject({
     .array(z.string().trim().min(1).max(200))
     .min(1)
     .max(10)
-    .describe(
-      "Pupil-facing recall questions supporting the worksheet as a whole, in use order.",
-    ),
+    .describe("Pupil-facing recall questions supporting this task, in use order."),
 });
 
 function text(value: string): InlineContent {
@@ -68,15 +66,22 @@ function promptQuestions(
 }
 
 export const promptQuestionsContribution: TransformationContribution = {
-  prepare: (context) =>
-    definePreparedContribution({
+  prepare: (context) => {
+    const task = context.targetNode;
+    if (task === undefined) {
+      throw new Error(`${context.transformationKind} needs the task it supports.`);
+    }
+
+    return definePreparedContribution({
       name: "prompt_questions",
       schema: promptQuestionsSchema,
       apply: (output) => [
-        insertAtStartOfBody(
+        insertAtStart(
           context.document,
           promptQuestions(context, output.questions),
+          task.id,
         ),
       ],
-    }),
+    });
+  },
 };

@@ -35,6 +35,7 @@ import {
   documentDismissesTransformations,
 } from "../transformations/dismissal";
 import {
+  getResourceNodesByType,
   CONTRIBUTION_EXTENSION_KEY,
   type ResourceDocument,
 } from "@oaknational/resource-document";
@@ -492,7 +493,7 @@ describe("removing an accepted scaffold", () => {
 describe("dismissing transformations", () => {
   it("stores an approved revision with the invisible target marker", async () => {
     const currentDocument = await loadWorksheet();
-    const question = currentDocument.content.find((node) => node.type === "question");
+    const question = getResourceNodesByType(currentDocument, "question")[0];
     if (question === undefined) {
       throw new Error("The worksheet fixture needs a question.");
     }

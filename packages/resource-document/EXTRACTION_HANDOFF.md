@@ -1,7 +1,6 @@
 # Extraction markup handoff
 
-> WIP: This is a placeholder - it will be updated once we've created the first iteration
-> based on upcoming sample data.
+> WIP: This is the current expectation for ORA, subject to change depending on the results actually emitted by the extraction service.
 
 This is the starting point for the extraction team. For the `0.1` spike, the
 extractor emits one self-contained semantic-markup string.
@@ -123,6 +122,7 @@ is provisional and will be revised against real extraction samples.
 | Directive                | Canonical output  | Child blocks |
 | ------------------------ | ----------------- | ------------ |
 | `oak-section`            | `section`         | Yes          |
+| `oak-task`               | `task`            | Yes          |
 | `oak-heading`            | `heading`         | No           |
 | `oak-paragraph`          | `paragraph`       | No           |
 | `oak-learning-objective` | `callout`         | No           |
@@ -140,8 +140,11 @@ is provisional and will be revised against real extraction samples.
 
 <!-- vocabulary:end -->
 
-`oak-heading` requires `level` from 1 to 6. `oak-question` accepts `number`
-and non-negative `marks`. Questions cannot be nested. Callout aliases select
+`oak-heading` requires `level` from 1 to 6. `oak-task` wraps one practice
+task: its heading, if it has one, then everything that belongs to it. Every
+question belongs to a task, and a worksheet without task headings is a single
+task. `oak-question` accepts `number` and non-negative `marks`. Questions cannot
+be nested. Callout aliases select
 `learning-objective` or `instruction`; `oak-callout` requires a `role` of
 `learning-objective`, `instruction`, `note` or `warning`.
 `oak-answer-space` requires `kind` (`lines`, `box`, `grid`); `lines` requires

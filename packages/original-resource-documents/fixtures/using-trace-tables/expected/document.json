@@ -16,73 +16,85 @@
     },
     {
       "id": "task-a",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task A: Explain how to trace variable values"
-        }
-      ]
-    },
-    {
-      "id": "question-1",
-      "type": "question",
-      "label": "1",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-explain-what-a-trace-table-is-and-describe-how-and-why",
-          "type": "paragraph",
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Explain what a trace table is and describe how and why programmers use one."
+              "text": "Task A: Explain how to trace variable values"
             }
           ]
         },
         {
-          "id": "question-1-response",
-          "type": "responseSpace",
-          "kind": "lines",
-          "lines": 8
+          "id": "question-1",
+          "type": "question",
+          "label": "1",
+          "children": [
+            {
+              "id": "unstable:paragraph-explain-what-a-trace-table-is-and-describe-how-and-why",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Explain what a trace table is and describe how and why programmers use one."
+                }
+              ]
+            },
+            {
+              "id": "question-1-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 8
+            }
+          ]
         }
       ]
     },
     {
       "id": "task-b",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task B: Trace values in a while loop"
-        }
-      ]
-    },
-    {
-      "id": "question-2",
-      "type": "question",
-      "label": "2",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-create-a-trace-table-to-trace-the-values-of-line-varia",
-          "type": "paragraph",
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Create a trace table to trace the values of line, variable, count and conditions in this program."
+              "text": "Task B: Trace values in a while loop"
             }
           ]
         },
         {
-          "id": "countdown-program",
-          "type": "codeBlock",
-          "source": "from time import sleep\ncount = 5\nwhile count != 0:\n    print(count)\n    count = count - 1\n    sleep(1)"
-        },
-        {
-          "id": "question-2-response",
-          "type": "responseSpace",
-          "kind": "grid"
+          "id": "question-2",
+          "type": "question",
+          "label": "2",
+          "children": [
+            {
+              "id": "unstable:paragraph-create-a-trace-table-to-trace-the-values-of-line-varia",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Create a trace table to trace the values of line, variable, count and conditions in this program."
+                }
+              ]
+            },
+            {
+              "id": "countdown-program",
+              "type": "codeBlock",
+              "source": "from time import sleep\ncount = 5\nwhile count != 0:\n    print(count)\n    count = count - 1\n    sleep(1)"
+            },
+            {
+              "id": "question-2-response",
+              "type": "responseSpace",
+              "kind": "grid"
+            }
+          ]
         }
       ]
     }

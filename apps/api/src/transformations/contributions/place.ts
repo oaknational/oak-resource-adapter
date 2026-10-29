@@ -6,7 +6,7 @@ type Placement = (siblings: readonly ResourceNode[], index: number) => ResourceN
 function hasChildren(
   node: ResourceNode,
 ): node is Extract<ResourceNode, { children: ResourceNode[] }> {
-  return node.type === "question" || node.type === "section";
+  return "children" in node;
 }
 
 /**
@@ -104,19 +104,25 @@ export function insertBeneath(
   });
 }
 
-/**
- * Document-wide support leads the worksheet body: after a level 1 title, before
- * the first content node, or last when there is no body to lead.
- */
-export function insertAtStartOfBody(
+/** Copies the document with `node` leading its target's children, after any heading. */
+export function insertAtStart(
   document: ResourceDocument,
   node: ResourceNode,
+  targetBlockId: string,
 ): ResourceDocument {
-  const [firstNode, secondNode] = document.content;
-  const firstBodyNode =
-    firstNode?.type === "heading" && firstNode.level === 1 ? secondNode : firstNode;
+  return place(document, targetBlockId, (siblings, index) => {
+    const target = siblings[index];
+    if (target === undefined || !hasChildren(target)) {
+      throw new Error(
+        `Block ${JSON.stringify(targetBlockId)} has no children to lead.`,
+      );
+    }
+    const [first] = target.children;
+    const position = first?.type === "heading" ? 1 : 0;
 
-  return firstBodyNode === undefined
-    ? { ...document, content: [...document.content, node] }
-    : insertBefore(document, node, firstBodyNode.id);
+    return siblings.with(index, {
+      ...target,
+      children: target.children.toSpliced(position, 0, node),
+    });
+  });
 }

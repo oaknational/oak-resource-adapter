@@ -43,7 +43,7 @@ export async function expectSuggestionsReady(drawer: Locator) {
     drawer.getByRole("button", { name: "Add a word bank", exact: true }),
   ).toBeEnabled();
   await expect(
-    drawer.getByRole("button", { name: "Add recall questions", exact: true }),
+    drawer.getByRole("button", { name: "Add recall questions", exact: true }).first(),
   ).toBeEnabled();
 }
 

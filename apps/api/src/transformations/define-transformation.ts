@@ -108,6 +108,15 @@ function validateDeclaration(declaration: TransformationDeclaration): void {
     );
   }
 
+  if (
+    "offer" in declaration.suggestion &&
+    (declaration.params !== undefined || declaration.supportLevels !== undefined)
+  ) {
+    throw new Error(
+      `${declaration.kind} is always offered, so nothing would choose its params.`,
+    );
+  }
+
   const levels = declaration.supportLevels;
   if (levels === undefined) {
     return;

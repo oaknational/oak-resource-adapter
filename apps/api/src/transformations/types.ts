@@ -43,14 +43,30 @@ export type PupilBarrier =
 export type TransformationParams = Readonly<Record<string, unknown>>;
 export type TransformationParamsSchema = z.ZodType<TransformationParams>;
 
-export type TransformationSuggestionGuidance = Readonly<{
+type SuggestionDescription = Readonly<{
   /** Explains the change in terms useful to an agent choosing between kinds. */
   description: string;
-  /** Evidence in the current resource that makes this change useful. */
-  useWhen: string;
-  /** Evidence that the change would duplicate support or lower the task's ambition. */
-  avoidWhen: string;
 }>;
+
+/** The suggestion agent offers the kind where the resource gives it a reason. */
+export type ChosenSuggestionGuidance = SuggestionDescription &
+  Readonly<{
+    /** Evidence in the current resource that makes this change useful. */
+    useWhen: string;
+    /** Evidence that the change would duplicate support or lower the task's ambition. */
+    avoidWhen: string;
+  }>;
+
+/** Offered at every eligible target without asking the suggestion agent. */
+export type AlwaysOfferedSuggestionGuidance = SuggestionDescription &
+  Readonly<{
+    offer: "always";
+    /** Shown to the teacher with every offer. */
+    reason: string;
+  }>;
+
+export type TransformationSuggestionGuidance =
+  AlwaysOfferedSuggestionGuidance | ChosenSuggestionGuidance;
 
 /** Documents one run produced, in the order the definition declares. */
 export type TransformationDocuments = readonly [

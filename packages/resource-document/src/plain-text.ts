@@ -47,6 +47,7 @@ function alternativeText(alternative: AssetAlternative): string {
 function nodeText(node: ResourceNode, assets: ReadonlyMap<string, Asset>): string[] {
   switch (node.type) {
     case "section":
+    case "task":
       return [];
     case "question":
       return [node.label ?? ""];

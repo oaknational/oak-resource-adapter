@@ -16,121 +16,127 @@
     },
     {
       "id": "task-c",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task C: How can we adapt to climate change?"
-        }
-      ]
-    },
-    {
-      "id": "question-1",
-      "type": "question",
-      "label": "1",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-complete-the-table-explaining-why-each-method-for-adap",
-          "type": "paragraph",
+          "id": "task-c-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Complete the table, explaining why each method for adaptation is important."
+              "text": "Task C: How can we adapt to climate change?"
             }
           ]
         },
         {
-          "id": "adaptation-strategies",
-          "type": "table",
-          "role": "explanation",
-          "header": [
+          "id": "question-1",
+          "type": "question",
+          "label": "1",
+          "children": [
             {
-              "kind": "content",
+              "id": "unstable:paragraph-complete-the-table-explaining-why-each-method-for-adap",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "Adaptation strategy"
+                  "text": "Complete the table, explaining why each method for adaptation is important."
                 }
               ]
             },
             {
-              "kind": "content",
-              "content": [
+              "id": "adaptation-strategies",
+              "type": "table",
+              "role": "explanation",
+              "header": [
                 {
-                  "type": "text",
-                  "text": "Explanation"
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Adaptation strategy"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Explanation"
+                    }
+                  ]
                 }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Growing drought resistant crops"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Building flood defences"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Managing water sources"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
               ]
-            }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Growing drought resistant crops"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Building flood defences"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Managing water sources"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "id": "question-2",
-      "type": "question",
-      "label": "2",
-      "children": [
-        {
-          "id": "unstable:paragraph-explain-why-we-should-consider-adaptation-and-mitigati",
-          "type": "paragraph",
-          "content": [
-            {
-              "type": "text",
-              "text": "Explain why we should consider adaptation and mitigation strategies when trying to tackle climate change."
             }
           ]
         },
         {
-          "id": "question-2-response",
-          "type": "responseSpace",
-          "kind": "lines",
-          "lines": 5
+          "id": "question-2",
+          "type": "question",
+          "label": "2",
+          "children": [
+            {
+              "id": "unstable:paragraph-explain-why-we-should-consider-adaptation-and-mitigati",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Explain why we should consider adaptation and mitigation strategies when trying to tackle climate change."
+                }
+              ]
+            },
+            {
+              "id": "question-2-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 5
+            }
+          ]
         }
       ]
     }

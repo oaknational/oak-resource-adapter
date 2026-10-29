@@ -43,7 +43,7 @@ A definition carries:
 | `kind`                 | The stable internal name stored in the database.                                                      |
 | `status`               | `draft` for experiments, `active` for product-ready work, `retired` for work withdrawn from teachers. |
 | `label`                | What the teacher reads.                                                                               |
-| `suggestion`           | What a suggestion flow uses to decide when this change is useful.                                     |
+| `suggestion`           | When a suggestion flow should offer this change, or `offer: "always"` to offer it at every target.    |
 | `params`               | Strict arguments beyond the support level, if it takes any.                                           |
 | `target`               | The whole document, or one node selected from declared node types.                                    |
 | `outputs`              | What it produces, in order: a revision, companion documents, or both.                                 |
@@ -151,11 +151,11 @@ output rather than prose. A contribution prepares its exact schema against the
 validated request, so support level can change both the model contract and the
 document it produces. `invokeStructured` enforces that schema. Placement is the
 contribution's decision, so a prompt cannot move a scaffold somewhere the
-transformation did not intend. Task-targeted support lands beneath its task and
-before the space a pupil writes in; document-wide support can instead lead the
-worksheet body. Every node a contribution adds carries the contribution ID in its
-extensions, which is how a later transformation removes or replaces exactly this
-work.
+transformation did not intend. Question-targeted support lands beneath its
+question and before the space a pupil writes in; support for a whole task leads
+the task, after its heading. Every node a contribution adds carries the
+contribution ID in its extensions, which is how a later transformation removes or
+replaces exactly this work.
 
 The initial-scaffolding workflow treats only the transformation that produced the
 current head as pending review. Retry creates another attempt for the same
@@ -228,6 +228,10 @@ the options of its `inputs`. Its structured response is validated again through
 the transformation's params, target and availability rules. An offer that fails
 that second pass, or repeats a change already offered for the same target, is
 dropped rather than failing the batch. Returning no suggestions is valid.
+
+A kind whose `suggestion` declares `offer: "always"` is never shown to the model.
+It is offered at each of its eligible targets with its fixed `reason`, ahead of
+the model's choices, and the model is not called when nothing else is eligible.
 
 When a teacher chooses **No scaffold required**, the workflow creates a generated
 revision with an invisible `oak:transformations-dismissed` extension on that node
