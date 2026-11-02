@@ -14,9 +14,7 @@ import { afterEach, beforeAll, beforeEach, expect, vi } from "vitest";
 
 import type { TransformationContribution } from "../transformations/contributions/contribution";
 import { sentenceStartersContribution } from "../transformations/definitions/scaffold-add-sentence-starters/contribution";
-import { wordBankContribution } from "../transformations/definitions/scaffold-add-word-bank/contribution";
 import { chunkTasksContribution } from "../transformations/definitions/scaffold-chunk-tasks/contribution";
-import type { SupportLevel } from "../transformations/support-level";
 
 export interface XmlNode {
   [name: string]: XmlNode[] | Record<string, string> | string | undefined;
@@ -181,8 +179,7 @@ export function expectRowHeight(row: XmlNode, height: number) {
   });
 }
 
-type ScaffoldKind =
-  "scaffold-chunk-tasks" | "scaffold-add-sentence-starters" | "scaffold-add-word-bank";
+type ScaffoldKind = "scaffold-chunk-tasks" | "scaffold-add-sentence-starters";
 
 const scaffolds: Readonly<
   Record<
@@ -190,7 +187,6 @@ const scaffolds: Readonly<
     Readonly<{
       contribution: TransformationContribution;
       output: unknown;
-      supportLevel?: SupportLevel;
     }>
   >
 > = {
@@ -209,11 +205,6 @@ const scaffolds: Readonly<
     contribution: sentenceStartersContribution,
     output: { lines: ["Metals form positive ions because", "This means that"] },
   },
-  "scaffold-add-word-bank": {
-    contribution: wordBankContribution,
-    output: { entries: [{ term: "ion" }, { term: "electron" }] },
-    supportLevel: "low",
-  },
 };
 
 /** Adds a scaffold to a question using the same code the app uses. */
@@ -226,13 +217,12 @@ export function withScaffold(
     (node) => node.id === questionId,
   );
   if (targetNode === undefined) throw new Error(`No node ${questionId} to scaffold.`);
-  const { contribution, output, supportLevel } = scaffolds[kind];
+  const { contribution, output } = scaffolds[kind];
   const prepared = contribution.prepare({
     contributionId: `${kind}-${questionId}`,
     document,
     material: {},
     params: {},
-    supportLevel,
     targetNode,
     transformationKind: kind,
   });

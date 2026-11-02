@@ -507,8 +507,7 @@ async function renderNode(
         })),
       ];
     }
-    case "definitionList": {
-      const chained = keepNext ? { keepNext: true } : {};
+    case "definitionList":
       return [
         ...(node.lead ? inlineParagraphs(node.lead, paragraphOptions) : []),
         ...node.entries.flatMap((entry) => [
@@ -518,17 +517,16 @@ async function renderNode(
             { bold: true },
           ),
           ...(entry.definition
-            ? inlineParagraphs(entry.definition, { indent: { left: 240 }, ...chained })
+            ? inlineParagraphs(entry.definition, { indent: { left: 240 }, keepNext })
             : []),
           ...(entry.example
             ? inlineParagraphs(
                 [{ type: "text", text: "Example: " }, ...entry.example],
-                { indent: { left: 240 }, ...chained },
+                { indent: { left: 240 }, keepNext },
               )
             : []),
         ]),
       ];
-    }
     case "responseSpace":
       return responseSpace(node, keepNext);
     case "figure":

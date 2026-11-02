@@ -97,6 +97,17 @@ describe("keptWithFollowingContent", () => {
       kept: ["prompt-a", "prompt-b"],
     },
     {
+      label: "a figure opening the next part",
+      children: [
+        text("prompt-a"),
+        space("lines-a", "lines"),
+        figure,
+        text("prompt-b"),
+        space("lines-b", "lines"),
+      ],
+      kept: ["prompt-a", "figure", "prompt-b"],
+    },
+    {
       label: "consecutive tables",
       children: [text("prompt"), table("t1"), table("t2")],
       kept: ["prompt", "t1"],
@@ -162,15 +173,6 @@ describe("keptWithFollowingContent", () => {
         space("box"),
       ],
       kept: ["s2", "s3"],
-    },
-    {
-      label: "an explicit opt-out on a step",
-      children: [
-        text("prompt"),
-        steps({ s2: { keepWithNext: false } }, ["s1", "s2", "s3"]),
-        space("box"),
-      ],
-      kept: ["prompt", "s1", "s2", "s3"],
     },
   ])("keeps $kept for $label", ({ children, kept }) => {
     const ids = [

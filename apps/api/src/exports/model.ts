@@ -96,16 +96,17 @@ export function keptWithFollowingContent(
 ): ReadonlySet<ResourceNode> {
   const leaves = leavesOf(question.children);
   const kept = new Set<ResourceNode>();
-  let followingKept = false;
   for (let index = leaves.length - 1; index >= 0; index -= 1) {
     const { node, breakAfter } = leaves[index]!;
     const next = leaves[index + 1]?.node;
-    const keep: boolean =
+    if (
       next !== undefined &&
       !breakAfter &&
-      (introducedByPrompt(next) || (node.type !== "responseSpace" && followingKept));
-    if (keep) kept.add(node);
-    followingKept = keep;
+      node.type !== "responseSpace" &&
+      (introducedByPrompt(next) || kept.has(next))
+    ) {
+      kept.add(node);
+    }
   }
   return kept;
 }
