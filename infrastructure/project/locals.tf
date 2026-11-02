@@ -44,9 +44,13 @@ locals {
     }
   }
 
+  # Vercel picks pnpm from the lockfile version, which pnpm 11 leaves at 9.0;
+  # Corepack makes builds use the root packageManager version instead.
   plain_values = {
-    api_preview    = { DATABASE_CA_CERT = var.database_ca_cert_staging }
-    api_production = { DATABASE_CA_CERT = var.database_ca_cert_production }
+    api_shared      = { ENABLE_EXPERIMENTAL_COREPACK = "1" }
+    api_preview     = { DATABASE_CA_CERT = var.database_ca_cert_staging }
+    api_production  = { DATABASE_CA_CERT = var.database_ca_cert_production }
+    harness_preview = { ENABLE_EXPERIMENTAL_COREPACK = "1" }
   }
 
   groups = {

@@ -1,8 +1,8 @@
 version: 2
 updates:
   - package-ecosystem: npm
-    # .npmrc sets shared-workspace-lockfile=true, so there is one root
-    # lockfile; per-package entries would conflict over it.
+    # The workspace has one root lockfile; per-package entries would conflict
+    # over it.
     directory: /
     schedule:
       interval: weekly
