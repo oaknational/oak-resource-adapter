@@ -172,7 +172,7 @@ function anHourFromNow(): string {
 
 const fullAccess = { tier: "full" } as const;
 
-function limitedAllowance(remaining: number, resetsAt = "2026-11-01T00:00:00.000Z") {
+function limitedAllowance(remaining: number, resetsAt = "2099-11-01T00:00:00.000Z") {
   return { limit: 3, remaining, resetsAt, tier: "limited" } as const;
 }
 
@@ -938,7 +938,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
       opened(readyState(), {
         limit: 100_000,
         remaining: 99_999,
-        resetsAt: "2026-11-01T00:00:00.000Z",
+        resetsAt: "2099-11-01T00:00:00.000Z",
         tier: "limited",
       }),
     );
