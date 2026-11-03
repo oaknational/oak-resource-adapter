@@ -23,6 +23,7 @@ import {
   text,
   unpack,
   worksheetFixture,
+  type XmlNode,
 } from "./docx.test-support";
 import type { ImageLoader } from "./images";
 
@@ -757,5 +758,325 @@ describe("DOCX synthetic node semantics", () => {
     ]);
     expect(text(one(part("docProps/core.xml"), "dc:title"))).toBe("Title <&> 😀");
     expect(document).toEqual(before);
+  });
+});
+
+describe("DOCX question grouping", () => {
+  type Layout = NonNullable<ResourceNode["layout"]>;
+
+  function steps(prefix: string, count = 3): ResourceNode {
+    return {
+      id: `${prefix}-steps`,
+      type: "section",
+      children: Array.from({ length: count }, (_, index) =>
+        paragraph(`${prefix}-step-${index + 1}`, `${prefix} step ${index + 1}`),
+      ),
+    };
+  }
+
+  function answer(
+    prefix: string,
+    kind: "box" | "lines" | "grid",
+    lines = 4,
+  ): ResourceNode {
+    return {
+      id: `${prefix}-answer`,
+      type: "responseSpace",
+      kind,
+      ...(kind === "lines" ? { lines } : {}),
+    };
+  }
+
+  function question(label: string, nodes: ResourceNode[]): ResourceNode {
+    return { id: `question-${label}`, type: "question", label, children: nodes };
+  }
+
+  function withLayout(
+    nodes: ResourceNode[],
+    id: string,
+    layout: Layout,
+  ): ResourceNode[] {
+    return nodes.map((node) => {
+      if (node.id === id) return { ...node, layout };
+      if (node.type === "section")
+        return { ...node, children: withLayout(node.children, id, layout) };
+      return node;
+    });
+  }
+
+  async function exported(content: ResourceNode[]) {
+    return unpack(await generateDocx(documentWith(content), { embedFigures: false }));
+  }
+
+  function keptNext(nodes: XmlNode[]): boolean[] {
+    return nodes.map((node) => enabled([node], "w:keepNext").length > 0);
+  }
+
+  function beforeFirstTable(body: XmlNode[]): XmlNode[] {
+    return body.slice(
+      0,
+      body.findIndex((node) => Object.hasOwn(node, "w:tbl")),
+    );
+  }
+
+  it.each(["box", "lines", "grid"] as const)(
+    "keeps a question's prompt and scaffold steps with the start of its %s",
+    async (kind) => {
+      const { body, paragraphs } = await exported([
+        question("1", [
+          paragraph("prompt", "Draw the ion."),
+          steps("1"),
+          answer("1", kind),
+        ]),
+      ]);
+
+      const lead = beforeFirstTable(body);
+      expect(lead.map(text)).toEqual([
+        "Question 1",
+        "Draw the ion.",
+        "1 step 1",
+        "1 step 2",
+        "1 step 3",
+      ]);
+      expect(keptNext(lead)).toEqual(lead.map(() => true));
+      const tableRows = rows(one(body, "w:tbl"));
+      if (kind === "box") expect(tableRows).toHaveLength(1);
+      for (const row of tableRows) {
+        expect(enabled([row], "w:cantSplit")).toHaveLength(1);
+        expect(enabled([row], "w:keepNext")).toHaveLength(0);
+      }
+      expect(keptNext([paragraphs.at(-1)!])).toEqual([false]);
+      expect(enabled(body, "w:pageBreakBefore")).toHaveLength(0);
+    },
+  );
+
+  it.each([
+    {
+      label: "defined terms",
+      entries: [
+        { term: inline("ion"), definition: inline("a charged particle") },
+        { term: inline("shell"), definition: inline("an energy level") },
+      ],
+    },
+    {
+      label: "terms only",
+      entries: [{ term: inline("ion") }, { term: inline("shell") }],
+    },
+  ])(
+    "keeps every line of a word bank of $label with its answer",
+    async ({ entries }) => {
+      const { body } = await exported([
+        question("1", [
+          paragraph("prompt", "Explain how an ion forms."),
+          {
+            id: "1-bank",
+            type: "definitionList",
+            lead: inline("Vocabulary you could include:"),
+            entries,
+          },
+          answer("1", "lines", 4),
+        ]),
+      ]);
+
+      const lead = beforeFirstTable(body);
+      expect(lead.length).toBeGreaterThan(4);
+      expect(keptNext(lead)).toEqual(lead.map(() => true));
+    },
+  );
+
+  it("keeps stacked scaffolds together with the answer", async () => {
+    const { body } = await exported([
+      question("1", [
+        paragraph("prompt", "Explain how an ion forms."),
+        {
+          id: "1-starters",
+          type: "section",
+          children: [
+            paragraph("1-starters-lead", "You could begin your answer like this:"),
+            paragraph("1-starter-1", "Metals form positive ions because"),
+          ],
+        },
+        {
+          id: "1-bank",
+          type: "definitionList",
+          lead: inline("Vocabulary you could include:"),
+          entries: [{ term: inline("ion") }, { term: inline("electron") }],
+        },
+        answer("1", "box"),
+      ]),
+    ]);
+
+    const lead = beforeFirstTable(body);
+    expect(lead.map(text)).toEqual([
+      "Question 1",
+      "Explain how an ion forms.",
+      "You could begin your answer like this:",
+      "Metals form positive ions because",
+      "Vocabulary you could include:",
+      "ion",
+      "electron",
+    ]);
+    expect(keptNext(lead)).toEqual(lead.map(() => true));
+  });
+
+  it("keeps a whole definition list with following content when it asks to", async () => {
+    const { paragraphs } = await exported([
+      {
+        id: "bank",
+        type: "definitionList",
+        entries: [
+          { term: inline("ion"), definition: inline("a charged particle") },
+          { term: inline("shell"), definition: inline("an energy level") },
+        ],
+        layout: { keepWithNext: true },
+      },
+      paragraph("after", "Following content"),
+    ]);
+
+    expect(keptNext(paragraphs)).toEqual([true, true, true, true, false]);
+  });
+
+  it("does not chain one question to the next", async () => {
+    const { body } = await exported([
+      question("1", [
+        paragraph("1-prompt", "First prompt."),
+        steps("1"),
+        answer("1", "box"),
+      ]),
+      question("2", [
+        paragraph("2-prompt", "Second prompt."),
+        steps("2"),
+        answer("2", "box"),
+      ]),
+    ]);
+
+    const second = body.findIndex((node) => text(node) === "Question 2");
+    const [box, spacer] = body.slice(second - 2, second);
+    expect(Object.hasOwn(box!, "w:tbl")).toBe(true);
+    expect(enabled([box!], "w:keepNext")).toHaveLength(0);
+    expect(keptNext([spacer!, body[second]!])).toEqual([false, true]);
+  });
+
+  it.each([
+    { label: "before the scaffold", id: "1-steps", layout: { breakBefore: "page" } },
+    { label: "after the scaffold", id: "1-steps", layout: { breakAfter: "page" } },
+    { label: "after a step", id: "1-step-1", layout: { breakAfter: "page" } },
+    { label: "before the answer", id: "1-answer", layout: { breakBefore: "page" } },
+  ] as const)(
+    "ends the group at an explicit page break $label",
+    async ({ id, layout }) => {
+      const { body } = await exported([
+        question(
+          "1",
+          withLayout(
+            [paragraph("prompt", "Draw the ion."), steps("1"), answer("1", "box")],
+            id,
+            layout,
+          ),
+        ),
+      ]);
+
+      expect(enabled(body, "w:pageBreakBefore")).toHaveLength(1);
+      const broken = body.findIndex(
+        (node) => enabled([node], "w:pageBreakBefore").length > 0,
+      );
+      expect(keptNext([body[broken - 1]!])).toEqual([false]);
+      expect(body.map(text).filter(Boolean)).toEqual([
+        "Question 1",
+        "Draw the ion.",
+        "1 step 1",
+        "1 step 2",
+        "1 step 3",
+      ]);
+    },
+  );
+
+  it("lets one step opt out without unchaining the rest", async () => {
+    const { paragraphs } = await exported([
+      question(
+        "1",
+        withLayout(
+          [paragraph("prompt", "Draw the ion."), steps("1", 4), answer("1", "box")],
+          "1-step-2",
+          { keepWithNext: false },
+        ),
+      ),
+    ]);
+
+    const lead = paragraphs.filter((node) => /^(Draw|1 step)/.test(text(node)));
+    expect(keptNext(lead)).toEqual([true, true, false, true, true]);
+  });
+
+  it("keeps every paragraph of a step that holds display maths", async () => {
+    const { body } = await exported([
+      question("1", [
+        paragraph("prompt", "Write the equation."),
+        {
+          id: "1-steps",
+          type: "section",
+          children: [
+            {
+              id: "1-step-1",
+              type: "paragraph",
+              content: [
+                { type: "text", text: "Balance the charges:" },
+                {
+                  type: "math",
+                  value: "Be \\rightarrow Be^{2+} + 2e^-",
+                  display: true,
+                },
+                { type: "text", text: "then check both sides." },
+              ],
+            },
+            paragraph("1-step-2", "1 step 2"),
+          ],
+        },
+        answer("1", "box"),
+      ]),
+    ]);
+
+    const lead = beforeFirstTable(body);
+    expect(lead).toHaveLength(6);
+    expect(keptNext(lead)).toEqual(lead.map(() => true));
+  });
+
+  it("chains through an empty section before the answer", async () => {
+    const { body } = await exported([
+      question("1", [
+        paragraph("prompt", "Draw the ion."),
+        steps("1"),
+        { id: "empty", type: "section", children: [] },
+        answer("1", "box"),
+      ]),
+    ]);
+
+    const lead = beforeFirstTable(body);
+    expect(lead).toHaveLength(5);
+    expect(keptNext(lead)).toEqual(lead.map(() => true));
+  });
+
+  it("still emits the group, whole, for content longer than a page", async () => {
+    const stem = Array.from({ length: 60 }, (_, index) =>
+      paragraph(
+        `1-stem-${index}`,
+        `Stem paragraph ${index}: ${"long enough to fill most of a line. ".repeat(3).trim()}`,
+      ),
+    );
+    const { body } = await exported([
+      question("1", [...stem, steps("1", 5), answer("1", "lines", 40)]),
+      question("2", [paragraph("2-prompt", "Second prompt."), answer("2", "box")]),
+    ]);
+
+    const [writing, box] = select(body, "w:tbl");
+    const lead = body.slice(0, body.indexOf(writing!));
+    expect(lead).toHaveLength(1 + 60 + 5);
+    expect(keptNext(lead)).toEqual(lead.map(() => true));
+    expect(rows(writing!)).toHaveLength(40);
+    for (const row of rows(writing!))
+      expect(enabled([row], "w:keepNext")).toHaveLength(0);
+    const [boxRow] = rows(box!);
+    expectRowHeight(boxRow!, 2400);
+    expect(enabled([boxRow!], "w:cantSplit")).toHaveLength(1);
+    expect(enabled(body, "w:pageBreakBefore")).toHaveLength(0);
   });
 });

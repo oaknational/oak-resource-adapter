@@ -24,6 +24,7 @@ import {
   setupDocxTests,
   text,
   unpack,
+  withScaffold,
   worksheetFixture,
 } from "./docx.test-support";
 
@@ -185,6 +186,74 @@ describe("DOCX worksheetFixture() exports", () => {
       expect(index).toBeGreaterThan(-1);
       expect(enabled([body[index]!], "w:keepNext")).toHaveLength(1);
       expect(Object.hasOwn(body[index + 1]!, nextTag)).toBe(true);
+    },
+  );
+
+  it("keeps a scaffolded forming-ions Question 3 together wherever it falls", async () => {
+    const { expectedDocument } = await loadOriginalResourceDocumentFixture(
+      "forming-ions-for-ionic-bonding",
+    );
+    const inPlace = withScaffold(
+      expectedDocument,
+      "question-3",
+      "scaffold-chunk-tasks",
+    );
+    const pushedDown = withScaffold(
+      inPlace,
+      "question-2",
+      "scaffold-add-sentence-starters",
+    );
+    const groups: boolean[][] = [];
+    for (const document of [inPlace, pushedDown]) {
+      const { body } = unpack(await generateDocx(document, { embedFigures: false }));
+      const heading = body.findIndex((node) => text(node) === "Question 3");
+      const box = body.findIndex(
+        (node, index) => index > heading && Object.hasOwn(node, "w:tbl"),
+      );
+      const group = body.slice(heading, box);
+      expect(group.map(text)).toEqual([
+        "Question 3",
+        expect.stringMatching(/^Beryllium, Be, is in Group 2/),
+        "Step 1: Find beryllium in Group 2 of the periodic table.",
+        "Step 2: Write its electronic configuration, 2,2.",
+        "Step 3: Remove its two outer electrons.",
+        "Step 4: Draw the ion in square brackets with its 2+ charge.",
+      ]);
+      const [boxRow, ...otherRows] = rows(body[box]!);
+      expect(otherRows).toHaveLength(0);
+      expect(enabled([boxRow!], "w:cantSplit")).toHaveLength(1);
+      expect(enabled([body[heading - 1]!], "w:keepNext")).toHaveLength(0);
+      expect(enabled(body, "w:pageBreakBefore")).toHaveLength(0);
+      groups.push(group.map((node) => enabled([node], "w:keepNext").length > 0));
+    }
+
+    expect(groups[0]).toEqual(groups[0]!.map(() => true));
+    expect(groups[1]).toEqual(groups[0]);
+  });
+
+  it.each([
+    {
+      fixtureId: "school-life-singular-verbs-like-choisir-questions-with-qui",
+      prefix: "Parle, écoute et répète",
+    },
+    {
+      fixtureId: "what-greek-myths-can-tell-us-about-ancient-greece",
+      prefix: "Add notes to the diagram",
+    },
+  ])(
+    "keeps every stem paragraph with its table in $fixtureId",
+    async ({ fixtureId, prefix }) => {
+      const { expectedDocument } = await loadOriginalResourceDocumentFixture(fixtureId);
+      const { body } = unpack(
+        await generateDocx(expectedDocument, { embedFigures: false }),
+      );
+      const start = body.findIndex((node) => text(node).startsWith(prefix));
+      const table = body.findIndex(
+        (node, index) => index > start && Object.hasOwn(node, "w:tbl"),
+      );
+      const stem = body.slice(start, table);
+      expect(stem.length).toBeGreaterThan(1);
+      for (const node of stem) expect(enabled([node], "w:keepNext")).toHaveLength(1);
     },
   );
 
