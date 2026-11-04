@@ -16,97 +16,109 @@
     },
     {
       "id": "task-a",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task A: Switching perspectives"
-        }
-      ]
-    },
-    {
-      "id": "task-a-instruction",
-      "layout": {
-        "keepWithNext": true
-      },
-      "type": "callout",
-      "role": "instruction",
-      "content": [
-        {
-          "type": "text",
-          "text": "Write the same scene from two different perspectives. Begin with a short paragraph in the past tense and third person. Then describe Addie's thoughts in the present tense and first person."
-        }
-      ]
-    },
-    {
-      "id": "question-1",
-      "type": "question",
-      "label": "1",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-write-your-version-of-the-scene-use-sentence-variety-a",
-          "type": "paragraph",
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Write your version of the scene. Use sentence variety and description in the third-person paragraph. Focus on Addie's feelings, thoughts and questions in the first-person paragraph."
+              "text": "Task A: Switching perspectives"
             }
           ]
         },
         {
-          "id": "question-1-response",
-          "type": "responseSpace",
-          "kind": "lines",
-          "lines": 12
+          "id": "task-a-instruction",
+          "layout": {
+            "keepWithNext": true
+          },
+          "type": "callout",
+          "role": "instruction",
+          "content": [
+            {
+              "type": "text",
+              "text": "Write the same scene from two different perspectives. Begin with a short paragraph in the past tense and third person. Then describe Addie's thoughts in the present tense and first person."
+            }
+          ]
+        },
+        {
+          "id": "question-1",
+          "type": "question",
+          "label": "1",
+          "children": [
+            {
+              "id": "unstable:paragraph-write-your-version-of-the-scene-use-sentence-variety-a",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Write your version of the scene. Use sentence variety and description in the third-person paragraph. Focus on Addie's feelings, thoughts and questions in the first-person paragraph."
+                }
+              ]
+            },
+            {
+              "id": "question-1-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 12
+            }
+          ]
         }
       ]
     },
     {
       "id": "task-b",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task B: Writing an internal monologue"
-        }
-      ]
-    },
-    {
-      "id": "task-b-instruction",
-      "layout": {
-        "keepWithNext": true
-      },
-      "type": "callout",
-      "role": "instruction",
-      "content": [
-        {
-          "type": "text",
-          "text": "Write an internal monologue for Addie. Use present tense, first person, repetition, contractions, ellipsis, rhetorical questions, informal sentence openers and sensory detail."
-        }
-      ]
-    },
-    {
-      "id": "question-2",
-      "type": "question",
-      "label": "2",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-show-what-addie-thinks-and-feels-at-this-moment-includ",
-          "type": "paragraph",
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Show what Addie thinks and feels at this moment, including how her senses become overwhelming."
+              "text": "Task B: Writing an internal monologue"
             }
           ]
         },
         {
-          "id": "question-2-response",
-          "type": "responseSpace",
-          "kind": "lines",
-          "lines": 14
+          "id": "task-b-instruction",
+          "layout": {
+            "keepWithNext": true
+          },
+          "type": "callout",
+          "role": "instruction",
+          "content": [
+            {
+              "type": "text",
+              "text": "Write an internal monologue for Addie. Use present tense, first person, repetition, contractions, ellipsis, rhetorical questions, informal sentence openers and sensory detail."
+            }
+          ]
+        },
+        {
+          "id": "question-2",
+          "type": "question",
+          "label": "2",
+          "children": [
+            {
+              "id": "unstable:paragraph-show-what-addie-thinks-and-feels-at-this-moment-includ",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Show what Addie thinks and feels at this moment, including how her senses become overwhelming."
+                }
+              ]
+            },
+            {
+              "id": "question-2-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 14
+            }
+          ]
         }
       ]
     }

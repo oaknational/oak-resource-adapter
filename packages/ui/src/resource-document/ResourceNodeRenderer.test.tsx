@@ -21,6 +21,14 @@ const examples = {
     type: "section",
     children: [{ id: "p", type: "paragraph", content: [...text] }],
   },
+  task: {
+    id: "task",
+    type: "task",
+    children: [
+      { id: "task-heading", type: "heading", level: 2, content: [...text] },
+      { id: "task-p", type: "paragraph", content: [...text] },
+    ],
+  },
   heading: { id: "heading", type: "heading", level: 1, content: [...text] },
   paragraph: { id: "paragraph", type: "paragraph", content: [...text] },
   callout: { id: "callout", type: "callout", role: "instruction", content: [...text] },

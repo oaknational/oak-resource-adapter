@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
+import { resourceDirectiveNames } from "../vocabulary.js";
 import { parseResourceMarkup, safeParseResourceMarkup } from "./parse.js";
 
 const genericFrontmatter = [
@@ -277,10 +278,22 @@ describe("tables and code", () => {
 });
 
 describe("the canonical document", () => {
-  it("parses every directive, heading and paragraph form", () => {
-    const fixture = (name: string) =>
-      readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
+  const fixture = (name: string) =>
+    readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
 
+  it("uses every directive in the vocabulary", () => {
+    const used = new Set(
+      fixture("every-directive.mmd")
+        .match(/^:::oak-[a-z-]+/gm)
+        ?.map((line) => line.slice(3)),
+    );
+
+    expect(
+      resourceDirectiveNames().filter((directive) => !used.has(directive)),
+    ).toEqual([]);
+  });
+
+  it("parses every directive, heading and paragraph form", () => {
     expect(parseResourceMarkup(fixture("every-directive.mmd"))).toEqual(
       JSON.parse(fixture("every-directive.json")),
     );

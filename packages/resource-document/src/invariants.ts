@@ -32,7 +32,7 @@ function visitNodes(
     const path = [...basePath, index];
     visit({ node, path, insideQuestion });
 
-    if (node.type === "section" || node.type === "question") {
+    if ("children" in node) {
       visitNodes(
         node.children,
         [...path, "children"],

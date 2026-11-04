@@ -1,3 +1,4 @@
+import { getResourceNodesByType } from "@oaknational/resource-document";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import { buildLesson } from "@oaknational/resource-adapter-curriculum";
 import { transformationCatalogueSchema } from "@oaknational/resource-adapter-dev-api-contracts";
@@ -57,9 +58,7 @@ beforeAll(async () => {
     ...lesson,
     resourceType: "worksheet",
   });
-  const first = worksheet.content.find(
-    (node): node is QuestionNode => node.type === "question",
-  );
+  const first = getResourceNodesByType(worksheet, "question")[0];
   if (first === undefined) {
     throw new Error("The fixture has no question.");
   }

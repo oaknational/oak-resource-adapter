@@ -70,6 +70,7 @@ function nodeLines(node: ResourceNode, depth: number): string[] {
 
   switch (node.type) {
     case "section":
+    case "task":
       return [header, ...node.children.flatMap((child) => nodeLines(child, depth + 1))];
     case "question": {
       const label = node.label === undefined ? "" : ` ${node.label}`;

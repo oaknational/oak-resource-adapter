@@ -30,171 +30,183 @@
     },
     {
       "id": "task-a",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task A: Words historians use"
-        }
-      ]
-    },
-    {
-      "id": "question-1",
-      "type": "question",
-      "label": "1",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-write-the-meaning-of-each-word-in-your-own-words",
-          "type": "paragraph",
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Write the meaning of each word in your own words."
+              "text": "Task A: Words historians use"
             }
           ]
         },
         {
-          "id": "vocabulary",
-          "type": "table",
-          "role": "vocabulary",
-          "header": [
+          "id": "question-1",
+          "type": "question",
+          "label": "1",
+          "children": [
             {
-              "kind": "content",
+              "id": "unstable:paragraph-write-the-meaning-of-each-word-in-your-own-words",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "Word"
+                  "text": "Write the meaning of each word in your own words."
                 }
               ]
             },
             {
-              "kind": "content",
-              "content": [
+              "id": "vocabulary",
+              "type": "table",
+              "role": "vocabulary",
+              "header": [
                 {
-                  "type": "text",
-                  "text": "What it means"
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Word"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "What it means"
+                    }
+                  ]
                 }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "civilisation"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "BCE"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "fertile"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
               ]
             }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "civilisation"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "BCE"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "fertile"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ]
           ]
         }
       ]
     },
     {
       "id": "task-b",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task B: Why the Nile mattered"
-        }
-      ]
-    },
-    {
-      "id": "reading",
-      "layout": {
-        "keepWithNext": true
-      },
-      "type": "callout",
-      "role": "instruction",
-      "content": [
-        {
-          "type": "text",
-          "text": "The Ancient Egyptians lived beside a long, deep river they called the Nile, in North Africa. Dry land on either side protected them from their enemies."
-        }
-      ]
-    },
-    {
-      "id": "question-2",
-      "type": "question",
-      "label": "2",
-      "marks": 2,
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-the-nile-carried-a-dark-black-mud-explain-what-happene",
-          "type": "paragraph",
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "The Nile carried a dark black mud. Explain what happened to the land when the river flooded."
+              "text": "Task B: Why the Nile mattered"
             }
           ]
         },
         {
-          "id": "question-2-response",
-          "type": "responseSpace",
-          "kind": "lines",
-          "lines": 4
-        }
-      ]
-    },
-    {
-      "id": "question-3",
-      "type": "question",
-      "label": "3",
-      "marks": 3,
-      "children": [
-        {
-          "id": "unstable:paragraph-around-3-000-bce-the-two-kingdoms-of-upper-egypt-and-l",
-          "type": "paragraph",
+          "id": "reading",
+          "layout": {
+            "keepWithNext": true
+          },
+          "type": "callout",
+          "role": "instruction",
           "content": [
             {
               "type": "text",
-              "text": "Around 3,000 BCE the two kingdoms of Upper Egypt and Lower Egypt were united. Why might a river have helped to join the two kingdoms together?"
+              "text": "The Ancient Egyptians lived beside a long, deep river they called the Nile, in North Africa. Dry land on either side protected them from their enemies."
             }
           ]
         },
         {
-          "id": "question-3-response",
-          "type": "responseSpace",
-          "kind": "lines",
-          "lines": 6
+          "id": "question-2",
+          "type": "question",
+          "label": "2",
+          "marks": 2,
+          "children": [
+            {
+              "id": "unstable:paragraph-the-nile-carried-a-dark-black-mud-explain-what-happene",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The Nile carried a dark black mud. Explain what happened to the land when the river flooded."
+                }
+              ]
+            },
+            {
+              "id": "question-2-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 4
+            }
+          ]
+        },
+        {
+          "id": "question-3",
+          "type": "question",
+          "label": "3",
+          "marks": 3,
+          "children": [
+            {
+              "id": "unstable:paragraph-around-3-000-bce-the-two-kingdoms-of-upper-egypt-and-l",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Around 3,000 BCE the two kingdoms of Upper Egypt and Lower Egypt were united. Why might a river have helped to join the two kingdoms together?"
+                }
+              ]
+            },
+            {
+              "id": "question-3-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 6
+            }
+          ]
         }
       ]
     }

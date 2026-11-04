@@ -448,9 +448,7 @@ async function renderNodes(
     );
     // Containers consume the pending break at their first rendered descendant.
     blocks.push(
-      ...(node.type === "section" || node.type === "question"
-        ? rendered
-        : consumePageBreak(rendered, context)),
+      ...("children" in node ? rendered : consumePageBreak(rendered, context)),
     );
     if (node.type === "heading") {
       currentHeading = headingLevel(context.enclosingQuestionLevel, node.level);
@@ -472,6 +470,7 @@ async function renderNode(
   };
   switch (node.type) {
     case "section":
+    case "task":
       return renderNodes(node.children, context);
     case "heading":
       return inlineParagraphs(node.content, {

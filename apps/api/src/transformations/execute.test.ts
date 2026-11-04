@@ -1,3 +1,7 @@
+import {
+  getResourceNodeById,
+  getResourceNodesByType,
+} from "@oaknational/resource-document";
 import { definePromptTemplate } from "@oaknational/resource-adapter-ai";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -152,9 +156,7 @@ beforeAll(async () => {
     programmeSlug: "english-primary-ks2",
     resourceType: "worksheet",
   });
-  const [question] = worksheet.content.filter(
-    (node): node is QuestionNode => node.type === "question",
-  );
+  const [question] = getResourceNodesByType(worksheet, "question");
 
   if (question === undefined) {
     throw new Error("The worksheet fixture no longer has a top-level question.");
@@ -368,8 +370,7 @@ describe("executeTransformation with a contribution", () => {
     );
     expect(run).toMatchObject({ meta, outcome: "APPLIED" });
 
-    const applied = appliedDocument(run)
-      .content.filter((node): node is QuestionNode => node.type === "question")
+    const applied = getResourceNodesByType(appliedDocument(run), "question")
       .flatMap((question) => question.children)
       .find((node) => node.id === "contribution-1-vocabulary");
 
@@ -411,8 +412,8 @@ describe("executeTransformation with a contribution", () => {
     );
 
     const children =
-      appliedDocument(run).content.find(
-        (node): node is QuestionNode => node.id === firstQuestion.id,
+      getResourceNodesByType(appliedDocument(run), "question").find(
+        (node) => node.id === firstQuestion.id,
       )?.children ?? [];
     const scaffold = children.findIndex(
       (node) => node.id === "contribution-2-vocabulary",
@@ -454,9 +455,10 @@ describe("executeTransformation with a contribution", () => {
       { createInvoker: () => invoker, prepare },
     );
 
-    const entry = appliedDocument(run)
-      .content.flatMap((node) => (node.type === "question" ? node.children : []))
-      .find((node) => node.id === "contribution-3-vocabulary");
+    const entry = getResourceNodeById(
+      appliedDocument(run),
+      "contribution-3-vocabulary",
+    );
 
     expect(entry).toMatchObject({
       entries: [

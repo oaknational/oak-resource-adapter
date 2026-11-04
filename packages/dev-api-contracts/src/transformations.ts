@@ -28,13 +28,22 @@ const targetSchema = z.discriminatedUnion("scope", [
     .readonly(),
 ]);
 
-const suggestionGuidanceSchema = z
-  .object({
-    avoidWhen: z.string(),
-    description: z.string(),
-    useWhen: z.string(),
-  })
-  .readonly();
+const suggestionGuidanceSchema = z.union([
+  z
+    .object({
+      avoidWhen: z.string(),
+      description: z.string(),
+      useWhen: z.string(),
+    })
+    .readonly(),
+  z
+    .object({
+      description: z.string(),
+      offer: z.literal("always"),
+      reason: z.string(),
+    })
+    .readonly(),
+]);
 
 const transformationOutputSchema = z.enum(["companion-document", "revised-resource"]);
 

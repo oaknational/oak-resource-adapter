@@ -16,263 +16,275 @@
     },
     {
       "id": "task-a",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task A: The Ancient Greek gods and goddesses"
-        }
-      ]
-    },
-    {
-      "id": "question-1",
-      "type": "question",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-add-notes-to-the-diagram-about-each-ancient-greek-god-",
-          "type": "paragraph",
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Add notes to the diagram about each Ancient Greek god and goddess."
+              "text": "Task A: The Ancient Greek gods and goddesses"
             }
           ]
         },
         {
-          "id": "unstable:paragraph-then-share-and-compare-your-notes-with-a-partner",
-          "type": "paragraph",
-          "content": [
+          "id": "question-1",
+          "type": "question",
+          "children": [
             {
-              "type": "text",
-              "text": "Then share and compare your notes with a partner."
-            }
-          ]
-        },
-        {
-          "id": "gods-and-goddesses",
-          "type": "table",
-          "role": "diagram-notes",
-          "header": [
-            {
-              "kind": "content",
+              "id": "unstable:paragraph-add-notes-to-the-diagram-about-each-ancient-greek-god-",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "God or goddess"
+                  "text": "Add notes to the diagram about each Ancient Greek god and goddess."
                 }
               ]
             },
             {
-              "kind": "content",
+              "id": "unstable:paragraph-then-share-and-compare-your-notes-with-a-partner",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "Notes"
+                  "text": "Then share and compare your notes with a partner."
                 }
               ]
+            },
+            {
+              "id": "gods-and-goddesses",
+              "type": "table",
+              "role": "diagram-notes",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "God or goddess"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Notes"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Zeus"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Hera"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Ares"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Aphrodite"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
             }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Zeus"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Hera"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Ares"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Aphrodite"
-                  }
-                ]
-              },
-              {
-                "kind": "answer"
-              }
-            ]
           ]
         }
       ]
     },
     {
       "id": "task-b",
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "Task B: What do myths tell us about Ancient Greek culture?"
-        }
-      ]
-    },
-    {
-      "id": "task-b-instruction",
-      "layout": {
-        "keepWithNext": true
-      },
-      "type": "callout",
-      "role": "instruction",
-      "content": [
-        {
-          "type": "text",
-          "text": "Work in a small group."
-        }
-      ]
-    },
-    {
-      "id": "question-2",
-      "type": "question",
+      "type": "task",
       "children": [
         {
-          "id": "unstable:paragraph-write-a-short-play-retelling-the-story-of-the-ancient-",
-          "type": "paragraph",
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
           "content": [
             {
               "type": "text",
-              "text": "Write a short play retelling the story of the Ancient Greek myth about why the seasons change. The information below is provided to help you. Your story should have a beginning, a middle and an end."
+              "text": "Task B: What do myths tell us about Ancient Greek culture?"
             }
           ]
         },
         {
-          "id": "play-planning",
-          "type": "table",
-          "role": "planning",
-          "header": [
+          "id": "task-b-instruction",
+          "layout": {
+            "keepWithNext": true
+          },
+          "type": "callout",
+          "role": "instruction",
+          "content": [
             {
-              "kind": "content",
+              "type": "text",
+              "text": "Work in a small group."
+            }
+          ]
+        },
+        {
+          "id": "question-2",
+          "type": "question",
+          "children": [
+            {
+              "id": "unstable:paragraph-write-a-short-play-retelling-the-story-of-the-ancient-",
+              "type": "paragraph",
               "content": [
                 {
                   "type": "text",
-                  "text": "characters"
+                  "text": "Write a short play retelling the story of the Ancient Greek myth about why the seasons change. The information below is provided to help you. Your story should have a beginning, a middle and an end."
                 }
               ]
             },
             {
-              "kind": "content",
-              "content": [
+              "id": "play-planning",
+              "type": "table",
+              "role": "planning",
+              "header": [
                 {
-                  "type": "text",
-                  "text": "settings"
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "characters"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "settings"
+                    }
+                  ]
                 }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
+            },
+            {
+              "id": "play-cast",
+              "type": "table",
+              "role": "cast",
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Alex"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Hades"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Sam"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Demeter"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Sofia"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Persephone"
+                      }
+                    ]
+                  }
+                ]
               ]
             }
-          ],
-          "rows": [
-            [
-              {
-                "kind": "answer"
-              },
-              {
-                "kind": "answer"
-              }
-            ]
-          ]
-        },
-        {
-          "id": "play-cast",
-          "type": "table",
-          "role": "cast",
-          "rows": [
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Alex"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Hades"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Sam"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Demeter"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Sofia"
-                  }
-                ]
-              },
-              {
-                "kind": "content",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Persephone"
-                  }
-                ]
-              }
-            ]
           ]
         }
       ]

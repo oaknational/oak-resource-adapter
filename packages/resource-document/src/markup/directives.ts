@@ -106,6 +106,16 @@ const directiveHandlers: DirectiveHandlers = {
     };
   },
 
+  "oak-task": (directive, state, parseChildren) => {
+    const { attributes, name } = directive;
+    assertAttributes(attributes, commonAttributeNames, name);
+    return {
+      ...commonNodeFields(attributes, name),
+      type: "task",
+      children: parseChildren(directive),
+    };
+  },
+
   "oak-question": (directive, state, parseChildren) => {
     const { attributes, name } = directive;
     assertAttributes(attributes, [...commonAttributeNames, "number", "marks"], name);

@@ -1,3 +1,4 @@
+import { getResourceNodesByType } from "@oaknational/resource-document";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -20,9 +21,7 @@ beforeAll(async () => {
     programmeSlug: "english-primary-ks2",
     resourceType: "worksheet",
   });
-  const firstQuestion = worksheet.content.find(
-    (node): node is QuestionNode => node.type === "question",
-  );
+  const firstQuestion = getResourceNodesByType(worksheet, "question")[0];
   if (firstQuestion === undefined) {
     throw new Error("The fixture has no question.");
   }

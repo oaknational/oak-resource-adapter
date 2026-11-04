@@ -1,4 +1,4 @@
-import { notAlreadyApplied } from "../../availability";
+import { notAlreadyAppliedToTarget } from "../../availability";
 import { defineTransformation } from "../../define-transformation";
 import { promptQuestionsContribution } from "./contribution";
 import { addPromptQuestionsPrompt } from "./prompt";
@@ -11,21 +11,19 @@ export const addPromptQuestionsTransformation = defineTransformation({
   status: "active",
   suggestion: {
     description:
-      "Adds questions that prompt pupils to recall relevant lesson knowledge.",
-    useWhen:
-      "The pupil needs to recall knowledge that is not included in the task instruction or question. A poor response would most likely come from the pupil not retrieving a fact, term or step the task leaves implicit, and the task instruction carries no prompts of its own.",
-    avoidWhen:
-      "There is no specific knowledge pupils need to recall, or the task instruction already itemises what to include or supplies bracketed prompts.",
+      "Adds questions at the start of a task that prompt pupils to recall the lesson knowledge it needs.",
+    offer: "always",
+    reason: "Prompt pupils to recall what they need before they start this task.",
   },
   barriers: ["working-memory", "gaps-in-knowledge"],
-  target: { scope: "document" },
+  target: { scope: "node", nodeTypes: ["task"] },
   materialRequirements: [
     { key: "lesson.keyLearningPoints", required: true },
     { key: "lesson.slides", required: false },
     { key: "lesson.transcriptSummary", required: false },
   ],
   outputs: ["revised-resource"],
-  isAvailable: notAlreadyApplied(KIND),
+  isAvailable: notAlreadyAppliedToTarget(KIND),
   execution: {
     strategy: "model",
     prompt: addPromptQuestionsPrompt,
