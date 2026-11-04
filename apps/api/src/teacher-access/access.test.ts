@@ -132,10 +132,10 @@ describe("an access-limit-me address", () => {
     });
   });
 
-  it("gives way to a grant", () => {
+  it("gives way to a grant for access, but not for the copyright region", () => {
     expect(
       accessFor({ region: "GB", ora: { access: "full" } }, verified(accessLimitMe)),
-    ).toEqual({ tier: "full", inCopyrightRegion: true });
+    ).toEqual({ tier: "full", inCopyrightRegion: false });
   });
 });
 

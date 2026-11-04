@@ -77,7 +77,8 @@ export function teacherAccessFromClerkUser({
   const { region, ora } = privateMetadataSchema.safeParse(privateMetadata).data ?? {};
   const oakAddresses = verifiedOakAddresses(emailAddresses);
   const granted = ora?.access === "full";
-  const behavesOutsideUk = !granted && hasMarker(oakAddresses, "access-limit-me");
+  const markedOutsideUk = hasMarker(oakAddresses, "access-limit-me");
+  const behavesOutsideUk = !granted && markedOutsideUk;
   const inRegion = (regions: readonly string[]) =>
     region !== undefined && regions.includes(region);
   const modelJobsPer24h =
@@ -88,7 +89,7 @@ export function teacherAccessFromClerkUser({
       (granted || oakAddresses.length > 0 || inRegion(FULL_ACCESS_REGIONS))
         ? "full"
         : "limited",
-    inCopyrightRegion: !behavesOutsideUk && inRegion(COPYRIGHT_REGIONS),
+    inCopyrightRegion: !markedOutsideUk && inRegion(COPYRIGHT_REGIONS),
     ...(modelJobsPer24h === undefined ? {} : { modelJobsPer24h }),
   };
 }
