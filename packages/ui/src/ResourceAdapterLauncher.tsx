@@ -40,18 +40,17 @@ const PROMPTS = {
   signedOut: {
     action: "Sign in",
     heading: "Sign in to create more with Aila",
-    message:
-      "Adapting this lesson's resources with AI is available to signed-in teachers.",
+    message: "You can adapt this lesson's resources with AI once you're signed in.",
   },
   needsSetup: {
     action: "Finish setup",
     heading: "Finish setting up your account",
     message:
-      "Adapting this lesson's resources with AI needs a few more details about you.",
+      "Add a few details about yourself, then you can adapt this lesson's resources with AI.",
   },
   setupIncomplete: {
     action: "Try again",
-    heading: "Your account setup was not completed",
+    heading: "Your account setup isn't finished",
     message: "Finish setting up your account to adapt this lesson's resources with AI.",
   },
 } as const;
@@ -105,7 +104,7 @@ export function ResourceAdapterLauncher<
     return (
       <OakFlex $alignItems="flex-start" $flexDirection="column" $gap="spacing-8">
         <OakP $font="body-2" role="status">
-          You&apos;re all set. You can now adapt this lesson&apos;s resources with AI.
+          Your account is ready. Adapt this lesson&apos;s resources below.
         </OakP>
         {button}
       </OakFlex>

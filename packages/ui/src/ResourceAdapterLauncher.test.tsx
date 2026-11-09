@@ -92,11 +92,11 @@ describe("ResourceAdapterLauncher", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("tells a teacher back from onboarding that they are all set", () => {
+  it("tells a teacher back from onboarding that their account is ready", () => {
     rememberOnboardingTrip(lesson);
     renderLauncher("ready");
 
-    expect(screen.getByRole("status")).toHaveTextContent("You're all set.");
+    expect(screen.getByRole("status")).toHaveTextContent("Your account is ready.");
     expect(screen.getByRole("button", { name: worksheet.label })).toBeVisible();
     expect(sessionStorage.length).toBe(0);
   });
@@ -106,7 +106,7 @@ describe("ResourceAdapterLauncher", () => {
     const { onFinishSetup } = renderLauncher("needsSetup");
 
     expect(
-      screen.getByRole("region", { name: "Your account setup was not completed" }),
+      screen.getByRole("region", { name: "Your account setup isn't finished" }),
     ).toBeVisible();
     expect(sessionStorage.length).toBe(0);
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
@@ -120,13 +120,13 @@ describe("ResourceAdapterLauncher", () => {
     expect(sessionStorage.length).toBe(1);
   });
 
-  it("says setup was not completed when a signed-out teacher signs in without remounting", () => {
+  it("says setup isn't finished when a signed-out teacher signs in without remounting", () => {
     rememberOnboardingTrip(lesson);
     const { rerender } = renderLauncher("signedOut");
     rerender(launcher("needsSetup"));
 
     expect(
-      screen.getByRole("region", { name: "Your account setup was not completed" }),
+      screen.getByRole("region", { name: "Your account setup isn't finished" }),
     ).toBeVisible();
   });
 

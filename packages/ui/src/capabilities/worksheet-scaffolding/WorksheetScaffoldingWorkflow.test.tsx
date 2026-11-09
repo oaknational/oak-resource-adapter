@@ -982,7 +982,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
     const onFinishSetup = vi.fn();
     renderDialog({ onFinishSetup });
 
-    expect(await screen.findByText("Your account is not set up yet")).toBeVisible();
+    expect(await screen.findByText("Your account isn't set up yet")).toBeVisible();
     expect(screen.queryByRole("article")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Finish setup" }));
     expect(onFinishSetup).toHaveBeenCalledOnce();

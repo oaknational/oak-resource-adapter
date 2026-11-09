@@ -81,7 +81,7 @@ The launcher shows a prompt to sign in or to finish setting up the account, or
 the capability button once the teacher is ready. `onSignIn` and `onFinishSetup`
 must bring the teacher back to the lesson through OWA onboarding. The launcher
 remembers the trip in `sessionStorage`, so on return it confirms the account is
-ready or says setup was not completed.
+ready or says setup isn't finished.
 
 The helper wraps the package's internal typed tRPC client, so hosts never
 depend on `@trpc/client` themselves.

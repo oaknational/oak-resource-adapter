@@ -20,8 +20,8 @@ export const LOADING_STATUS = {
 } as const satisfies WorkflowStatus;
 
 export const NEEDS_SETUP_STATUS = {
-  message: "Finish setting up your Oak account to adapt this lesson.",
-  title: "Your account is not set up yet",
+  message: "Finish setting up your account to adapt this lesson.",
+  title: "Your account isn't set up yet",
   tone: "neutral",
 } as const satisfies WorkflowStatus;
 
