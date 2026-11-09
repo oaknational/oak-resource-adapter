@@ -4,7 +4,9 @@ import {
   getResourceAdapterCapabilities,
   getResourceAdapterCapabilityAvailability,
   ResourceAdapterApiError,
+  type GetToken,
   type LessonContext,
+  type ResourceAdapterCapabilitiesResponse,
   type ResourceAdapterCapability,
   type ResourceAdapterLauncherAccount,
 } from "@oaknational/resource-adapter";
@@ -26,6 +28,46 @@ export type UseCapabilitiesResult = Readonly<{
   state: CapabilitiesState;
 }>;
 
+type SignedInAccount = Exclude<ResourceAdapterLauncherAccount, "signedOut">;
+
+type Loaded =
+  | Readonly<{ state: "signedOut"; available: boolean }>
+  | Readonly<{ state: "ready"; response: ResourceAdapterCapabilitiesResponse }>;
+
+async function loadCapabilities({
+  apiBaseUrl,
+  getToken,
+  lesson,
+  signedOut,
+}: Readonly<{
+  apiBaseUrl: string;
+  getToken: GetToken;
+  lesson: LessonContext;
+  signedOut: boolean;
+}>): Promise<Loaded> {
+  if (signedOut) {
+    const available = await getResourceAdapterCapabilityAvailability({
+      apiBaseUrl,
+      lesson,
+    });
+    return { state: "signedOut", available };
+  }
+  const response = await getResourceAdapterCapabilities({
+    apiBaseUrl,
+    getToken,
+    lesson,
+  });
+  return { state: "ready", response };
+}
+
+function accountFor(
+  state: CapabilitiesState,
+  signedInAccount: SignedInAccount | null,
+): ResourceAdapterLauncherAccount | null {
+  if (state === "signedOut") return "signedOut";
+  return state === "ready" ? signedInAccount : null;
+}
+
 export function useCapabilities({
   apiBaseUrl,
   lesson,
@@ -40,7 +82,7 @@ export function useCapabilities({
     readonly ResourceAdapterCapability[]
   >([]);
   const [state, setState] = useState<CapabilitiesState>("loading");
-  const [account, setAccount] = useState<ResourceAdapterLauncherAccount | null>(null);
+  const [signedInAccount, setSignedInAccount] = useState<SignedInAccount | null>(null);
   const [hasAvailableCapabilities, setHasAvailableCapabilities] = useState(false);
 
   const [attempt, setAttempt] = useState(0);
@@ -52,7 +94,6 @@ export function useCapabilities({
     async function load() {
       setCapabilities([]);
       setHasAvailableCapabilities(false);
-      setAccount(null);
       setState("loading");
 
       if (!isLoaded) {
@@ -60,40 +101,32 @@ export function useCapabilities({
       }
 
       try {
-        if (signedOut) {
-          const available = await getResourceAdapterCapabilityAvailability({
-            apiBaseUrl,
-            lesson,
-          });
-          if (current) {
-            setHasAvailableCapabilities(available);
-            setAccount("signedOut");
-            setState("signedOut");
-          }
-        } else {
-          const response = await getResourceAdapterCapabilities({
-            apiBaseUrl,
-            getToken,
-            lesson,
-          });
-          if (current) {
-            setCapabilities(response.capabilities);
-            setHasAvailableCapabilities(response.capabilities.length > 0);
-            setAccount(response.account.state);
-            setState("ready");
-          }
+        const loaded = await loadCapabilities({
+          apiBaseUrl,
+          getToken,
+          lesson,
+          signedOut,
+        });
+        if (!current) {
+          return;
         }
+        if (loaded.state === "signedOut") {
+          setHasAvailableCapabilities(loaded.available);
+        } else {
+          setCapabilities(loaded.response.capabilities);
+          setHasAvailableCapabilities(loaded.response.capabilities.length > 0);
+          setSignedInAccount(loaded.response.account.state);
+        }
+        setState(loaded.state);
       } catch (error: unknown) {
         if (!current) {
           return;
         }
         if (error instanceof ResourceAdapterApiError && error.status === 401) {
-          setAccount("signedOut");
           setState("signedOut");
           return;
         }
         log.error(error);
-        if (signedOut) setAccount("signedOut");
         setState(signedOut ? "signedOut" : "error");
       }
     }
@@ -105,7 +138,7 @@ export function useCapabilities({
   }, [apiBaseUrl, attempt, getToken, isLoaded, isSignedIn, lesson, viewAsSignedOut]);
 
   return {
-    account,
+    account: accountFor(state, signedInAccount),
     capabilities,
     hasAvailableCapabilities,
     reload: () => setAttempt((value) => value + 1),

@@ -2,13 +2,13 @@
 
 import {
   ResourceAdapterLauncher,
+  type ResourceAdapterCapabilityOption,
   type ResourceAdapterLauncherProps,
 } from "@oaknational/resource-adapter";
 import { OakSecondaryButton } from "@oaknational/oak-components";
 
 import styles from "./CreateMorePanel.module.css";
 import type { UseCapabilitiesResult } from "../../_hooks/useCapabilities";
-import type { ResourceAdapterCapabilityOption } from "@oaknational/resource-adapter";
 
 export function CreateMorePanel<TCapability extends ResourceAdapterCapabilityOption>({
   account,

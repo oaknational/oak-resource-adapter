@@ -63,7 +63,7 @@ describe("ResourceAdapterLauncher", () => {
 
     expect(onSignIn).toHaveBeenCalledOnce();
     expect(onFinishSetup).not.toHaveBeenCalled();
-    expect(sessionStorage.length).toBe(1);
+    expect(sessionStorage).toHaveLength(1);
   });
 
   it("asks a teacher who needs setup to finish it, remembering the lesson", async () => {
@@ -75,7 +75,7 @@ describe("ResourceAdapterLauncher", () => {
     await userEvent.click(screen.getByRole("button", { name: "Finish setup" }));
 
     expect(onFinishSetup).toHaveBeenCalledOnce();
-    expect(sessionStorage.length).toBe(1);
+    expect(sessionStorage).toHaveLength(1);
   });
 
   it("shows only the capability button to a ready teacher", () => {
@@ -98,7 +98,7 @@ describe("ResourceAdapterLauncher", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("Your account is ready.");
     expect(screen.getByRole("button", { name: worksheet.label })).toBeVisible();
-    expect(sessionStorage.length).toBe(0);
+    expect(sessionStorage).toHaveLength(0);
   });
 
   it("says when a teacher comes back from onboarding still needing setup", async () => {
@@ -108,7 +108,7 @@ describe("ResourceAdapterLauncher", () => {
     expect(
       screen.getByRole("region", { name: "Your account setup isn't finished" }),
     ).toBeVisible();
-    expect(sessionStorage.length).toBe(0);
+    expect(sessionStorage).toHaveLength(0);
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(onFinishSetup).toHaveBeenCalledOnce();
   });
@@ -117,7 +117,7 @@ describe("ResourceAdapterLauncher", () => {
     rememberOnboardingTrip(lesson);
     renderLauncher("signedOut");
 
-    expect(sessionStorage.length).toBe(1);
+    expect(sessionStorage).toHaveLength(1);
   });
 
   it("says setup isn't finished when a signed-out teacher signs in without remounting", () => {
