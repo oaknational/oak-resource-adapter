@@ -1,8 +1,6 @@
 import {
   contentGuidanceSchema,
-  featuresSchema,
   lessonAssetsSchema,
-  lessonDataSchema,
   lessonContentSchema,
   mvLessonRestrictionLevelsSchema,
   programmeFieldsSchema,
@@ -12,14 +10,14 @@ import {
 } from "@oaknational/oak-curriculum-schema";
 import { z } from "zod";
 
+import { distinctSorted } from "../distinct-sorted.js";
 import type { LessonResource, LessonResourceType } from "../resource/resource.js";
 import type {
-  CategoryMaxRestriction,
   LessonKeyword,
   LessonMisconception,
+  LessonRestrictionLevels,
   Programme,
   RestrictionLevel,
-  ThirdPartyMaterialCategory,
   Unit,
 } from "./lesson.js";
 
@@ -212,54 +210,59 @@ const RESTRICTION_LEVELS = {
   Restricted: "restricted",
 } as const satisfies Record<PublishedRestrictionLevel, RestrictionLevel>;
 
-const CATEGORY_BY_MAX_RESTRICTION_COLUMN = {
-  tpc_downloadablefiles_max_restriction: "downloadable-files",
-  tpc_media_max_restriction: "media",
-  tpc_quizimages_max_restriction: "quiz-images",
-  tpc_works_max_restriction: "works",
-} as const satisfies Record<string, ThirdPartyMaterialCategory>;
+export const RESTRICTION_COLUMNS: readonly string[] = [
+  "features",
+  "tpc_downloadablefiles_max_restriction",
+  "tpc_media_max_restriction",
+  "tpc_works_max_restriction",
+];
 
-type MaxRestrictionColumn = keyof typeof CATEGORY_BY_MAX_RESTRICTION_COLUMN;
-
-export const RESTRICTION_COLUMNS: readonly string[] = Object.keys(
-  CATEGORY_BY_MAX_RESTRICTION_COLUMN,
-);
+// A null column is a category the lesson carries no material of, not a restriction.
+function levelsOf(level: PublishedRestrictionLevel | null): RestrictionLevel[] {
+  return level === null ? [] : [RESTRICTION_LEVELS[level]];
+}
 
 export const restrictionRowSchema = mvLessonRestrictionLevelsSchema
   .pick({
+    features: true,
     tpc_downloadablefiles_max_restriction: true,
     tpc_media_max_restriction: true,
-    tpc_quizimages_max_restriction: true,
     tpc_works_max_restriction: true,
   })
-  // A null column is a category the lesson carries no material of, not a restriction.
-  .transform((row): readonly CategoryMaxRestriction[] =>
-    Object.entries(CATEGORY_BY_MAX_RESTRICTION_COLUMN).flatMap(([column, category]) => {
-      const level = row[column as MaxRestrictionColumn];
-      return level === null ? [] : [{ category, maxLevel: RESTRICTION_LEVELS[level] }];
-    }),
-  );
-
-/** Matched exactly, as OWA does when it withholds a legacy lesson's downloads. */
-const LEGACY_COPYRIGHT_NOTICE = "This lesson contains copyright material.";
-
-export const rightsBrowseRowSchema = z
-  .object({
-    // The pinned schema predates `agf__has_copyright_restrictions`.
-    features: featuresSchema
-      .pick({ agf__geo_restricted: true })
-      .extend({ agf__has_copyright_restrictions: z.boolean().nullish() })
-      .nullish(),
-    copyright_content: lessonDataSchema.shape.copyright_content.optional(),
-  })
-  .transform(({ features, copyright_content }) => ({
-    copyrightRestricted: features?.agf__has_copyright_restrictions === true,
-    geoRestricted: features?.agf__geo_restricted === true,
-    legacyCopyright: (copyright_content ?? []).some(
-      ({ copyright_info }) => copyright_info === LEGACY_COPYRIGHT_NOTICE,
+  .transform((row): LessonRestrictionLevels => ({
+    works: levelsOf(row.tpc_works_max_restriction),
+    media: levelsOf(row.tpc_media_max_restriction),
+    downloadableFiles: levelsOf(row.tpc_downloadablefiles_max_restriction),
+    featureKeys: distinctSorted(
+      Object.entries(row.features ?? {}).flatMap(([key, value]) =>
+        value === false ? [] : [key],
+      ),
     ),
   }));
 
-export const rightsContentRowSchema = z
-  .object({ expired: z.boolean().nullish() })
-  .transform(({ expired }) => ({ expired: expired === true }));
+export function combineRestrictionLevels(
+  rows: readonly LessonRestrictionLevels[],
+): LessonRestrictionLevels | null {
+  if (rows.length === 0) {
+    return null;
+  }
+
+  return {
+    works: distinctSorted(rows.flatMap(({ works }) => works)),
+    media: distinctSorted(rows.flatMap(({ media }) => media)),
+    downloadableFiles: distinctSorted(
+      rows.flatMap(({ downloadableFiles }) => downloadableFiles),
+    ),
+    featureKeys: distinctSorted(rows.flatMap(({ featureKeys }) => featureKeys)),
+  };
+}
+
+const subjectSlugSchema = programmeFieldsSchema.shape.subject_slug;
+
+export const subjectMembershipRowSchema = z
+  .object({ subject_slug: subjectSlugSchema })
+  .transform(({ subject_slug }) => subject_slug);
+
+export const eligibilityBrowseRowSchema = syntheticUnitvariantLessonsByKsSchema
+  .pick({ is_legacy: true, programme_slug: true })
+  .extend({ subject_slug: subjectSlugSchema });

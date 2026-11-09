@@ -63,12 +63,10 @@ vi.mock("@oaknational/resource-adapter-curriculum", async (importOriginal) => ({
     endpoint: "https://curriculum.test",
     apiKey: "test",
   }),
-  createOakLessonRightsReader: () => async () => ({
-    maxRestrictions: [],
-    copyrightRestricted: false,
-    legacyCopyright: false,
-    expired: false,
-    geoRestricted: false,
+  createOakLessonEligibilityFactsReader: () => async () => ({
+    restrictionLevels: { works: [], media: [], downloadableFiles: [], featureKeys: [] },
+    subjectSlugs: ["english"],
+    legacy: false,
   }),
 }));
 

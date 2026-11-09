@@ -114,7 +114,10 @@ A part is read from the lesson or, where Oak holds no such field, derived for th
 run. `lesson.transcriptSummary` is derived by summarising the transcript with a
 model, and its `.learningCycleTitles`, `.practiceTasksWithFeedback` and
 `.checksForUnderstanding` siblings are projections of that one summary. A
-derivation that cannot run warns and omits the part.
+derivation that cannot run warns and omits the part. A lesson taught in a subject
+listed in [`lesson-materials.ts`](../apps/api/src/lesson-rules/lesson-materials.ts)
+has its transcript withheld, so no summary is generated and a transcript part
+must be optional.
 
 Required material is checked in `transformations/required-material.ts`. A
 transformation cannot run if its request is missing a required part.

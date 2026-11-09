@@ -21,6 +21,7 @@ function oakPublishesThatLesson(): void {
             assets: [assetsRow()],
             browseData: [browseDataRow()],
             content: [contentRow()],
+            subjectMemberships: [{ subject_slug: "maths" }],
           },
         }),
       ),
@@ -66,7 +67,7 @@ describe.each(implementations)("%s repository", (_name, build) => {
       vi.fn().mockResolvedValue(
         new Response(
           JSON.stringify({
-            data: { assets: [], browseData: [], content: [], restrictionLevels: [] },
+            data: { assets: [], browseData: [], content: [], subjectMemberships: [] },
           }),
         ),
       ),

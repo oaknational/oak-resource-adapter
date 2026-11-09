@@ -482,12 +482,17 @@ describe("deterministic transformation contributions", () => {
   it.each(["ks1", "ks2", "ks3", "ks4"])(
     "applies chunk steps using the real %s schema",
     async (keyStage) => {
-      const fixture = originalResourceDocumentFixtureManifest.find(
-        (entry) =>
-          "oakLesson" in entry && entry.oakLesson.programme.keyStageSlug === keyStage,
-      );
-      if (!fixture) throw new Error(`Missing ${keyStage} fixture`);
-      const document = documentFor(fixture.id);
+      const worksheet = documentFor();
+      if (worksheet.profile !== "worksheet.v0") {
+        throw new Error("The fixture is not a worksheet.");
+      }
+      const document: ResourceDocument = {
+        ...worksheet,
+        metadata: {
+          ...worksheet.metadata,
+          keyStage: { id: keyStage, label: keyStage.toUpperCase() },
+        },
+      };
       const [question] = getResourceNodesByType(document, "question");
       if (!question) throw new Error("The fixture needs a question");
       const kind = "scaffold-chunk-tasks";

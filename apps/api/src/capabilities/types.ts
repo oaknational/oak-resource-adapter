@@ -1,4 +1,4 @@
-import type { LessonRights } from "@oaknational/resource-adapter-curriculum";
+import type { LessonEligibilityFacts } from "@oaknational/resource-adapter-curriculum";
 import type {
   LessonContext,
   ResourceAdapterCapability,
@@ -11,7 +11,7 @@ import type { RegisteredSuggestionFlowId } from "../suggestions/flow-ids";
 export type EligibilityContext = Readonly<{
   lesson: LessonContext;
   /** `null` when Oak publishes no such lesson in the programme. */
-  rights: LessonRights | null;
+  facts: LessonEligibilityFacts | null;
   originalFileResourceTypes: readonly string[];
   extractedResourceTypes: readonly string[];
 }>;

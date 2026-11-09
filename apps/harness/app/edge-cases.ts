@@ -207,18 +207,37 @@ const edgeCaseDefinitions = [
     facts: readUnparseableMarkup,
   },
   {
-    id: "copyright-restricted-lesson",
-    title: "Oak marks the lesson copyright-restricted",
-    summary: "Oak flags the lesson as containing copyright material.",
+    id: "excluded-subject-lesson",
+    title: "The lesson is in a subject we leave out",
+    summary: "Oak teaches the lesson in a subject ORA is not offered on yet.",
     expectation: "Expected: nothing appears",
-    reason:
-      "Oak flags some lessons as containing copyright material. We offer none of them, even when every third-party restriction Oak records would allow reuse, as it does here. We hold no worksheet data for this lesson either, so this case shows the outcome but cannot show the flag alone causing it. The API's tests cover that.",
+    reason: "Some subjects are not cleared for ORA yet.",
     lesson: {
-      lessonSlug: "winsome-pinnock-introduces-leave-taking",
-      programmeSlug: "english-secondary-ks4-aqa",
-      title: "Winsome Pinnock introduces ‘Leave Taking’",
-      subjectSlug: "english",
-      keyStageSlug: "ks4",
+      lessonSlug: "latitude-and-longitude",
+      programmeSlug: "geography-secondary-ks3",
+      title: "Latitude and longitude",
+      subjectSlug: "geography",
+      keyStageSlug: "ks3",
+      availableResources: ["worksheet"],
+    },
+    brokenApiPath: false,
+    facts: async (lesson: LessonContext) => {
+      const { facts } = await extractionFacts(lesson);
+      return factsOnly([...facts, { term: "Subject", value: lesson.subjectSlug }]);
+    },
+  },
+  {
+    id: "copyright-conflict-lesson",
+    title: "Oak flags a copyright conflict in the lesson",
+    summary: "Oak records a copyright conflict somewhere in the lesson.",
+    expectation: "Expected: nothing appears",
+    reason: "Oak flags some lessons as having a copyright conflict.",
+    lesson: {
+      lessonSlug: "recognise-and-understand-the-value-of-different-coins",
+      programmeSlug: "maths-primary-ks1",
+      title: "Recognise and understand the value of different coins",
+      subjectSlug: "maths",
+      keyStageSlug: "ks1",
       availableResources: ["worksheet"],
     },
     brokenApiPath: false,
@@ -226,7 +245,7 @@ const edgeCaseDefinitions = [
       const { facts } = await extractionFacts(lesson);
       return factsOnly([
         ...facts,
-        { term: "Oak's flag", value: "agf__has_copyright_restrictions" },
+        { term: "Oak's flag", value: "has_copyright_conflict" },
       ]);
     },
   },

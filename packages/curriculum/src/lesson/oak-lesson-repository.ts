@@ -6,23 +6,28 @@ import {
   type OakCurriculumConfig,
   type ResolvedOakCurriculumConfig,
 } from "../config.js";
+import { distinctSorted } from "../distinct-sorted.js";
 import { CurriculumError, toCurriculumError } from "../errors.js";
 import { executeHasuraQuery } from "../hasura.js";
 import { lessonNotFound, validateLessonIdentity } from "./lesson-identity.js";
-import { LESSON_BY_SLUG_QUERY, LESSON_RIGHTS_QUERY } from "./lesson-query.js";
+import {
+  LESSON_BY_SLUG_QUERY,
+  LESSON_ELIGIBILITY_FACTS_QUERY,
+} from "./lesson-query.js";
 import {
   assetsRowSchema,
   browseRowSchema,
+  combineRestrictionLevels,
   contentRowSchema,
   restrictionRowSchema,
-  rightsBrowseRowSchema,
-  rightsContentRowSchema,
+  eligibilityBrowseRowSchema,
+  subjectMembershipRowSchema,
 } from "./lesson-schema.js";
 import type {
   Lesson,
   LessonIdentity,
   LessonRepository,
-  LessonRights,
+  LessonEligibilityFacts,
 } from "./lesson.js";
 
 const log = raLogger("curriculum");
@@ -32,14 +37,14 @@ const responseSchema = z.object({
     assets: z.array(z.unknown()),
     browseData: z.array(z.unknown()),
     content: z.array(z.unknown()),
+    subjectMemberships: z.array(subjectMembershipRowSchema),
   }),
 });
 
-const rightsResponseSchema = z.object({
+const eligibilityFactsResponseSchema = z.object({
   data: z.object({
-    browseData: z.array(z.unknown()),
-    content: z.array(z.unknown()),
-    restrictionLevels: z.array(z.unknown()),
+    browseData: z.array(eligibilityBrowseRowSchema),
+    restrictionLevels: z.array(restrictionRowSchema),
   }),
 });
 
@@ -106,6 +111,7 @@ async function fetchLesson(
   return {
     identity,
     resources: assets?.resources ?? [],
+    subjectSlugs: distinctSorted(response.data.subjectMemberships),
     ...placement,
     ...content,
   };
@@ -139,37 +145,33 @@ function atMostOne<Schema extends z.ZodType>(
 }
 
 /** `null` when Oak publishes no such lesson in the programme. */
-export function createOakLessonRightsReader(config: OakCurriculumConfig) {
+export function createOakLessonEligibilityFactsReader(config: OakCurriculumConfig) {
   const resolvedConfig = resolveOakCurriculumConfig(config);
-  return async (identity: LessonIdentity): Promise<LessonRights | null> => {
+  return async (identity: LessonIdentity): Promise<LessonEligibilityFacts | null> => {
     validateLessonIdentity(identity);
     try {
-      const response = rightsResponseSchema.parse(
+      const { data } = eligibilityFactsResponseSchema.parse(
         await executeHasuraQuery(resolvedConfig, {
-          query: LESSON_RIGHTS_QUERY,
-          variables: {
-            lessonSlug: identity.lessonSlug,
-            programmeSlug: identity.programmeSlug,
-          },
+          query: LESSON_ELIGIBILITY_FACTS_QUERY,
+          variables: { lessonSlug: identity.lessonSlug },
         }),
       );
-      const flags = atMostOne(response.data.browseData, rightsBrowseRowSchema, {
-        identity,
-        what: "copyright flags",
-      });
-      const content = atMostOne(response.data.content, rightsContentRowSchema, {
-        identity,
-        what: "expiry",
-      });
-      if (flags === undefined || content === undefined) {
+      if (
+        !data.browseData.some((row) => row.programme_slug === identity.programmeSlug)
+      ) {
         return null;
       }
-      const maxRestrictions =
-        atMostOne(response.data.restrictionLevels, restrictionRowSchema, {
-          identity,
-          what: "set of restriction levels",
-        }) ?? [];
-      return { maxRestrictions, ...flags, ...content };
+      if (new Set(data.restrictionLevels.map((row) => JSON.stringify(row))).size > 1) {
+        log.warn(
+          { identity, rows: data.restrictionLevels },
+          "restriction rows disagree",
+        );
+      }
+      return {
+        restrictionLevels: combineRestrictionLevels(data.restrictionLevels),
+        subjectSlugs: distinctSorted(data.browseData.map((row) => row.subject_slug)),
+        legacy: data.browseData.some((row) => row.is_legacy),
+      };
     } catch (error) {
       throw toCurriculumError(error);
     }

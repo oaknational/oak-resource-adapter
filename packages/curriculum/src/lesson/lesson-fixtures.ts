@@ -115,6 +115,7 @@ export function restrictionLevelsRow(
 ): MvLessonRestrictionLevels {
   return mvLessonRestrictionLevelsFixture({
     overrides: {
+      features: {},
       slug: "adding-fractions",
       tpc_downloadablefiles_max_restriction: null,
       tpc_media_max_restriction: null,
@@ -125,16 +126,18 @@ export function restrictionLevelsRow(
   });
 }
 
-/** The browse data columns `LESSON_RIGHTS_QUERY` selects, under its aliases. */
-export function rightsBrowseRow(
+/** A browse data row as `LESSON_ELIGIBILITY_FACTS_QUERY` selects it, under its aliases. */
+export function eligibilityBrowseRow(
   overrides: Partial<{
-    copyright_content: { copyright_info: string }[] | null;
-    features: Record<string, unknown> | null;
+    is_legacy: unknown;
+    programme_slug: string;
+    subject_slug: unknown;
   }> = {},
 ) {
-  return { copyright_content: null, features: {}, ...overrides };
-}
-
-export function rightsContentRow(expired: unknown = null) {
-  return { expired };
+  return {
+    is_legacy: false,
+    programme_slug: "maths-primary-ks2",
+    subject_slug: "maths",
+    ...overrides,
+  };
 }

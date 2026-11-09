@@ -35,8 +35,14 @@ const edgeCases = [
     offersCreateMore: true,
   },
   {
-    id: "copyright-restricted-lesson",
-    heading: "Oak marks the lesson copyright-restricted",
+    id: "excluded-subject-lesson",
+    heading: "The lesson is in a subject we leave out",
+    outcome: "The capabilities endpoint returned 0 capabilities.",
+    offersCreateMore: false,
+  },
+  {
+    id: "copyright-conflict-lesson",
+    heading: "Oak flags a copyright conflict in the lesson",
     outcome: "The capabilities endpoint returned 0 capabilities.",
     offersCreateMore: false,
   },

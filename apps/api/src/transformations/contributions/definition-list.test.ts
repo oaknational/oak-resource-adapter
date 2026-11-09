@@ -13,16 +13,20 @@ describe("tidyKeywordDefinition", () => {
     ["BCE", "BCE is short for 'Before Common Era'", "short for 'Before Common Era'"],
     ["account", "an account is a version of events", "a version of events"],
     [
-      "gland",
-      "An organ or tissues that produces hormones.",
-      "an organ or tissues that produces hormones.",
+      "ion",
+      "An atom or molecule that has lost or gained one or more electrons so has a charge.",
+      "an atom or molecule that has lost or gained one or more electrons so has a charge.",
     ],
     [
-      "choisir",
-      "French -ir verb meaning 'to choose'",
-      "French -ir verb meaning 'to choose'",
+      "dot–and–cross diagram",
+      "Used to show how chemical bonds are formed between atoms",
+      "Used to show how chemical bonds are formed between atoms",
     ],
-    ["[s]", "pronounced as in 'maison'", "pronounced as in 'maison'"],
+    [
+      "Mount Olympus",
+      "Mount Olympus is the highest mountain in Greece",
+      "the highest mountain in Greece",
+    ],
   ])("tidies Oak's definition of %s", (keyword, description, expected) => {
     expect(tidyKeywordDefinition(keyword, description)).toBe(expected);
   });
