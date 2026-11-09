@@ -16,5 +16,6 @@ allowBuilds:
   sharp: true
   "@swc/core": false
   cbor-extract: false
+  koffi: false
   core-js: false
   protobufjs: false
