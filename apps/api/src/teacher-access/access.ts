@@ -34,6 +34,15 @@ const privateMetadataSchema = z.object({
     .catch(undefined),
 });
 
+// Aila records full access as `isDemoUser: false`. ADAPT-203 replaces this with
+// ORA grants when Aila is sunset.
+const publicMetadataSchema = z.object({
+  labs: z
+    .object({ isDemoUser: z.literal(false).optional().catch(undefined) })
+    .optional()
+    .catch(undefined),
+});
+
 type ClerkEmailAddress = Readonly<{
   emailAddress: string;
   verification: Readonly<{ status: string }> | null;
@@ -41,6 +50,7 @@ type ClerkEmailAddress = Readonly<{
 
 export type ClerkUser = Readonly<{
   privateMetadata: unknown;
+  publicMetadata: unknown;
   emailAddresses: readonly ClerkEmailAddress[];
 }>;
 
@@ -72,9 +82,11 @@ function oakModelJobsPer24h(oakAddresses: readonly string[]): number | undefined
 
 export function teacherAccessFromClerkUser({
   privateMetadata,
+  publicMetadata,
   emailAddresses,
 }: ClerkUser): TeacherAccess {
   const { region, ora } = privateMetadataSchema.safeParse(privateMetadata).data ?? {};
+  const { labs } = publicMetadataSchema.safeParse(publicMetadata).data ?? {};
   const oakAddresses = verifiedOakAddresses(emailAddresses);
   const granted = ora?.access === "full";
   const markedOutsideUk = hasMarker(oakAddresses, "access-limit-me");
@@ -86,7 +98,10 @@ export function teacherAccessFromClerkUser({
   return {
     tier:
       !behavesOutsideUk &&
-      (granted || oakAddresses.length > 0 || inRegion(FULL_ACCESS_REGIONS))
+      (granted ||
+        oakAddresses.length > 0 ||
+        inRegion(FULL_ACCESS_REGIONS) ||
+        labs?.isDemoUser === false)
         ? "full"
         : "limited",
     inCopyrightRegion: !markedOutsideUk && inRegion(COPYRIGHT_REGIONS),

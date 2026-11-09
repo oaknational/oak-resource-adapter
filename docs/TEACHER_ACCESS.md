@@ -4,9 +4,15 @@
 
 A teacher has `full` access when their Clerk user's `privateMetadata.region` is
 `GB`, `IM`, `JE` or `GG`, when `privateMetadata.ora.access` is exactly `"full"`,
-or when they have a verified `@thenational.academy` address. Every other teacher,
-including one with no stored region, is `limited`. ORA ignores unverified
-addresses.
+when they have a verified `@thenational.academy` address, or when Aila gives
+them full access (`publicMetadata.labs.isDemoUser` is exactly `false`). Every
+other teacher, including one with no stored region, is `limited`. ORA ignores
+unverified addresses.
+
+ORA reads Aila's flag only until Aila is sunset, when ADAPT-203 copies Aila's
+exceptions into ORA grants. Aila sets the flag for teachers in the same regions
+as ORA, for exceptions staff set by hand, and for every pre-release beta user.
+ORA never writes `publicMetadata.labs`.
 
 OWA and Aila onboarding store the region. ORA only reads it.
 
@@ -44,6 +50,8 @@ A marker in a verified Oak address lets an Oak account test a limit:
 Both markers can be used on one account, in one address or in separate ones. An
 `ora.access` grant takes precedence over `access-limit-me` for access, and
 `ora.usageLimits.modelJobsPer24h` over either marker's daily limit.
+`access-limit-me` takes precedence over Aila's flag, which Aila sets on every UK
+account that has used it.
 
 ## Changing a teacher's access
 

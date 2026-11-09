@@ -4,11 +4,10 @@ import {
   OAK_MODEL_JOBS_PER_24H,
   RATE_LIMIT_ME_MODEL_JOBS_PER_24H,
   teacherAccessFromClerkUser,
+  type ClerkUser,
 } from "./access";
 
-type EmailAddress = Parameters<
-  typeof teacherAccessFromClerkUser
->[0]["emailAddresses"][number];
+type EmailAddress = ClerkUser["emailAddresses"][number];
 
 const verified = (emailAddress: string): EmailAddress => ({
   emailAddress,
@@ -20,8 +19,18 @@ const unverified = (emailAddress: string): EmailAddress => ({
   verification: { status: "unverified" },
 });
 
+const accessOf = (user: Partial<ClerkUser>) =>
+  teacherAccessFromClerkUser({
+    privateMetadata: {},
+    publicMetadata: {},
+    emailAddresses: [],
+    ...user,
+  });
+
 const accessFor = (privateMetadata: unknown, ...emailAddresses: EmailAddress[]) =>
-  teacherAccessFromClerkUser({ privateMetadata, emailAddresses });
+  accessOf({ privateMetadata, emailAddresses });
+
+const withAilaFlag = (isDemoUser: unknown) => ({ labs: { isDemoUser } });
 
 const oak = "teacher@thenational.academy";
 const accessLimitMe = "teacher+access-limit-me@thenational.academy";
@@ -46,6 +55,42 @@ describe("a teacher's access tier", () => {
 
   it("keeps the region when the ORA metadata is malformed", () => {
     expect(accessFor({ region: "GB", ora: "full" }).tier).toBe("full");
+  });
+});
+
+describe("Aila full access", () => {
+  it.each([
+    ["a region outside the list", { region: "US" }],
+    ["no stored region", {}],
+  ])("gives full access with %s", (_, privateMetadata) => {
+    expect(
+      accessOf({ privateMetadata, publicMetadata: withAilaFlag(false) }),
+    ).toEqual({ tier: "full", inCopyrightRegion: false });
+  });
+
+  it.each([true, null, "false"])("changes nothing when the flag is %s", (isDemoUser) => {
+    expect(
+      accessOf({
+        privateMetadata: { region: "US" },
+        publicMetadata: withAilaFlag(isDemoUser),
+      }).tier,
+    ).toBe("limited");
+  });
+
+  it("keeps the region when Aila's metadata is malformed", () => {
+    expect(
+      accessOf({ privateMetadata: { region: "GB" }, publicMetadata: { labs: "x" } }),
+    ).toEqual({ tier: "full", inCopyrightRegion: true });
+  });
+
+  it("gives way to access-limit-me", () => {
+    expect(
+      accessOf({
+        privateMetadata: { region: "GB" },
+        publicMetadata: withAilaFlag(false),
+        emailAddresses: [verified(accessLimitMe)],
+      }),
+    ).toEqual({ tier: "limited", inCopyrightRegion: false });
   });
 });
 
