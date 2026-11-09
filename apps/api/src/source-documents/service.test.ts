@@ -71,13 +71,11 @@ describe("resolveSourceDocumentLocator", () => {
 
     await expect(
       resolveSourceDocumentLocator(request, teacher, resolveContext, {
-        resolve: vi
-          .fn()
-          .mockResolvedValue({
-            onboarded: false,
-            tier: "full",
-            inCopyrightRegion: true,
-          }),
+        resolve: vi.fn().mockResolvedValue({
+          onboarded: false,
+          tier: "full",
+          inCopyrightRegion: true,
+        }),
       }),
     ).resolves.toEqual({ outcome: "needsSetup" });
     expect(resolveContext).not.toHaveBeenCalled();

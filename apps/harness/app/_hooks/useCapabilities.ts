@@ -6,6 +6,7 @@ import {
   ResourceAdapterApiError,
   type LessonContext,
   type ResourceAdapterCapability,
+  type ResourceAdapterLauncherAccount,
 } from "@oaknational/resource-adapter";
 import { useAuth } from "@clerk/nextjs";
 import { raLogger } from "@oaknational/resource-adapter-logger";
@@ -16,6 +17,8 @@ const log = raLogger("harness");
 export type CapabilitiesState = "error" | "loading" | "ready" | "signedOut";
 
 export type UseCapabilitiesResult = Readonly<{
+  /** Null until the state is `signedOut` or `ready`. */
+  account: ResourceAdapterLauncherAccount | null;
   capabilities: readonly ResourceAdapterCapability[];
   /** Set while signed out too, when `capabilities` cannot be read. */
   hasAvailableCapabilities: boolean;
@@ -37,6 +40,7 @@ export function useCapabilities({
     readonly ResourceAdapterCapability[]
   >([]);
   const [state, setState] = useState<CapabilitiesState>("loading");
+  const [account, setAccount] = useState<ResourceAdapterLauncherAccount | null>(null);
   const [hasAvailableCapabilities, setHasAvailableCapabilities] = useState(false);
 
   const [attempt, setAttempt] = useState(0);
@@ -48,6 +52,7 @@ export function useCapabilities({
     async function load() {
       setCapabilities([]);
       setHasAvailableCapabilities(false);
+      setAccount(null);
       setState("loading");
 
       if (!isLoaded) {
@@ -62,6 +67,7 @@ export function useCapabilities({
           });
           if (current) {
             setHasAvailableCapabilities(available);
+            setAccount("signedOut");
             setState("signedOut");
           }
         } else {
@@ -73,6 +79,7 @@ export function useCapabilities({
           if (current) {
             setCapabilities(response.capabilities);
             setHasAvailableCapabilities(response.capabilities.length > 0);
+            setAccount(response.account.state);
             setState("ready");
           }
         }
@@ -81,10 +88,12 @@ export function useCapabilities({
           return;
         }
         if (error instanceof ResourceAdapterApiError && error.status === 401) {
+          setAccount("signedOut");
           setState("signedOut");
           return;
         }
         log.error(error);
+        if (signedOut) setAccount("signedOut");
         setState(signedOut ? "signedOut" : "error");
       }
     }
@@ -96,6 +105,7 @@ export function useCapabilities({
   }, [apiBaseUrl, attempt, getToken, isLoaded, isSignedIn, lesson, viewAsSignedOut]);
 
   return {
+    account,
     capabilities,
     hasAvailableCapabilities,
     reload: () => setAttempt((value) => value + 1),

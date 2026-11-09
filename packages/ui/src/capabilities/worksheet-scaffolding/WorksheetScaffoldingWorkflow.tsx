@@ -2,6 +2,7 @@
 
 import {
   OakInlineBanner,
+  OakPrimaryButton,
   OakSecondaryButton,
   OakTertiaryButton,
 } from "@oaknational/oak-components";
@@ -12,6 +13,7 @@ import {
 
 import type { TeacherAllowance } from "@oaknational/resource-adapter-contracts/internal";
 
+import { rememberOnboardingTrip } from "../../onboardingTrip.js";
 import { ResourceAdapterUnavailableMessage } from "../../ResourceAdapterErrorBoundary.js";
 import { ResourceDocumentRenderer } from "../../resource-document/ResourceDocumentRenderer.js";
 import type { TrackAnalyticsEvent } from "../../analytics.js";
@@ -56,6 +58,7 @@ export type WorksheetScaffoldingWorkflowProps = Readonly<{
   isOpen: boolean;
   lesson: LessonContext;
   onError?: ResourceAdapterErrorHandler;
+  onFinishSetup: () => void;
   track: TrackAnalyticsEvent;
 }>;
 
@@ -167,7 +170,19 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   if (state.status === "needsSetup") {
     return (
       <WorkflowFrame status={NEEDS_SETUP_STATUS}>
-        <WorkflowStatusBanner cta={null} status={NEEDS_SETUP_STATUS} />
+        <WorkflowStatusBanner
+          cta={
+            <OakPrimaryButton
+              onClick={() => {
+                rememberOnboardingTrip(props.lesson);
+                props.onFinishSetup();
+              }}
+            >
+              Finish setup
+            </OakPrimaryButton>
+          }
+          status={NEEDS_SETUP_STATUS}
+        />
       </WorkflowFrame>
     );
   }

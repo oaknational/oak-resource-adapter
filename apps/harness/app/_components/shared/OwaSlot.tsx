@@ -6,18 +6,22 @@ import { ViewAsControl } from "./ViewAs";
 
 export type OwaSlotBadge = "Fixture" | "Live" | "Stand-in";
 
-/** The launcher is the real package; the sign-in and error panels are the harness's. */
+/** The launcher, its prompts included, is the real package; the error panel is the harness's. */
 export function owaSlotBadge({
+  account,
   capabilities,
   hasAvailableCapabilities,
   state,
-}: Pick<UseCapabilitiesResult, "capabilities" | "hasAvailableCapabilities" | "state">):
-  OwaSlotBadge | undefined {
-  if (capabilities.length > 0) {
-    return "Live";
+}: Pick<
+  UseCapabilitiesResult,
+  "account" | "capabilities" | "hasAvailableCapabilities" | "state"
+>): OwaSlotBadge | undefined {
+  if (state === "error") {
+    return "Stand-in";
   }
-  const showsSignInPrompt = state === "signedOut" && hasAvailableCapabilities;
-  return showsSignInPrompt || state === "error" ? "Stand-in" : undefined;
+  const showsPrompt =
+    account === "needsSetup" || (account === "signedOut" && hasAvailableCapabilities);
+  return showsPrompt || capabilities.length > 0 ? "Live" : undefined;
 }
 
 export function OwaSlot({

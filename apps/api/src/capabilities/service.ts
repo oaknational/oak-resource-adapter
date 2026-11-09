@@ -28,7 +28,7 @@ export type EligibilityResolver = (
 ) => Promise<EligibilityContext>;
 
 /** Capability-specific predicates cannot override the lesson's rights gate. */
-export function isCapabilityEligible(
+function isCapabilityEligible(
   definition: CapabilityDefinition,
   context: EligibilityContext,
 ): boolean {

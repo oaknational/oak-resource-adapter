@@ -1,77 +1,24 @@
 "use client";
 
-import { ResourceAdapterButton } from "@oaknational/resource-adapter";
-import { SignInButton, useAuth } from "@clerk/nextjs";
-import { OakPrimaryButton, OakSecondaryButton } from "@oaknational/oak-components";
-
-import { useViewAsHref } from "./ViewAs";
-import styles from "./CreateMorePanel.module.css";
-import type { CapabilitiesState } from "../../_hooks/useCapabilities";
-import type {
-  ResourceAdapterButtonProps,
-  ResourceAdapterCapabilityOption,
+import {
+  ResourceAdapterLauncher,
+  type ResourceAdapterLauncherProps,
 } from "@oaknational/resource-adapter";
+import { OakSecondaryButton } from "@oaknational/oak-components";
+
+import styles from "./CreateMorePanel.module.css";
+import type { UseCapabilitiesResult } from "../../_hooks/useCapabilities";
+import type { ResourceAdapterCapabilityOption } from "@oaknational/resource-adapter";
 
 export function CreateMorePanel<TCapability extends ResourceAdapterCapabilityOption>({
-  capabilities,
+  account,
   hasAvailableCapabilities,
-  onSelectCapability,
   onRetry,
-  onPreviewSignIn,
   state,
-}: Readonly<{
-  capabilities: readonly TCapability[];
-  hasAvailableCapabilities: boolean;
-  onSelectCapability: ResourceAdapterButtonProps<TCapability>["onSelectCapability"];
-  onRetry: () => void;
-  onPreviewSignIn?: (() => void) | undefined;
-  state: CapabilitiesState;
-}>) {
-  const { isSignedIn } = useAuth();
-  const signedInHref = useViewAsHref()(false);
-  // Bare on purpose. The OWA slot renders this panel to show only what OWA itself
-  // renders, so any harness framing belongs to the page that wants it.
-  if (capabilities.length > 0) {
-    return (
-      <ResourceAdapterButton
-        capabilities={capabilities}
-        onSelectCapability={onSelectCapability}
-      />
-    );
-  }
-
-  // Nothing behind the prompt means no prompt: signing in to find an empty
-  // dialog is worse than never being asked.
-  if (state === "signedOut") {
-    if (!hasAvailableCapabilities) {
-      return null;
-    }
-
-    return (
-      <section
-        aria-labelledby="resource-adapter-sign-in-heading"
-        className={styles.createMore}
-      >
-        <h2 id="resource-adapter-sign-in-heading">Sign in to create more with Aila</h2>
-        <p>
-          Adapting this lesson&apos;s resources with AI is available to signed-in
-          teachers.
-        </p>
-        {onPreviewSignIn && isSignedIn ? (
-          <OakPrimaryButton onClick={onPreviewSignIn}>Sign in</OakPrimaryButton>
-        ) : (
-          <SignInButton
-            mode="modal"
-            forceRedirectUrl={signedInHref}
-            signUpForceRedirectUrl={signedInHref}
-          >
-            <OakPrimaryButton onClick={onPreviewSignIn}>Sign in</OakPrimaryButton>
-          </SignInButton>
-        )}
-      </section>
-    );
-  }
-
+  ...launcher
+}: Omit<ResourceAdapterLauncherProps<TCapability>, "account"> &
+  Pick<UseCapabilitiesResult, "account" | "hasAvailableCapabilities" | "state"> &
+  Readonly<{ onRetry: () => void }>) {
   if (state === "error") {
     return (
       <section
@@ -87,5 +34,13 @@ export function CreateMorePanel<TCapability extends ResourceAdapterCapabilityOpt
     );
   }
 
-  return null;
+  // Nothing behind the prompt means no prompt: signing in to find an empty
+  // dialog is worse than never being asked.
+  if (account === null || (account === "signedOut" && !hasAvailableCapabilities)) {
+    return null;
+  }
+
+  // Bare on purpose. The OWA slot renders this panel to show only what OWA itself
+  // renders, so any harness framing belongs to the page that wants it.
+  return <ResourceAdapterLauncher account={account} {...launcher} />;
 }

@@ -120,6 +120,7 @@ function dialogProps(
     isOpen: true,
     lesson,
     onClose: vi.fn(),
+    onFinishSetup: vi.fn(),
     ...overrides,
   };
 }
@@ -978,10 +979,13 @@ describe("WorksheetScaffoldingWorkflow", () => {
 
   it("asks a teacher who is not onboarded to finish setting up their account", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce({ outcome: "needsSetup" });
-    renderDialog();
+    const onFinishSetup = vi.fn();
+    renderDialog({ onFinishSetup });
 
     expect(await screen.findByText("Your account is not set up yet")).toBeVisible();
     expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Finish setup" }));
+    expect(onFinishSetup).toHaveBeenCalledOnce();
   });
 
   it("says when the teacher can start again once this month's adaptations are used", async () => {

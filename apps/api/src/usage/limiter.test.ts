@@ -32,7 +32,11 @@ describe("the model job limiter", () => {
   it("checks the teacher's usage against the configured limit", async () => {
     const retryAt = vi.fn().mockResolvedValue(null);
     const limiter = createModelJobLimiter({
-      access: accessResolving({ onboarded: true, tier: "full", inCopyrightRegion: true }),
+      access: accessResolving({
+        onboarded: true,
+        tier: "full",
+        inCopyrightRegion: true,
+      }),
       limit: () => 7,
       retryAt,
     });
@@ -84,7 +88,12 @@ describe("the model job limiter", () => {
     const limiter = createModelJobLimiter({
       access: accessResolving(
         { onboarded: true, tier: "full", inCopyrightRegion: true },
-        { onboarded: true, tier: "full", inCopyrightRegion: true, modelJobsPer24h: 250 },
+        {
+          onboarded: true,
+          tier: "full",
+          inCopyrightRegion: true,
+          modelJobsPer24h: 250,
+        },
       ),
       limit: () => 7,
       retryAt,

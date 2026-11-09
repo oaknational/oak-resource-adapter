@@ -1,7 +1,7 @@
 # @oaknational/resource-adapter
 
 React UI for Oak National Academy's Resource Adapter: the lesson-page entry
-point (`ResourceAdapterButton`, `ResourceAdapterDialog`) and the
+point (`ResourceAdapterLauncher`, `ResourceAdapterDialog`) and the
 `getResourceAdapterCapabilities` helper for resolving what the service can do
 for a lesson.
 
@@ -38,13 +38,13 @@ from server code:
 ```ts
 import {
   getResourceAdapterCapabilities,
-  ResourceAdapterButton,
   ResourceAdapterDialog,
+  ResourceAdapterLauncher,
   type ResourceAdapterCapability,
 } from "@oaknational/resource-adapter";
 import { useState } from "react";
 
-const capabilities = await getResourceAdapterCapabilities({
+const { account, capabilities } = await getResourceAdapterCapabilities({
   apiBaseUrl: "https://resource-adapter.example",
   getToken,
   lesson,
@@ -52,10 +52,16 @@ const capabilities = await getResourceAdapterCapabilities({
 
 const [selectedCapability, setSelectedCapability] =
   useState<ResourceAdapterCapability>();
+const finishSetup = () =>
+  router.push(`/onboarding?returnTo=${encodeURIComponent(lessonPath)}`);
 
-<ResourceAdapterButton
-  capabilities={capabilities.capabilities}
+<ResourceAdapterLauncher
+  account={account.state}
+  capabilities={capabilities}
+  lesson={lesson}
+  onFinishSetup={finishSetup}
   onSelectCapability={setSelectedCapability}
+  onSignIn={signInThroughOnboarding}
 />;
 
 {selectedCapability && (
@@ -66,9 +72,16 @@ const [selectedCapability, setSelectedCapability] =
     isOpen={true}
     lesson={lesson}
     onClose={() => {}}
+    onFinishSetup={finishSetup}
   />
 )}
 ```
+
+The launcher shows a prompt to sign in or to finish setting up the account, or
+the capability button once the teacher is ready. `onSignIn` and `onFinishSetup`
+must bring the teacher back to the lesson through OWA onboarding. The launcher
+remembers the trip in `sessionStorage`, so on return it confirms the account is
+ready or says setup was not completed.
 
 The helper wraps the package's internal typed tRPC client, so hosts never
 depend on `@trpc/client` themselves.
@@ -85,8 +98,9 @@ const canOfferAdaptation = await getResourceAdapterCapabilityAvailability({
 });
 ```
 
-It answers whether _this package version_ could render anything for the lesson,
-so a sign-in prompt gated on it never leads a teacher to an empty dialog.
+It answers whether _this package version_ could render anything for the lesson.
+Render the launcher with `account="signedOut"` only when it is true, so signing
+in never leads a teacher to an empty dialog.
 
 ### Analytics
 

@@ -12,7 +12,7 @@ metadata; the event plan itself is Oak's Avo tracking plan.
 
 OWA maps the event union to its Avo functions with an exhaustive switch and
 sends through its own PostHog instance and consent flow. Hosts fire "Resource Adapter Opened"
-themselves, with the control `ResourceAdapterButton` passes to
+themselves, with the control `ResourceAdapterLauncher` passes to
 `onSelectCapability` as its `Component Type`.
 
 ## Events

@@ -2,7 +2,7 @@
 
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import shared from "./shared.module.css";
 import styles from "./ViewAs.module.css";
@@ -38,15 +38,6 @@ export function useViewAsHref(): (signedOut: boolean) => string {
     }
     return `${pathname}?${parameters.toString()}`;
   };
-}
-
-export function useExitSignedOutPreview(): (() => void) | undefined {
-  const viewAsSignedOut = useViewAsSignedOut();
-  const router = useRouter();
-  const hrefFor = useViewAsHref();
-  return viewAsSignedOut
-    ? () => router.push(hrefFor(false), { scroll: false })
-    : undefined;
 }
 
 export function ViewAsControl() {

@@ -8,6 +8,11 @@ the account as `needsSetup`, and opening worksheet scaffolding from a lesson
 returns `needsSetup` instead of starting work. Aila's onboarding does not count:
 OWA onboarding keeps the region Aila stored and leaves Aila's metadata alone.
 
+The harness cannot reach OWA onboarding, so its sign-in and "Finish setup" go
+through a stand-in at `/onboarding`, also linked as "Account setup" in the
+header. It writes `owa.isOnboarded` and the region the tester picks, or clears
+both, on the development Clerk instance only.
+
 A teacher who onboarded before OWA stored a region, or whose region header was
 missing, has no region. They are ready, outside the copyright regions, and
 limited unless one of the other tier rules gives them full access. Onboarding
@@ -41,10 +46,11 @@ applies to both tiers. A teacher with a verified Oak address gets 1000
 replaces either for one teacher. ORA does not read Aila's
 `privateMetadata.customRateLimit`, which counts Aila generations.
 
-ORA caches each onboarded teacher's access and refreshes it before refusing work
-because of a usage limit, so a grant or raised limit applies on their next
-attempt. A teacher who needs setup is looked up on every request, so the first
-request after onboarding sees it.
+ORA caches each onboarded teacher's access, for 10 minutes in production and 10
+seconds elsewhere, and refreshes it before refusing work because of a usage
+limit, so a grant or raised limit applies on their next attempt. A teacher who
+needs setup is looked up on every request, so the first request after
+onboarding sees it.
 
 ## Copyright region
 

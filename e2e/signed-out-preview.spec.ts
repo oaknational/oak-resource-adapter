@@ -26,7 +26,7 @@ test(
     await expect(signInPrompt).toBeVisible();
     await expect(
       page.getByRole("heading", {
-        name: "What teachers see in OWA Stand-in",
+        name: "What teachers see in OWA Live",
         exact: true,
       }),
     ).toBeVisible();

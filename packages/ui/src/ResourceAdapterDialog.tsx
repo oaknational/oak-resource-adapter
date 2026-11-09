@@ -30,6 +30,8 @@ export type ResourceAdapterDialogProps = Readonly<{
   onClose: () => void;
   /** Invoked with any error the adapter catches, for the host's observability. */
   onError?: ResourceAdapterErrorHandler;
+  /** Must send the teacher to onboarding and back to this lesson. */
+  onFinishSetup: () => void;
 }>;
 
 /**
@@ -102,6 +104,7 @@ function ResourceAdapterDialogInner({
   lesson,
   onClose,
   onError,
+  onFinishSetup,
   resetKeys,
   track,
 }: ResourceAdapterDialogInnerProps) {
@@ -145,6 +148,7 @@ function ResourceAdapterDialogInner({
               isOpen={isOpen}
               lesson={lesson}
               {...(onError ? { onError } : {})}
+              onFinishSetup={onFinishSetup}
               track={track}
             />
           </ResourceAdapterErrorBoundary>

@@ -1,6 +1,8 @@
 "use client";
 
 import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { AccessIndicator } from "./AccessIndicator";
 import { ApiHealthIndicator } from "./ApiHealthIndicator";
@@ -8,6 +10,7 @@ import styles from "./SiteHeader.module.css";
 
 export function SiteHeader() {
   const { isLoaded, isSignedIn } = useAuth();
+  const pathname = usePathname();
 
   return (
     <header className={styles.header}>
@@ -17,7 +20,21 @@ export function SiteHeader() {
       </div>
       <ApiHealthIndicator />
       <AccessIndicator />
-      {isLoaded && (isSignedIn ? <UserButton /> : <SignInButton mode="modal" />)}
+      {isLoaded &&
+        (isSignedIn ? (
+          <>
+            <Link
+              aria-current={pathname === "/onboarding" ? "page" : undefined}
+              className={styles.accountSetup}
+              href="/onboarding"
+            >
+              Account setup
+            </Link>
+            <UserButton />
+          </>
+        ) : (
+          <SignInButton mode="modal" />
+        ))}
     </header>
   );
 }
