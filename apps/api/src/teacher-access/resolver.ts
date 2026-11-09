@@ -58,7 +58,10 @@ export function createCachedTeacherAccessResolver(
     const access = lookUp(teacherId)
       .then((value) => {
         entries.delete(teacherId);
-        entries.set(teacherId, { access: value, expiresAt: now() + ttlMs });
+        // Uncached until onboarded, so the first request after onboarding sees it.
+        if (value.onboarded) {
+          entries.set(teacherId, { access: value, expiresAt: now() + ttlMs });
+        }
         return value;
       })
       .finally(() => inFlight.delete(teacherId));

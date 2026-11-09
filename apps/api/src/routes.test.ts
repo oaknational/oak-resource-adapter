@@ -43,6 +43,13 @@ vi.mock("./authentication", async (importOriginal) => {
   };
 });
 
+vi.mock("./teacher-access/resolver", () => ({
+  teacherAccessResolver: {
+    resolve: () =>
+      Promise.resolve({ onboarded: true, tier: "full", inCopyrightRegion: true }),
+  },
+}));
+
 // Fully stubbed so these tests can never make a paid OpenAI call.
 vi.mock("./ai/dev-invoker", () => ({
   invokeDevSmokeText: vi.fn(),

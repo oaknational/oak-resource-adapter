@@ -34,6 +34,7 @@ type MonthlyLimitReached = UsageLimitReached<"adapted_resources_month">;
 export type WorkflowState =
   | Readonly<{ status: "idle" }>
   | Readonly<{ status: "loading" }>
+  | Readonly<{ status: "needsSetup" }>
   | Readonly<{
       status: "choosing";
       resumable: WorksheetScaffoldingResumable;
@@ -117,6 +118,9 @@ function opened(
   state: WorkflowState,
   { declined, entry }: Extract<WorkflowEvent, { type: "opened" }>,
 ): WorkflowState {
+  if (entry.outcome === "needsSetup") {
+    return { status: "needsSetup" };
+  }
   const accessTier = entry.allowance.tier;
   if (entry.outcome === "resumable") {
     return {

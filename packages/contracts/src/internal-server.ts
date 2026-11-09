@@ -151,6 +151,7 @@ const worksheetScaffoldingStateSchema = z.object({
 }) satisfies z.ZodType<WorksheetScaffoldingState>;
 
 const worksheetScaffoldingEntrySchema = z.discriminatedUnion("outcome", [
+  z.object({ outcome: z.literal("needsSetup") }),
   z.object({
     allowance: teacherAllowanceSchema,
     outcome: z.literal("opened"),

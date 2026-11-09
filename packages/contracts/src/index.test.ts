@@ -12,6 +12,8 @@ import { hostRouter } from "./server.js";
 
 const fullAllowance = { get: () => Promise.resolve({ tier: "full" } as const) };
 
+const readyAccount = { state: "ready", tier: "full", inCopyrightRegion: true } as const;
+
 const sourceDocument: ResourceDocument = {
   schemaVersion: "0.1",
   id: "oak:worksheet:adding-fractions:pupil",
@@ -92,6 +94,7 @@ describe("Resource Adapter API contracts", () => {
   it("accepts a capability response", () => {
     expect(
       resourceAdapterCapabilitiesResponseSchema.parse({
+        account: readyAccount,
         capabilities: [
           {
             id: "worksheetScaffolding",
@@ -108,6 +111,7 @@ describe("Resource Adapter API contracts", () => {
   it("accepts a capability introduced after this package version", () => {
     expect(
       resourceAdapterCapabilitiesResponseSchema.parse({
+        account: readyAccount,
         capabilities: [
           {
             id: "future-adapter",
@@ -129,6 +133,7 @@ describe("Resource Adapter API contracts", () => {
         },
         capabilities: {
           getCapabilities: () => ({
+            account: readyAccount,
             capabilities: [
               {
                 id: "worksheetScaffolding",
@@ -161,7 +166,7 @@ describe("Resource Adapter API contracts", () => {
           teacherId: "teacher-456",
         },
         capabilities: {
-          getCapabilities: () => ({ capabilities: [] }),
+          getCapabilities: () => ({ account: readyAccount, capabilities: [] }),
           hasCapabilities: () => ({ available: false }),
         },
       });
@@ -183,7 +188,7 @@ describe("Resource Adapter API contracts", () => {
         apiContractVersion: resourceAdapterApiContractVersion,
         authenticatedTeacher: null,
         capabilities: {
-          getCapabilities: () => ({ capabilities: [] }),
+          getCapabilities: () => ({ account: readyAccount, capabilities: [] }),
           hasCapabilities: () => ({ available: true }),
         },
       });
@@ -206,7 +211,7 @@ describe("Resource Adapter API contracts", () => {
         apiContractVersion: 999,
         authenticatedTeacher: null,
         capabilities: {
-          getCapabilities: () => ({ capabilities: [] }),
+          getCapabilities: () => ({ account: readyAccount, capabilities: [] }),
           hasCapabilities: () => ({ available: true }),
         },
       });
@@ -228,7 +233,7 @@ describe("Resource Adapter API contracts", () => {
         apiContractVersion: resourceAdapterApiContractVersion,
         authenticatedTeacher: null,
         capabilities: {
-          getCapabilities: () => ({ capabilities: [] }),
+          getCapabilities: () => ({ account: readyAccount, capabilities: [] }),
           hasCapabilities: () => ({ available: false }),
         },
       });

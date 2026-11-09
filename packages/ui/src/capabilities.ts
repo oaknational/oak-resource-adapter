@@ -1,4 +1,5 @@
 import type {
+  ResourceAdapterAccount,
   ResourceAdapterCapabilitiesResponse as ServiceCapabilitiesResponse,
   ResourceAdapterCapability as ServiceCapability,
 } from "@oaknational/resource-adapter-contracts";
@@ -9,6 +10,7 @@ export type ResourceAdapterCapabilityId = (typeof supportedCapabilityIds)[number
 export type ResourceAdapterCapability = Omit<ServiceCapability, "id"> &
   Readonly<{ id: ResourceAdapterCapabilityId }>;
 export type ResourceAdapterCapabilitiesResponse = Readonly<{
+  account: ResourceAdapterAccount;
   capabilities: readonly ResourceAdapterCapability[];
 }>;
 
@@ -27,6 +29,7 @@ export function getSupportedCapabilities(
   response: ServiceCapabilitiesResponse,
 ): ResourceAdapterCapabilitiesResponse {
   return {
+    account: response.account,
     capabilities: response.capabilities.filter(isSupportedCapability),
   };
 }

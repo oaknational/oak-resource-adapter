@@ -11,6 +11,8 @@ export const OAK_MODEL_JOBS_PER_24H = 1000;
 export const RATE_LIMIT_ME_MODEL_JOBS_PER_24H = 5;
 
 export type TeacherAccess = Readonly<{
+  /** `publicMetadata.owa.isOnboarded`. Aila's onboarding does not count. */
+  onboarded: boolean;
   tier: "full" | "limited";
   /** Whether geo-restricted lessons are offered. A grant does not change it. */
   inCopyrightRegion: boolean;
@@ -34,9 +36,13 @@ const privateMetadataSchema = z.object({
     .catch(undefined),
 });
 
-// Aila records full access as `isDemoUser: false`. ADAPT-203 replaces this with
-// ORA grants when Aila is sunset.
 const publicMetadataSchema = z.object({
+  owa: z
+    .object({ isOnboarded: z.literal(true).optional().catch(undefined) })
+    .optional()
+    .catch(undefined),
+  // Aila records full access as `isDemoUser: false`. ADAPT-203 replaces this with
+  // ORA grants when Aila is sunset.
   labs: z
     .object({ isDemoUser: z.literal(false).optional().catch(undefined) })
     .optional()
@@ -86,7 +92,7 @@ export function teacherAccessFromClerkUser({
   emailAddresses,
 }: ClerkUser): TeacherAccess {
   const { region, ora } = privateMetadataSchema.safeParse(privateMetadata).data ?? {};
-  const { labs } = publicMetadataSchema.safeParse(publicMetadata).data ?? {};
+  const { owa, labs } = publicMetadataSchema.safeParse(publicMetadata).data ?? {};
   const oakAddresses = verifiedOakAddresses(emailAddresses);
   const granted = ora?.access === "full";
   const markedOutsideUk = hasMarker(oakAddresses, "access-limit-me");
@@ -96,6 +102,7 @@ export function teacherAccessFromClerkUser({
   const modelJobsPer24h =
     ora?.usageLimits?.modelJobsPer24h ?? oakModelJobsPer24h(oakAddresses);
   return {
+    onboarded: owa?.isOnboarded === true,
     tier:
       !behavesOutsideUk &&
       (granted ||

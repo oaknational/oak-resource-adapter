@@ -58,6 +58,23 @@ describe("a teacher's access tier", () => {
   });
 });
 
+describe("a teacher's onboarding", () => {
+  it("is complete when OWA has set its flag", () => {
+    expect(accessOf({ publicMetadata: { owa: { isOnboarded: true } } }).onboarded).toBe(
+      true,
+    );
+  });
+
+  it.each([
+    ["no OWA metadata", {}],
+    ["a false flag", { owa: { isOnboarded: false } }],
+    ["a flag that is not a boolean", { owa: { isOnboarded: "true" } }],
+    ["only Aila onboarding", { labs: { isOnboarded: true, isDemoUser: false } }],
+  ])("is incomplete with %s", (_, publicMetadata) => {
+    expect(accessOf({ publicMetadata }).onboarded).toBe(false);
+  });
+});
+
 describe("Aila full access", () => {
   it.each([
     ["a region outside the list", { region: "US" }],
@@ -65,22 +82,28 @@ describe("Aila full access", () => {
   ])("gives full access with %s", (_, privateMetadata) => {
     expect(
       accessOf({ privateMetadata, publicMetadata: withAilaFlag(false) }),
-    ).toEqual({ tier: "full", inCopyrightRegion: false });
+    ).toMatchObject({
+      tier: "full",
+      inCopyrightRegion: false,
+    });
   });
 
-  it.each([true, null, "false"])("changes nothing when the flag is %s", (isDemoUser) => {
-    expect(
-      accessOf({
-        privateMetadata: { region: "US" },
-        publicMetadata: withAilaFlag(isDemoUser),
-      }).tier,
-    ).toBe("limited");
-  });
+  it.each([true, null, "false"])(
+    "changes nothing when the flag is %s",
+    (isDemoUser) => {
+      expect(
+        accessOf({
+          privateMetadata: { region: "US" },
+          publicMetadata: withAilaFlag(isDemoUser),
+        }).tier,
+      ).toBe("limited");
+    },
+  );
 
   it("keeps the region when Aila's metadata is malformed", () => {
     expect(
       accessOf({ privateMetadata: { region: "GB" }, publicMetadata: { labs: "x" } }),
-    ).toEqual({ tier: "full", inCopyrightRegion: true });
+    ).toMatchObject({ tier: "full", inCopyrightRegion: true });
   });
 
   it("gives way to access-limit-me", () => {
@@ -90,7 +113,7 @@ describe("Aila full access", () => {
         publicMetadata: withAilaFlag(false),
         emailAddresses: [verified(accessLimitMe)],
       }),
-    ).toEqual({ tier: "limited", inCopyrightRegion: false });
+    ).toMatchObject({ tier: "limited", inCopyrightRegion: false });
   });
 });
 
@@ -118,11 +141,12 @@ describe("a teacher's daily limit override", () => {
   it.each([0, -1, 1.5, "250", null])("is ignored when it is %s", (modelJobsPer24h) => {
     expect(
       accessFor({ ora: { access: "full", usageLimits: { modelJobsPer24h } } }),
-    ).toEqual({ tier: "full", inCopyrightRegion: false });
+    ).toEqual({ onboarded: false, tier: "full", inCopyrightRegion: false });
   });
 
   it("ignores Aila's custom rate limit", () => {
     expect(accessFor({ customRateLimit: 500 })).toEqual({
+      onboarded: false,
       tier: "limited",
       inCopyrightRegion: false,
     });
@@ -131,7 +155,7 @@ describe("a teacher's daily limit override", () => {
 
 describe("a verified Oak address", () => {
   it("gives full access and the Oak daily limit without ORA metadata", () => {
-    expect(accessFor({}, verified(oak))).toEqual({
+    expect(accessFor({}, verified(oak))).toMatchObject({
       tier: "full",
       inCopyrightRegion: false,
       modelJobsPer24h: OAK_MODEL_JOBS_PER_24H,
@@ -152,6 +176,7 @@ describe("a verified Oak address", () => {
     ],
   ])("is not %s", (_, emailAddresses) => {
     expect(accessFor({}, ...emailAddresses)).toEqual({
+      onboarded: false,
       tier: "limited",
       inCopyrightRegion: false,
     });
@@ -161,6 +186,7 @@ describe("a verified Oak address", () => {
 describe("an access-limit-me address", () => {
   it("makes a UK teacher limited, outside the copyright region, on the default daily limit", () => {
     expect(accessFor({ region: "GB" }, verified(accessLimitMe))).toEqual({
+      onboarded: false,
       tier: "limited",
       inCopyrightRegion: false,
     });
@@ -171,7 +197,7 @@ describe("an access-limit-me address", () => {
   });
 
   it("is ignored when unverified", () => {
-    expect(accessFor({ region: "GB" }, unverified(accessLimitMe))).toEqual({
+    expect(accessFor({ region: "GB" }, unverified(accessLimitMe))).toMatchObject({
       tier: "full",
       inCopyrightRegion: true,
     });
@@ -180,13 +206,13 @@ describe("an access-limit-me address", () => {
   it("gives way to a grant for access, but not for the copyright region", () => {
     expect(
       accessFor({ region: "GB", ora: { access: "full" } }, verified(accessLimitMe)),
-    ).toEqual({ tier: "full", inCopyrightRegion: false });
+    ).toMatchObject({ tier: "full", inCopyrightRegion: false });
   });
 });
 
 describe("a rate-limit-me address", () => {
   it("lowers the daily limit for a UK teacher without changing their access", () => {
-    expect(accessFor({ region: "GB" }, verified(rateLimitMe))).toEqual({
+    expect(accessFor({ region: "GB" }, verified(rateLimitMe))).toMatchObject({
       tier: "full",
       inCopyrightRegion: true,
       modelJobsPer24h: RATE_LIMIT_ME_MODEL_JOBS_PER_24H,
@@ -195,6 +221,7 @@ describe("a rate-limit-me address", () => {
 
   it("is ignored when unverified", () => {
     expect(accessFor({ region: "GB" }, unverified(rateLimitMe))).toEqual({
+      onboarded: false,
       tier: "full",
       inCopyrightRegion: true,
     });
@@ -212,7 +239,7 @@ describe("a rate-limit-me address", () => {
   it("combines with access-limit-me on another address", () => {
     expect(
       accessFor({ region: "GB" }, verified(accessLimitMe), verified(rateLimitMe)),
-    ).toEqual({
+    ).toMatchObject({
       tier: "limited",
       inCopyrightRegion: false,
       modelJobsPer24h: RATE_LIMIT_ME_MODEL_JOBS_PER_24H,

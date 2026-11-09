@@ -976,6 +976,14 @@ describe("WorksheetScaffoldingWorkflow", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("asks a teacher who is not onboarded to finish setting up their account", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce({ outcome: "needsSetup" });
+    renderDialog();
+
+    expect(await screen.findByText("Your account is not set up yet")).toBeVisible();
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+  });
+
   it("says when the teacher can start again once this month's adaptations are used", async () => {
     const usageLimit = {
       kind: "adapted_resources_month",

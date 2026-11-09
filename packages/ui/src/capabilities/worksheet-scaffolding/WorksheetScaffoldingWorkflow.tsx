@@ -43,6 +43,7 @@ import {
   FAILURE_TITLES,
   LOADING_STATUS,
   MONTHLY_RESET_STATUS,
+  NEEDS_SETUP_STATUS,
   failureMessage,
   foundNoScaffolds,
   readyStatus,
@@ -162,6 +163,13 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   }
   if (state.status === "monthlyLimitReached") {
     return <MonthlyLimitWorkflow onTryAgain={tryAgain} state={state} />;
+  }
+  if (state.status === "needsSetup") {
+    return (
+      <WorkflowFrame status={NEEDS_SETUP_STATUS}>
+        <WorkflowStatusBanner cta={null} status={NEEDS_SETUP_STATUS} />
+      </WorkflowFrame>
+    );
   }
   if (state.status === "error") {
     return (

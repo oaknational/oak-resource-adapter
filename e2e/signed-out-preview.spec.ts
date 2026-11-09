@@ -179,6 +179,11 @@ for (const signedOut of [false, true]) {
                 data: available
                   ? { available: true }
                   : {
+                      account: {
+                        state: "ready",
+                        tier: "full",
+                        inCopyrightRegion: true,
+                      },
                       capabilities: [
                         {
                           id: "worksheetScaffolding",

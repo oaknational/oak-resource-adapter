@@ -3,8 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 import { createCachedTeacherAccessResolver } from "./resolver";
 import type { TeacherAccess } from "./access";
 
-const limited: TeacherAccess = { tier: "limited", inCopyrightRegion: false };
-const full: TeacherAccess = { tier: "full", inCopyrightRegion: true };
+const limited: TeacherAccess = {
+  onboarded: true,
+  tier: "limited",
+  inCopyrightRegion: false,
+};
+const full: TeacherAccess = { onboarded: true, tier: "full", inCopyrightRegion: true };
 
 describe("the cached teacher access resolver", () => {
   it("serves a lookup until it expires", async () => {
@@ -22,6 +26,20 @@ describe("the cached teacher access resolver", () => {
     now = 999;
     await expect(resolver.resolve("user_a")).resolves.toEqual(limited);
     now = 1000;
+    await expect(resolver.resolve("user_a")).resolves.toEqual(full);
+    expect(lookUp).toHaveBeenCalledTimes(2);
+  });
+
+  it("looks up a teacher who is not onboarded on every request", async () => {
+    const notOnboarded: TeacherAccess = { ...full, onboarded: false };
+    const lookUp = vi
+      .fn<() => Promise<TeacherAccess>>()
+      .mockResolvedValueOnce(notOnboarded)
+      .mockResolvedValueOnce(full);
+    const resolver = createCachedTeacherAccessResolver(lookUp);
+
+    await expect(resolver.resolve("user_a")).resolves.toEqual(notOnboarded);
+    await expect(resolver.resolve("user_a")).resolves.toEqual(full);
     await expect(resolver.resolve("user_a")).resolves.toEqual(full);
     expect(lookUp).toHaveBeenCalledTimes(2);
   });

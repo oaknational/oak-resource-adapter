@@ -261,6 +261,11 @@ export function useWorksheetScaffolding({
       (entry) => {
         if (replacingRef.current === replacing) replacingRef.current = null;
         if (cancelled) return;
+        if (entry.outcome === "needsSetup") {
+          offeredRef.current = null;
+          dispatch({ type: "opened", entry });
+          return;
+        }
         const offered = offeredRef.current;
         if (entry.outcome === "resumable") {
           offeredRef.current = entry.resumable;
