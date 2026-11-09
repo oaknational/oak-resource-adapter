@@ -23,7 +23,7 @@
     "@oaknational/resource-document": "workspace:*",
     "@portabletext/react": "^4.0.3",
     "next": "^16.4.3",
-    "next-cloudinary": "^6.19.3",
+    "next-cloudinary": "^7.0.0",
     "posthog-js": "^1.438.21",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
