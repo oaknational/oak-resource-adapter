@@ -52,7 +52,9 @@ const contextFor = (
 describe("appliedOncePerTargetRule", () => {
   const rule = appliedOncePerTargetRule({
     id: "applied-once-per-target",
+    label: "Test",
     description: "Test",
+    condition: "Test",
   });
   const definition = defineTransformation({ ...declaration, rules: [rule] });
   const appliedTo = (targetBlockId: string) => [
@@ -75,7 +77,7 @@ describe("appliedOncePerTargetRule", () => {
 
 describe("keyStageRule", () => {
   const rule = keyStageRule(
-    { id: "key-stage", description: "Test" },
+    { id: "key-stage", label: "Test", description: "Test", condition: "Test" },
     { keyStageSlugs: ["ks3"] },
   );
 
@@ -86,7 +88,12 @@ describe("keyStageRule", () => {
     expect(rule.check({ document: worksheet })).toBe("unsupported-key-stage");
     expect(
       keyStageRule(
-        { id: "key-stage", description: "Test" },
+        {
+          id: "key-stage",
+          label: "Test",
+          description: "Test",
+          condition: "Test",
+        },
         { keyStageSlugs: ["ks2"] },
       ).check({
         document: worksheet,

@@ -11,7 +11,10 @@ import { LESSON_MATERIALS_RULE } from "../lesson-rules/lesson-materials";
 import { LESSON_RULES } from "../lesson-rules/rules";
 import type { Rule } from "../rules/rule";
 import { transformationRulesFor } from "../transformations/evaluate-transformation";
-import { transformationDefinitions } from "../transformations/registry";
+import {
+  isRegisteredTransformationKind,
+  transformationDefinitions,
+} from "../transformations/registry";
 import type {
   TransformationDefinition,
   TransformationRule,
@@ -19,16 +22,49 @@ import type {
 import { ACCOUNT_GATES, accessPolicies } from "./account";
 
 function describeRule(rule: Rule<never> | TransformationRule): RuleDescription {
-  const { config, description, id, kind, reads } = rule;
-  return {
+  const {
+    checks,
+    condition,
     config,
     description,
+    displayValues,
+    displayValuesLabel,
     id,
     kind,
+    label,
     reads,
+    source,
+  } = rule;
+  return {
+    config,
+    ...(description === undefined ? {} : { description }),
+    id,
+    kind,
+    label,
+    ...(displayValues === undefined ? {} : { displayValues }),
+    ...(displayValuesLabel === undefined ? {} : { displayValuesLabel }),
+    ...(source === undefined ? {} : { source }),
+    ...(checks === undefined ? {} : { checks }),
+    reads,
+    condition,
     ...("removesSupportLevels" in rule && rule.removesSupportLevels !== undefined
       ? { removesSupportLevels: rule.removesSupportLevels }
       : {}),
+  };
+}
+
+/** The excludes rule lists kinds, which only the registry can name for a reader. */
+function withKindLabels(rule: RuleDescription): RuleDescription {
+  if (rule.kind !== "excludes" || rule.displayValues === undefined) {
+    return rule;
+  }
+  return {
+    ...rule,
+    displayValues: rule.displayValues.map((kind) =>
+      isRegisteredTransformationKind(kind)
+        ? transformationDefinitions[kind].label
+        : kind,
+    ),
   };
 }
 
@@ -54,7 +90,7 @@ export function getDevRuleCatalogue(): RuleCatalogue {
         ...(definition.inputs === undefined ? {} : { inputs: definition.inputs }),
         kind: definition.kind,
         label: definition.label,
-        rules: transformationRulesFor(definition).map(describeRule),
+        rules: transformationRulesFor(definition).map(describeRule).map(withKindLabels),
         status: definition.status,
       }),
     ),

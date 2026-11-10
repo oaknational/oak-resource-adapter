@@ -99,7 +99,12 @@ const worksheetGatedCapability: CapabilityDefinition = {
   resourceType: "worksheet",
   rules: [
     resourceInputsRule(
-      { id: "resource-inputs", description: "A rule under test." },
+      {
+        id: "resource-inputs",
+        label: "Test",
+        description: "A rule under test.",
+        condition: "Test",
+      },
       { resourceType: "worksheet" },
     ),
   ],
@@ -112,7 +117,12 @@ const starterQuizGatedCapability: CapabilityDefinition = {
   resourceType: "starter-quiz",
   rules: [
     resourceInputsRule(
-      { id: "resource-inputs", description: "A rule under test." },
+      {
+        id: "resource-inputs",
+        label: "Test",
+        description: "A rule under test.",
+        condition: "Test",
+      },
       { resourceType: "starter-quiz" },
     ),
   ],

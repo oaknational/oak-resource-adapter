@@ -29,7 +29,8 @@ export const chunkTasksTransformation = defineTransformation({
     keyStageRule(
       {
         id: "key-stage",
-        description: "Refuses a resource outside the key stages with a step range.",
+        label: "Is for a key stage with a step range",
+        condition: "The resource isn't for one of these key stages",
       },
       { keyStageSlugs: CHUNKING_KEY_STAGES },
     ),

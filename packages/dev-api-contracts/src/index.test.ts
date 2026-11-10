@@ -136,6 +136,11 @@ const rule = {
   description: "Removes definitions from word banks on French lessons.",
   id: "mfl",
   kind: "subject",
+  label: "Modern foreign languages",
+  displayValues: ["French"],
+  source: "Oak's browse data",
+  checks: ["The lesson is taught in French"],
+  condition: "The lesson is in one of these subjects",
   reads: ["lesson"],
   removesSupportLevels: ["mid"],
 };
@@ -170,7 +175,14 @@ const responses: ReadonlyArray<readonly [string, z.ZodType, unknown]> = [
       ],
       lesson: [rule],
       lessonMaterials: [
-        { config: {}, description: "Withholds transcripts.", id: "transcript" },
+        {
+          config: {},
+          description: "Withholds transcripts.",
+          id: "transcript",
+          label: "English transcripts",
+          displayValues: ["English"],
+          condition: "The transcript, if the lesson is in one of these subjects",
+        },
       ],
       transformations: [
         {

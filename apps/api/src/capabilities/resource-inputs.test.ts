@@ -4,7 +4,12 @@ import { resourceInputsRule } from "./resource-inputs";
 
 describe("resourceInputsRule", () => {
   const rule = resourceInputsRule(
-    { id: "resource-inputs", description: "A rule under test." },
+    {
+      id: "resource-inputs",
+      label: "Test",
+      description: "A rule under test.",
+      condition: "Test",
+    },
     { resourceType: "worksheet" },
   );
   const check = (

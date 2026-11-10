@@ -2,13 +2,12 @@ import { defineRule, type RuleMetadata } from "../rules/rule";
 import type { EligibilityContext } from "./types";
 
 export function resourceInputsRule<const TId extends string>(
-  { id, description }: RuleMetadata<TId>,
+  metadata: RuleMetadata<TId>,
   config: Readonly<{ resourceType: string }>,
 ) {
   return defineRule({
-    id,
+    ...metadata,
     kind: "resource-inputs",
-    description,
     config,
     reads: ["lesson"],
     check: ({

@@ -3,13 +3,12 @@ import { defineRule, type RuleMetadata } from "../rules/rule";
 import type { TeacherContext } from "./context";
 
 export function geoRule<const TId extends string>(
-  { id, description }: RuleMetadata<TId>,
+  metadata: RuleMetadata<TId>,
   config: Readonly<{ featureKey: string }>,
 ) {
   return defineRule({
-    id,
+    ...metadata,
     kind: "geo",
-    description,
     config,
     reads: ["lesson", "teacher"],
     check: ({ facts, teacher }: LessonFactsContext & TeacherContext) =>

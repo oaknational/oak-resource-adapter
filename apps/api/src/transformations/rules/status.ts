@@ -2,13 +2,12 @@ import { defineRule, type RuleMetadata } from "../../rules/rule";
 import type { TransformationRuleContext, TransformationStatus } from "../types";
 
 export function statusRule<const TId extends string>(
-  { id, description }: RuleMetadata<TId>,
+  metadata: RuleMetadata<TId>,
   config: Readonly<{ offeredStatuses: readonly TransformationStatus[] }>,
 ) {
   return defineRule({
-    id,
+    ...metadata,
     kind: "status",
-    description,
     config,
     reads: [],
     check: ({ definition }: Pick<TransformationRuleContext, "definition">) =>

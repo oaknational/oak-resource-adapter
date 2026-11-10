@@ -1,11 +1,16 @@
-import type { RestrictionLevel } from "@oaknational/resource-adapter-curriculum";
+import {
+  RESTRICTION_LEVEL_COLUMNS,
+  RESTRICTION_LEVELS_VIEW,
+  type RestrictionLevel,
+} from "@oaknational/resource-adapter-curriculum";
 
 import type { LessonFactsContext } from "../rules/context";
+import { code, readableSlug } from "../rules/rule-presentation";
 import { defineRule, type RuleMetadata } from "../rules/rule";
 
 /** A lesson with no published restriction levels cannot be judged, so it is refused. */
 export function copyrightRule<const TId extends string>(
-  { id, description }: RuleMetadata<TId>,
+  metadata: RuleMetadata<TId>,
   config: Readonly<{
     restrictedLevels: readonly RestrictionLevel[];
     conflictFeatureKeys: readonly string[];
@@ -14,11 +19,18 @@ export function copyrightRule<const TId extends string>(
   const isRestricted = (level: RestrictionLevel) =>
     config.restrictedLevels.includes(level);
 
+  const { downloadableFiles, featureKeys, media, works } = RESTRICTION_LEVEL_COLUMNS;
+
   return defineRule({
-    id,
+    ...metadata,
     kind: "copyright",
-    description,
     config,
+    source: `Oak's ${code(RESTRICTION_LEVELS_VIEW)} view, with every published row for the lesson combined`,
+    checks: [
+      "The view has no published row for the lesson",
+      `Its ${code(featureKeys)} include ${config.conflictFeatureKeys.map(code).join(" or ")}`,
+      `Its works (${code(works)}), media (${code(media)}) or downloadable files (${code(downloadableFiles)}) are ${config.restrictedLevels.map(readableSlug).join(" or ")}`,
+    ],
     reads: ["lesson"],
     check: ({ facts }: LessonFactsContext) => {
       const restrictionLevels = facts?.restrictionLevels;

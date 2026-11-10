@@ -31,7 +31,8 @@ export const addTaskGlossaryTransformation = defineTransformation({
     subjectRule(
       {
         id: "mfl",
-        description: "Refuses task glossaries on French, German and Spanish lessons.",
+        label: "Isn't a modern foreign languages lesson",
+        condition: "The lesson is in one of these subjects",
       },
       { subjectSlugs: MFL_SUBJECT_SLUGS },
     ),

@@ -31,6 +31,7 @@ function parseSection(view: SearchParam): HarnessSection {
     view === "edge-cases" ||
     view === "suggestions" ||
     view === "exports" ||
+    view === "rules" ||
     view === "transformations"
   ) {
     return view;
@@ -60,7 +61,7 @@ async function resolveView(
   lessonId: string,
   parameters: Record<string, SearchParam>,
 ): Promise<HarnessView> {
-  if (section === "capabilities" || section === "smoke-tests") {
+  if (section === "capabilities" || section === "rules" || section === "smoke-tests") {
     return { section };
   }
 

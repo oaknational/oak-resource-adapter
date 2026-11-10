@@ -6,7 +6,9 @@ const ruleThat = (id: string, reason: string | null) =>
   defineRule({
     id,
     kind: "test",
+    label: "Test",
     description: "A rule under test.",
+    condition: "Test",
     config: {},
     reads: [],
     check: vi.fn((): string | null => reason),

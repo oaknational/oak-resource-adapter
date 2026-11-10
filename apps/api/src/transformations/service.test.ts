@@ -54,7 +54,9 @@ const withheld = defineTransformation({
     defineRule({
       id: "withheld",
       kind: "test",
+      label: "Test",
       description: "Refuses everything.",
+      condition: "Test",
       config: {},
       reads: [],
       check: () => "withheld",

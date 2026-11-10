@@ -3,14 +3,14 @@ import type { TransformationRuleContext } from "../types";
 
 /** Reads the key stage the resource document records, not the lesson's programme. */
 export function keyStageRule<const TId extends string>(
-  { id, description }: RuleMetadata<TId>,
+  metadata: RuleMetadata<TId>,
   config: Readonly<{ keyStageSlugs: readonly string[] }>,
 ) {
   return defineRule({
-    id,
+    ...metadata,
     kind: "key-stage",
-    description,
     config,
+    displayValues: config.keyStageSlugs.map((slug) => slug.toUpperCase()),
     reads: ["resource"],
     check: ({
       document: { metadata },

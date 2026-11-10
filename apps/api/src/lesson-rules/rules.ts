@@ -10,8 +10,10 @@ import { lessonStatusRule } from "./lesson-status";
 export const LESSON_STATUS_RULE = lessonStatusRule(
   {
     id: "lesson-status",
+    label: "Is published, current and not expired",
+    condition: "The lesson isn't published, is a legacy lesson, or has expired",
     description:
-      "Refuses a lesson Oak does not publish in the programme it is opened from, or one that is legacy or expired.",
+      "Published means published in the programme the lesson is opened from.",
   },
   { expiredFeatureKey: "expired" },
 );
@@ -19,7 +21,10 @@ export const LESSON_STATUS_RULE = lessonStatusRule(
 export const SUBJECT_RULE = subjectRule(
   {
     id: "subject",
-    description: "Refuses a lesson taught in a subject not yet cleared for ORA.",
+    label: "Isn't in an excluded subject",
+    condition: "The lesson is in one of these subjects",
+    description:
+      "Matches a lesson taught in a listed subject in any of its programmes.",
   },
   {
     subjectSlugs: [
@@ -35,14 +40,20 @@ export const SUBJECT_RULE = subjectRule(
 );
 
 export const EXCLUDED_LESSONS_RULE = excludedLessonsRule(
-  { id: "excluded-lessons", description: "Refuses a listed lesson in any programme." },
+  {
+    id: "excluded-lessons",
+    label: "Isn't on the excluded lessons list",
+    condition: "The lesson is on our list of excluded lessons",
+    description: "Matches the lesson in whichever programme it's opened from.",
+  },
   { lessonSlugs: [] },
 );
 
 export const CONTENT_GUIDANCE_RULE = contentGuidanceRule(
   {
     id: "content-guidance",
-    description: "Refuses a lesson with any listed content guidance.",
+    label: "Has no excluded content guidance",
+    condition: "The lesson has any of this content guidance",
   },
   { labels: [] },
 );
@@ -50,8 +61,9 @@ export const CONTENT_GUIDANCE_RULE = contentGuidanceRule(
 export const COPYRIGHT_RULE = copyrightRule(
   {
     id: "copyright",
-    description:
-      "Refuses a lesson with restricted third-party material, a copyright conflict, or no published restriction levels.",
+    label: "Has no restricted copyright material",
+    condition:
+      "The lesson has restricted copyright material, a copyright conflict, or no clearance information",
   },
   {
     restrictedLevels: ["restricted", "highly-restricted"],
@@ -62,8 +74,11 @@ export const COPYRIGHT_RULE = copyrightRule(
 export const GEO_RULE = geoRule(
   {
     id: "geo",
+    label: "Is available in the teacher's region",
+    condition:
+      "The lesson is restricted to the UK and Crown dependencies, and the signed-in teacher is elsewhere",
     description:
-      "Refuses a geo-restricted lesson to a signed-in teacher outside a copyright region.",
+      "A signed-out visitor isn't refused, so ORA appears and the teacher is refused after signing in.",
   },
   { featureKey: "agf__geo_restricted" },
 );
@@ -71,8 +86,8 @@ export const GEO_RULE = geoRule(
 export const LESSON_RULES = [
   LESSON_STATUS_RULE,
   SUBJECT_RULE,
+  COPYRIGHT_RULE,
   EXCLUDED_LESSONS_RULE,
   CONTENT_GUIDANCE_RULE,
-  COPYRIGHT_RULE,
   GEO_RULE,
 ] as const satisfies readonly Rule<LessonRuleContext>[];

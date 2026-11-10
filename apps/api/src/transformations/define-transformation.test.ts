@@ -27,7 +27,9 @@ const levelled = {
 const refusesEverything = defineRule({
   id: "test-narrowing",
   kind: "test",
+  label: "Test",
   description: "A rule under test.",
+  condition: "Test",
   config: {},
   reads: [],
   check: () => "matched",

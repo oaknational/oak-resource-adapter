@@ -12,6 +12,8 @@ const LESSON_VIEWS = {
   restrictionLevels: "published_mv_lesson_restriction_levels_2",
 } as const;
 
+export const RESTRICTION_LEVELS_VIEW = LESSON_VIEWS.restrictionLevels;
+
 /**
  * The whole lesson: only the columns the schemas read. Every view except browse
  * data is keyed by lesson alone; only browse data distinguishes programmes, and

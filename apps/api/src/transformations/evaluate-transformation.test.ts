@@ -61,7 +61,9 @@ const ruleThat = (
   defineRule({
     id,
     kind: "test",
+    label: "Test",
     description: "A rule under test.",
+    condition: "Test",
     config: {},
     reads: [],
     check,
@@ -70,7 +72,9 @@ const ruleThat = (
 const matchesAnyLesson = defineRule({
   id: "narrows",
   kind: "test",
+  label: "Test",
   description: "A rule under test.",
+  condition: "Test",
   config: {},
   reads: [],
   check: () => "matched",
@@ -131,7 +135,12 @@ describe("a shared kind at the transformation level", () => {
       ...declaration,
       rules: [
         excludedLessonsRule(
-          { id: "excluded-lessons", description: "Test" },
+          {
+            id: "excluded-lessons",
+            label: "Test",
+            description: "Test",
+            condition: "Test",
+          },
           { lessonSlugs: ["joining-letters"] },
         ),
       ],

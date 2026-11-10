@@ -18,15 +18,30 @@ export type Rule<
 > = Readonly<{
   id: TId;
   kind: TKind;
-  description: string;
+  /** What the rule checks for, in plain words. */
+  label: string;
+  /** Only where the label and condition leave something out. */
+  description?: string;
+  /** The condition in plain words, for the harness. */
+  condition: string;
   config: TConfig;
+  /** The config's product-facing list, readable, when the rule matches against one. */
+  displayValues?: readonly string[];
+  /** Introduces `displayValues` where the condition doesn't, as in "Applies to". */
+  displayValuesLabel?: string;
+  /** Where the facts a rule checks come from, when that is worth naming. */
+  source?: string;
+  /** The separate conditions behind `condition`, any one of which matches. */
+  checks?: readonly string[];
   reads: readonly RuleInput[];
   check: (context: TContext) => TReason | null;
 }>;
 
 export type RuleMetadata<TId extends string> = Readonly<{
   id: TId;
-  description: string;
+  label: string;
+  description?: string;
+  condition: string;
 }>;
 
 export function defineRule<

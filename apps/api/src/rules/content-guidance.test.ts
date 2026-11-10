@@ -5,7 +5,12 @@ import { lessonFacts } from "./test-facts";
 
 describe("contentGuidanceRule", () => {
   const rule = contentGuidanceRule(
-    { id: "test", description: "A rule under test." },
+    {
+      id: "test",
+      label: "Test",
+      description: "A rule under test.",
+      condition: "Test",
+    },
     { labels: ["Depiction or discussion of serious crime"] },
   );
 

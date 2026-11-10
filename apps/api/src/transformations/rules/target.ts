@@ -4,6 +4,7 @@ import {
 } from "@oaknational/resource-document";
 
 import { defineRule, type RuleMetadata } from "../../rules/rule";
+import { readableSlug } from "../../rules/rule-presentation";
 import type { TransformationRuleContext, TransformationTarget } from "../types";
 
 type TargetContext = Pick<TransformationRuleContext, "document" | "targetBlockId">;
@@ -25,14 +26,18 @@ function hasEligibleTarget(
 }
 
 export function targetRule<const TId extends string>(
-  { id, description }: RuleMetadata<TId>,
+  metadata: RuleMetadata<TId>,
   config: Readonly<{ target: TransformationTarget }>,
 ) {
   return defineRule({
-    id,
+    ...metadata,
     kind: "target",
-    description,
     config,
+    displayValuesLabel: "Applies to",
+    displayValues:
+      config.target.scope === "document"
+        ? ["The whole resource"]
+        : config.target.nodeTypes.map(readableSlug),
     reads: ["resource"],
     check: (context: TargetContext) =>
       hasEligibleTarget(config.target, context) ? null : "no-eligible-target",

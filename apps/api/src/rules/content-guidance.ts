@@ -3,14 +3,14 @@ import { defineRule, type RuleMetadata } from "./rule";
 
 /** Matches Oak's labels exactly. */
 export function contentGuidanceRule<const TId extends string>(
-  { id, description }: RuleMetadata<TId>,
+  metadata: RuleMetadata<TId>,
   config: Readonly<{ labels: readonly string[] }>,
 ) {
   return defineRule({
-    id,
+    ...metadata,
     kind: "content-guidance",
-    description,
     config,
+    displayValues: config.labels,
     reads: ["lesson"],
     check: ({ facts }: LessonFactsContext) =>
       facts?.contentGuidance.some((label) => config.labels.includes(label))

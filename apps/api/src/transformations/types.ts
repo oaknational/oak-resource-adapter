@@ -146,7 +146,7 @@ export type TransformationDefinition<
   inputs?: readonly TransformationInput[];
   /** Kinds that may not share a target with this one. Declared on both sides. */
   excludes?: readonly string[];
-  /** Kind-specific rules, checked in order after every kind's level-wide rules. */
+  /** Kind-specific rules, checked in order after the common rules. */
   rules: readonly TransformationRule[];
   /** Keys `transformations.kind` and `suggested_transformations.kind`. */
   kind: TKind;

@@ -4,7 +4,12 @@ import { excludedLessonsRule } from "./excluded-lessons";
 
 describe("excludedLessonsRule", () => {
   const rule = excludedLessonsRule(
-    { id: "test", description: "A rule under test." },
+    {
+      id: "test",
+      label: "Test",
+      description: "A rule under test.",
+      condition: "Test",
+    },
     { lessonSlugs: ["joining-letters"] },
   );
 

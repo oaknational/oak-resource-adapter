@@ -13,15 +13,18 @@ export function commonTransformationRules(
     statusRule(
       {
         id: "status",
-        description: "Refuses a transformation that is a draft or retired.",
+        label: "Is active",
+        condition: "It's still a draft, or has been retired",
       },
       { offeredStatuses: ["active"] },
     ),
     materialSourceRule(
       {
         id: "material-source",
+        label: "Can read the lesson material it needs",
+        condition: "It needs lesson material ORA can't read yet",
         description:
-          "Refuses a transformation whose required lesson material has no source.",
+          "Material with no source can't be read for any lesson, so the scaffold could never run.",
       },
       {
         requiredKeys: (definition.materialRequirements ?? [])
@@ -32,16 +35,17 @@ export function commonTransformationRules(
     targetRule(
       {
         id: "target",
-        description:
-          "Refuses a transformation with nothing in the resource it can change.",
+        label: "Has something in the resource to change",
+        condition: "The resource has nothing it can change",
       },
       { target: definition.target },
     ),
     excludesRule(
       {
         id: "excludes",
-        description:
-          "Refuses a transformation on a target that already carries one it cannot share with.",
+        label: "Doesn't conflict with a scaffold already there",
+        condition:
+          "The question or task already has a scaffold it can't be combined with",
       },
       { kinds: definition.excludes ?? [] },
     ),
@@ -50,5 +54,6 @@ export function commonTransformationRules(
 
 export const APPLIED_ONCE_PER_TARGET_RULE = appliedOncePerTargetRule({
   id: "applied-once-per-target",
-  description: "Refuses a target that already carries this transformation.",
+  label: "Isn't already on the question or task",
+  condition: "The question or task already has it",
 });

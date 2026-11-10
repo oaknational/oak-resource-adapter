@@ -1,15 +1,25 @@
 import type { Lesson } from "@oaknational/resource-adapter-curriculum";
 
+import { readableSlug } from "../rules/rule-presentation";
+
 export type LessonMaterialsRule = Readonly<{
   id: string;
-  description: string;
+  label: string;
+  description?: string;
+  condition: string;
   config: Readonly<{ transcriptWithheldSubjectSlugs: readonly string[] }>;
+  displayValues: readonly string[];
 }>;
+
+const transcriptWithheldSubjectSlugs = ["english"];
 
 export const LESSON_MATERIALS_RULE: LessonMaterialsRule = {
   id: "transcript",
-  description: "Withholds the transcript of a lesson taught in a listed subject.",
-  config: { transcriptWithheldSubjectSlugs: ["english"] },
+  label: "Reads the transcript only outside listed subjects",
+  condition: "The transcript, if the lesson is in one of these subjects",
+  description: "No summary is made from a transcript ORA leaves out.",
+  config: { transcriptWithheldSubjectSlugs },
+  displayValues: transcriptWithheldSubjectSlugs.map(readableSlug),
 };
 
 /**

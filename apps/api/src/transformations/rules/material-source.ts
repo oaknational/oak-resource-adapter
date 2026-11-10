@@ -1,17 +1,18 @@
 import type { OakMaterialKey } from "../../oak-material/material";
-import { oakMaterialIsAvailable } from "../../oak-material/catalogue";
+import { OAK_MATERIAL, oakMaterialIsAvailable } from "../../oak-material/catalogue";
 import { defineRule, type RuleMetadata } from "../../rules/rule";
 
 /** Material with no source cannot be read for any lesson, so the kind could never run. */
 export function materialSourceRule<const TId extends string>(
-  { id, description }: RuleMetadata<TId>,
+  metadata: RuleMetadata<TId>,
   config: Readonly<{ requiredKeys: readonly OakMaterialKey[] }>,
 ) {
   return defineRule({
-    id,
+    ...metadata,
     kind: "material-source",
-    description,
     config,
+    displayValuesLabel: "Needs",
+    displayValues: config.requiredKeys.map((key) => OAK_MATERIAL[key].label),
     reads: [],
     check: () =>
       config.requiredKeys.some((key) => !oakMaterialIsAvailable(key))

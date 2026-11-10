@@ -2,6 +2,8 @@ import { lessonContextSchema } from "@oaknational/resource-adapter-contracts";
 import { transformationInputSchema } from "@oaknational/resource-adapter-contracts/internal";
 import { z } from "zod";
 
+import { transformationStatusSchema } from "./transformations.js";
+
 export type RuleConfigValue =
   | boolean
   | number
@@ -23,11 +25,22 @@ export type RuleInput = z.infer<typeof ruleInputSchema>;
 const ruleSchema = z
   .object({
     config: ruleConfigSchema,
-    description: z.string(),
+    description: z.string().optional(),
     id: z.string(),
     kind: z.string(),
+    label: z.string(),
+    /** The values the rule matches, readable, when it matches against a list. */
+    displayValues: z.array(z.string()).readonly().optional(),
+    /** Introduces `displayValues` where the condition doesn't. */
+    displayValuesLabel: z.string().optional(),
     reads: z.array(ruleInputSchema).readonly(),
     removesSupportLevels: z.array(z.string()).readonly().optional(),
+    /** Where the facts the rule checks come from. Backticks mark identifiers. */
+    source: z.string().optional(),
+    /** The separate conditions behind `condition`, any one of which matches. Backticks mark identifiers. */
+    checks: z.array(z.string()).readonly().optional(),
+    /** The condition in plain words. */
+    condition: z.string(),
   })
   .readonly();
 
@@ -82,7 +95,14 @@ export const ruleCatalogueSchema = z
     lessonMaterials: z
       .array(
         z
-          .object({ config: ruleConfigSchema, description: z.string(), id: z.string() })
+          .object({
+            config: ruleConfigSchema,
+            description: z.string().optional(),
+            id: z.string(),
+            label: z.string(),
+            displayValues: z.array(z.string()).readonly(),
+            condition: z.string(),
+          })
           .readonly(),
       )
       .readonly(),
@@ -96,7 +116,7 @@ export const ruleCatalogueSchema = z
             kind: z.string(),
             label: z.string(),
             rules: z.array(ruleSchema).readonly(),
-            status: z.string(),
+            status: transformationStatusSchema,
           })
           .readonly(),
       )

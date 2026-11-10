@@ -219,12 +219,17 @@ const RESTRICTION_LEVELS = {
   Restricted: "restricted",
 } as const satisfies Record<PublishedRestrictionLevel, RestrictionLevel>;
 
-export const RESTRICTION_COLUMNS: readonly string[] = [
-  "features",
-  "tpc_downloadablefiles_max_restriction",
-  "tpc_media_max_restriction",
-  "tpc_works_max_restriction",
-];
+/** The restriction levels view column each field of `LessonRestrictionLevels` reads. */
+export const RESTRICTION_LEVEL_COLUMNS = {
+  downloadableFiles: "tpc_downloadablefiles_max_restriction",
+  featureKeys: "features",
+  media: "tpc_media_max_restriction",
+  works: "tpc_works_max_restriction",
+} as const satisfies Record<keyof LessonRestrictionLevels, string>;
+
+export const RESTRICTION_COLUMNS: readonly string[] = Object.values(
+  RESTRICTION_LEVEL_COLUMNS,
+);
 
 // A null column is a category the lesson carries no material of, not a restriction.
 function levelsOf(level: PublishedRestrictionLevel | null): RestrictionLevel[] {
@@ -239,12 +244,12 @@ export const restrictionRowSchema = mvLessonRestrictionLevelsSchema
     tpc_works_max_restriction: true,
   })
   .transform((row): LessonRestrictionLevels => ({
-    works: levelsOf(row.tpc_works_max_restriction),
-    media: levelsOf(row.tpc_media_max_restriction),
-    downloadableFiles: levelsOf(row.tpc_downloadablefiles_max_restriction),
+    works: levelsOf(row[RESTRICTION_LEVEL_COLUMNS.works]),
+    media: levelsOf(row[RESTRICTION_LEVEL_COLUMNS.media]),
+    downloadableFiles: levelsOf(row[RESTRICTION_LEVEL_COLUMNS.downloadableFiles]),
     featureKeys: distinctSorted(
-      Object.entries(row.features ?? {}).flatMap(([key, value]) =>
-        value === false ? [] : [key],
+      Object.entries(row[RESTRICTION_LEVEL_COLUMNS.featureKeys] ?? {}).flatMap(
+        ([key, value]) => (value === false ? [] : [key]),
       ),
     ),
   }));

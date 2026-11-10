@@ -1,14 +1,12 @@
 import { defineRule, type RuleMetadata } from "../../rules/rule";
 import type { TransformationRuleContext } from "../types";
 
-export function appliedOncePerTargetRule<const TId extends string>({
-  id,
-  description,
-}: RuleMetadata<TId>) {
+export function appliedOncePerTargetRule<const TId extends string>(
+  metadata: RuleMetadata<TId>,
+) {
   return defineRule({
-    id,
+    ...metadata,
     kind: "applied-once-per-target",
-    description,
     config: {},
     reads: ["adaptation"],
     check: ({

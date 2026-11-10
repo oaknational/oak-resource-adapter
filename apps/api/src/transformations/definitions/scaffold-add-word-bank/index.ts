@@ -47,8 +47,8 @@ export const addWordBankTransformation = defineTransformation({
       subjectRule(
         {
           id: "mfl",
-          description:
-            "Removes definitions from word banks on French, German and Spanish lessons.",
+          label: "Offers definitions only outside modern foreign languages",
+          condition: "The lesson is in one of these subjects",
         },
         { subjectSlugs: MFL_SUBJECT_SLUGS },
       ),

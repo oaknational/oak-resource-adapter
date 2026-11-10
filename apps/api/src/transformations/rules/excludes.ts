@@ -2,14 +2,15 @@ import { defineRule, type RuleMetadata } from "../../rules/rule";
 import type { TransformationRuleContext } from "../types";
 
 export function excludesRule<const TId extends string>(
-  { id, description }: RuleMetadata<TId>,
+  metadata: RuleMetadata<TId>,
   config: Readonly<{ kinds: readonly string[] }>,
 ) {
   return defineRule({
-    id,
+    ...metadata,
     kind: "excludes",
-    description,
     config,
+    displayValuesLabel: "Can't be combined with",
+    displayValues: config.kinds,
     reads: ["adaptation"],
     check: ({
       appliedTransformations,

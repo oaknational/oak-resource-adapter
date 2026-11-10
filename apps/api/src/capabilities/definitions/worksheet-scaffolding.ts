@@ -10,15 +10,16 @@ export const worksheetScaffoldingCapability = {
     resourceInputsRule(
       {
         id: "resource-inputs",
-        description:
-          "Refuses a lesson unless Oak publishes its worksheet and we hold an extracted copy.",
+        label: "Has both a worksheet and extracted semantic data",
+        condition: "We don't have the lesson's worksheet, or haven't extracted it yet",
       },
       { resourceType: "worksheet" },
     ),
     excludedLessonsRule(
       {
         id: "handwriting-and-spelling",
-        description: "Refuses English primary handwriting and spelling lessons.",
+        label: "Isn't a handwriting or spelling lesson",
+        condition: "The lesson is a handwriting or spelling lesson",
       },
       { lessonSlugs: [] },
     ),

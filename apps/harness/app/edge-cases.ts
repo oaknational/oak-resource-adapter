@@ -221,10 +221,7 @@ const edgeCaseDefinitions = [
       availableResources: ["worksheet"],
     },
     brokenApiPath: false,
-    facts: async (lesson: LessonContext) => {
-      const { facts } = await extractionFacts(lesson);
-      return factsOnly([...facts, { term: "Subject", value: lesson.subjectSlug }]);
-    },
+    facts: extractionFacts,
   },
   {
     id: "copyright-conflict-lesson",
@@ -241,13 +238,7 @@ const edgeCaseDefinitions = [
       availableResources: ["worksheet"],
     },
     brokenApiPath: false,
-    facts: async (lesson: LessonContext) => {
-      const { facts } = await extractionFacts(lesson);
-      return factsOnly([
-        ...facts,
-        { term: "Oak's flag", value: "has_copyright_conflict" },
-      ]);
-    },
+    facts: extractionFacts,
   },
   {
     id: "one-capability-ui",

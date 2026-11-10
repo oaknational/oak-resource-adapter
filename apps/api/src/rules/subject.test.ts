@@ -5,7 +5,12 @@ import { subjectRule } from "./subject";
 
 describe("subjectRule", () => {
   const rule = subjectRule(
-    { id: "test", description: "A rule under test." },
+    {
+      id: "test",
+      label: "Test",
+      description: "A rule under test.",
+      condition: "Test",
+    },
     { subjectSlugs: ["french", "spanish"] },
   );
 

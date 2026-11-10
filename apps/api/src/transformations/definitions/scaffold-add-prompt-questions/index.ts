@@ -27,8 +27,8 @@ export const addPromptQuestionsTransformation = defineTransformation({
     contentGuidanceRule(
       {
         id: "content-guidance",
-        description:
-          "Refuses recall questions on lessons with sensitive content guidance.",
+        label: "Has no sensitive content guidance",
+        condition: "The lesson has any of this content guidance",
       },
       {
         labels: [

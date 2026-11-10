@@ -2,13 +2,12 @@ import type { LessonFactsContext } from "../rules/context";
 import { defineRule, type RuleMetadata } from "../rules/rule";
 
 export function lessonStatusRule<const TId extends string>(
-  { id, description }: RuleMetadata<TId>,
+  metadata: RuleMetadata<TId>,
   config: Readonly<{ expiredFeatureKey: string }>,
 ) {
   return defineRule({
-    id,
+    ...metadata,
     kind: "lesson-status",
-    description,
     config,
     reads: ["lesson"],
     check: ({ facts }: LessonFactsContext) => {
