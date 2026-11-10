@@ -50,9 +50,9 @@ Resource Adapter needs no storage credential of its own. Two things follow:
 
 `createOakLessonEligibilityFactsReader` returns what Oak records about a lesson for ORA's
 lesson rules in [`apps/api/src/lesson-rules`](../apps/api/src/lesson-rules) to
-judge. Unlike the lesson's other views, restriction rows that disagree are
-combined rather than refused: a lesson is as restricted as all its published rows
-together.
+judge. Unlike the lesson's other views, restriction and content rows that disagree
+are combined rather than refused: a lesson is as restricted as all its published
+rows together, and carries every content guidance label any of them records.
 
 The canonical semantic contract is a separate concern in
 `@oaknational/resource-document`. ORA retrieves a validated instance of that

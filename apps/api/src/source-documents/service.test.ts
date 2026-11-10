@@ -46,6 +46,7 @@ const unrestricted: LessonEligibilityFacts = {
   restrictionLevels: { works: [], media: [], downloadableFiles: [], featureKeys: [] },
   subjectSlugs: ["english"],
   legacy: false,
+  contentGuidance: [],
 };
 
 const adaptableWith =

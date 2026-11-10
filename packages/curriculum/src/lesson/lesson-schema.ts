@@ -49,6 +49,19 @@ export const browseRowSchema = syntheticUnitvariantLessonsByKsSchema
     },
   }));
 
+const contentGuidanceColumnSchema = z
+  .array(contentGuidanceSchema.pick({ contentguidance_label: true }))
+  .nullable()
+  .transform((rows): readonly string[] =>
+    (rows ?? []).flatMap(({ contentguidance_label }) =>
+      contentguidance_label === null ? [] : [contentguidance_label],
+    ),
+  );
+
+export const eligibilityContentRowSchema = z
+  .object({ content_guidance: contentGuidanceColumnSchema })
+  .transform(({ content_guidance }) => content_guidance);
+
 export const contentRowSchema = lessonContentSchema
   .pick({
     key_learning_points: true,
@@ -58,9 +71,7 @@ export const contentRowSchema = lessonContentSchema
     transcript_sentences: true,
   })
   .extend({
-    content_guidance: z
-      .array(contentGuidanceSchema.pick({ contentguidance_label: true }))
-      .nullable(),
+    content_guidance: contentGuidanceColumnSchema,
     lesson_title: z.string().min(1),
   })
   .transform(
@@ -75,9 +86,7 @@ export const contentRowSchema = lessonContentSchema
       title: string;
       transcript: string | null;
     } => ({
-      contentGuidance: (row.content_guidance ?? []).flatMap((guidance) =>
-        guidance.contentguidance_label === null ? [] : [guidance.contentguidance_label],
-      ),
+      contentGuidance: row.content_guidance,
       keyLearningPoints: (row.key_learning_points ?? []).map(
         ({ key_learning_point }) => key_learning_point,
       ),

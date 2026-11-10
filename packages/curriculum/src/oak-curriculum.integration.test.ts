@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { oakCurriculumConfigFromEnv, oakResourceStoreConfigFromEnv } from "./config.js";
+import { distinctSorted } from "./distinct-sorted.js";
 import { CurriculumError } from "./errors.js";
 import type { LessonRepository } from "./lesson/lesson.js";
 import { findLessonResource } from "./resource/resource.js";
@@ -149,6 +150,13 @@ describeIntegration("Oak curriculum endpoint (development)", () => {
         "Depiction or discussion of violence or suffering",
       ]),
     );
+  });
+
+  it("reports content guidance among a lesson's facts", async () => {
+    const facts = await readFacts(LESSON_WITH_CONTENT_GUIDANCE);
+    const lesson = await lessons.fetch(LESSON_WITH_CONTENT_GUIDANCE);
+
+    expect(facts?.contentGuidance).toEqual(distinctSorted(lesson.contentGuidance));
   });
 
   it("reports the restriction levels of a lesson that carries third-party material", async () => {

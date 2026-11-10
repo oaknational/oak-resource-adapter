@@ -35,7 +35,7 @@ export function evaluateCapabilities(
   context: EligibilityContext,
   teacher: Pick<TeacherAccess, "inCopyrightRegion"> | undefined,
 ): Pick<ResourceAdapterCapabilitiesResponse, "capabilities"> {
-  const refusal = lessonRefusal(context.facts, teacher);
+  const refusal = lessonRefusal({ ...context, teacher });
   if (refusal !== null) {
     const { lessonSlug, programmeSlug } = context.lesson;
     log.info({ lessonSlug, programmeSlug, refusal }, "lesson refused");

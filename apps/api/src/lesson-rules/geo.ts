@@ -1,21 +1,21 @@
-import type { LessonEligibilityFacts } from "@oaknational/resource-adapter-curriculum";
+import type { LessonFactsContext } from "../rules/context";
+import { defineRule, type RulePlacement } from "../rules/rule";
+import type { TeacherContext } from "./context";
 
-import type { TeacherAccess } from "../teacher-access/access";
-
-export type GeoRule = Readonly<{ featureKey: string }>;
-
-export const GEO_RULE: GeoRule = { featureKey: "agf__geo_restricted" };
-
-export type GeoRefusalReason = "outside-copyright-region";
-
-/** `teacher` is `undefined` when signed out: signing in may unlock the lesson. */
-export function geoRefusalReason(
-  { restrictionLevels }: LessonEligibilityFacts,
-  teacher: Pick<TeacherAccess, "inCopyrightRegion"> | undefined,
-  rule: GeoRule = GEO_RULE,
-): GeoRefusalReason | null {
-  const restricted = restrictionLevels?.featureKeys.includes(rule.featureKey) ?? false;
-  return restricted && teacher !== undefined && !teacher.inCopyrightRegion
-    ? "outside-copyright-region"
-    : null;
+export function geoRule<const TId extends string>(
+  { id, description }: RulePlacement<TId>,
+  config: Readonly<{ featureKey: string }>,
+) {
+  return defineRule({
+    id,
+    kind: "geo",
+    description,
+    config,
+    check: ({ facts, teacher }: LessonFactsContext & TeacherContext) =>
+      (facts?.restrictionLevels?.featureKeys.includes(config.featureKey) ?? false) &&
+      teacher !== undefined &&
+      !teacher.inCopyrightRegion
+        ? "outside-copyright-region"
+        : null,
+  });
 }

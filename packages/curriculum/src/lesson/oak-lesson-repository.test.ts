@@ -720,10 +720,14 @@ describe("what reaches the log", () => {
 
 function oakRespondsWithFacts(data: {
   browseData?: unknown[];
+  content?: unknown[];
   restrictionLevels?: unknown[];
 }): void {
-  oakResponds({ browseData: [eligibilityBrowseRow()], ...data });
+  oakResponds({ browseData: [eligibilityBrowseRow()], content: [], ...data });
 }
+
+const guidance = (label: string | null) =>
+  contentGuidanceFixture({ overrides: { contentguidance_label: label } });
 
 const readFacts = () => createOakLessonEligibilityFactsReader(config)(addingFractions);
 
@@ -736,10 +740,11 @@ describe("facts reader", () => {
     const request = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
     expect(request.variables).toEqual({ lessonSlug: addingFractions.lessonSlug });
     expect(request.query).toContain("published_mv_lesson_restriction_levels_2");
-    expect(request.query.match(/_state: \{ _eq: "published" \}/g)).toHaveLength(1);
+    expect(request.query.match(/_state: \{ _eq: "published" \}/g)).toHaveLength(2);
     expect(request.query).toContain('programme_fields(path: "subject_slug")');
     expect(request.query).not.toContain("programme_slug: {");
-    expect(request.query).not.toContain("content:");
+    expect(request.query).toContain("content_guidance");
+    expect(request.query).not.toContain("transcript_sentences");
     expect(request.query).not.toContain("tpc_quizimages_max_restriction");
   });
 
@@ -768,6 +773,7 @@ describe("facts reader", () => {
       },
       subjectSlugs: ["maths"],
       legacy: false,
+      contentGuidance: [],
     });
   });
 
@@ -821,6 +827,33 @@ describe("facts reader", () => {
     await expect(readFacts()).resolves.toMatchObject({
       subjectSlugs: ["chemistry", "combined-science", "maths"],
       legacy: true,
+    });
+  });
+
+  it("reports the labelled content guidance of every published content row", async () => {
+    oakRespondsWithFacts({
+      content: [
+        {
+          content_guidance: [
+            guidance("Depiction or discussion of serious crime"),
+            guidance(null),
+          ],
+        },
+        {
+          content_guidance: [
+            guidance("Depiction or discussion of mental health issues"),
+            guidance("Depiction or discussion of serious crime"),
+          ],
+        },
+        { content_guidance: null },
+      ],
+    });
+
+    await expect(readFacts()).resolves.toMatchObject({
+      contentGuidance: [
+        "Depiction or discussion of mental health issues",
+        "Depiction or discussion of serious crime",
+      ],
     });
   });
 

@@ -4,12 +4,9 @@ import {
 } from "@oaknational/resource-adapter-curriculum";
 import { describe, expect, it } from "vitest";
 
-import { lessonRefusal } from ".";
-import { COPYRIGHT_RULE } from "./copyright";
-import { GEO_RULE } from "./geo";
+import { lessonRefusal, type LessonRuleContext } from ".";
 import { applyLessonMaterialsRule, LESSON_MATERIALS_RULE } from "./lesson-materials";
-import { LESSON_STATUS_RULE } from "./lesson-status";
-import { SUBJECT_RULE } from "./subject";
+import { COPYRIGHT_RULE, GEO_RULE, LESSON_STATUS_RULE, SUBJECT_RULE } from "./rules";
 
 const allowed: LessonEligibilityFacts = {
   restrictionLevels: {
@@ -20,6 +17,7 @@ const allowed: LessonEligibilityFacts = {
   },
   subjectSlugs: ["maths"],
   legacy: false,
+  contentGuidance: [],
 };
 
 const withFeature = (key: string): LessonEligibilityFacts => ({
@@ -31,47 +29,50 @@ const inRegion = { inCopyrightRegion: true };
 const outsideRegion = { inCopyrightRegion: false };
 const signedOut = undefined;
 
+const refusalOf = (
+  facts: LessonEligibilityFacts | null,
+  { teacher }: Pick<LessonRuleContext, "teacher"> = { teacher: inRegion },
+) => lessonRefusal({ lesson: { lessonSlug: "adding-fractions" }, facts, teacher });
+
 describe("lessonRefusal", () => {
   it("refuses nothing on a lesson no rule applies to, signed in or out", () => {
     for (const teacher of [inRegion, outsideRegion, signedOut]) {
-      expect(lessonRefusal(allowed, teacher)).toBeNull();
+      expect(refusalOf(allowed, { teacher })).toBeNull();
     }
   });
 
   it("refuses a lesson Oak does not publish in the programme", () => {
-    expect(lessonRefusal(null, inRegion)).toEqual({
+    expect(refusalOf(null)).toEqual({
+      level: "lesson",
       rule: "lesson-status",
       reason: "unpublished",
     });
   });
 
-  it.each(SUBJECT_RULE.excludedSubjectSlugs)(
+  it.each(SUBJECT_RULE.config.subjectSlugs)(
     "refuses a lesson taught in %s, whichever programme it is opened from",
     (slug) => {
-      expect(
-        lessonRefusal({ ...allowed, subjectSlugs: ["maths", slug] }, inRegion),
-      ).toEqual({ rule: "subject", reason: "excluded-subject" });
+      expect(refusalOf({ ...allowed, subjectSlugs: ["maths", slug] })).toEqual({
+        level: "lesson",
+        rule: "subject",
+        reason: "excluded-subject",
+      });
     },
   );
 
-  it("refuses a lesson taught in no subject", () => {
-    expect(lessonRefusal({ ...allowed, subjectSlugs: [] }, inRegion)).toEqual({
-      rule: "subject",
-      reason: "no-subject",
-    });
-  });
-
   it("refuses a lesson with no published restriction levels", () => {
-    expect(lessonRefusal({ ...allowed, restrictionLevels: null }, inRegion)).toEqual({
+    expect(refusalOf({ ...allowed, restrictionLevels: null })).toEqual({
+      level: "lesson",
       rule: "copyright",
       reason: "no-restriction-levels",
     });
   });
 
-  it.each(COPYRIGHT_RULE.conflictFeatureKeys)(
+  it.each(COPYRIGHT_RULE.config.conflictFeatureKeys)(
     "refuses a lesson whose features set %s",
     (key) => {
-      expect(lessonRefusal(withFeature(key), inRegion)).toEqual({
+      expect(refusalOf(withFeature(key))).toEqual({
+        level: "lesson",
         rule: "copyright",
         reason: "copyright-conflict",
       });
@@ -85,50 +86,60 @@ describe("lessonRefusal", () => {
   ] as const;
 
   it.each(
-    COPYRIGHT_RULE.restrictedLevels.flatMap((level) =>
+    COPYRIGHT_RULE.config.restrictedLevels.flatMap((level) =>
       categories.map(([category, reason]) => [level, category, reason] as const),
     ),
   )("refuses %s %s alongside reusable material", (level, category, reason) => {
     const levels = allowed.restrictionLevels!;
     expect(
-      lessonRefusal(
-        {
-          ...allowed,
-          restrictionLevels: { ...levels, [category]: [...levels[category], level] },
-        },
-        inRegion,
-      ),
-    ).toEqual({ rule: "copyright", reason });
+      refusalOf({
+        ...allowed,
+        restrictionLevels: { ...levels, [category]: [...levels[category], level] },
+      }),
+    ).toEqual({ level: "lesson", rule: "copyright", reason });
   });
 
   it("refuses nothing on Oak's older copyright flags", () => {
-    expect(
-      lessonRefusal(withFeature("agf__has_copyright_restrictions"), inRegion),
-    ).toBeNull();
+    expect(refusalOf(withFeature("agf__has_copyright_restrictions"))).toBeNull();
   });
 
   it("refuses a geo-restricted lesson only to a signed-in teacher outside a copyright region", () => {
-    const geoRestricted = withFeature(GEO_RULE.featureKey);
+    const geoRestricted = withFeature(GEO_RULE.config.featureKey);
 
-    expect(lessonRefusal(geoRestricted, outsideRegion)).toEqual({
+    expect(refusalOf(geoRestricted, { teacher: outsideRegion })).toEqual({
+      level: "lesson",
       rule: "geo",
       reason: "outside-copyright-region",
     });
-    expect(lessonRefusal(geoRestricted, inRegion)).toBeNull();
-    expect(lessonRefusal(geoRestricted, signedOut)).toBeNull();
+    expect(refusalOf(geoRestricted)).toBeNull();
+    expect(refusalOf(geoRestricted, { teacher: signedOut })).toBeNull();
   });
 
   it("refuses a legacy lesson", () => {
-    expect(lessonRefusal({ ...allowed, legacy: true }, inRegion)).toEqual({
+    expect(refusalOf({ ...allowed, legacy: true })).toEqual({
+      level: "lesson",
       rule: "lesson-status",
       reason: "legacy",
     });
   });
 
   it("refuses an expired lesson", () => {
+    expect(refusalOf(withFeature(LESSON_STATUS_RULE.config.expiredFeatureKey))).toEqual(
+      { level: "lesson", rule: "lesson-status", reason: "expired" },
+    );
+  });
+
+  it("reports the first rule a lesson fails", () => {
     expect(
-      lessonRefusal(withFeature(LESSON_STATUS_RULE.expiredFeatureKey), inRegion),
-    ).toEqual({ rule: "lesson-status", reason: "expired" });
+      refusalOf(
+        {
+          ...withFeature("has_copyright_conflict"),
+          legacy: true,
+          subjectSlugs: ["french"],
+        },
+        { teacher: outsideRegion },
+      ),
+    ).toEqual({ level: "lesson", rule: "lesson-status", reason: "legacy" });
   });
 });
 

@@ -1,20 +1,26 @@
-import type { LessonEligibilityFacts } from "@oaknational/resource-adapter-curriculum";
+import type { LessonFactsContext } from "../rules/context";
+import { defineRule, type RulePlacement } from "../rules/rule";
 
-export type LessonStatusRule = Readonly<{ expiredFeatureKey: string }>;
-
-export const LESSON_STATUS_RULE: LessonStatusRule = { expiredFeatureKey: "expired" };
-
-export type LessonStatusRefusalReason = "unpublished" | "legacy" | "expired";
-
-export function lessonStatusRefusalReason(
-  facts: LessonEligibilityFacts,
-  rule: LessonStatusRule = LESSON_STATUS_RULE,
-): LessonStatusRefusalReason | null {
-  if (facts.legacy) {
-    return "legacy";
-  }
-  if (facts.restrictionLevels?.featureKeys.includes(rule.expiredFeatureKey)) {
-    return "expired";
-  }
-  return null;
+export function lessonStatusRule<const TId extends string>(
+  { id, description }: RulePlacement<TId>,
+  config: Readonly<{ expiredFeatureKey: string }>,
+) {
+  return defineRule({
+    id,
+    kind: "lesson-status",
+    description,
+    config,
+    check: ({ facts }: LessonFactsContext) => {
+      if (facts === null) {
+        return "unpublished";
+      }
+      if (facts.legacy) {
+        return "legacy";
+      }
+      if (facts.restrictionLevels?.featureKeys.includes(config.expiredFeatureKey)) {
+        return "expired";
+      }
+      return null;
+    },
+  });
 }

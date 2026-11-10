@@ -75,5 +75,10 @@ export const LESSON_ELIGIBILITY_FACTS_QUERY = `
     ) {
       ${RESTRICTION_COLUMNS.join("\n      ")}
     }
+    content: ${LESSON_VIEWS.content}(
+      where: { lesson_slug: { _eq: $lessonSlug }, _state: { _eq: "published" } }
+    ) {
+      content_guidance
+    }
   }
 `;
