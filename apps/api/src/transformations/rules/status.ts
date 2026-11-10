@@ -10,6 +10,7 @@ export function statusRule<const TId extends string>(
     kind: "status",
     description,
     config,
+    reads: [],
     check: ({ definition }: Pick<TransformationRuleContext, "definition">) =>
       config.offeredStatuses.includes(definition.status) ? null : definition.status,
   });

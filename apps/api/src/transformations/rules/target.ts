@@ -33,6 +33,7 @@ export function targetRule<const TId extends string>(
     kind: "target",
     description,
     config,
+    reads: ["resource"],
     check: (context: TargetContext) =>
       hasEligibleTarget(config.target, context) ? null : "no-eligible-target",
   });

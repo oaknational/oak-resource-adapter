@@ -11,6 +11,7 @@ export function keyStageRule<const TId extends string>(
     kind: "key-stage",
     description,
     config,
+    reads: ["resource"],
     check: ({
       document: { metadata },
     }: Pick<TransformationRuleContext, "document">) => {

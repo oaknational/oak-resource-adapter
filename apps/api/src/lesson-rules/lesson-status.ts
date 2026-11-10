@@ -10,6 +10,7 @@ export function lessonStatusRule<const TId extends string>(
     kind: "lesson-status",
     description,
     config,
+    reads: ["lesson"],
     check: ({ facts }: LessonFactsContext) => {
       if (facts === null) {
         return "unpublished";

@@ -11,6 +11,7 @@ export function excludedLessonsRule<const TId extends string>(
     kind: "excluded-lessons",
     description,
     config,
+    reads: ["lesson"],
     check: ({ lesson }: LessonIdentityContext) =>
       lesson !== null && config.lessonSlugs.includes(lesson.lessonSlug)
         ? "excluded-lesson"

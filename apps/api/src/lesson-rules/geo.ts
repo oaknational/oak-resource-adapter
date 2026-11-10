@@ -11,6 +11,7 @@ export function geoRule<const TId extends string>(
     kind: "geo",
     description,
     config,
+    reads: ["lesson", "teacher"],
     check: ({ facts, teacher }: LessonFactsContext & TeacherContext) =>
       (facts?.restrictionLevels?.featureKeys.includes(config.featureKey) ?? false) &&
       teacher !== undefined &&

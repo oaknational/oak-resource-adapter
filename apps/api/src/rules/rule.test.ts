@@ -8,6 +8,7 @@ const ruleThat = (id: string, reason: string | null) =>
     kind: "test",
     description: "A rule under test.",
     config: {},
+    reads: [],
     check: vi.fn((): string | null => reason),
   });
 

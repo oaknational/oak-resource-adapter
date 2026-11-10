@@ -11,6 +11,7 @@ export function subjectRule<const TId extends string>(
     kind: "subject",
     description,
     config,
+    reads: ["lesson"],
     check: ({ facts }: LessonFactsContext) =>
       facts?.subjectSlugs.some((slug) => config.subjectSlugs.includes(slug))
         ? "excluded-subject"

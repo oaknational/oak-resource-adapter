@@ -19,6 +19,7 @@ export function copyrightRule<const TId extends string>(
     kind: "copyright",
     description,
     config,
+    reads: ["lesson"],
     check: ({ facts }: LessonFactsContext) => {
       const restrictionLevels = facts?.restrictionLevels;
       if (restrictionLevels === undefined) {

@@ -11,6 +11,7 @@ export function contentGuidanceRule<const TId extends string>(
     kind: "content-guidance",
     description,
     config,
+    reads: ["lesson"],
     check: ({ facts }: LessonFactsContext) =>
       facts?.contentGuidance.some((label) => config.labels.includes(label))
         ? "content-guidance"

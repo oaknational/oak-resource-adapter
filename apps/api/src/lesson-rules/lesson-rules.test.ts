@@ -146,7 +146,7 @@ describe("lessonRefusal", () => {
 describe("applyLessonMaterialsRule", () => {
   const transcript = "Today we are going to look at...";
 
-  it.each(LESSON_MATERIALS_RULE.transcriptWithheldSubjectSlugs)(
+  it.each(LESSON_MATERIALS_RULE.config.transcriptWithheldSubjectSlugs)(
     "withholds the transcript of a lesson also taught in %s",
     (slug) => {
       expect(

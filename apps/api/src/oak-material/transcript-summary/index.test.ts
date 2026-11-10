@@ -68,7 +68,7 @@ describe("transcript summaries", () => {
     expect(rendered).not.toContain("Equivalent fractions have the same value.");
   });
 
-  it.each(LESSON_MATERIALS_RULE.transcriptWithheldSubjectSlugs)(
+  it.each(LESSON_MATERIALS_RULE.config.transcriptWithheldSubjectSlugs)(
     "does not invoke the summariser for a lesson taught in %s",
     async (slug) => {
       const summariseTranscript = vi.fn();

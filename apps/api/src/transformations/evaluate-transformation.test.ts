@@ -63,6 +63,7 @@ const ruleThat = (
     kind: "test",
     description: "A rule under test.",
     config: {},
+    reads: [],
     check,
   });
 
@@ -71,6 +72,7 @@ const matchesAnyLesson = defineRule({
   kind: "test",
   description: "A rule under test.",
   config: {},
+  reads: [],
   check: () => "matched",
 });
 

@@ -1,11 +1,15 @@
 import type { Lesson } from "@oaknational/resource-adapter-curriculum";
 
 export type LessonMaterialsRule = Readonly<{
-  transcriptWithheldSubjectSlugs: readonly string[];
+  id: string;
+  description: string;
+  config: Readonly<{ transcriptWithheldSubjectSlugs: readonly string[] }>;
 }>;
 
 export const LESSON_MATERIALS_RULE: LessonMaterialsRule = {
-  transcriptWithheldSubjectSlugs: ["english"],
+  id: "transcript",
+  description: "Withholds the transcript of a lesson taught in a listed subject.",
+  config: { transcriptWithheldSubjectSlugs: ["english"] },
 };
 
 /**
@@ -17,7 +21,7 @@ export function applyLessonMaterialsRule(
   rule: LessonMaterialsRule = LESSON_MATERIALS_RULE,
 ): Lesson {
   const withheld = lesson.subjectSlugs.some((slug) =>
-    rule.transcriptWithheldSubjectSlugs.includes(slug),
+    rule.config.transcriptWithheldSubjectSlugs.includes(slug),
   );
   return withheld ? { ...lesson, transcript: null } : lesson;
 }

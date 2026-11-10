@@ -56,6 +56,7 @@ const withheld = defineTransformation({
       kind: "test",
       description: "Refuses everything.",
       config: {},
+      reads: [],
       check: () => "withheld",
     }),
   ],

@@ -28,6 +28,7 @@ vi.mock("../teacher-access/resolver", () => ({
 
 import {
   evaluateCapabilities,
+  explainEligibility,
   getCapabilities,
   hasCapabilities,
   resolveEligibility,
@@ -262,6 +263,41 @@ describe("resolveEligibility", () => {
     await expect(
       resolveEligibility({ ...worksheetLesson, lessonSlug: "not-a-lesson" }),
     ).resolves.toMatchObject({ extractedResourceTypes: [] });
+  });
+});
+
+describe("explainEligibility", () => {
+  const context = {
+    lesson: quizOnlyLesson,
+    facts: unrestricted,
+    originalFileResourceTypes: ["starter-quiz", "worksheet"],
+    extractedResourceTypes: ["starter-quiz"],
+  };
+
+  it("names the rule that refused each capability", () => {
+    expect(explainEligibility(testDefinitions, context, undefined)).toEqual({
+      lesson: null,
+      capabilities: [
+        {
+          id: "test-worksheet-capability",
+          refusal: {
+            level: "capability",
+            rule: "resource-inputs",
+            reason: "not-extracted",
+          },
+        },
+        { id: "test-starter-quiz-capability", refusal: null },
+      ],
+    });
+  });
+
+  it("checks no capability on a refused lesson", () => {
+    expect(
+      explainEligibility(testDefinitions, { ...context, facts: null }, undefined),
+    ).toEqual({
+      lesson: { level: "lesson", rule: "lesson-status", reason: "unpublished" },
+      capabilities: [],
+    });
   });
 });
 

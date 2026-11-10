@@ -29,6 +29,7 @@ const refusesEverything = defineRule({
   kind: "test",
   description: "A rule under test.",
   config: {},
+  reads: [],
   check: () => "matched",
 });
 

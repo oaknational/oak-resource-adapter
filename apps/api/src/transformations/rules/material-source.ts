@@ -12,6 +12,7 @@ export function materialSourceRule<const TId extends string>(
     kind: "material-source",
     description,
     config,
+    reads: [],
     check: () =>
       config.requiredKeys.some((key) => !oakMaterialIsAvailable(key))
         ? "no-material-source"

@@ -10,6 +10,7 @@ export function appliedOncePerTargetRule<const TId extends string>({
     kind: "applied-once-per-target",
     description,
     config: {},
+    reads: ["adaptation"],
     check: ({
       appliedTransformations,
       definition,

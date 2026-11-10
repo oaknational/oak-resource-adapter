@@ -10,6 +10,7 @@ export function resourceInputsRule<const TId extends string>(
     kind: "resource-inputs",
     description,
     config,
+    reads: ["lesson"],
     check: ({
       originalFileResourceTypes,
       extractedResourceTypes,

@@ -10,9 +10,9 @@ import type {
 } from "@oaknational/resource-adapter-contracts";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 
-import { lessonRefusal } from "../lesson-rules";
+import { lessonRefusal, type LessonRefusal } from "../lesson-rules";
 import { readLessonFacts } from "../curriculum/read-lesson-facts";
-import { firstRefusal } from "../rules/rule";
+import { firstRefusal, type RuleRefusal } from "../rules/rule";
 import type { TeacherAccess } from "../teacher-access/access";
 import {
   teacherAccessResolver,
@@ -27,29 +27,63 @@ export type EligibilityResolver = (
 
 const log = raLogger("capabilities");
 
+export type CapabilityRefusal = RuleRefusal<
+  "capability",
+  CapabilityDefinition["rules"][number]
+>;
+
+export type EligibilityExplanation = Readonly<{
+  lesson: LessonRefusal | null;
+  /** Empty when the lesson is refused: capability rules are not checked. */
+  capabilities: readonly Readonly<{ id: string; refusal: CapabilityRefusal | null }>[];
+}>;
+
+export function explainEligibility(
+  definitions: ReadonlyArray<CapabilityDefinition>,
+  context: EligibilityContext,
+  teacher: Pick<TeacherAccess, "inCopyrightRegion"> | undefined,
+): EligibilityExplanation {
+  const lesson = lessonRefusal({ ...context, teacher });
+  return {
+    lesson,
+    capabilities:
+      lesson === null
+        ? definitions.map(({ id, rules }) => ({
+            id,
+            refusal: firstRefusal("capability", rules, context),
+          }))
+        : [],
+  };
+}
+
 export function evaluateCapabilities(
   definitions: ReadonlyArray<CapabilityDefinition>,
   context: EligibilityContext,
   teacher: Pick<TeacherAccess, "inCopyrightRegion"> | undefined,
 ): Pick<ResourceAdapterCapabilitiesResponse, "capabilities"> {
   const { lessonSlug, programmeSlug } = context.lesson;
-  const refusal = lessonRefusal({ ...context, teacher });
-  if (refusal !== null) {
-    log.info({ lessonSlug, programmeSlug, refusal }, "lesson refused");
+  const explanation = explainEligibility(definitions, context, teacher);
+  if (explanation.lesson !== null) {
+    log.info(
+      { lessonSlug, programmeSlug, refusal: explanation.lesson },
+      "lesson refused",
+    );
     return { capabilities: [] };
+  }
+  const offered = new Set<string>();
+  for (const { id, refusal } of explanation.capabilities) {
+    if (refusal === null) {
+      offered.add(id);
+    } else {
+      log.info(
+        { lessonSlug, programmeSlug, capabilityId: id, refusal },
+        "capability refused",
+      );
+    }
   }
   return {
     capabilities: definitions
-      .filter(({ id, rules }) => {
-        const capabilityRefusal = firstRefusal("capability", rules, context);
-        if (capabilityRefusal !== null) {
-          log.info(
-            { lessonSlug, programmeSlug, capabilityId: id, refusal: capabilityRefusal },
-            "capability refused",
-          );
-        }
-        return capabilityRefusal === null;
-      })
+      .filter(({ id }) => offered.has(id))
       .map(({ id, label, resourceType }) => ({ id, label, resourceType })),
   };
 }

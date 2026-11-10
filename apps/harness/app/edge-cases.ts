@@ -141,9 +141,9 @@ const edgeCaseDefinitions = [
     reason:
       "Aila needs two things to adapt a worksheet: the original file from Oak, and our own extracted copy of what is inside it. Here only the Oak file exists, so teachers should see no Create more button.",
     lesson: {
-      lessonSlug: "adding-fractions",
+      lessonSlug: "add-fractions-with-the-same-denominator",
       programmeSlug: "maths-primary-ks2",
-      title: "Adding fractions",
+      title: "Add fractions with the same denominator",
       subjectSlug: "maths",
       keyStageSlug: "ks2",
       availableResources: ["worksheet"],

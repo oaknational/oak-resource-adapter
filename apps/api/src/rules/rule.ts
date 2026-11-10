@@ -1,4 +1,7 @@
-import type { RuleConfig } from "@oaknational/resource-adapter-dev-api-contracts";
+import type {
+  RuleConfig,
+  RuleInput,
+} from "@oaknational/resource-adapter-dev-api-contracts";
 
 export type RuleLevel = "lesson" | "capability" | "transformation";
 
@@ -17,6 +20,7 @@ export type Rule<
   kind: TKind;
   description: string;
   config: TConfig;
+  reads: readonly RuleInput[];
   check: (context: TContext) => TReason | null;
 }>;
 

@@ -10,6 +10,7 @@ export function excludesRule<const TId extends string>(
     kind: "excludes",
     description,
     config,
+    reads: ["adaptation"],
     check: ({
       appliedTransformations,
       targetBlockId,
