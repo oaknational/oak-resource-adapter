@@ -132,12 +132,14 @@ export function eligibilityBrowseRow(
     is_legacy: unknown;
     programme_slug: string;
     subject_slug: unknown;
+    subject_categories: unknown;
   }> = {},
 ) {
   return {
     is_legacy: false,
     programme_slug: "maths-primary-ks2",
     subject_slug: "maths",
+    subject_categories: null,
     ...overrides,
   };
 }

@@ -277,6 +277,17 @@ export const subjectMembershipRowSchema = z
   .object({ subject_slug: subjectSlugSchema })
   .transform(({ subject_slug }) => subject_slug);
 
+// Labels arrive alongside numbers and nulls; only the labels are kept.
+const subjectCategoriesSchema = z
+  .array(z.union([z.string(), z.number(), z.null()]))
+  .nullable()
+  .transform((categories): string[] =>
+    (categories ?? []).filter((category) => typeof category === "string"),
+  );
+
 export const eligibilityBrowseRowSchema = syntheticUnitvariantLessonsByKsSchema
   .pick({ is_legacy: true, programme_slug: true })
-  .extend({ subject_slug: subjectSlugSchema });
+  .extend({
+    subject_slug: subjectSlugSchema,
+    subject_categories: subjectCategoriesSchema,
+  });

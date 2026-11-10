@@ -16,6 +16,7 @@ const allowed: LessonEligibilityFacts = {
     featureKeys: [],
   },
   subjectSlugs: ["maths"],
+  subjectCategories: [],
   legacy: false,
   contentGuidance: [],
 };

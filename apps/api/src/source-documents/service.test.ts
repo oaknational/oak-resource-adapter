@@ -45,6 +45,7 @@ const unavailable = { outcome: "unavailable" };
 const unrestricted: LessonEligibilityFacts = {
   restrictionLevels: { works: [], media: [], downloadableFiles: [], featureKeys: [] },
   subjectSlugs: ["english"],
+  subjectCategories: [],
   legacy: false,
   contentGuidance: [],
 };

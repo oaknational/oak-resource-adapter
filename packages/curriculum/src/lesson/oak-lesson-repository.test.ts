@@ -742,6 +742,7 @@ describe("facts reader", () => {
     expect(request.query).toContain("published_mv_lesson_restriction_levels_2");
     expect(request.query.match(/_state: \{ _eq: "published" \}/g)).toHaveLength(2);
     expect(request.query).toContain('programme_fields(path: "subject_slug")');
+    expect(request.query).toContain('unit_data(path: "subjectcategories")');
     expect(request.query).not.toContain("programme_slug: {");
     expect(request.query).toContain("content_guidance");
     expect(request.query).not.toContain("transcript_sentences");
@@ -772,6 +773,7 @@ describe("facts reader", () => {
         featureKeys: ["expired", "has_copyright_conflict"],
       },
       subjectSlugs: ["maths"],
+      subjectCategories: [],
       legacy: false,
       contentGuidance: [],
     });
@@ -854,6 +856,23 @@ describe("facts reader", () => {
         "Depiction or discussion of mental health issues",
         "Depiction or discussion of serious crime",
       ],
+    });
+  });
+
+  it("collects the labelled subject categories of every unit the lesson is taught in", async () => {
+    oakRespondsWithFacts({
+      browseData: [
+        eligibilityBrowseRow({ subject_categories: ["Spelling", 3, null] }),
+        eligibilityBrowseRow({
+          programme_slug: "english-primary-ks1",
+          subject_categories: ["Handwriting", "Spelling"],
+        }),
+        eligibilityBrowseRow({ programme_slug: "english-primary-ks2" }),
+      ],
+    });
+
+    await expect(readFacts()).resolves.toMatchObject({
+      subjectCategories: ["Handwriting", "Spelling"],
     });
   });
 

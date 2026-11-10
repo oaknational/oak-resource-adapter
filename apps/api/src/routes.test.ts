@@ -73,6 +73,7 @@ vi.mock("@oaknational/resource-adapter-curriculum", async (importOriginal) => ({
         featureKeys: [],
       },
       subjectSlugs: ["english"],
+      subjectCategories: [],
       legacy: false,
       contentGuidance: [],
     }) satisfies LessonEligibilityFacts,

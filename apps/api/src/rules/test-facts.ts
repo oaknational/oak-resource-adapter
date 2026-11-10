@@ -6,6 +6,7 @@ export function lessonFacts(
   return {
     restrictionLevels: null,
     subjectSlugs: ["english"],
+    subjectCategories: [],
     legacy: false,
     contentGuidance: [],
     ...overrides,

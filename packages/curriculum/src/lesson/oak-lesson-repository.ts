@@ -172,6 +172,9 @@ export function createOakLessonEligibilityFactsReader(config: OakCurriculumConfi
       return {
         restrictionLevels: combineRestrictionLevels(data.restrictionLevels),
         subjectSlugs: distinctSorted(data.browseData.map((row) => row.subject_slug)),
+        subjectCategories: distinctSorted(
+          data.browseData.flatMap((row) => row.subject_categories),
+        ),
         legacy: data.browseData.some((row) => row.is_legacy),
         contentGuidance: distinctSorted(data.content.flat()),
       };

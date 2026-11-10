@@ -73,6 +73,8 @@ export type LessonEligibilityFacts = Readonly<{
   restrictionLevels: LessonRestrictionLevels | null;
   /** Every subject the lesson is taught in, across all its programmes. */
   subjectSlugs: readonly string[];
+  /** Every unit's subject categories, across all its programmes. */
+  subjectCategories: readonly string[];
   legacy: boolean;
   contentGuidance: readonly string[];
 }>;

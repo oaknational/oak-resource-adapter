@@ -42,6 +42,7 @@ import type { TeacherAccess } from "../teacher-access/access";
 const unrestricted: LessonEligibilityFacts = {
   restrictionLevels: { works: [], media: [], downloadableFiles: [], featureKeys: [] },
   subjectSlugs: ["english"],
+  subjectCategories: [],
   legacy: false,
   contentGuidance: [],
 };
@@ -434,6 +435,8 @@ describe("capability lesson rules", () => {
       withRestrictionLevels({ featureKeys: ["has_copyright_conflict"] }),
     ],
     ["an excluded subject", { ...unrestricted, subjectSlugs: ["english", "music"] }],
+    ["a handwriting lesson", { ...unrestricted, subjectCategories: ["Handwriting"] }],
+    ["a spelling lesson", { ...unrestricted, subjectCategories: ["Spelling"] }],
     ["an expired lesson", withRestrictionLevels({ featureKeys: ["expired"] })],
     ["a legacy lesson", { ...unrestricted, legacy: true }],
     ["a lesson Oak does not publish in the programme", null],

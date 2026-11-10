@@ -1,8 +1,15 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { z } from "zod";
 
-import { oakCurriculumConfigFromEnv, oakResourceStoreConfigFromEnv } from "./config.js";
+import {
+  oakCurriculumConfigFromEnv,
+  oakResourceStoreConfigFromEnv,
+  resolveOakCurriculumConfig,
+} from "./config.js";
 import { distinctSorted } from "./distinct-sorted.js";
 import { CurriculumError } from "./errors.js";
+import { executeHasuraQuery } from "./hasura.js";
+import { BROWSE_DATA_VIEW } from "./lesson/lesson-query.js";
 import type { LessonRepository } from "./lesson/lesson.js";
 import { findLessonResource } from "./resource/resource.js";
 import {
@@ -55,6 +62,17 @@ const MULTI_SUBJECT_LESSON = {
   lessonSlug: "forming-ions-for-ionic-bonding",
   programmeSlug: "chemistry-secondary-ks4-higher-aqa",
 };
+
+const HANDWRITING_LESSON = {
+  lessonSlug: "formation-of-a-h-k-and-t",
+  programmeSlug: "english-primary-ks1",
+};
+
+const programmesResponseSchema = z.object({
+  data: z.object({
+    programmes: z.array(z.object({ subject_slug: z.string(), phase_slug: z.string() })),
+  }),
+});
 
 describeIntegration("Oak curriculum endpoint (development)", () => {
   let lessons: LessonRepository;
@@ -185,4 +203,41 @@ describeIntegration("Oak curriculum endpoint (development)", () => {
     expect(facts?.subjectSlugs).toEqual(["chemistry", "combined-science"]);
     expect(lesson.subjectSlugs).toEqual(["chemistry", "combined-science"]);
   });
+
+  it("reports a lesson's subject categories", async () => {
+    const facts = await readFacts(HANDWRITING_LESSON);
+
+    expect(facts?.subjectCategories).toEqual(["Handwriting"]);
+  });
+
+  it.each(["Handwriting", "Spelling"])(
+    "publishes the %s category only on English primary lessons",
+    async (category) => {
+      const response = await executeHasuraQuery(
+        resolveOakCurriculumConfig(oakCurriculumConfigFromEnv(process.env)),
+        {
+          query: `
+            query ProgrammesWithCategory($categories: jsonb!) {
+              programmes: ${BROWSE_DATA_VIEW}(
+                where: { unit_data: { _contains: $categories } }
+                distinct_on: programme_slug
+              ) {
+                subject_slug: programme_fields(path: "subject_slug")
+                phase_slug: programme_fields(path: "phase_slug")
+              }
+            }
+          `,
+          variables: { categories: { subjectcategories: [category] } },
+        },
+      );
+      const { programmes } = programmesResponseSchema.parse(response).data;
+
+      expect(programmes.length).toBeGreaterThan(0);
+      expect(
+        distinctSorted(
+          programmes.map((row) => `${row.subject_slug} ${row.phase_slug}`),
+        ),
+      ).toEqual(["english primary"]);
+    },
+  );
 });

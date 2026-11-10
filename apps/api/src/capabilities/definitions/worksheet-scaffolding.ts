@@ -1,4 +1,4 @@
-import { excludedLessonsRule } from "../../rules/excluded-lessons";
+import { subjectCategoryRule } from "../../rules/subject-category";
 import { resourceInputsRule } from "../resource-inputs";
 import type { CapabilityDefinition } from "../types";
 
@@ -15,13 +15,13 @@ export const worksheetScaffoldingCapability = {
       },
       { resourceType: "worksheet" },
     ),
-    excludedLessonsRule(
+    subjectCategoryRule(
       {
         id: "handwriting-and-spelling",
         label: "Isn't a handwriting or spelling lesson",
         condition: "The lesson is a handwriting or spelling lesson",
       },
-      { lessonSlugs: [] },
+      { categories: ["Handwriting", "Spelling"] },
     ),
   ],
   suggestionFlowId: "worksheet-scaffolding",
