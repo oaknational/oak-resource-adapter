@@ -1,7 +1,3 @@
-import {
-  createOakLessonEligibilityFactsReader,
-  oakCurriculumConfigFromEnv,
-} from "@oaknational/resource-adapter-curriculum";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 
@@ -15,6 +11,8 @@ import type {
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 
 import { lessonRefusal } from "../lesson-rules";
+import { readLessonFacts } from "../curriculum/read-lesson-facts";
+import { firstRefusal } from "../rules/rule";
 import type { TeacherAccess } from "../teacher-access/access";
 import {
   teacherAccessResolver,
@@ -29,21 +27,29 @@ export type EligibilityResolver = (
 
 const log = raLogger("capabilities");
 
-/** The lesson rules run before any capability's own predicate, which cannot override them. */
 export function evaluateCapabilities(
   definitions: ReadonlyArray<CapabilityDefinition>,
   context: EligibilityContext,
   teacher: Pick<TeacherAccess, "inCopyrightRegion"> | undefined,
 ): Pick<ResourceAdapterCapabilitiesResponse, "capabilities"> {
+  const { lessonSlug, programmeSlug } = context.lesson;
   const refusal = lessonRefusal({ ...context, teacher });
   if (refusal !== null) {
-    const { lessonSlug, programmeSlug } = context.lesson;
     log.info({ lessonSlug, programmeSlug, refusal }, "lesson refused");
     return { capabilities: [] };
   }
   return {
     capabilities: definitions
-      .filter((definition) => definition.isEligible(context))
+      .filter(({ id, rules }) => {
+        const capabilityRefusal = firstRefusal("capability", rules, context);
+        if (capabilityRefusal !== null) {
+          log.info(
+            { lessonSlug, programmeSlug, capabilityId: id, refusal: capabilityRefusal },
+            "capability refused",
+          );
+        }
+        return capabilityRefusal === null;
+      })
       .map(({ id, label, resourceType }) => ({ id, label, resourceType })),
   };
 }
@@ -51,9 +57,7 @@ export function evaluateCapabilities(
 /** `originalFileResourceTypes` is caller-supplied, not resolved from Oak. */
 export const resolveEligibility: EligibilityResolver = async (lesson) => ({
   lesson,
-  facts: await createOakLessonEligibilityFactsReader(
-    oakCurriculumConfigFromEnv(process.env),
-  )(lesson),
+  facts: await readLessonFacts(lesson),
   originalFileResourceTypes: lesson.availableResources,
   extractedResourceTypes: await originalResourceDocuments.listExtractedResourceTypes({
     source: "oak",

@@ -1,12 +1,11 @@
-import { all, notAlreadyAppliedToTarget } from "../../availability";
 import { defineTransformation } from "../../define-transformation";
-import { chunkTasksContribution, supportsChunkingKeyStage } from "./contribution";
+import { keyStageRule } from "../../rules/key-stage";
+import { APPLIED_ONCE_PER_TARGET_RULE } from "../../rules/common-rules";
+import { CHUNKING_KEY_STAGES, chunkTasksContribution } from "./contribution";
 import { chunkTasksPrompt } from "./prompt";
 
-const KIND = "scaffold-chunk-tasks";
-
 export const chunkTasksTransformation = defineTransformation({
-  kind: KIND,
+  kind: "scaffold-chunk-tasks",
   label: "Break the task into ordered steps",
   status: "retired",
   suggestion: {
@@ -26,10 +25,16 @@ export const chunkTasksTransformation = defineTransformation({
   ],
   target: { scope: "node", nodeTypes: ["question"] },
   outputs: ["revised-resource"],
-  isAvailable: all(
-    ({ document }) => supportsChunkingKeyStage(document),
-    notAlreadyAppliedToTarget(KIND),
-  ),
+  rules: [
+    keyStageRule(
+      {
+        id: "key-stage",
+        description: "Refuses a resource outside the key stages with a step range.",
+      },
+      { keyStageSlugs: CHUNKING_KEY_STAGES },
+    ),
+    APPLIED_ONCE_PER_TARGET_RULE,
+  ],
   execution: {
     strategy: "model",
     prompt: chunkTasksPrompt,

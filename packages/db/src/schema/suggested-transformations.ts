@@ -28,6 +28,8 @@ export const suggestedTransformations = resourceAdapterSchema.table(
     id: uuid("id")
       .primaryKey()
       .default(sql`gen_random_uuid()`),
+    /** The choices offered with the suggestion, after any rule narrowed them. */
+    inputs: jsonb("inputs").notNull().default([]),
     /** Keys into the same registry as `transformations.kind`. */
     kind: text("kind").notNull(),
     /** Arguments to apply if accepted, validated by the registry. */

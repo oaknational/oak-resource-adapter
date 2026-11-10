@@ -1,9 +1,9 @@
 import type { LessonFactsContext } from "./context";
-import { defineRule, type RulePlacement } from "./rule";
+import { defineRule, type RuleMetadata } from "./rule";
 
 /** Matches Oak's labels exactly. */
 export function contentGuidanceRule<const TId extends string>(
-  { id, description }: RulePlacement<TId>,
+  { id, description }: RuleMetadata<TId>,
   config: Readonly<{ labels: readonly string[] }>,
 ) {
   return defineRule({

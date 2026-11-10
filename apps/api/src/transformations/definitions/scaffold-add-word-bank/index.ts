@@ -1,12 +1,13 @@
-import { notAlreadyAppliedToTarget } from "../../availability";
+import { subjectRule } from "../../../rules/subject";
 import { defineTransformation } from "../../define-transformation";
+import { removingSupportLevels } from "../../narrowing";
+import { MFL_SUBJECT_SLUGS } from "../../../rules/subject-groups";
+import { APPLIED_ONCE_PER_TARGET_RULE } from "../../rules/common-rules";
 import { wordBankContribution } from "./contribution";
 import { addWordBankPrompt } from "./prompt";
 
-const KIND = "scaffold-add-word-bank";
-
 export const addWordBankTransformation = defineTransformation({
-  kind: KIND,
+  kind: "scaffold-add-word-bank",
   label: "Add a word bank",
   status: "active",
   suggestion: {
@@ -39,7 +40,20 @@ export const addWordBankTransformation = defineTransformation({
     { key: "lesson.transcriptSummary", required: false },
   ],
   outputs: ["revised-resource"],
-  isAvailable: notAlreadyAppliedToTarget(KIND),
+  rules: [
+    APPLIED_ONCE_PER_TARGET_RULE,
+    removingSupportLevels(
+      ["mid"],
+      subjectRule(
+        {
+          id: "mfl",
+          description:
+            "Removes definitions from word banks on French, German and Spanish lessons.",
+        },
+        { subjectSlugs: MFL_SUBJECT_SLUGS },
+      ),
+    ),
+  ],
   execution: {
     strategy: "model",
     prompt: addWordBankPrompt,

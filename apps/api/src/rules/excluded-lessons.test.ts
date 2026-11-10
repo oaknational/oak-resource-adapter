@@ -14,4 +14,8 @@ describe("excludedLessonsRule", () => {
     );
     expect(rule.check({ lesson: { lessonSlug: "adding-fractions" } })).toBeNull();
   });
+
+  it("refuses nothing without a lesson", () => {
+    expect(rule.check({ lesson: null })).toBeNull();
+  });
 });

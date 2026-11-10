@@ -20,8 +20,7 @@ export type Rule<
   check: (context: TContext) => TReason | null;
 }>;
 
-/** Where a rule sits in a level's list, and what it means there. */
-export type RulePlacement<TId extends string> = Readonly<{
+export type RuleMetadata<TId extends string> = Readonly<{
   id: TId;
   description: string;
 }>;

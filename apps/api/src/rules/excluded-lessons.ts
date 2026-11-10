@@ -1,9 +1,9 @@
 import type { LessonIdentityContext } from "./context";
-import { defineRule, type RulePlacement } from "./rule";
+import { defineRule, type RuleMetadata } from "./rule";
 
 /** Matches a listed lesson in whichever programme it is opened from. */
 export function excludedLessonsRule<const TId extends string>(
-  { id, description }: RulePlacement<TId>,
+  { id, description }: RuleMetadata<TId>,
   config: Readonly<{ lessonSlugs: readonly string[] }>,
 ) {
   return defineRule({
@@ -12,6 +12,8 @@ export function excludedLessonsRule<const TId extends string>(
     description,
     config,
     check: ({ lesson }: LessonIdentityContext) =>
-      config.lessonSlugs.includes(lesson.lessonSlug) ? "excluded-lesson" : null,
+      lesson !== null && config.lessonSlugs.includes(lesson.lessonSlug)
+        ? "excluded-lesson"
+        : null,
   });
 }

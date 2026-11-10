@@ -18,6 +18,8 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { AdaptationAllowance } from "../usage/adaptation-allowance";
 
 import { createOrGetJob } from "../jobs/job-repository";
+import { withoutSupportLevels } from "../transformations/narrowing";
+import { transformationDefinitions } from "../transformations/registry";
 import {
   acceptSuggestion,
   acceptPendingReview,
@@ -138,6 +140,7 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       resourceDocumentId,
       suggestions: [
         {
+          inputs: [],
           kind: "scaffold-add-word-bank",
           params: { supportLevel: "low" },
           reason: "Vocabulary support would help here.",
@@ -336,12 +339,14 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       resourceDocumentId: resourceDocumentId,
       suggestions: [
         {
+          inputs: [],
           kind: "scaffold-add-word-bank",
           params: { supportLevel: "low" },
           reason: "The first offer.",
           targetBlockId: null,
         },
         {
+          inputs: [],
           kind: "scaffold-chunk-tasks",
           params: { supportLevel: "low" },
           reason: "The second offer.",
@@ -354,6 +359,33 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       { position: 0, reason: "The first offer." },
       { position: 1, reason: "The second offer." },
     ]);
+  });
+
+  it("reads back the choices an offer was made with", async () => {
+    const { adaptationId, resourceDocumentId } = await newAdaptation();
+    const { attempt } = await newAttempt(adaptationId, resourceDocumentId);
+    const offered = withoutSupportLevels(
+      transformationDefinitions["scaffold-add-word-bank"],
+      ["mid"],
+    )?.inputs;
+    expect(offered?.[0]?.options.map(({ value }) => value)).toEqual(["low"]);
+
+    await completeSuggestionAttempt({
+      attemptId: attempt.id,
+      resourceDocumentId,
+      suggestions: [
+        {
+          inputs: offered ?? [],
+          kind: "scaffold-add-word-bank",
+          params: { supportLevel: "low" },
+          reason: "Vocabulary support would help here.",
+          targetBlockId: null,
+        },
+      ],
+    });
+
+    const [stored] = await listOpenSuggestions(resourceDocumentId);
+    expect(stored?.inputs).toEqual(offered);
   });
 
   it("stores an empty suggestion result durably", async () => {
@@ -378,6 +410,7 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       resourceDocumentId,
       suggestions: [
         {
+          inputs: [],
           kind: "scaffold-add-word-bank",
           params: { supportLevel: "low" },
           reason: "The original offer.",
@@ -400,6 +433,7 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       resourceDocumentId,
       suggestions: [
         {
+          inputs: [],
           kind: "scaffold-chunk-tasks",
           params: { supportLevel: "low" },
           reason: "The replacement offer.",
@@ -424,6 +458,7 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       resourceDocumentId,
       suggestions: [
         {
+          inputs: [],
           kind: "scaffold-add-word-bank",
           params: { supportLevel: "low" },
           reason: "The original offer.",
@@ -461,6 +496,7 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       resourceDocumentId,
       suggestions: [
         {
+          inputs: [],
           kind: "scaffold-add-word-bank",
           params: { supportLevel: "low" },
           reason: "The current offer.",
@@ -491,6 +527,7 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       resourceDocumentId: resourceDocumentId,
       suggestions: [
         {
+          inputs: [],
           kind: "scaffold-add-word-bank",
           params: { supportLevel: "low" },
           reason: "The only offer.",
@@ -806,6 +843,7 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
         resourceDocumentId: created.resourceDocumentId,
         suggestions: [
           {
+            inputs: [],
             kind: "scaffold-add-word-bank",
             params: { supportLevel: "low" },
             reason: "The offer the teacher accepted.",

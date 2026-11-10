@@ -1,17 +1,17 @@
 import type { TransformationCatalogueItem } from "@oaknational/resource-adapter-dev-api-contracts";
-import {
-  getResourceNodeById,
-  getResourceNodesByType,
-} from "@oaknational/resource-document";
+import { raLogger } from "@oaknational/resource-adapter-logger";
 
 import { requireCapability } from "../capabilities/registry";
 import { OAK_MATERIAL, oakMaterialIsAvailable } from "../oak-material/catalogue";
 import { transformationDefinitions } from "./registry";
+import { evaluateTransformation } from "./evaluate-transformation";
 import type {
   AvailableTransformation,
   TransformationAvailabilityContext,
   TransformationDefinition,
 } from "./types";
+
+const log = raLogger("transformations");
 
 export function executionType(
   definition: TransformationDefinition,
@@ -70,72 +70,46 @@ export function listRegisteredTransformations(): readonly TransformationCatalogu
   return Object.values(transformationDefinitions).map(toCatalogueItem);
 }
 
-/** A transformation whose required material has no source cannot run, so it is not offered. */
-function hasResolvableMaterial(definition: TransformationDefinition): boolean {
-  return (definition.materialRequirements ?? [])
-    .filter(({ required }) => required)
-    .every(({ key }) => oakMaterialIsAvailable(key));
-}
-
-function isExcludedByApplied(
-  definition: TransformationDefinition,
-  { appliedTransformations, targetBlockId }: TransformationAvailabilityContext,
-): boolean {
-  return appliedTransformations.some(
-    ({ kind, targetBlockId: appliedTarget }) =>
-      appliedTarget === targetBlockId && (definition.excludes ?? []).includes(kind),
-  );
-}
-
-function hasEligibleTarget(
-  definition: TransformationDefinition,
-  context: TransformationAvailabilityContext,
-): boolean {
-  if (definition.target.scope === "document") {
-    return context.targetBlockId === undefined;
-  }
-
-  if (context.targetBlockId !== undefined) {
-    const node = getResourceNodeById(context.document, context.targetBlockId);
-    return node !== undefined && definition.target.nodeTypes.includes(node.type);
-  }
-
-  return definition.target.nodeTypes.some(
-    (type) => getResourceNodesByType(context.document, type).length > 0,
-  );
-}
-
+/** The definitions offered, in the order given, each narrowed by any rule that removed levels. */
 export function evaluateTransformations(
   definitions: ReadonlyArray<TransformationDefinition>,
   context: TransformationAvailabilityContext,
-): readonly AvailableTransformation[] {
-  return definitions
-    .filter(
-      (definition) =>
-        definition.status === "active" &&
-        hasResolvableMaterial(definition) &&
-        hasEligibleTarget(definition, context) &&
-        !isExcludedByApplied(definition, context) &&
-        definition.isAvailable(context),
-    )
-    .map(({ barriers, inputs, kind, label, outputs, suggestion, target }) => ({
-      barriers,
-      inputs,
-      kind,
-      label,
-      outputs,
-      suggestion,
-      target,
-    }));
+): readonly TransformationDefinition[] {
+  return definitions.flatMap((definition) => {
+    const evaluation = evaluateTransformation(definition, context);
+    if ("refusal" in evaluation) {
+      log.info(
+        {
+          kind: definition.kind,
+          targetBlockId: context.targetBlockId,
+          refusal: evaluation.refusal,
+        },
+        "transformation refused",
+      );
+      return [];
+    }
+    return [evaluation.offered];
+  });
 }
 
-/** Resolves active kinds a capability offers, preserving capability order. */
+export function toAvailableTransformation({
+  barriers,
+  inputs,
+  kind,
+  label,
+  outputs,
+  suggestion,
+  target,
+}: TransformationDefinition): AvailableTransformation {
+  return { barriers, inputs, kind, label, outputs, suggestion, target };
+}
+
 export function transformationsForCapability(
   capabilityId: string,
 ): ReadonlyArray<TransformationDefinition> {
-  return requireCapability(capabilityId)
-    .transformationKinds.map((kind) => transformationDefinitions[kind])
-    .filter((definition) => definition.status === "active");
+  return requireCapability(capabilityId).transformationKinds.map(
+    (kind) => transformationDefinitions[kind],
+  );
 }
 
 export function listTransformationsForCapability(
@@ -144,5 +118,5 @@ export function listTransformationsForCapability(
   return evaluateTransformations(
     transformationsForCapability(context.capabilityId),
     context,
-  );
+  ).map(toAvailableTransformation);
 }

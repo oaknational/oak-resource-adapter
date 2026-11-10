@@ -54,6 +54,8 @@ const material: OakMaterial = {
   },
 };
 
+const lesson = { identity: null, material, facts: null };
+
 const documents = new Map<string, ResourceDocument>();
 
 beforeAll(async () => {
@@ -86,7 +88,7 @@ function setup() {
       }),
     },
   });
-  return { createInvoker: () => invoker, material, prepare, recorder };
+  return { createInvoker: () => invoker, lesson, prepare, recorder };
 }
 
 function expectValidRecording(
@@ -138,14 +140,16 @@ describe("deterministic suggestion catalogue", () => {
         flow,
         document,
         [],
-        material,
+        lesson,
         prepare,
       );
       expect(candidates.length).toBeGreaterThan(0);
-      const offered = alwaysOffered.flatMap(({ kind, eligibleTargets }) =>
-        (eligibleTargets.scope === "document" ? [null] : eligibleTargets.blockIds).map(
-          (targetBlockId) => ({ kind, targetBlockId }),
-        ),
+      const offered = alwaysOffered.flatMap(
+        ({ definition: { kind }, eligibleTargets }) =>
+          (eligibleTargets.scope === "document"
+            ? [null]
+            : eligibleTargets.blockIds
+          ).map((targetBlockId) => ({ kind, targetBlockId })),
       );
       const [first, second] = await Promise.all([
         generateSuggestions(flow, document, [], config),
@@ -153,7 +157,10 @@ describe("deterministic suggestion catalogue", () => {
       ]);
       expect(first).toEqual(second);
       const expected: { kind: string; targetBlockId: string | null }[] = [];
-      for (const { kind, eligibleTargets } of candidates) {
+      for (const {
+        definition: { kind },
+        eligibleTargets,
+      } of candidates) {
         const targets =
           eligibleTargets.scope === "document" ? [null] : eligibleTargets.blockIds;
         const excludes =
@@ -209,10 +216,12 @@ describe("deterministic suggestion catalogue", () => {
         flow,
         document,
         applied,
-        material,
+        lesson,
         prepare,
       );
-      const wordBank = candidates.find(({ kind }) => kind === "scaffold-add-word-bank");
+      const wordBank = candidates.find(
+        ({ definition }) => definition.kind === "scaffold-add-word-bank",
+      );
       expect(wordBank?.eligibleTargets).toMatchObject({
         scope: "node",
         blockIds: expect.not.arrayContaining([first.id]),
@@ -246,7 +255,7 @@ describe("deterministic suggestion catalogue", () => {
         singleKind,
         document,
         [],
-        material,
+        lesson,
         prepare,
       );
       expect(candidates).toHaveLength(1);
@@ -311,7 +320,7 @@ describe("deterministic suggestion catalogue", () => {
     ];
     const config = setup();
     expect(
-      (await prepareSuggestionFlow(flow, document, applied, material, prepare))
+      (await prepareSuggestionFlow(flow, document, applied, lesson, prepare))
         .candidates,
     ).toEqual([]);
     await expect(generateSuggestions(flow, document, applied, config)).resolves.toEqual(

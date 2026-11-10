@@ -11,6 +11,7 @@ import { generateSuggestionsJob } from "../jobs/suggestions/generate-definition"
 import { removeTransformationJob } from "../jobs/transformations/remove-definition";
 import { retryTransformationJob } from "../jobs/transformations/retry-definition";
 import { dismissTransformationsJob } from "../jobs/transformations/dismiss-definition";
+import { readLessonFacts } from "../curriculum/read-lesson-facts";
 import { suggestionFlowDefinitions } from "../suggestions/registry";
 import {
   generateSuggestions,
@@ -50,6 +51,7 @@ export type WorksheetScaffoldingJobDependencies = {
   createInvoker: typeof createApplicationModelInvoker;
   executeTransformation: typeof executeRegisteredTransformation;
   generate: typeof generateSuggestions;
+  readFacts: typeof readLessonFacts;
   readJob: typeof getJob;
   repository: WorksheetScaffoldingExecutionRepository;
   resolveMaterial: ResolveTransformationMaterial;
@@ -78,6 +80,7 @@ const defaultDependencies: WorksheetScaffoldingJobDependencies = {
   createInvoker: createApplicationModelInvoker,
   executeTransformation: executeRegisteredTransformation,
   generate: generateSuggestions,
+  readFacts: readLessonFacts,
   readJob: getJob,
   repository: scaffoldingRepository,
   resolveMaterial: resolveApplicationMaterial,
@@ -193,11 +196,15 @@ export async function executeGenerateSuggestions(
   const flow = suggestionFlowDefinitions[input.flowId];
   const createInvoker = () =>
     dependencies.createInvoker(attempt.id, head.adaptation.clerkUserId);
-  const { material } = await dependencies.resolveMaterial(
-    suggestionMaterialRequirements(flow),
-    lessonOf(head.adaptation),
-    createInvoker,
-  );
+  const lesson = lessonOf(head.adaptation);
+  const [{ material }, facts] = await Promise.all([
+    dependencies.resolveMaterial(
+      suggestionMaterialRequirements(flow),
+      lesson,
+      createInvoker,
+    ),
+    dependencies.readFacts(lesson),
+  ]);
   const suggestions = await dependencies.generate(
     flow,
     document,
@@ -205,7 +212,7 @@ export async function executeGenerateSuggestions(
     {
       correlationKey: jobId,
       createInvoker,
-      material,
+      lesson: { identity: lesson ?? null, material, facts },
     },
   );
 

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { always } from "./availability";
 import { defineTransformation } from "./define-transformation";
 import { listRegisteredTransformations, toCatalogueItem } from "./service";
 import type { OakMaterialRequirement } from "../oak-material/material";
@@ -19,7 +18,7 @@ function deterministicWith(
     target: { scope: "document" },
     materialRequirements,
     outputs: ["revised-resource"],
-    isAvailable: always,
+    rules: [],
     execution: { strategy: "deterministic", apply: (document) => [document] },
   });
 }
@@ -33,7 +32,7 @@ const textModel = defineTransformation({
   suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "node", nodeTypes: ["question"] },
   outputs: ["revised-resource"],
-  isAvailable: always,
+  rules: [],
   execution: { strategy: "model", prompt: addWordBankPrompt },
 });
 
@@ -44,7 +43,7 @@ const structuredModel = defineTransformation({
   suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "node", nodeTypes: ["question"] },
   outputs: ["revised-resource"],
-  isAvailable: always,
+  rules: [],
   execution: {
     strategy: "model",
     prompt: addWordBankPrompt,
@@ -110,7 +109,7 @@ describe("toCatalogueItem", () => {
         suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
         target: { scope: "document" },
         outputs: ["revised-resource"],
-        isAvailable: always,
+        rules: [],
         execution: { strategy: "deterministic", apply: (document) => [document] },
         supportLevels: [
           { description: "A little help.", label: "Add a little help", level: "low" },

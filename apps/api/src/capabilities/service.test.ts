@@ -33,7 +33,8 @@ import {
   resolveEligibility,
   type EligibilityResolver,
 } from "./service";
-import { hasResourceInputs, type CapabilityDefinition } from "./types";
+import { resourceInputsRule } from "./resource-inputs";
+import type { CapabilityDefinition } from "./types";
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import type { TeacherAccess } from "../teacher-access/access";
 
@@ -95,7 +96,12 @@ const worksheetGatedCapability: CapabilityDefinition = {
   id: "test-worksheet-capability",
   label: "Worksheet capability",
   resourceType: "worksheet",
-  isEligible: (context) => hasResourceInputs(context, "worksheet"),
+  rules: [
+    resourceInputsRule(
+      { id: "resource-inputs", description: "A rule under test." },
+      { resourceType: "worksheet" },
+    ),
+  ],
   transformationKinds: ["identity"],
 };
 
@@ -103,7 +109,12 @@ const starterQuizGatedCapability: CapabilityDefinition = {
   id: "test-starter-quiz-capability",
   label: "Starter quiz capability",
   resourceType: "starter-quiz",
-  isEligible: (context) => hasResourceInputs(context, "starter-quiz"),
+  rules: [
+    resourceInputsRule(
+      { id: "resource-inputs", description: "A rule under test." },
+      { resourceType: "starter-quiz" },
+    ),
+  ],
   transformationKinds: ["identity"],
 };
 
@@ -155,7 +166,7 @@ describe("getCapabilities", () => {
       resolverFor(["worksheet"], ["worksheet"]),
     );
 
-    expect(capabilities[0]).not.toHaveProperty("isEligible");
+    expect(capabilities[0]).not.toHaveProperty("rules");
   });
 
   it("excludes the capability's transformation kinds from the response", async () => {
@@ -255,7 +266,7 @@ describe("resolveEligibility", () => {
 });
 
 describe("evaluateCapabilities", () => {
-  it("evaluates each definition's predicate independently", () => {
+  it("evaluates each definition's rules independently", () => {
     const response = evaluateCapabilities(
       testDefinitions,
       {

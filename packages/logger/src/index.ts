@@ -16,7 +16,8 @@ export type LoggerKey =
   | "feature-flags"
   | "harness"
   | "internal-api"
-  | "moderation";
+  | "moderation"
+  | "transformations";
 
 /**
  * A pluggable error reporter (e.g. `Sentry.captureException`). The logger stays

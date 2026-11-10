@@ -1,8 +1,8 @@
 import type { LessonFactsContext } from "../rules/context";
-import { defineRule, type RulePlacement } from "../rules/rule";
+import { defineRule, type RuleMetadata } from "../rules/rule";
 
 export function lessonStatusRule<const TId extends string>(
-  { id, description }: RulePlacement<TId>,
+  { id, description }: RuleMetadata<TId>,
   config: Readonly<{ expiredFeatureKey: string }>,
 ) {
   return defineRule({

@@ -15,7 +15,6 @@ import type { QuestionNode, ResourceDocument } from "@oaknational/resource-docum
 
 import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
 import { resolveLessonMaterial } from "../oak-material/from-lesson";
-import { always } from "./availability";
 import { defineTransformation } from "./define-transformation";
 
 import {
@@ -51,7 +50,7 @@ const cycleTitlesScaffold = defineTransformation({
   ],
   target: { scope: "document" },
   outputs: ["revised-resource"],
-  isAvailable: always,
+  rules: [],
   execution: {
     strategy: "model",
     prompt: definePromptTemplate({

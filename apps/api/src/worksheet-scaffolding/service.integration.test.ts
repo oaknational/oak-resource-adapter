@@ -125,6 +125,7 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
       resourceDocumentId,
       suggestions: [
         {
+          inputs: [],
           kind: "scaffold-add-word-bank",
           params: { supportLevel: "low" },
           reason: "Vocabulary support would help here.",

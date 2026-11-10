@@ -37,6 +37,7 @@ import {
 } from "./test-doubles";
 import { ConcurrencyConflictError } from "../jobs/job-repository";
 import type { TeacherAccess } from "../teacher-access/access";
+import { withoutSupportLevels } from "../transformations/narrowing";
 import { transformationDefinitions } from "../transformations/registry";
 import {
   getResourceNodesByType,
@@ -630,12 +631,14 @@ describe("reading worksheet scaffolding state", () => {
     });
   });
 
-  it("omits inputs for a transformation that declares none", async () => {
+  it("omits inputs when the suggestion offered no choice", async () => {
     const dependencies = stubDependencies({
       repository: stubRepository({
         listOpenSuggestions: vi
           .fn()
-          .mockResolvedValue([storedSuggestion({ kind: "identity", params: {} })]),
+          .mockResolvedValue([
+            storedSuggestion({ inputs: [], kind: "identity", params: {} }),
+          ]),
       }),
     });
 
@@ -978,6 +981,33 @@ describe("accepting a suggestion", () => {
         {
           adaptationId: ADAPTATION_ID,
           params: { supportLevel: "enormous" },
+          suggestionId: SUGGESTION_ID,
+        },
+        teacher,
+        dependencies,
+      ),
+    ).rejects.toThrow();
+    expect(dependencies.enqueue).not.toHaveBeenCalled();
+  });
+
+  it("refuses a support level the suggestion did not offer", async () => {
+    const narrowed = withoutSupportLevels(
+      transformationDefinitions["scaffold-add-word-bank"],
+      ["mid"],
+    );
+    const dependencies = stubDependencies({
+      repository: stubRepository({
+        getOpenSuggestion: vi
+          .fn()
+          .mockResolvedValue(storedSuggestion({ inputs: narrowed?.inputs })),
+      }),
+    });
+
+    await expect(
+      enqueueSuggestionApplication(
+        {
+          adaptationId: ADAPTATION_ID,
+          params: { supportLevel: "mid" },
           suggestionId: SUGGESTION_ID,
         },
         teacher,

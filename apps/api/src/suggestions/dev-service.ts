@@ -17,6 +17,9 @@ import {
   suggestionMaterialRequirements,
   type PrepareSuggestionPrompt,
 } from "./service";
+import type { SuggestionLessonContext } from "./types";
+import { toAvailableTransformation } from "../transformations/service";
+import { readLessonFacts } from "../curriculum/read-lesson-facts";
 import { resolveApplicationMaterial } from "../transformations/application-material-resolver";
 import type { AppliedTransformationSummary } from "../transformations/types";
 
@@ -64,16 +67,19 @@ export function getDevSuggestionCatalogue(): SuggestionCatalogue {
   };
 }
 
-async function materialFor(
+async function lessonFor(
   flow: ReturnType<typeof resolveFlow>,
   command: DevSuggestionCommand,
-) {
-  const { material } = await resolveApplicationMaterial(
-    suggestionMaterialRequirements(flow),
-    command.lesson,
-    createDevModelInvoker,
-  );
-  return material;
+): Promise<SuggestionLessonContext> {
+  const [{ material }, facts] = await Promise.all([
+    resolveApplicationMaterial(
+      suggestionMaterialRequirements(flow),
+      command.lesson,
+      createDevModelInvoker,
+    ),
+    readLessonFacts(command.lesson),
+  ]);
+  return { identity: command.lesson ?? null, material, facts };
 }
 
 export async function previewDevSuggestionFlow(
@@ -84,12 +90,15 @@ export async function previewDevSuggestionFlow(
     flow,
     command.document,
     command.appliedTransformations,
-    await materialFor(flow, command),
+    await lessonFor(flow, command),
     prepareWithoutPersistence,
   );
 
   return {
-    candidates,
+    candidates: candidates.map(({ definition, eligibleTargets }) => ({
+      ...toAvailableTransformation(definition),
+      eligibleTargets,
+    })),
     flow: describeFlow(flow),
     prompt: {
       identifier: flow.prompt.identifier,
@@ -109,7 +118,7 @@ export async function runDevSuggestionFlow(
     {
       correlationKey: `dev-suggestions-${flow.id}`,
       createInvoker: createDevModelInvoker,
-      material: await materialFor(flow, command),
+      lesson: await lessonFor(flow, command),
       prepare: prepareWithoutPersistence,
     },
   );

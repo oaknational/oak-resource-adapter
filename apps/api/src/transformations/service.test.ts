@@ -5,11 +5,14 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { ResourceDocument } from "@oaknational/resource-document";
 
 import { worksheetScaffoldingCapability } from "../capabilities/definitions/worksheet-scaffolding";
+import { defineRule } from "../rules/rule";
+import { lessonFacts } from "../rules/test-facts";
 import { defineTransformation } from "./define-transformation";
 import { transformationDefinitions } from "./registry";
 import {
   evaluateTransformations,
   listTransformationsForCapability,
+  toAvailableTransformation,
   transformationsForCapability,
 } from "./service";
 
@@ -20,7 +23,13 @@ let worksheet: ResourceDocument;
 function contextFor(
   capabilityId = "worksheetScaffolding",
 ): TransformationAvailabilityContext {
-  return { appliedTransformations: [], capabilityId, document: worksheet };
+  return {
+    appliedTransformations: [],
+    capabilityId,
+    document: worksheet,
+    facts: null,
+    lesson: null,
+  };
 }
 
 const offered = defineTransformation({
@@ -30,7 +39,7 @@ const offered = defineTransformation({
   suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "document" },
   outputs: ["revised-resource"],
-  isAvailable: () => true,
+  rules: [],
   execution: { strategy: "deterministic", apply: (document) => [document] },
 });
 
@@ -41,7 +50,15 @@ const withheld = defineTransformation({
   suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "node", nodeTypes: ["question"] },
   outputs: ["revised-resource"],
-  isAvailable: () => false,
+  rules: [
+    defineRule({
+      id: "withheld",
+      kind: "test",
+      description: "Refuses everything.",
+      config: {},
+      check: () => "withheld",
+    }),
+  ],
   execution: { strategy: "deterministic", apply: (document) => [document] },
 });
 
@@ -56,15 +73,11 @@ beforeAll(async () => {
 
 describe("evaluateTransformations", () => {
   it("returns only the kinds whose rules hold", () => {
-    expect(evaluateTransformations([offered, withheld], contextFor())).toEqual([
-      {
-        kind: "test-offered",
-        label: "Offered",
-        outputs: ["revised-resource"],
-        suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
-        target: { scope: "document" },
-      },
-    ]);
+    expect(
+      evaluateTransformations([offered, withheld], contextFor()).map(
+        ({ kind }) => kind,
+      ),
+    ).toEqual(["test-offered"]);
   });
 
   it("preserves the order it was given", () => {
@@ -75,10 +88,17 @@ describe("evaluateTransformations", () => {
     ).toEqual(["test-offered", "test-offered-second"]);
   });
 
-  it("excludes rules and prompts from the listing", () => {
-    const [transformation] = evaluateTransformations([offered], contextFor());
+  it("leaves rules and prompts out of what a client sees", () => {
+    const transformation = toAvailableTransformation(offered);
 
-    expect(transformation).not.toHaveProperty("isAvailable");
+    expect(transformation).toEqual({
+      kind: "test-offered",
+      label: "Offered",
+      outputs: ["revised-resource"],
+      suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
+      target: { scope: "document" },
+    });
+    expect(transformation).not.toHaveProperty("rules");
     expect(transformation).not.toHaveProperty("execution");
     expect(transformation).not.toHaveProperty("params");
   });
@@ -99,11 +119,7 @@ describe("transformationsForCapability", () => {
   it("resolves the kinds the worksheet capability declares, in order", () => {
     expect(
       transformationsForCapability("worksheetScaffolding").map(({ kind }) => kind),
-    ).toEqual(
-      worksheetScaffoldingCapability.transformationKinds.filter(
-        (kind) => transformationDefinitions[kind].status === "active",
-      ),
-    );
+    ).toEqual(worksheetScaffoldingCapability.transformationKinds);
   });
 
   it("rejects an unknown capability rather than offering nothing", () => {
@@ -168,6 +184,39 @@ describe("listTransformationsForCapability", () => {
     expect(
       listTransformationsForCapability(context).map(({ kind }) => kind),
     ).not.toContain("scaffold-add-word-bank");
+  });
+
+  it("withholds recall questions from a lesson with sensitive content guidance", () => {
+    const kinds = (contentGuidance: readonly string[]) =>
+      listTransformationsForCapability({
+        ...contextFor(),
+        facts: lessonFacts({ contentGuidance }),
+      }).map(({ kind }) => kind);
+
+    expect(kinds(["Depiction or discussion of serious crime"])).not.toContain(
+      "scaffold-add-prompt-questions",
+    );
+    expect(kinds(["Depiction or discussion of discriminatory behaviour"])).toContain(
+      "scaffold-add-prompt-questions",
+    );
+  });
+
+  it("offers an MFL lesson the word bank without definitions, and no task glossary", () => {
+    const offeredOn = (subjectSlugs: readonly string[]) =>
+      listTransformationsForCapability({
+        ...contextFor(),
+        facts: lessonFacts({ subjectSlugs }),
+      });
+    const supportLevels = (subjectSlugs: readonly string[]) =>
+      offeredOn(subjectSlugs)
+        .find(({ kind }) => kind === "scaffold-add-word-bank")
+        ?.inputs?.[0]?.options.map(({ value }) => value);
+
+    expect(supportLevels(["english", "french"])).toEqual(["low"]);
+    expect(supportLevels(["english"])).toEqual(["low", "mid"]);
+    expect(offeredOn(["spanish"]).map(({ kind }) => kind)).not.toContain(
+      "scaffold-add-task-glossary",
+    );
   });
 
   it("rejects an unknown capability", () => {

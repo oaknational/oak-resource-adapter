@@ -1,9 +1,9 @@
 import type { LessonFactsContext } from "./context";
-import { defineRule, type RulePlacement } from "./rule";
+import { defineRule, type RuleMetadata } from "./rule";
 
 /** Matches a lesson taught in any listed subject, across all its programmes. */
 export function subjectRule<const TId extends string>(
-  { id, description }: RulePlacement<TId>,
+  { id, description }: RuleMetadata<TId>,
   config: Readonly<{ subjectSlugs: readonly string[] }>,
 ) {
   return defineRule({

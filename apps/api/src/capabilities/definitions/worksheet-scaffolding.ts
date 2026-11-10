@@ -1,10 +1,28 @@
-import { hasResourceInputs, type CapabilityDefinition } from "../types";
+import { excludedLessonsRule } from "../../rules/excluded-lessons";
+import { resourceInputsRule } from "../resource-inputs";
+import type { CapabilityDefinition } from "../types";
 
 export const worksheetScaffoldingCapability = {
   id: "worksheetScaffolding",
   label: "Add extra scaffolding",
   resourceType: "worksheet",
-  isEligible: (context) => hasResourceInputs(context, "worksheet"),
+  rules: [
+    resourceInputsRule(
+      {
+        id: "resource-inputs",
+        description:
+          "Refuses a lesson unless Oak publishes its worksheet and we hold an extracted copy.",
+      },
+      { resourceType: "worksheet" },
+    ),
+    excludedLessonsRule(
+      {
+        id: "handwriting-and-spelling",
+        description: "Refuses English primary handwriting and spelling lessons.",
+      },
+      { lessonSlugs: [] },
+    ),
+  ],
   suggestionFlowId: "worksheet-scaffolding",
   transformationKinds: [
     "scaffold-add-word-bank",

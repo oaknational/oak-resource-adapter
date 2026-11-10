@@ -29,6 +29,8 @@ import {
   isRegisteredTransformationKind,
   transformationDefinitions,
 } from "../transformations/registry";
+import { offeredParamsSchema } from "../transformations/offered-params";
+import type { TransformationDefinition } from "../transformations/types";
 import {
   adaptationHeadConcurrencyKey,
   SUGGESTION_FLOW_ID,
@@ -44,7 +46,7 @@ import {
   type WorksheetScaffoldingDependencies,
   type WorksheetScaffoldingServiceRepository,
 } from "./dependencies";
-import { asParams, storedSupportLevel } from "./stored-params";
+import { asParams, storedInputs, storedSupportLevel } from "./stored-params";
 
 /** The job input is stored as JSON, so validated params are narrowed to it. */
 function asJobParams(value: unknown): Record<string, JobJsonValue> {
@@ -177,9 +179,10 @@ async function readAdaptation(
         const definition = isRegisteredTransformationKind(row.kind)
           ? transformationDefinitions[row.kind]
           : undefined;
+        const inputs = storedInputs(row.inputs);
         return {
           id: row.id,
-          ...(definition?.inputs === undefined ? {} : { inputs: definition.inputs }),
+          ...(inputs.length === 0 ? {} : { inputs }),
           kind: row.kind,
           label: definition?.label ?? row.kind,
           params: asParams(row.params),
@@ -305,9 +308,10 @@ export async function enqueueSuggestionApplication(
     return null;
   }
   const params = asJobParams(
-    transformationDefinitions[suggestion.kind].params.parse(
-      input.params ?? suggestion.params,
-    ),
+    offeredParamsSchema(
+      transformationDefinitions[suggestion.kind] as TransformationDefinition,
+      storedInputs(suggestion.inputs),
+    ).parse(input.params ?? suggestion.params),
   );
 
   return enqueueOnHead(head, input, target, dependencies, {

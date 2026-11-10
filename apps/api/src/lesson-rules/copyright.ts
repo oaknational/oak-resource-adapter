@@ -1,11 +1,11 @@
 import type { RestrictionLevel } from "@oaknational/resource-adapter-curriculum";
 
 import type { LessonFactsContext } from "../rules/context";
-import { defineRule, type RulePlacement } from "../rules/rule";
+import { defineRule, type RuleMetadata } from "../rules/rule";
 
 /** A lesson with no published restriction levels cannot be judged, so it is refused. */
 export function copyrightRule<const TId extends string>(
-  { id, description }: RulePlacement<TId>,
+  { id, description }: RuleMetadata<TId>,
   config: Readonly<{
     restrictedLevels: readonly RestrictionLevel[];
     conflictFeatureKeys: readonly string[];

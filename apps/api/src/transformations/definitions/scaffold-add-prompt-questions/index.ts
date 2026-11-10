@@ -1,12 +1,11 @@
-import { notAlreadyAppliedToTarget } from "../../availability";
+import { contentGuidanceRule } from "../../../rules/content-guidance";
 import { defineTransformation } from "../../define-transformation";
+import { APPLIED_ONCE_PER_TARGET_RULE } from "../../rules/common-rules";
 import { promptQuestionsContribution } from "./contribution";
 import { addPromptQuestionsPrompt } from "./prompt";
 
-const KIND = "scaffold-add-prompt-questions";
-
 export const addPromptQuestionsTransformation = defineTransformation({
-  kind: KIND,
+  kind: "scaffold-add-prompt-questions",
   label: "Add recall questions",
   status: "active",
   suggestion: {
@@ -23,7 +22,24 @@ export const addPromptQuestionsTransformation = defineTransformation({
     { key: "lesson.transcriptSummary", required: false },
   ],
   outputs: ["revised-resource"],
-  isAvailable: notAlreadyAppliedToTarget(KIND),
+  rules: [
+    APPLIED_ONCE_PER_TARGET_RULE,
+    contentGuidanceRule(
+      {
+        id: "content-guidance",
+        description:
+          "Refuses recall questions on lessons with sensitive content guidance.",
+      },
+      {
+        labels: [
+          "Depiction or discussion of sexual violence",
+          "Depiction or discussion of sexual content",
+          "Depiction or discussion of mental health issues",
+          "Depiction or discussion of serious crime",
+        ],
+      },
+    ),
+  ],
   execution: {
     strategy: "model",
     prompt: addPromptQuestionsPrompt,

@@ -1,9 +1,9 @@
 import type { LessonFactsContext } from "../rules/context";
-import { defineRule, type RulePlacement } from "../rules/rule";
+import { defineRule, type RuleMetadata } from "../rules/rule";
 import type { TeacherContext } from "./context";
 
 export function geoRule<const TId extends string>(
-  { id, description }: RulePlacement<TId>,
+  { id, description }: RuleMetadata<TId>,
   config: Readonly<{ featureKey: string }>,
 ) {
   return defineRule({

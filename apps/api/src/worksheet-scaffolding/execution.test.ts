@@ -64,6 +64,7 @@ function stubDependencies(
     createInvoker: vi.fn(),
     executeTransformation: vi.fn(),
     generate: vi.fn().mockResolvedValue([]),
+    readFacts: vi.fn().mockResolvedValue(null),
     readJob: vi.fn(),
     repository: stubRepository(),
     resolveMaterial: vi.fn().mockResolvedValue({ material: {}, warnings: [] }),
@@ -186,14 +187,21 @@ describe("generating suggestions", () => {
     });
   });
 
-  it("gives the flow the material of the adaptation's lesson", async () => {
+  it("gives the flow the material and facts of the adaptation's lesson", async () => {
     const material = {
       "lesson.keywords": {
         keywords: [{ description: "a point of view", keyword: "perspective" }],
         kind: "keywords",
       },
     } as const;
+    const facts = {
+      restrictionLevels: null,
+      subjectSlugs: ["english"],
+      legacy: false,
+      contentGuidance: ["Depiction or discussion of serious crime"],
+    };
     const dependencies = stubDependencies({
+      readFacts: vi.fn().mockResolvedValue(facts),
       readJob: vi.fn().mockResolvedValue(generateJob()),
       resolveMaterial: vi.fn().mockResolvedValue({ material, warnings: [] }),
     });
@@ -209,8 +217,11 @@ describe("generating suggestions", () => {
       expect.anything(),
       expect.anything(),
       expect.anything(),
-      expect.objectContaining({ material }),
+      expect.objectContaining({
+        lesson: { identity: lessonReference, material, facts },
+      }),
     );
+    expect(dependencies.readFacts).toHaveBeenCalledWith(lessonReference);
   });
 
   it("attributes its model calls to the adaptation's teacher", async () => {

@@ -1,12 +1,12 @@
-import { notAlreadyAppliedToTarget } from "../../availability";
+import { subjectRule } from "../../../rules/subject";
 import { defineTransformation } from "../../define-transformation";
+import { MFL_SUBJECT_SLUGS } from "../../../rules/subject-groups";
+import { APPLIED_ONCE_PER_TARGET_RULE } from "../../rules/common-rules";
 import { taskGlossaryContribution } from "./contribution";
 import { addTaskGlossaryPrompt } from "./prompt";
 
-const KIND = "scaffold-add-task-glossary";
-
 export const addTaskGlossaryTransformation = defineTransformation({
-  kind: KIND,
+  kind: "scaffold-add-task-glossary",
   label: "Add a task glossary",
   status: "active",
   suggestion: {
@@ -26,7 +26,16 @@ export const addTaskGlossaryTransformation = defineTransformation({
     { key: "lesson.transcriptSummary", required: false },
   ],
   outputs: ["revised-resource"],
-  isAvailable: notAlreadyAppliedToTarget(KIND),
+  rules: [
+    APPLIED_ONCE_PER_TARGET_RULE,
+    subjectRule(
+      {
+        id: "mfl",
+        description: "Refuses task glossaries on French, German and Spanish lessons.",
+      },
+      { subjectSlugs: MFL_SUBJECT_SLUGS },
+    ),
+  ],
   execution: {
     strategy: "model",
     prompt: addTaskGlossaryPrompt,
