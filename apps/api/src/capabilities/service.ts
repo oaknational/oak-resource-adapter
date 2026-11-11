@@ -1,7 +1,3 @@
-import {
-  createOakLessonEligibilityFactsReader,
-  oakCurriculumConfigFromEnv,
-} from "@oaknational/resource-adapter-curriculum";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 
@@ -14,7 +10,9 @@ import type {
 } from "@oaknational/resource-adapter-contracts";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 
-import { lessonRefusal } from "../lesson-rules";
+import { lessonRefusal, type LessonRefusal } from "../lesson-rules";
+import { readLessonFacts } from "../curriculum/read-lesson-facts";
+import { firstRefusal, type RuleRefusal } from "../rules/rule";
 import type { TeacherAccess } from "../teacher-access/access";
 import {
   teacherAccessResolver,
@@ -29,21 +27,63 @@ export type EligibilityResolver = (
 
 const log = raLogger("capabilities");
 
-/** The lesson rules run before any capability's own predicate, which cannot override them. */
+export type CapabilityRefusal = RuleRefusal<
+  "capability",
+  CapabilityDefinition["rules"][number]
+>;
+
+export type EligibilityExplanation = Readonly<{
+  lesson: LessonRefusal | null;
+  /** Empty when the lesson is refused: capability rules are not checked. */
+  capabilities: readonly Readonly<{ id: string; refusal: CapabilityRefusal | null }>[];
+}>;
+
+export function explainEligibility(
+  definitions: ReadonlyArray<CapabilityDefinition>,
+  context: EligibilityContext,
+  teacher: Pick<TeacherAccess, "inCopyrightRegion"> | undefined,
+): EligibilityExplanation {
+  const lesson = lessonRefusal({ ...context, teacher });
+  return {
+    lesson,
+    capabilities:
+      lesson === null
+        ? definitions.map(({ id, rules }) => ({
+            id,
+            refusal: firstRefusal("capability", rules, context),
+          }))
+        : [],
+  };
+}
+
 export function evaluateCapabilities(
   definitions: ReadonlyArray<CapabilityDefinition>,
   context: EligibilityContext,
   teacher: Pick<TeacherAccess, "inCopyrightRegion"> | undefined,
 ): Pick<ResourceAdapterCapabilitiesResponse, "capabilities"> {
-  const refusal = lessonRefusal(context.facts, teacher);
-  if (refusal !== null) {
-    const { lessonSlug, programmeSlug } = context.lesson;
-    log.info({ lessonSlug, programmeSlug, refusal }, "lesson refused");
+  const { lessonSlug, programmeSlug } = context.lesson;
+  const explanation = explainEligibility(definitions, context, teacher);
+  if (explanation.lesson !== null) {
+    log.info(
+      { lessonSlug, programmeSlug, refusal: explanation.lesson },
+      "lesson refused",
+    );
     return { capabilities: [] };
+  }
+  const offered = new Set<string>();
+  for (const { id, refusal } of explanation.capabilities) {
+    if (refusal === null) {
+      offered.add(id);
+    } else {
+      log.info(
+        { lessonSlug, programmeSlug, capabilityId: id, refusal },
+        "capability refused",
+      );
+    }
   }
   return {
     capabilities: definitions
-      .filter((definition) => definition.isEligible(context))
+      .filter(({ id }) => offered.has(id))
       .map(({ id, label, resourceType }) => ({ id, label, resourceType })),
   };
 }
@@ -51,9 +91,7 @@ export function evaluateCapabilities(
 /** `originalFileResourceTypes` is caller-supplied, not resolved from Oak. */
 export const resolveEligibility: EligibilityResolver = async (lesson) => ({
   lesson,
-  facts: await createOakLessonEligibilityFactsReader(
-    oakCurriculumConfigFromEnv(process.env),
-  )(lesson),
+  facts: await readLessonFacts(lesson),
   originalFileResourceTypes: lesson.availableResources,
   extractedResourceTypes: await originalResourceDocuments.listExtractedResourceTypes({
     source: "oak",

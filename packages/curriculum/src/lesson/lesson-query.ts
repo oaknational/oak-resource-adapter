@@ -12,6 +12,9 @@ const LESSON_VIEWS = {
   restrictionLevels: "published_mv_lesson_restriction_levels_2",
 } as const;
 
+export const BROWSE_DATA_VIEW = LESSON_VIEWS.browseData;
+export const RESTRICTION_LEVELS_VIEW = LESSON_VIEWS.restrictionLevels;
+
 /**
  * The whole lesson: only the columns the schemas read. Every view except browse
  * data is keyed by lesson alone; only browse data distinguishes programmes, and
@@ -69,11 +72,17 @@ export const LESSON_ELIGIBILITY_FACTS_QUERY = `
       is_legacy
       programme_slug
       subject_slug: programme_fields(path: "subject_slug")
+      subject_categories: unit_data(path: "subjectcategories")
     }
     restrictionLevels: ${LESSON_VIEWS.restrictionLevels}(
       where: { slug: { _eq: $lessonSlug }, _state: { _eq: "published" } }
     ) {
       ${RESTRICTION_COLUMNS.join("\n      ")}
+    }
+    content: ${LESSON_VIEWS.content}(
+      where: { lesson_slug: { _eq: $lessonSlug }, _state: { _eq: "published" } }
+    ) {
+      content_guidance
     }
   }
 `;

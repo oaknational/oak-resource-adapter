@@ -141,9 +141,9 @@ const edgeCaseDefinitions = [
     reason:
       "Aila needs two things to adapt a worksheet: the original file from Oak, and our own extracted copy of what is inside it. Here only the Oak file exists, so teachers should see no Create more button.",
     lesson: {
-      lessonSlug: "adding-fractions",
+      lessonSlug: "add-fractions-with-the-same-denominator",
       programmeSlug: "maths-primary-ks2",
-      title: "Adding fractions",
+      title: "Add fractions with the same denominator",
       subjectSlug: "maths",
       keyStageSlug: "ks2",
       availableResources: ["worksheet"],
@@ -221,10 +221,7 @@ const edgeCaseDefinitions = [
       availableResources: ["worksheet"],
     },
     brokenApiPath: false,
-    facts: async (lesson: LessonContext) => {
-      const { facts } = await extractionFacts(lesson);
-      return factsOnly([...facts, { term: "Subject", value: lesson.subjectSlug }]);
-    },
+    facts: extractionFacts,
   },
   {
     id: "copyright-conflict-lesson",
@@ -241,13 +238,7 @@ const edgeCaseDefinitions = [
       availableResources: ["worksheet"],
     },
     brokenApiPath: false,
-    facts: async (lesson: LessonContext) => {
-      const { facts } = await extractionFacts(lesson);
-      return factsOnly([
-        ...facts,
-        { term: "Oak's flag", value: "has_copyright_conflict" },
-      ]);
-    },
+    facts: extractionFacts,
   },
   {
     id: "one-capability-ui",

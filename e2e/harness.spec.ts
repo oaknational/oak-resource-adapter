@@ -15,40 +15,50 @@ const edgeCases = [
     heading: "Oak has a worksheet, we have no data for it",
     outcome: "The capabilities endpoint returned 0 capabilities.",
     offersCreateMore: false,
+    decision:
+      "Add extra scaffolding isn't offered: We don't have the lesson's worksheet, or haven't extracted it yet (Not extracted)",
   },
   {
     id: "extraction-without-worksheet",
     heading: "We have worksheet data, Oak has no worksheet",
     outcome: "The capabilities endpoint returned 0 capabilities.",
     offersCreateMore: false,
+    decision:
+      "Add extra scaffolding isn't offered: We don't have the lesson's worksheet, or haven't extracted it yet (No original file)",
   },
   {
     id: "unsupported-markup",
     heading: "Worksheet data uses a feature we do not recognise",
     outcome: "The capabilities endpoint returned 1 capabilities.",
     offersCreateMore: true,
+    decision: "Add extra scaffolding is offered",
   },
   {
     id: "malformed-extraction",
     heading: "Worksheet data we cannot read at all",
     outcome: "The capabilities endpoint returned 1 capabilities.",
     offersCreateMore: true,
+    decision: "Add extra scaffolding is offered",
   },
   {
     id: "excluded-subject-lesson",
     heading: "The lesson is in a subject we leave out",
     outcome: "The capabilities endpoint returned 0 capabilities.",
     offersCreateMore: false,
+    decision:
+      "ORA isn't offered: The lesson is in one of these subjects (Excluded subject)",
   },
   {
     id: "copyright-conflict-lesson",
     heading: "Oak flags a copyright conflict in the lesson",
     outcome: "The capabilities endpoint returned 0 capabilities.",
     offersCreateMore: false,
+    decision:
+      "ORA isn't offered: The lesson has restricted copyright material, a copyright conflict, or no clearance information (Copyright conflict)",
   },
 ] as const;
 
-for (const { heading, id, offersCreateMore, outcome } of edgeCases) {
+for (const { decision, heading, id, offersCreateMore, outcome } of edgeCases) {
   test(
     `reports what OWA sees for: ${heading.toLowerCase()}`,
     {
@@ -67,6 +77,7 @@ for (const { heading, id, offersCreateMore, outcome } of edgeCases) {
         page.getByRole("heading", { level: 1, name: heading }),
       ).toBeVisible();
       await expect(page.getByTestId("capability-outcome")).toHaveText(outcome);
+      await expect(page.getByTestId("eligibility-decision")).toHaveText(decision);
       await expect(
         page.getByRole("button", { name: "Add extra scaffolding" }),
       ).toHaveCount(offersCreateMore ? 1 : 0);
@@ -211,5 +222,33 @@ test(
     await expect(
       page.getByRole("button", { name: "Add extra scaffolding" }),
     ).toHaveCount(0);
+  },
+);
+
+test(
+  "shows every lesson rule the API runs, and links an edge case's decision to its rule",
+  { tag: "@deployment-safe" },
+  async ({ page }) => {
+    await page.goto("/?view=rules");
+    const catalogue = (await (
+      await page.request.get("/adapter-proxy/dev/rules")
+    ).json()) as { lesson: { condition: string }[] };
+    const lessonBox = page.getByRole("listitem", {
+      name: "Does ORA appear on OWA's lesson page?",
+    });
+
+    for (const { condition } of catalogue.lesson) {
+      await expect(lessonBox.getByText(condition, { exact: true })).toBeVisible();
+    }
+
+    await page.goto("/?view=edge-cases&case=copyright-conflict-lesson");
+    await page
+      .getByTestId("eligibility-decision")
+      .getByRole("link", {
+        name: "The lesson has restricted copyright material, a copyright conflict, or no clearance information",
+      })
+      .click();
+    await expect(page).toHaveURL(/view=rules#rule-lesson-copyright$/);
+    await expect(page.locator("#rule-lesson-copyright")).toBeFocused();
   },
 );

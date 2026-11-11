@@ -1,0 +1,58 @@
+.panel {
+  border: 2px solid #222222;
+  border-radius: 0.75rem;
+  margin-top: 1.5rem;
+  padding: 1rem clamp(1rem, 3vw, 1.5rem);
+}
+
+.panel h2 {
+  margin-top: 0;
+}
+
+.lines {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lines > li {
+  border-left: 4px solid;
+  padding: 0.375rem 0.75rem;
+}
+
+.lines > .offered {
+  background: #ebfbeb;
+  border-color: #31693d;
+}
+
+.lines > .refused {
+  background: #f5e9f2;
+  border-color: #b1044b;
+}
+
+.lines a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.setup {
+  border-left: 4px solid #8a6200;
+  background: #fff7cc;
+  padding: 0.375rem 0.75rem;
+}
+
+.hypothetical {
+  opacity: 0.85;
+}
+
+.hypothetical > li {
+  border-left-style: dashed;
+}
+
+.firstOnly {
+  color: #4a4a4a;
+  font-size: 0.875rem;
+  margin: 0.5rem 0 0;
+}

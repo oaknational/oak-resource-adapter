@@ -24,6 +24,8 @@ export type UseCapabilitiesResult = Readonly<{
   capabilities: readonly ResourceAdapterCapability[];
   /** Set while signed out too, when `capabilities` cannot be read. */
   hasAvailableCapabilities: boolean;
+  /** Null unless a signed-in account is ready. */
+  inCopyrightRegion: boolean | null;
   reload: () => void;
   state: CapabilitiesState;
 }>;
@@ -84,6 +86,7 @@ export function useCapabilities({
   const [state, setState] = useState<CapabilitiesState>("loading");
   const [signedInAccount, setSignedInAccount] = useState<SignedInAccount | null>(null);
   const [hasAvailableCapabilities, setHasAvailableCapabilities] = useState(false);
+  const [inCopyrightRegion, setInCopyrightRegion] = useState<boolean | null>(null);
 
   const [attempt, setAttempt] = useState(0);
 
@@ -116,6 +119,11 @@ export function useCapabilities({
           setCapabilities(loaded.response.capabilities);
           setHasAvailableCapabilities(loaded.response.capabilities.length > 0);
           setSignedInAccount(loaded.response.account.state);
+          setInCopyrightRegion(
+            loaded.response.account.state === "ready"
+              ? loaded.response.account.inCopyrightRegion
+              : null,
+          );
         }
         setState(loaded.state);
       } catch (error: unknown) {
@@ -141,6 +149,7 @@ export function useCapabilities({
     account: accountFor(state, signedInAccount),
     capabilities,
     hasAvailableCapabilities,
+    inCopyrightRegion: state === "ready" ? inCopyrightRegion : null,
     reload: () => setAttempt((value) => value + 1),
     state,
   };

@@ -32,7 +32,13 @@ describeCheck("Oak worksheet fixtures", () => {
 
       expect(findLessonResource(lesson, "worksheet")).toBeDefined();
       // Outside every copyright region, so the fixture suits any teacher.
-      expect(lessonRefusal(facts, { inCopyrightRegion: false })).toBeNull();
+      expect(
+        lessonRefusal({
+          lesson: identity,
+          facts,
+          teacher: { inCopyrightRegion: false },
+        }),
+      ).toBeNull();
     },
   );
 });

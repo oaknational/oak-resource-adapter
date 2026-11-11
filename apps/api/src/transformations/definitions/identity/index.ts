@@ -1,4 +1,3 @@
-import { always } from "../../availability";
 import { defineTransformation } from "../../define-transformation";
 
 /** The no-op path through the pipeline, for wiring and tests rather than teaching. */
@@ -13,7 +12,7 @@ export const identityTransformation = defineTransformation({
   },
   target: { scope: "document" },
   outputs: ["revised-resource"],
-  isAvailable: always,
+  rules: [],
   execution: {
     strategy: "deterministic",
     apply: (document) => [document],

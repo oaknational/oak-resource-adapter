@@ -12,6 +12,9 @@ import {
   moderationSmokeResponseSchema,
   oakMaterialRequestSchema,
   oakMaterialResponseSchema,
+  eligibilityEvaluationRequestSchema,
+  eligibilityEvaluationResponseSchema,
+  ruleCatalogueSchema,
   storageRoundTripResponseSchema,
   suggestionCatalogueSchema,
   suggestionCommandSchema,
@@ -26,7 +29,7 @@ import {
 
 const unknownField = { addedByANewerVersion: true };
 
-const freeFormKeys = new Set(["document", "params"]);
+const freeFormKeys = new Set(["config", "document", "params"]);
 
 /** Adds `unknownField` to every object in `value`. */
 function withUnknownFields(value: unknown): unknown {
@@ -128,7 +131,76 @@ const suggestionFlow = {
   transformationKinds: ["scaffold-add-word-bank"],
 };
 
+const rule = {
+  config: { subjectSlugs: ["french"] },
+  description: "Removes definitions from word banks on French lessons.",
+  id: "mfl",
+  kind: "subject",
+  label: "Modern foreign languages",
+  displayValues: ["French"],
+  source: "Oak's browse data",
+  checks: ["The lesson is taught in French"],
+  condition: "The lesson is in one of these subjects",
+  reads: ["lesson"],
+  removesSupportLevels: ["mid"],
+};
+
+const refusal = { level: "lesson", reason: "excluded-subject", rule: "subject" };
+
 const responses: ReadonlyArray<readonly [string, z.ZodType, unknown]> = [
+  [
+    "rule catalogue",
+    ruleCatalogueSchema,
+    {
+      access: [
+        {
+          config: { adaptedResourcesPerMonth: 3 },
+          description: "Some teachers have a monthly allowance.",
+          id: "access-tier",
+          label: "Access tier",
+          outcomes: [{ label: "Limited", result: "3 resources a month" }],
+        },
+      ],
+      capabilities: [
+        { id: "worksheetScaffolding", label: "Add extra scaffolding", rules: [rule] },
+      ],
+      gates: [
+        {
+          description: "A signed-out teacher signs in to use ORA.",
+          id: "signed-in",
+          label: "Signed in",
+          status: "in-place",
+          untilMet: "Offered after sign-in",
+        },
+      ],
+      lesson: [rule],
+      lessonMaterials: [
+        {
+          config: {},
+          description: "Withholds transcripts.",
+          id: "transcript",
+          label: "English transcripts",
+          displayValues: ["English"],
+          condition: "The transcript, if the lesson is in one of these subjects",
+        },
+      ],
+      transformations: [
+        {
+          capabilityIds: ["worksheetScaffolding"],
+          inputs: availableTransformation.inputs,
+          kind: "scaffold-add-word-bank",
+          label: "Add a word bank",
+          rules: [rule],
+          status: "active",
+        },
+      ],
+    },
+  ],
+  [
+    "eligibility evaluation",
+    eligibilityEvaluationResponseSchema,
+    { capabilities: [{ id: "worksheetScaffolding", refusal }], lesson: refusal },
+  ],
   [
     "transformation catalogue",
     transformationCatalogueSchema,
@@ -302,6 +374,20 @@ const responses: ReadonlyArray<readonly [string, z.ZodType, unknown]> = [
 ];
 
 const requests: ReadonlyArray<readonly [string, z.ZodType, unknown]> = [
+  [
+    "eligibility evaluation",
+    eligibilityEvaluationRequestSchema,
+    {
+      lesson: {
+        ...lesson,
+        availableResources: ["worksheet"],
+        keyStageSlug: "ks2",
+        subjectSlug: "english",
+        title: "Adopting different perspectives",
+      },
+      teacher: { inCopyrightRegion: true },
+    },
+  ],
   [
     "transformation command",
     transformationCommandSchema,

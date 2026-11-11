@@ -35,3 +35,5 @@ export type {
 } from "./resource/resource.js";
 
 export { createOakLessonEligibilityFactsReader } from "./lesson/oak-lesson-repository.js";
+export { RESTRICTION_LEVELS_VIEW } from "./lesson/lesson-query.js";
+export { RESTRICTION_LEVEL_COLUMNS } from "./lesson/lesson-schema.js";

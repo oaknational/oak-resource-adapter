@@ -28,19 +28,23 @@ vi.mock("../teacher-access/resolver", () => ({
 
 import {
   evaluateCapabilities,
+  explainEligibility,
   getCapabilities,
   hasCapabilities,
   resolveEligibility,
   type EligibilityResolver,
 } from "./service";
-import { hasResourceInputs, type CapabilityDefinition } from "./types";
+import { resourceInputsRule } from "./resource-inputs";
+import type { CapabilityDefinition } from "./types";
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import type { TeacherAccess } from "../teacher-access/access";
 
 const unrestricted: LessonEligibilityFacts = {
   restrictionLevels: { works: [], media: [], downloadableFiles: [], featureKeys: [] },
   subjectSlugs: ["english"],
+  subjectCategories: [],
   legacy: false,
+  contentGuidance: [],
 };
 
 function withRestrictionLevels(
@@ -94,7 +98,17 @@ const worksheetGatedCapability: CapabilityDefinition = {
   id: "test-worksheet-capability",
   label: "Worksheet capability",
   resourceType: "worksheet",
-  isEligible: (context) => hasResourceInputs(context, "worksheet"),
+  rules: [
+    resourceInputsRule(
+      {
+        id: "resource-inputs",
+        label: "Test",
+        description: "A rule under test.",
+        condition: "Test",
+      },
+      { resourceType: "worksheet" },
+    ),
+  ],
   transformationKinds: ["identity"],
 };
 
@@ -102,7 +116,17 @@ const starterQuizGatedCapability: CapabilityDefinition = {
   id: "test-starter-quiz-capability",
   label: "Starter quiz capability",
   resourceType: "starter-quiz",
-  isEligible: (context) => hasResourceInputs(context, "starter-quiz"),
+  rules: [
+    resourceInputsRule(
+      {
+        id: "resource-inputs",
+        label: "Test",
+        description: "A rule under test.",
+        condition: "Test",
+      },
+      { resourceType: "starter-quiz" },
+    ),
+  ],
   transformationKinds: ["identity"],
 };
 
@@ -154,7 +178,7 @@ describe("getCapabilities", () => {
       resolverFor(["worksheet"], ["worksheet"]),
     );
 
-    expect(capabilities[0]).not.toHaveProperty("isEligible");
+    expect(capabilities[0]).not.toHaveProperty("rules");
   });
 
   it("excludes the capability's transformation kinds from the response", async () => {
@@ -253,8 +277,43 @@ describe("resolveEligibility", () => {
   });
 });
 
+describe("explainEligibility", () => {
+  const context = {
+    lesson: quizOnlyLesson,
+    facts: unrestricted,
+    originalFileResourceTypes: ["starter-quiz", "worksheet"],
+    extractedResourceTypes: ["starter-quiz"],
+  };
+
+  it("names the rule that refused each capability", () => {
+    expect(explainEligibility(testDefinitions, context, undefined)).toEqual({
+      lesson: null,
+      capabilities: [
+        {
+          id: "test-worksheet-capability",
+          refusal: {
+            level: "capability",
+            rule: "resource-inputs",
+            reason: "not-extracted",
+          },
+        },
+        { id: "test-starter-quiz-capability", refusal: null },
+      ],
+    });
+  });
+
+  it("checks no capability on a refused lesson", () => {
+    expect(
+      explainEligibility(testDefinitions, { ...context, facts: null }, undefined),
+    ).toEqual({
+      lesson: { level: "lesson", rule: "lesson-status", reason: "unpublished" },
+      capabilities: [],
+    });
+  });
+});
+
 describe("evaluateCapabilities", () => {
-  it("evaluates each definition's predicate independently", () => {
+  it("evaluates each definition's rules independently", () => {
     const response = evaluateCapabilities(
       testDefinitions,
       {
@@ -376,6 +435,8 @@ describe("capability lesson rules", () => {
       withRestrictionLevels({ featureKeys: ["has_copyright_conflict"] }),
     ],
     ["an excluded subject", { ...unrestricted, subjectSlugs: ["english", "music"] }],
+    ["a handwriting lesson", { ...unrestricted, subjectCategories: ["Handwriting"] }],
+    ["a spelling lesson", { ...unrestricted, subjectCategories: ["Spelling"] }],
     ["an expired lesson", withRestrictionLevels({ featureKeys: ["expired"] })],
     ["a legacy lesson", { ...unrestricted, legacy: true }],
     ["a lesson Oak does not publish in the programme", null],

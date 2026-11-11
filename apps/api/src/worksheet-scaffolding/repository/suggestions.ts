@@ -1,3 +1,4 @@
+import type { TransformationInput } from "@oaknational/resource-adapter-contracts/internal";
 import {
   getDatabaseClient,
   suggestedTransformations,
@@ -90,6 +91,7 @@ export async function completeSuggestionAttempt(input: {
   attemptId: string;
   resourceDocumentId: string;
   suggestions: readonly {
+    inputs: readonly TransformationInput[];
     kind: string;
     params: Readonly<Record<string, unknown>>;
     reason: string;
@@ -100,6 +102,7 @@ export async function completeSuggestionAttempt(input: {
     if (input.suggestions.length > 0) {
       await transaction.insert(suggestedTransformations).values(
         input.suggestions.map((suggestion, position) => ({
+          inputs: suggestion.inputs,
           kind: suggestion.kind,
           params: suggestion.params,
           position,

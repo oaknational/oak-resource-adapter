@@ -9,11 +9,11 @@ import {
 import type { OakMaterialRequirement } from "../oak-material/material";
 import type {
   PupilBarrier,
-  TransformationAvailabilityContext,
   TransformationDefinition,
   TransformationExecution,
   TransformationOutputs,
   TransformationParams,
+  TransformationRule,
   TransformationStatus,
   TransformationSuggestionGuidance,
   TransformationTarget,
@@ -24,13 +24,13 @@ type ParamsObject = z.ZodObject;
 export type TransformationDeclaration = Readonly<{
   barriers?: readonly PupilBarrier[];
   execution: TransformationExecution;
-  isAvailable: (context: TransformationAvailabilityContext) => boolean;
   kind: string;
   label: string;
   materialRequirements?: readonly OakMaterialRequirement[];
   outputs: TransformationOutputs;
   /** Arguments beyond the support level, which is derived. */
   params?: ParamsObject;
+  rules: readonly TransformationRule[];
   status: TransformationStatus;
   suggestion: TransformationSuggestionGuidance;
   supportLevels?: SupportLevelOptions;
@@ -60,25 +60,21 @@ export type DefinedTransformation<TDeclaration extends TransformationDeclaration
     TDeclaration["execution"]
   >;
 
-function inputsFromSupportLevels(
-  supportLevels: SupportLevelOptions | undefined,
-): readonly TransformationInput[] | undefined {
-  if (supportLevels === undefined) {
-    return undefined;
-  }
+export const SUPPORT_LEVEL_INPUT_ID = "supportLevel";
 
-  return [
-    {
-      id: "supportLevel",
-      kind: "choice",
-      label: "Support level",
-      options: supportLevels.map(({ description, label, level }) => ({
-        description,
-        label,
-        value: level,
-      })),
-    },
-  ];
+export function supportLevelInput(
+  supportLevels: SupportLevelOptions,
+): TransformationInput {
+  return {
+    id: SUPPORT_LEVEL_INPUT_ID,
+    kind: "choice",
+    label: "Support level",
+    options: supportLevels.map(({ description, label, level }) => ({
+      description,
+      label,
+      value: level,
+    })),
+  };
 }
 
 function paramsSchema<TDeclaration extends TransformationDeclaration>(
@@ -118,13 +114,18 @@ function validateDeclaration(declaration: TransformationDeclaration): void {
   }
 
   const levels = declaration.supportLevels;
-  if (levels === undefined) {
-    return;
-  }
-
-  const declaredLevels: readonly SupportLevel[] = supportLevelsOf(levels);
+  const declaredLevels: readonly SupportLevel[] =
+    levels === undefined ? [] : supportLevelsOf(levels);
   if (new Set(declaredLevels).size !== declaredLevels.length) {
     throw new Error(`${declaration.kind} declares a support level more than once.`);
+  }
+
+  for (const { id, removesSupportLevels = [] } of declaration.rules) {
+    if (removesSupportLevels.some((level) => !declaredLevels.includes(level))) {
+      throw new Error(
+        `${declaration.kind}'s ${id} rule removes a level it does not declare.`,
+      );
+    }
   }
 }
 
@@ -134,10 +135,11 @@ export function defineTransformation<
 >(declaration: TDeclaration): DefinedTransformation<TDeclaration> {
   validateDeclaration(declaration);
 
-  const inputs = inputsFromSupportLevels(declaration.supportLevels);
   return {
     ...declaration,
-    ...(inputs === undefined ? {} : { inputs }),
+    ...(declaration.supportLevels === undefined
+      ? {}
+      : { inputs: [supportLevelInput(declaration.supportLevels)] }),
     params: paramsSchema(declaration),
   };
 }

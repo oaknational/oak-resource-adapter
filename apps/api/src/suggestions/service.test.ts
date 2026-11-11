@@ -16,6 +16,8 @@ import {
   prepareSuggestionFlow,
   suggestionMaterialRequirements,
 } from "./service";
+import { lessonFacts } from "../rules/test-facts";
+import { transformationDefinitions } from "../transformations/registry";
 
 const material = {
   "lesson.keyLearningPoints": {
@@ -23,6 +25,8 @@ const material = {
     text: "- Every lesson teaches something.",
   },
 } as const;
+
+const lesson = { identity: null, material, facts: null };
 
 let worksheet: ResourceDocument;
 let questionId: string;
@@ -35,6 +39,7 @@ const RECALL = "scaffold-add-prompt-questions";
 /** Offered at every task ahead of anything the agent chooses. */
 function recallOffers(targetBlockIds: readonly string[] = taskIds) {
   return targetBlockIds.map((targetBlockId) => ({
+    inputs: [],
     kind: RECALL,
     label: "Add recall questions",
     params: {},
@@ -126,17 +131,19 @@ describe("worksheet scaffolding suggestions", () => {
       worksheetScaffoldingSuggestionFlow,
       worksheet,
       [],
-      material,
+      lesson,
       prepare,
     );
 
-    expect(result.candidates.map(({ kind }) => kind)).toEqual([
+    expect(result.candidates.map(({ definition }) => definition.kind)).toEqual([
       "scaffold-add-word-bank",
       "scaffold-add-task-glossary",
       "scaffold-add-sentence-starters",
       "scaffold-add-sentence-frames",
     ]);
-    expect(result.alwaysOffered.map(({ kind }) => kind)).toEqual([RECALL]);
+    expect(result.alwaysOffered.map(({ definition }) => definition.kind)).toEqual([
+      RECALL,
+    ]);
     expect(result.candidates[0]?.eligibleTargets).toEqual({
       blockIds: questionIds,
       scope: "node",
@@ -158,7 +165,7 @@ describe("worksheet scaffolding suggestions", () => {
           ...questionScaffoldsApplied(),
           { kind: RECALL, params: {}, targetBlockId: applied },
         ],
-        { createInvoker, material, prepare },
+        { createInvoker, lesson, prepare },
       ),
     ).resolves.toEqual(recallOffers(remaining));
     expect(remaining.length).toBeGreaterThan(0);
@@ -176,12 +183,12 @@ describe("worksheet scaffolding suggestions", () => {
           targetBlockId: questionId,
         },
       ],
-      material,
+      lesson,
       prepare,
     );
 
     const wordBank = result.candidates.find(
-      ({ kind }) => kind === "scaffold-add-word-bank",
+      ({ definition }) => definition.kind === "scaffold-add-word-bank",
     );
     expect(wordBank?.eligibleTargets).toEqual({
       blockIds: questionIds.filter((id) => id !== questionId),
@@ -194,12 +201,12 @@ describe("worksheet scaffolding suggestions", () => {
       worksheetScaffoldingSuggestionFlow,
       dismissTransformationsAt(worksheet, questionId),
       [],
-      material,
+      lesson,
       prepare,
     );
 
     const wordBank = result.candidates.find(
-      ({ kind }) => kind === "scaffold-add-word-bank",
+      ({ definition }) => definition.kind === "scaffold-add-word-bank",
     );
     expect(wordBank?.eligibleTargets).toEqual({
       blockIds: questionIds.filter((id) => id !== questionId),
@@ -218,7 +225,7 @@ describe("worksheet scaffolding suggestions", () => {
         worksheetScaffoldingSuggestionFlow,
         dismissTransformationsAt(worksheet, dismissed),
         questionScaffoldsApplied(),
-        { createInvoker: () => invokerWith({ suggestions: [] }), material, prepare },
+        { createInvoker: () => invokerWith({ suggestions: [] }), lesson, prepare },
       ),
     ).resolves.toEqual(recallOffers(remaining));
     expect(remaining.length).toBeGreaterThan(0);
@@ -227,7 +234,7 @@ describe("worksheet scaffolding suggestions", () => {
   it("returns validated parameters with a target and teacher-facing reason", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
-        material,
+        lesson,
         createInvoker: () =>
           invokerWith({
             suggestions: [
@@ -244,6 +251,7 @@ describe("worksheet scaffolding suggestions", () => {
     ).resolves.toEqual([
       ...recallOffers(),
       {
+        inputs: transformationDefinitions["scaffold-add-word-bank"].inputs,
         kind: "scaffold-add-word-bank",
         label: "Add a word bank",
         params: { supportLevel: "low" },
@@ -253,10 +261,47 @@ describe("worksheet scaffolding suggestions", () => {
     ]);
   });
 
+  it("drops a support level a rule removed for the lesson", async () => {
+    const [first, second] = questionIds;
+    const wordBank = (supportLevel: string, targetBlockId: string | undefined) => ({
+      kind: "scaffold-add-word-bank",
+      params: { supportLevel },
+      reason: "This question depends on recalling several topic words.",
+      targetBlockId,
+    });
+
+    const suggestions = await generateSuggestions(
+      worksheetScaffoldingSuggestionFlow,
+      worksheet,
+      [],
+      {
+        lesson: {
+          identity: null,
+          material,
+          facts: lessonFacts({ subjectSlugs: ["french"] }),
+        },
+        createInvoker: () =>
+          invokerWith({
+            suggestions: [wordBank("mid", first), wordBank("low", second)],
+          }),
+        prepare,
+      },
+    );
+
+    expect(suggestions.filter(({ kind }) => kind === "scaffold-add-word-bank")).toEqual(
+      [
+        expect.objectContaining({
+          params: { supportLevel: "low" },
+          targetBlockId: second,
+        }),
+      ],
+    );
+  });
+
   it("drops a suggestion for a target the transformation cannot change", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
-        material,
+        lesson,
         createInvoker: () =>
           invokerWith({
             suggestions: [
@@ -276,7 +321,7 @@ describe("worksheet scaffolding suggestions", () => {
   it("keeps the usable suggestions when one of them is unavailable", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
-        material,
+        lesson,
         createInvoker: () =>
           invokerWith({
             suggestions: [
@@ -308,7 +353,7 @@ describe("worksheet scaffolding suggestions", () => {
 
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
-        material,
+        lesson,
         createInvoker: () =>
           invokerWith({
             suggestions: [
@@ -345,7 +390,7 @@ describe("worksheet scaffolding suggestions", () => {
                 },
               ],
             }),
-          material,
+          lesson,
           prepare,
         },
       ),
@@ -364,7 +409,7 @@ describe("worksheet scaffolding suggestions", () => {
         worksheetScaffoldingSuggestionFlow,
         worksheet,
         appliedTransformations,
-        { createInvoker, material, prepare },
+        { createInvoker, lesson, prepare },
       ),
     ).resolves.toEqual([]);
     expect(createInvoker).not.toHaveBeenCalled();
@@ -373,7 +418,7 @@ describe("worksheet scaffolding suggestions", () => {
   it("allows the agent to recommend no changes", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
-        material,
+        lesson,
         createInvoker: () => invokerWith({ suggestions: [] }),
         prepare,
       }),
@@ -383,7 +428,7 @@ describe("worksheet scaffolding suggestions", () => {
   it("does not mistake an unsuccessful model response for no suggestions", async () => {
     await expect(
       generateSuggestions(worksheetScaffoldingSuggestionFlow, worksheet, [], {
-        material,
+        lesson,
         createInvoker: () => invokerWithOutcome("OUTPUT_MISSING"),
         prepare,
       }),
@@ -395,7 +440,7 @@ describe("worksheet scaffolding suggestions", () => {
       worksheetScaffoldingSuggestionFlow,
       worksheet,
       [],
-      {},
+      { identity: null, material: {}, facts: null },
       prepare,
     );
 
@@ -416,7 +461,7 @@ describe("worksheet scaffolding suggestions", () => {
       worksheetScaffoldingSuggestionFlow,
       worksheet,
       [],
-      material,
+      lesson,
       prepare,
     );
 
@@ -445,7 +490,7 @@ describe("worksheet scaffolding suggestions", () => {
               suggestion("scaffold-add-sentence-frames"),
             ],
           }),
-        material,
+        lesson,
         prepare,
       },
     );

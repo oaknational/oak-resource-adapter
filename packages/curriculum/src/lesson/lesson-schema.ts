@@ -49,6 +49,19 @@ export const browseRowSchema = syntheticUnitvariantLessonsByKsSchema
     },
   }));
 
+const contentGuidanceColumnSchema = z
+  .array(contentGuidanceSchema.pick({ contentguidance_label: true }))
+  .nullable()
+  .transform((rows): readonly string[] =>
+    (rows ?? []).flatMap(({ contentguidance_label }) =>
+      contentguidance_label === null ? [] : [contentguidance_label],
+    ),
+  );
+
+export const eligibilityContentRowSchema = z
+  .object({ content_guidance: contentGuidanceColumnSchema })
+  .transform(({ content_guidance }) => content_guidance);
+
 export const contentRowSchema = lessonContentSchema
   .pick({
     key_learning_points: true,
@@ -58,9 +71,7 @@ export const contentRowSchema = lessonContentSchema
     transcript_sentences: true,
   })
   .extend({
-    content_guidance: z
-      .array(contentGuidanceSchema.pick({ contentguidance_label: true }))
-      .nullable(),
+    content_guidance: contentGuidanceColumnSchema,
     lesson_title: z.string().min(1),
   })
   .transform(
@@ -75,9 +86,7 @@ export const contentRowSchema = lessonContentSchema
       title: string;
       transcript: string | null;
     } => ({
-      contentGuidance: (row.content_guidance ?? []).flatMap((guidance) =>
-        guidance.contentguidance_label === null ? [] : [guidance.contentguidance_label],
-      ),
+      contentGuidance: row.content_guidance,
       keyLearningPoints: (row.key_learning_points ?? []).map(
         ({ key_learning_point }) => key_learning_point,
       ),
@@ -210,12 +219,17 @@ const RESTRICTION_LEVELS = {
   Restricted: "restricted",
 } as const satisfies Record<PublishedRestrictionLevel, RestrictionLevel>;
 
-export const RESTRICTION_COLUMNS: readonly string[] = [
-  "features",
-  "tpc_downloadablefiles_max_restriction",
-  "tpc_media_max_restriction",
-  "tpc_works_max_restriction",
-];
+/** The restriction levels view column each field of `LessonRestrictionLevels` reads. */
+export const RESTRICTION_LEVEL_COLUMNS = {
+  downloadableFiles: "tpc_downloadablefiles_max_restriction",
+  featureKeys: "features",
+  media: "tpc_media_max_restriction",
+  works: "tpc_works_max_restriction",
+} as const satisfies Record<keyof LessonRestrictionLevels, string>;
+
+export const RESTRICTION_COLUMNS: readonly string[] = Object.values(
+  RESTRICTION_LEVEL_COLUMNS,
+);
 
 // A null column is a category the lesson carries no material of, not a restriction.
 function levelsOf(level: PublishedRestrictionLevel | null): RestrictionLevel[] {
@@ -230,12 +244,12 @@ export const restrictionRowSchema = mvLessonRestrictionLevelsSchema
     tpc_works_max_restriction: true,
   })
   .transform((row): LessonRestrictionLevels => ({
-    works: levelsOf(row.tpc_works_max_restriction),
-    media: levelsOf(row.tpc_media_max_restriction),
-    downloadableFiles: levelsOf(row.tpc_downloadablefiles_max_restriction),
+    works: levelsOf(row[RESTRICTION_LEVEL_COLUMNS.works]),
+    media: levelsOf(row[RESTRICTION_LEVEL_COLUMNS.media]),
+    downloadableFiles: levelsOf(row[RESTRICTION_LEVEL_COLUMNS.downloadableFiles]),
     featureKeys: distinctSorted(
-      Object.entries(row.features ?? {}).flatMap(([key, value]) =>
-        value === false ? [] : [key],
+      Object.entries(row[RESTRICTION_LEVEL_COLUMNS.featureKeys] ?? {}).flatMap(
+        ([key, value]) => (value === false ? [] : [key]),
       ),
     ),
   }));
@@ -263,6 +277,17 @@ export const subjectMembershipRowSchema = z
   .object({ subject_slug: subjectSlugSchema })
   .transform(({ subject_slug }) => subject_slug);
 
+// Labels arrive alongside numbers and nulls; only the labels are kept.
+const subjectCategoriesSchema = z
+  .array(z.union([z.string(), z.number(), z.null()]))
+  .nullable()
+  .transform((categories): string[] =>
+    (categories ?? []).filter((category) => typeof category === "string"),
+  );
+
 export const eligibilityBrowseRowSchema = syntheticUnitvariantLessonsByKsSchema
   .pick({ is_legacy: true, programme_slug: true })
-  .extend({ subject_slug: subjectSlugSchema });
+  .extend({
+    subject_slug: subjectSlugSchema,
+    subject_categories: subjectCategoriesSchema,
+  });

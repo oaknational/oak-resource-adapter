@@ -13,7 +13,6 @@ import type {
 import type { QuestionNode, ResourceDocument } from "@oaknational/resource-document";
 
 import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
-import { always } from "./availability";
 import { wordBankContribution } from "./definitions/scaffold-add-word-bank/contribution";
 import { defineTransformation } from "./define-transformation";
 import { executeTransformation, type PreparePrompt } from "./execute";
@@ -65,7 +64,7 @@ const identity = defineTransformation({
   suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "document" },
   outputs: ["revised-resource"],
-  isAvailable: always,
+  rules: [],
   execution: { strategy: "deterministic", apply: (document) => [document] },
 });
 
@@ -80,7 +79,7 @@ const blockScaffold = defineTransformation({
   suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "node", nodeTypes: ["question"] },
   outputs: ["revised-resource"],
-  isAvailable: always,
+  rules: [],
   execution: {
     strategy: "model",
     prompt: definePromptTemplate({
@@ -97,7 +96,7 @@ const contextHungry = defineTransformation({
   suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
   target: { scope: "document" },
   outputs: ["revised-resource"],
-  isAvailable: always,
+  rules: [],
   execution: {
     strategy: "model",
     prompt: definePromptTemplate({
@@ -118,7 +117,7 @@ const vocabularyScaffold = defineTransformation({
   materialRequirements: [{ key: "lesson.keywords", required: false }],
   target: { scope: "node", nodeTypes: ["question"] },
   outputs: ["revised-resource"],
-  isAvailable: always,
+  rules: [],
   execution: {
     strategy: "model",
     prompt: definePromptTemplate({

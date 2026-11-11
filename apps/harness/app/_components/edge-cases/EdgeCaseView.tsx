@@ -5,6 +5,7 @@ import type {
   ResourceAdapterOpeningControl,
 } from "@oaknational/resource-adapter";
 
+import { EligibilityPanel } from "./EligibilityPanel";
 import { CreateMorePanel } from "../shared/CreateMorePanel";
 import { ExtractionNotes } from "../shared/ExtractionNotes";
 import { ScenarioLayout } from "../shared/ScenarioLayout";
@@ -29,6 +30,7 @@ export function EdgeCaseView({
     dialog,
     finishSetup,
     hasAvailableCapabilities,
+    inCopyrightRegion,
     reload,
     selectCapability,
     signIn,
@@ -123,6 +125,15 @@ export function EdgeCaseView({
               />
             )}
           </OwaSlot>
+
+          {!edgeCase.brokenApiPath && (
+            <EligibilityPanel
+              account={account}
+              capabilitiesFailed={state === "error"}
+              inCopyrightRegion={inCopyrightRegion}
+              lesson={lesson}
+            />
+          )}
 
           <ExtractionNotes
             diagnostics={edgeCase.diagnostics}

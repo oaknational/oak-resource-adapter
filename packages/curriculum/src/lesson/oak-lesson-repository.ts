@@ -19,6 +19,7 @@ import {
   browseRowSchema,
   combineRestrictionLevels,
   contentRowSchema,
+  eligibilityContentRowSchema,
   restrictionRowSchema,
   eligibilityBrowseRowSchema,
   subjectMembershipRowSchema,
@@ -45,6 +46,7 @@ const eligibilityFactsResponseSchema = z.object({
   data: z.object({
     browseData: z.array(eligibilityBrowseRowSchema),
     restrictionLevels: z.array(restrictionRowSchema),
+    content: z.array(eligibilityContentRowSchema),
   }),
 });
 
@@ -170,7 +172,11 @@ export function createOakLessonEligibilityFactsReader(config: OakCurriculumConfi
       return {
         restrictionLevels: combineRestrictionLevels(data.restrictionLevels),
         subjectSlugs: distinctSorted(data.browseData.map((row) => row.subject_slug)),
+        subjectCategories: distinctSorted(
+          data.browseData.flatMap((row) => row.subject_categories),
+        ),
         legacy: data.browseData.some((row) => row.is_legacy),
+        contentGuidance: distinctSorted(data.content.flat()),
       };
     } catch (error) {
       throw toCurriculumError(error);
