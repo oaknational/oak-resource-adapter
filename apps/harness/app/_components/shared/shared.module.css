@@ -36,10 +36,6 @@
   background: #ebfbeb;
 }
 
-.pending {
-  visibility: hidden;
-}
-
 .scenarioSelectControls {
   display: flex;
   flex-wrap: wrap;

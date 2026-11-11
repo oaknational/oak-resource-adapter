@@ -40,22 +40,16 @@ export function useViewAsHref(): (signedOut: boolean) => string {
 }
 
 export function ViewAsControl() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isSignedIn } = useAuth();
   const viewAsSignedOut = useViewAsSignedOut();
   const hrefFor = useViewAsHref();
 
-  if (isLoaded && !isSignedIn) {
+  if (!isSignedIn) {
     return null;
   }
 
-  // Holds its space while Clerk loads, so the page does not shift when it appears.
   return (
-    <nav
-      aria-label="View as"
-      className={
-        isLoaded ? shared.modeSwitch : `${shared.modeSwitch} ${shared.pending}`
-      }
-    >
+    <nav aria-label="View as" className={shared.modeSwitch}>
       <Link
         aria-current={viewAsSignedOut ? undefined : "page"}
         href={hrefFor(false)}
