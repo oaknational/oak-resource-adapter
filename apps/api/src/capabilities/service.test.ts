@@ -31,8 +31,8 @@ import {
   explainEligibility,
   getCapabilities,
   hasCapabilities,
-  resolveEligibility,
-  type EligibilityResolver,
+  readEligibilityContext,
+  type EligibilityContextReader,
 } from "./service";
 import { resourceInputsRule } from "./resource-inputs";
 import type { CapabilityDefinition } from "./types";
@@ -84,7 +84,7 @@ function resolverFor(
   originalFileResourceTypes: readonly string[],
   extractedResourceTypes: readonly string[],
   facts: LessonEligibilityFacts | null = unrestricted,
-): EligibilityResolver {
+): EligibilityContextReader {
   return (lesson) =>
     Promise.resolve({
       lesson,
@@ -192,17 +192,17 @@ describe("getCapabilities", () => {
   });
 
   it("reports needsSetup without reading the lesson for a teacher who is not onboarded", async () => {
-    const resolveContext = vi.fn<EligibilityResolver>();
+    const readContext = vi.fn<EligibilityContextReader>();
 
     await expect(
       getCapabilities(
         worksheetLesson,
         teacher,
-        resolveContext,
+        readContext,
         accessResolving({ onboarded: false, tier: "full", inCopyrightRegion: true }),
       ),
     ).resolves.toEqual({ account: { state: "needsSetup" }, capabilities: [] });
-    expect(resolveContext).not.toHaveBeenCalled();
+    expect(readContext).not.toHaveBeenCalled();
   });
 
   it("reports the tier and copyright region of an onboarded teacher", async () => {
@@ -236,7 +236,7 @@ describe("getCapabilities", () => {
   });
 });
 
-describe("resolveEligibility", () => {
+describe("readEligibilityContext", () => {
   it.each(["restricted", "highly-restricted"] as const)(
     "uses Oak's %s result in both capability endpoints",
     async (maxLevel) => {
@@ -263,7 +263,7 @@ describe("resolveEligibility", () => {
   });
 
   it("reads extracted resource types from the fixture corpus", async () => {
-    await expect(resolveEligibility(worksheetLesson)).resolves.toMatchObject({
+    await expect(readEligibilityContext(worksheetLesson)).resolves.toMatchObject({
       facts: unrestricted,
       originalFileResourceTypes: ["worksheet"],
       extractedResourceTypes: ["worksheet"],
@@ -272,7 +272,7 @@ describe("resolveEligibility", () => {
 
   it("reports no extracted resource types for a lesson outside the corpus", async () => {
     await expect(
-      resolveEligibility({ ...worksheetLesson, lessonSlug: "not-a-lesson" }),
+      readEligibilityContext({ ...worksheetLesson, lessonSlug: "not-a-lesson" }),
     ).resolves.toMatchObject({ extractedResourceTypes: [] });
   });
 });

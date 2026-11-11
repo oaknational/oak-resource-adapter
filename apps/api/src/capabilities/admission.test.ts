@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 import type { LessonEligibilityFacts } from "@oaknational/resource-adapter-curriculum";
 
-import type { EligibilityResolver } from "../capabilities/service";
-import { resolveSourceDocumentLocator } from "./service";
+import type { EligibilityContextReader } from "./service";
+import { admitToCapability } from "./admission";
 
 vi.mock("../teacher-access/resolver", () => ({
   teacherAccessResolver: {
@@ -13,7 +13,7 @@ vi.mock("../teacher-access/resolver", () => ({
   },
 }));
 
-const request: Parameters<typeof resolveSourceDocumentLocator>[0] = {
+const request: Parameters<typeof admitToCapability>[0] = {
   capabilityId: "worksheetScaffolding",
   lesson: {
     lessonSlug: "adopting-different-perspectives",
@@ -30,8 +30,8 @@ const teacher: ResourceAdapterAuthenticatedTeacher = {
   teacherId: "teacher-456",
 };
 
-const located = {
-  outcome: "located",
+const admitted = {
+  outcome: "admitted",
   locator: {
     source: "oak",
     lessonSlug: request.lesson.lessonSlug,
@@ -51,7 +51,7 @@ const unrestricted: LessonEligibilityFacts = {
 };
 
 const adaptableWith =
-  (facts: LessonEligibilityFacts): EligibilityResolver =>
+  (facts: LessonEligibilityFacts): EligibilityContextReader =>
   async (lesson) => ({
     lesson,
     facts,
@@ -59,18 +59,18 @@ const adaptableWith =
     extractedResourceTypes: ["worksheet"],
   });
 
-describe("resolveSourceDocumentLocator", () => {
-  it("locates the resource type owned by an eligible capability", async () => {
+describe("admitToCapability", () => {
+  it("admits a teacher to an eligible capability, with its resource type", async () => {
     await expect(
-      resolveSourceDocumentLocator(request, teacher, adaptableWith(unrestricted)),
-    ).resolves.toEqual(located);
+      admitToCapability(request, teacher, adaptableWith(unrestricted)),
+    ).resolves.toEqual(admitted);
   });
 
   it("asks a teacher who is not onboarded to finish setting up, without reading the lesson", async () => {
-    const resolveContext = vi.fn<EligibilityResolver>();
+    const readContext = vi.fn<EligibilityContextReader>();
 
     await expect(
-      resolveSourceDocumentLocator(request, teacher, resolveContext, {
+      admitToCapability(request, teacher, readContext, {
         resolve: vi.fn().mockResolvedValue({
           onboarded: false,
           tier: "full",
@@ -78,12 +78,12 @@ describe("resolveSourceDocumentLocator", () => {
         }),
       }),
     ).resolves.toEqual({ outcome: "needsSetup" });
-    expect(resolveContext).not.toHaveBeenCalled();
+    expect(readContext).not.toHaveBeenCalled();
   });
 
-  it("does not resolve a locator for an ineligible lesson", async () => {
+  it("does not admit a teacher to an ineligible lesson", async () => {
     await expect(
-      resolveSourceDocumentLocator(request, teacher, async (lesson) => ({
+      admitToCapability(request, teacher, async (lesson) => ({
         lesson,
         facts: unrestricted,
         originalFileResourceTypes: ["worksheet"],
@@ -93,27 +93,23 @@ describe("resolveSourceDocumentLocator", () => {
   });
 
   it.each(["futureCapability", "toString", "constructor", "__proto__"])(
-    "does not resolve a locator for the unknown capability %s",
+    "does not admit a teacher to the unknown capability %s",
     async (capabilityId) => {
-      const resolveContext = vi.fn();
+      const readContext = vi.fn();
 
       await expect(
-        resolveSourceDocumentLocator(
-          { ...request, capabilityId },
-          teacher,
-          resolveContext,
-        ),
+        admitToCapability({ ...request, capabilityId }, teacher, readContext),
       ).resolves.toEqual(unavailable);
-      expect(resolveContext).not.toHaveBeenCalled();
+      expect(readContext).not.toHaveBeenCalled();
     },
   );
 });
 
 it.each(["restricted", "highly-restricted"] as const)(
-  "does not locate %s source material",
+  "does not admit a teacher to %s source material",
   async (maxLevel) => {
     await expect(
-      resolveSourceDocumentLocator(
+      admitToCapability(
         request,
         teacher,
         adaptableWith({
@@ -130,9 +126,9 @@ it.each(["restricted", "highly-restricted"] as const)(
   },
 );
 
-it("does not locate source material in an excluded subject", async () => {
+it("does not admit a teacher to a lesson in an excluded subject", async () => {
   await expect(
-    resolveSourceDocumentLocator(
+    admitToCapability(
       request,
       teacher,
       adaptableWith({ ...unrestricted, subjectSlugs: ["geography"] }),
@@ -141,16 +137,16 @@ it("does not locate source material in an excluded subject", async () => {
 });
 
 it.each([
-  ["locates", true, located],
-  ["does not locate", false, unavailable],
+  ["admits", true, admitted],
+  ["does not admit", false, unavailable],
 ])(
-  "%s geo-restricted source material when inCopyrightRegion is %s",
+  "%s a teacher to geo-restricted source material when inCopyrightRegion is %s",
   async (_, inCopyrightRegion, expected) => {
     const resolve = vi
       .fn()
       .mockResolvedValue({ onboarded: true, tier: "full", inCopyrightRegion });
     await expect(
-      resolveSourceDocumentLocator(
+      admitToCapability(
         request,
         teacher,
         adaptableWith({
