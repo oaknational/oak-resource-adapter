@@ -27,7 +27,12 @@ export function TermsView({
       secondaryAction={{ label: termsCopy.back, onClick: onBack }}
     >
       {termsCopy.paragraphs.map((parts) => (
-        <OakP $font="body-2" key={parts.join()}>
+        <OakP
+          $font="body-2"
+          key={parts
+            .map((part) => (typeof part === "string" ? part : part.label))
+            .join("")}
+        >
           {parts.map((part) =>
             typeof part === "string" ? (
               part
