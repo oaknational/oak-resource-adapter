@@ -129,6 +129,7 @@ export function EdgeCaseView({
           {!edgeCase.brokenApiPath && (
             <EligibilityPanel
               account={account}
+              capabilitiesFailed={state === "error"}
               inCopyrightRegion={inCopyrightRegion}
               lesson={lesson}
             />

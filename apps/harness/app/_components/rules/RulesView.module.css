@@ -345,6 +345,10 @@
   color: #4a4a4a;
 }
 
+.unavailableRules {
+  flex-basis: 100%;
+}
+
 .unavailableName {
   display: block;
   font-weight: 600;

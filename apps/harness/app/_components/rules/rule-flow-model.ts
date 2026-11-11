@@ -73,9 +73,10 @@ export type RuleFlowModel = Readonly<{
     settings: readonly ScaffoldSetting[];
     rules: readonly FlowRow[];
   }>[];
-  notOfferedScaffolds: readonly Pick<
-    CatalogueTransformation,
-    "kind" | "label" | "status"
+  notOfferedScaffolds: readonly Readonly<
+    Pick<CatalogueTransformation, "kind" | "label" | "status"> & {
+      rules: readonly FlowRow[];
+    }
   >[];
 }>;
 
@@ -121,6 +122,21 @@ function supersededNote(
     : undefined;
 }
 
+function ownRules(
+  { inputs, kind, rules }: CatalogueTransformation,
+  commonIds: ReadonlySet<string>,
+  lessonSubjects: ReadonlySet<string>,
+): FlowRow[] {
+  return rules
+    .filter(({ id }) => !commonIds.has(id))
+    .map((rule) => ({
+      anchor: ruleAnchor(transformationScope(kind), rule.id),
+      note: supersededNote(rule, lessonSubjects),
+      outcome: ruleOutcome(rule, inputs),
+      rule,
+    }));
+}
+
 export function buildRuleFlow(catalogue: RuleCatalogue): RuleFlowModel {
   const offered = catalogue.transformations.filter(
     ({ capabilityIds, status }) => status === "active" && capabilityIds.length > 0,
@@ -151,27 +167,25 @@ export function buildRuleFlow(catalogue: RuleCatalogue): RuleFlowModel {
       rule,
       variesByScaffold: varying.has(rule.id),
     })),
-    scaffolds: offered.map(({ inputs, kind, label, rules }) => ({
-      kind,
-      label,
-      settings: rules
+    scaffolds: offered.map((transformation) => ({
+      kind: transformation.kind,
+      label: transformation.label,
+      settings: transformation.rules
         .filter(({ id }) => varying.has(id))
         .flatMap(({ displayValues = [], displayValuesLabel, label: ruleLabel }) =>
           displayValues.length === 0
             ? []
             : [{ label: displayValuesLabel ?? ruleLabel, values: displayValues }],
         ),
-      rules: rules
-        .filter(({ id }) => !commonIds.has(id))
-        .map((rule) => ({
-          anchor: ruleAnchor(transformationScope(kind), rule.id),
-          note: supersededNote(rule, lessonSubjects),
-          outcome: ruleOutcome(rule, inputs),
-          rule,
-        })),
+      rules: ownRules(transformation, commonIds, lessonSubjects),
     })),
     notOfferedScaffolds: catalogue.transformations
       .filter((transformation) => !offered.includes(transformation))
-      .map(({ kind, label, status }) => ({ kind, label, status })),
+      .map((transformation) => ({
+        kind: transformation.kind,
+        label: transformation.label,
+        status: transformation.status,
+        rules: ownRules(transformation, commonIds, lessonSubjects),
+      })),
   };
 }

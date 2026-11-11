@@ -91,7 +91,7 @@ describe("buildRuleFlow", () => {
         capabilityIds: ["worksheetScaffolding"],
         kind: "chunking",
         label: "Chunk tasks",
-        rules: [...common],
+        rules: [...common, rule({ id: "key-stage" })],
         status: "retired",
       },
       {
@@ -129,10 +129,15 @@ describe("buildRuleFlow", () => {
     expect(flow.lesson[0]?.outcome).toBeUndefined();
   });
 
-  it("lists scaffolds no teacher is offered separately", () => {
-    expect(flow.notOfferedScaffolds.map(({ kind }) => kind)).toEqual([
-      "chunking",
-      "identity",
+  it("lists scaffolds no teacher is offered separately, with their own rules", () => {
+    expect(
+      flow.notOfferedScaffolds.map(({ kind, rules }) => [
+        kind,
+        rules.map(({ rule: { id } }) => id),
+      ]),
+    ).toEqual([
+      ["chunking", ["key-stage"]],
+      ["identity", []],
     ]);
   });
 

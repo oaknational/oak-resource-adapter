@@ -29,10 +29,13 @@ function perspective(
 
 export function EligibilityPanel({
   account,
+  capabilitiesFailed,
   inCopyrightRegion,
   lesson,
 }: Readonly<{
   account: ResourceAdapterLauncherAccount | null;
+  /** The account stays unknown, so nothing is checked. */
+  capabilitiesFailed: boolean;
   inCopyrightRegion: boolean | null;
   lesson: LessonContext;
 }>) {
@@ -77,8 +80,14 @@ export function EligibilityPanel({
       ) : (
         account !== null && <p>{perspective(account, inCopyrightRegion)}</p>
       )}
+      {capabilitiesFailed && (
+        <p role="alert">
+          Your account couldn&apos;t be read, so ORA&apos;s decision can&apos;t be
+          shown.
+        </p>
+      )}
       {error !== null && <p role="alert">{error}</p>}
-      {error === null && evaluated === null && (
+      {!capabilitiesFailed && error === null && evaluated === null && (
         <p aria-live="polite" role="status">
           Checking the rules…
         </p>

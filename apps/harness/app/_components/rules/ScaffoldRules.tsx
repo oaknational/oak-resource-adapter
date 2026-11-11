@@ -38,13 +38,19 @@ export function UnavailableScaffolds({
     <section aria-labelledby="scaffolds-not-offered" className={styles.notOffered}>
       <h3 id="scaffolds-not-offered">Currently unavailable scaffolds</h3>
       <ul className={styles.unavailableList}>
-        {scaffolds.map(({ kind, label, status }) => (
+        {scaffolds.map(({ kind, label, rules, status }) => (
           <li className={styles.unavailableScaffold} key={kind}>
             <span>
               <span className={styles.scaffoldKicker}>Scaffold</span>
               <span className={styles.unavailableName}>{label}</span>
             </span>
             <span className={statusBadgeClass(status)}>{status}</span>
+            {rules.length > 0 && (
+              <details className={`${styles.details} ${styles.unavailableRules}`}>
+                <summary>Rules</summary>
+                <RuleRows rows={rules} scaffold={label} />
+              </details>
+            )}
           </li>
         ))}
       </ul>
