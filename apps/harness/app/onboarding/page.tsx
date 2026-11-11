@@ -22,12 +22,16 @@ type OnboardingPageProps = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>;
 
-function formatAcceptedAt(acceptedAt: string): string {
-  return new Date(acceptedAt).toLocaleString("en-GB", {
+function termsStatus(acceptedTerms: ReturnType<typeof acceptedTermsOf>): string {
+  if (acceptedTerms === null) {
+    return "Not accepted";
+  }
+  const acceptedAt = new Date(acceptedTerms.acceptedAt).toLocaleString("en-GB", {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: "Europe/London",
   });
+  return `Version ${acceptedTerms.version}, accepted ${acceptedAt}`;
 }
 
 /** Stands in for OWA's `/onboarding?returnTo=`, which the harness cannot reach. */
@@ -71,11 +75,7 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
               <dt>Region</dt>
               <dd>{region ?? "None"}</dd>
               <dt>ORA's terms</dt>
-              <dd>
-                {acceptedTerms === null
-                  ? "Not accepted"
-                  : `Version ${acceptedTerms.version}, accepted ${formatAcceptedAt(acceptedTerms.acceptedAt)}`}
-              </dd>
+              <dd>{termsStatus(acceptedTerms)}</dd>
             </dl>
           </section>
 
