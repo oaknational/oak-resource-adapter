@@ -137,9 +137,13 @@ export type WorksheetScaffoldingEntryOutcome =
       usageLimit: UsageLimitReached<"adapted_resources_month">;
     }>;
 
-/** `allowance` is read after any use the request spent. */
-export type WorksheetScaffoldingEntry = WorksheetScaffoldingEntryOutcome &
-  Readonly<{ allowance: TeacherAllowance }>;
+/**
+ * `needsSetup`: the teacher has not completed OWA onboarding.
+ * `allowance` is read after any use the request spent.
+ */
+export type WorksheetScaffoldingEntry =
+  | Readonly<{ outcome: "needsSetup" }>
+  | (WorksheetScaffoldingEntryOutcome & Readonly<{ allowance: TeacherAllowance }>);
 
 export const transformationInputSchema = z.readonly(
   z.object({

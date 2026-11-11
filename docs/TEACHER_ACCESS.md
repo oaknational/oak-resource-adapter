@@ -1,12 +1,36 @@
 # Teacher access
 
+## Account setup
+
+ORA offers nothing to a signed-in teacher until OWA onboarding has set
+`publicMetadata.owa.isOnboarded`. Until then the capabilities response reports
+the account as `needsSetup`, and opening worksheet scaffolding from a lesson
+returns `needsSetup` instead of starting work. Aila's onboarding does not count:
+OWA onboarding keeps the region Aila stored and leaves Aila's metadata alone.
+
+The harness cannot reach OWA onboarding, so its sign-in and "Finish setup" go
+through a stand-in at `/onboarding`, also linked as "Account setup" in the
+header. It writes `owa.isOnboarded` and the region the tester picks, or clears
+both, on the development Clerk instance only.
+
+A teacher who onboarded before OWA stored a region, or whose region header was
+missing, has no region. They are ready, outside the copyright regions, and
+limited unless one of the other tier rules gives them full access. Onboarding
+again does not add a region, because OWA sends onboarded teachers straight back.
+
 ## Tiers
 
 A teacher has `full` access when their Clerk user's `privateMetadata.region` is
 `GB`, `IM`, `JE` or `GG`, when `privateMetadata.ora.access` is exactly `"full"`,
-or when they have a verified `@thenational.academy` address. Every other teacher,
-including one with no stored region, is `limited`. ORA ignores unverified
-addresses.
+when they have a verified `@thenational.academy` address, or when Aila gives
+them full access (`publicMetadata.labs.isDemoUser` is exactly `false`). Every
+other teacher, including one with no stored region, is `limited`. ORA ignores
+unverified addresses.
+
+ORA reads Aila's flag only until Aila is sunset, when ADAPT-203 copies Aila's
+exceptions into ORA grants. Aila sets the flag for teachers in the same regions
+as ORA, for exceptions staff set by hand, and for every pre-release beta user.
+ORA never writes `publicMetadata.labs`.
 
 OWA and Aila onboarding store the region. ORA only reads it.
 
@@ -22,8 +46,11 @@ applies to both tiers. A teacher with a verified Oak address gets 1000
 replaces either for one teacher. ORA does not read Aila's
 `privateMetadata.customRateLimit`, which counts Aila generations.
 
-ORA caches each teacher's access and refreshes it before refusing work because
-of a usage limit, so a grant or raised limit applies on their next attempt.
+ORA caches each onboarded teacher's access, for 10 minutes in production and 10
+seconds elsewhere, and refreshes it before refusing work because of a usage
+limit, so a grant or raised limit applies on their next attempt. A teacher who
+needs setup is looked up on every request, so the first request after
+onboarding sees it.
 
 ## Copyright region
 
@@ -44,6 +71,8 @@ A marker in a verified Oak address lets an Oak account test a limit:
 Both markers can be used on one account, in one address or in separate ones. An
 `ora.access` grant takes precedence over `access-limit-me` for access, and
 `ora.usageLimits.modelJobsPer24h` over either marker's daily limit.
+`access-limit-me` takes precedence over Aila's flag, which Aila sets on every UK
+account that has used it.
 
 ## Changing a teacher's access
 

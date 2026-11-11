@@ -54,6 +54,7 @@ function dialogProps(
     isOpen: true,
     lesson,
     onClose: vi.fn(),
+    onFinishSetup: vi.fn(),
     ...overrides,
   };
 }

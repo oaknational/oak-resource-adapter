@@ -51,6 +51,48 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "properties": {
+      "account": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "state": {
+                "type": "string",
+                "const": "needsSetup"
+              }
+            },
+            "required": [
+              "state"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "state": {
+                "type": "string",
+                "const": "ready"
+              },
+              "tier": {
+                "type": "string",
+                "enum": [
+                  "full",
+                  "limited"
+                ]
+              },
+              "inCopyrightRegion": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "state",
+              "tier",
+              "inCopyrightRegion"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
       "capabilities": {
         "readOnly": true,
         "type": "array",
@@ -83,6 +125,7 @@
       }
     },
     "required": [
+      "account",
       "capabilities"
     ],
     "additionalProperties": false

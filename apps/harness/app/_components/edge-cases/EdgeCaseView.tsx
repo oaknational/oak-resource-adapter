@@ -24,12 +24,14 @@ export function EdgeCaseView({
 }>) {
   const lesson = edgeCase.lesson;
   const {
+    account,
     capabilities,
     dialog,
-    exitSignedOutPreview,
+    finishSetup,
     hasAvailableCapabilities,
     reload,
     selectCapability,
+    signIn,
     state,
   } = useAdapterLauncher({
     apiBaseUrl: edgeCase.brokenApiPath ? `${apiBaseUrl}-unreachable` : apiBaseUrl,
@@ -87,25 +89,36 @@ export function EdgeCaseView({
             badge={
               showCapabilityFixture
                 ? "Fixture"
-                : owaSlotBadge({ capabilities, hasAvailableCapabilities, state })
+                : owaSlotBadge({
+                    account,
+                    capabilities,
+                    hasAvailableCapabilities,
+                    state,
+                  })
             }
           >
             {showCapabilityFixture ? (
               <CreateMorePanel
+                account={account}
                 capabilities={fixtureCapabilities}
                 hasAvailableCapabilities={hasAvailableCapabilities}
-                onSelectCapability={selectFixtureCapability}
+                lesson={lesson}
+                onFinishSetup={finishSetup}
                 onRetry={reload}
-                onPreviewSignIn={exitSignedOutPreview}
+                onSelectCapability={selectFixtureCapability}
+                onSignIn={signIn}
                 state={state}
               />
             ) : (
               <CreateMorePanel
+                account={account}
                 capabilities={capabilities}
                 hasAvailableCapabilities={hasAvailableCapabilities}
-                onSelectCapability={selectCapability}
+                lesson={lesson}
+                onFinishSetup={finishSetup}
                 onRetry={reload}
-                onPreviewSignIn={exitSignedOutPreview}
+                onSelectCapability={selectCapability}
+                onSignIn={signIn}
                 state={state}
               />
             )}

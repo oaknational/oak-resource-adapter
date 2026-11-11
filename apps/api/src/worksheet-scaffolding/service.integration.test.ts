@@ -40,7 +40,7 @@ const lessonReference = {
 } as const;
 
 const fullAccess = () =>
-  Promise.resolve({ tier: "full", inCopyrightRegion: true } as const);
+  Promise.resolve({ onboarded: true, tier: "full", inCopyrightRegion: true } as const);
 const access = { recheck: fullAccess, resolve: fullAccess };
 
 const limitOfOne = createModelJobLimiter({

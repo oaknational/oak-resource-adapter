@@ -9,6 +9,36 @@ const REQUIRED_ENV = [
   "E2E_CLERK_USER_EMAIL",
 ];
 
+const clerkApi = "https://api.clerk.com/v1";
+
+// ORA offers nothing until OWA onboarding sets this flag. The harness's stand-in
+// onboarding page can clear it, so every run restores it.
+async function ensureOnboarded(emailAddress: string, secretKey: string) {
+  const headers = {
+    Authorization: `Bearer ${secretKey}`,
+    "Content-Type": "application/json",
+  };
+  const response = await fetch(
+    `${clerkApi}/users?email_address=${encodeURIComponent(emailAddress)}`,
+    { headers },
+  );
+  expect(response.ok, "The browser-test account could not be looked up.").toBe(true);
+  const [user] = (await response.json()) as {
+    id: string;
+    public_metadata: { owa?: { isOnboarded?: boolean } };
+  }[];
+  expect(user, "The browser-test account does not exist.").toBeDefined();
+  if (user === undefined || user.public_metadata.owa?.isOnboarded === true) {
+    return;
+  }
+  const update = await fetch(`${clerkApi}/users/${user.id}/metadata`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify({ public_metadata: { owa: { isOnboarded: true } } }),
+  });
+  expect(update.ok, "The browser-test account could not be onboarded.").toBe(true);
+}
+
 setup("global setup", async ({ request }) => {
   const missing = REQUIRED_ENV.filter((name) => !process.env[name]);
 
@@ -19,6 +49,10 @@ setup("global setup", async ({ request }) => {
   }
 
   await clerkSetup();
+  await ensureOnboarded(
+    process.env.E2E_CLERK_USER_EMAIL ?? "",
+    process.env.CLERK_SECRET_KEY ?? "",
+  );
 
   const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
   if (bypassSecret) {

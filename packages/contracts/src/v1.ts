@@ -64,7 +64,18 @@ export const resourceAdapterCapabilitySchema = z.object({
   resourceType: lessonResourceTypeSchema,
 });
 
+/** `needsSetup`: the teacher has not completed OWA onboarding, so nothing is offered. */
+export const resourceAdapterAccountSchema = z.discriminatedUnion("state", [
+  z.object({ state: z.literal("needsSetup") }),
+  z.object({
+    state: z.literal("ready"),
+    tier: z.enum(["full", "limited"]),
+    inCopyrightRegion: z.boolean(),
+  }),
+]);
+
 export const resourceAdapterCapabilitiesResponseSchema = z.object({
+  account: resourceAdapterAccountSchema,
   capabilities: z.readonly(z.array(resourceAdapterCapabilitySchema)),
 });
 
@@ -88,6 +99,7 @@ export type ResourceAdapterCapabilityId = z.infer<
   typeof resourceAdapterCapabilityIdSchema
 >;
 export type ResourceAdapterCapability = z.infer<typeof resourceAdapterCapabilitySchema>;
+export type ResourceAdapterAccount = z.infer<typeof resourceAdapterAccountSchema>;
 export type ResourceAdapterCapabilitiesResponse = z.infer<
   typeof resourceAdapterCapabilitiesResponseSchema
 >;

@@ -6,6 +6,13 @@ import type { LessonRights } from "@oaknational/resource-adapter-curriculum";
 import type { EligibilityResolver } from "../capabilities/service";
 import { resolveSourceDocumentLocator } from "./service";
 
+vi.mock("../teacher-access/resolver", () => ({
+  teacherAccessResolver: {
+    resolve: () =>
+      Promise.resolve({ onboarded: true, tier: "full", inCopyrightRegion: true }),
+  },
+}));
+
 const request: Parameters<typeof resolveSourceDocumentLocator>[0] = {
   capabilityId: "worksheetScaffolding",
   lesson: {
@@ -23,12 +30,17 @@ const teacher: ResourceAdapterAuthenticatedTeacher = {
   teacherId: "teacher-456",
 };
 
-const locator = {
-  source: "oak",
-  lessonSlug: request.lesson.lessonSlug,
-  programmeSlug: request.lesson.programmeSlug,
-  resourceType: "worksheet",
+const located = {
+  outcome: "located",
+  locator: {
+    source: "oak",
+    lessonSlug: request.lesson.lessonSlug,
+    programmeSlug: request.lesson.programmeSlug,
+    resourceType: "worksheet",
+  },
 };
+
+const unavailable = { outcome: "unavailable" };
 
 const unrestricted: LessonRights = {
   maxRestrictions: [],
@@ -51,7 +63,22 @@ describe("resolveSourceDocumentLocator", () => {
   it("locates the resource type owned by an eligible capability", async () => {
     await expect(
       resolveSourceDocumentLocator(request, teacher, adaptableWith(unrestricted)),
-    ).resolves.toEqual(locator);
+    ).resolves.toEqual(located);
+  });
+
+  it("asks a teacher who is not onboarded to finish setting up, without reading the lesson", async () => {
+    const resolveContext = vi.fn<EligibilityResolver>();
+
+    await expect(
+      resolveSourceDocumentLocator(request, teacher, resolveContext, {
+        resolve: vi.fn().mockResolvedValue({
+          onboarded: false,
+          tier: "full",
+          inCopyrightRegion: true,
+        }),
+      }),
+    ).resolves.toEqual({ outcome: "needsSetup" });
+    expect(resolveContext).not.toHaveBeenCalled();
   });
 
   it("does not resolve a locator for an ineligible lesson", async () => {
@@ -62,7 +89,7 @@ describe("resolveSourceDocumentLocator", () => {
         originalFileResourceTypes: ["worksheet"],
         extractedResourceTypes: [],
       })),
-    ).resolves.toBeNull();
+    ).resolves.toEqual(unavailable);
   });
 
   it.each(["futureCapability", "toString", "constructor", "__proto__"])(
@@ -76,7 +103,7 @@ describe("resolveSourceDocumentLocator", () => {
           teacher,
           resolveContext,
         ),
-      ).resolves.toBeNull();
+      ).resolves.toEqual(unavailable);
       expect(resolveContext).not.toHaveBeenCalled();
     },
   );
@@ -94,7 +121,7 @@ it.each(["restricted", "highly-restricted"] as const)(
           maxRestrictions: [{ category: "media", maxLevel }],
         }),
       ),
-    ).resolves.toBeNull();
+    ).resolves.toEqual(unavailable);
   },
 );
 
@@ -105,16 +132,18 @@ it("does not locate copyright-restricted source material", async () => {
       teacher,
       adaptableWith({ ...unrestricted, copyrightRestricted: true }),
     ),
-  ).resolves.toBeNull();
+  ).resolves.toEqual(unavailable);
 });
 
 it.each([
-  ["locates", true, locator],
-  ["does not locate", false, null],
+  ["locates", true, located],
+  ["does not locate", false, unavailable],
 ])(
   "%s geo-restricted source material when inCopyrightRegion is %s",
   async (_, inCopyrightRegion, expected) => {
-    const resolve = vi.fn().mockResolvedValue({ tier: "full", inCopyrightRegion });
+    const resolve = vi
+      .fn()
+      .mockResolvedValue({ onboarded: true, tier: "full", inCopyrightRegion });
     await expect(
       resolveSourceDocumentLocator(
         request,

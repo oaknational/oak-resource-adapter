@@ -70,26 +70,33 @@ export async function openWorksheetScaffolding(
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingEntry | null> {
   const outcome = await enter(request, target, dependencies);
-  return outcome === null
-    ? null
-    : { ...outcome, allowance: await getTeacherAllowance(target, dependencies) };
+  if (outcome === null || outcome.outcome === "needsSetup") {
+    return outcome;
+  }
+  return { ...outcome, allowance: await getTeacherAllowance(target, dependencies) };
 }
 
 async function enter(
   request: WorksheetScaffoldingOpenRequest,
   target: ResourceAdapterAuthenticatedTeacher,
   dependencies: WorksheetScaffoldingDependencies,
-): Promise<WorksheetScaffoldingEntryOutcome | null> {
+): Promise<
+  WorksheetScaffoldingEntryOutcome | Readonly<{ outcome: "needsSetup" }> | null
+> {
   const { lesson, replacing } = request;
   const { repository } = dependencies;
 
-  const locator = await dependencies.resolveSourceDocumentLocator(
+  const location = await dependencies.resolveSourceDocumentLocator(
     { capabilityId: CAPABILITY.id, lesson },
     target,
   );
-  if (locator === null) {
+  if (location.outcome === "unavailable") {
     return null;
   }
+  if (location.outcome === "needsSetup") {
+    return { outcome: "needsSetup" };
+  }
+  const { locator } = location;
 
   if (replacing === undefined) {
     const recentAdaptationsOfLesson = {

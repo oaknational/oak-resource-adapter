@@ -5,6 +5,11 @@ export type {
   ResourceAdapterOpeningControl,
 } from "./ResourceAdapterButton.js";
 export { ResourceAdapterDialog } from "./ResourceAdapterDialog.js";
+export { ResourceAdapterLauncher } from "./ResourceAdapterLauncher.js";
+export type {
+  ResourceAdapterLauncherAccount,
+  ResourceAdapterLauncherProps,
+} from "./ResourceAdapterLauncher.js";
 export type { ResourceAdapterDialogProps } from "./ResourceAdapterDialog.js";
 export { ResourceAdapterErrorBoundary } from "./ResourceAdapterErrorBoundary.js";
 export type { ResourceAdapterErrorBoundaryProps } from "./ResourceAdapterErrorBoundary.js";

@@ -9,11 +9,13 @@ import { originalResourceDocuments } from "@oaknational/resource-adapter-origina
 import type {
   LessonContext,
   ResourceAdapterCapabilitiesResponse,
+  ResourceAdapterCapability,
   ResourceAdapterCapabilityAvailabilityRequest,
   ResourceAdapterCapabilityAvailabilityResponse,
 } from "@oaknational/resource-adapter-contracts";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 
+import type { TeacherAccess } from "../teacher-access/access";
 import {
   teacherAccessResolver,
   type TeacherAccessResolver,
@@ -26,7 +28,7 @@ export type EligibilityResolver = (
 ) => Promise<EligibilityContext>;
 
 /** Capability-specific predicates cannot override the lesson's rights gate. */
-export function isCapabilityEligible(
+function isCapabilityEligible(
   definition: CapabilityDefinition,
   context: EligibilityContext,
 ): boolean {
@@ -37,21 +39,17 @@ export function isCapabilityEligible(
   );
 }
 
-export async function meetsGeoRestriction(
+function meetsGeoRestriction(
   rights: Pick<LessonRights, "geoRestricted"> | null,
-  teacherId: string,
-  access: Pick<TeacherAccessResolver, "resolve"> = teacherAccessResolver,
-): Promise<boolean> {
-  return (
-    rights?.geoRestricted !== true ||
-    (await access.resolve(teacherId)).inCopyrightRegion
-  );
+  teacher: Pick<TeacherAccess, "inCopyrightRegion">,
+): boolean {
+  return rights?.geoRestricted !== true || teacher.inCopyrightRegion;
 }
 
 export function evaluateCapabilities(
   definitions: ReadonlyArray<CapabilityDefinition>,
   context: EligibilityContext,
-): ResourceAdapterCapabilitiesResponse {
+): Pick<ResourceAdapterCapabilitiesResponse, "capabilities"> {
   return {
     capabilities: definitions
       .filter((definition) => isCapabilityEligible(definition, context))
@@ -73,21 +71,59 @@ export const resolveEligibility: EligibilityResolver = async (lesson) => ({
   }),
 });
 
+export type LessonEligibility =
+  | Readonly<{ outcome: "needsSetup" }>
+  | Readonly<{
+      outcome: "ready";
+      teacher: TeacherAccess;
+      capabilities: readonly ResourceAdapterCapability[];
+    }>;
+
+/** The rules every signed-in lesson entry point applies. */
+export async function resolveLessonEligibility(
+  lesson: LessonContext,
+  teacherId: string,
+  resolveContext: EligibilityResolver = resolveEligibility,
+  access: Pick<TeacherAccessResolver, "resolve"> = teacherAccessResolver,
+): Promise<LessonEligibility> {
+  const teacher = await access.resolve(teacherId);
+  if (!teacher.onboarded) {
+    return { outcome: "needsSetup" };
+  }
+  const context = await resolveContext(lesson);
+  return {
+    outcome: "ready",
+    teacher,
+    capabilities: meetsGeoRestriction(context.rights, teacher)
+      ? evaluateCapabilities(Object.values(capabilityDefinitions), context).capabilities
+      : [],
+  };
+}
+
 export async function getCapabilities(
   lesson: LessonContext,
   target: ResourceAdapterAuthenticatedTeacher,
   resolveContext: EligibilityResolver = resolveEligibility,
   access: Pick<TeacherAccessResolver, "resolve"> = teacherAccessResolver,
 ): Promise<ResourceAdapterCapabilitiesResponse> {
-  const context = await resolveContext(lesson);
-  const response = evaluateCapabilities(Object.values(capabilityDefinitions), context);
-  if (
-    response.capabilities.length > 0 &&
-    !(await meetsGeoRestriction(context.rights, target.teacherId, access))
-  ) {
-    return { capabilities: [] };
+  const eligibility = await resolveLessonEligibility(
+    lesson,
+    target.teacherId,
+    resolveContext,
+    access,
+  );
+  if (eligibility.outcome === "needsSetup") {
+    return { account: { state: "needsSetup" }, capabilities: [] };
   }
-  return response;
+  const { teacher, capabilities } = eligibility;
+  return {
+    account: {
+      state: "ready",
+      tier: teacher.tier,
+      inCopyrightRegion: teacher.inCopyrightRegion,
+    },
+    capabilities,
+  };
 }
 
 /** Signed out, so a geo-restricted lesson counts: signing in may unlock it. */

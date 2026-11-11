@@ -1,6 +1,7 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 
+import { isProductionDeployment } from "../environment";
 import { teacherAccessFromClerkUser, type TeacherAccess } from "./access";
 
 export type TeacherAccessResolver = Readonly<{
@@ -58,7 +59,10 @@ export function createCachedTeacherAccessResolver(
     const access = lookUp(teacherId)
       .then((value) => {
         entries.delete(teacherId);
-        entries.set(teacherId, { access: value, expiresAt: now() + ttlMs });
+        // Uncached until onboarded, so the first request after onboarding sees it.
+        if (value.onboarded) {
+          entries.set(teacherId, { access: value, expiresAt: now() + ttlMs });
+        }
         return value;
       })
       .finally(() => inFlight.delete(teacherId));
@@ -88,6 +92,8 @@ export function createCachedTeacherAccessResolver(
   };
 }
 
+// Short outside production, so a test account's changed metadata shows within seconds.
 export const teacherAccessResolver = createCachedTeacherAccessResolver(
   lookUpTeacherAccessInClerk,
+  { ttlMs: isProductionDeployment() ? TTL_MS : 10 * 1000 },
 );
