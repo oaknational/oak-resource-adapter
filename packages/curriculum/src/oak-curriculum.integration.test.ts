@@ -6,7 +6,7 @@ import type { LessonRepository } from "./lesson/lesson.js";
 import { findLessonResource } from "./resource/resource.js";
 import {
   createOakLessonRepository,
-  createOakLessonRightsReader,
+  createOakLessonEligibilityFactsReader,
 } from "./lesson/oak-lesson-repository.js";
 import { createOakResourceStore } from "./resource/oak-resource-store.js";
 import type { ResourceStore } from "./resource/resource.js";
@@ -40,37 +40,32 @@ const RESTRICTED_LESSON = {
   programmeSlug: "music-secondary-ks4-edexcel",
 };
 
-const RIGHTS_FLAGGED_LESSONS = [
-  [
-    "copyrightRestricted",
-    { lessonSlug: "understanding-ground-bass", programmeSlug: "music-secondary-ks3" },
-  ],
-  [
-    "legacyCopyright",
-    {
-      lessonSlug: "d-is-for-danger-6rw64t",
-      programmeSlug:
-        "personal-social-and-emotional-development-foundation-early-years-foundation-stage-l",
-    },
-  ],
-  [
-    "expired",
-    {
-      lessonSlug: "chemical-formulae-and-conservation-of-mass-jeab35",
-      programmeSlug: "chemistry-secondary-ks4-l",
-    },
-  ],
-] as const;
+const COPYRIGHT_CONFLICT_LESSON = {
+  lessonSlug: "recognise-and-understand-the-value-of-different-coins",
+  programmeSlug: "maths-primary-ks1",
+};
+
+const EXPIRED_LEGACY_LESSON = {
+  lessonSlug: "chemical-formulae-and-conservation-of-mass-jeab35",
+  programmeSlug: "chemistry-secondary-ks4-l",
+};
+
+const MULTI_SUBJECT_LESSON = {
+  lessonSlug: "forming-ions-for-ionic-bonding",
+  programmeSlug: "chemistry-secondary-ks4-higher-aqa",
+};
 
 describeIntegration("Oak curriculum endpoint (development)", () => {
   let lessons: LessonRepository;
   let resources: ResourceStore;
-  let readRights: ReturnType<typeof createOakLessonRightsReader>;
+  let readFacts: ReturnType<typeof createOakLessonEligibilityFactsReader>;
 
   beforeAll(() => {
     lessons = createOakLessonRepository(oakCurriculumConfigFromEnv(process.env));
     resources = createOakResourceStore(oakResourceStoreConfigFromEnv(process.env));
-    readRights = createOakLessonRightsReader(oakCurriculumConfigFromEnv(process.env));
+    readFacts = createOakLessonEligibilityFactsReader(
+      oakCurriculumConfigFromEnv(process.env),
+    );
   });
 
   it("fetches a known lesson", async () => {
@@ -157,20 +152,29 @@ describeIntegration("Oak curriculum endpoint (development)", () => {
   });
 
   it("reports the restriction levels of a lesson that carries third-party material", async () => {
-    const rights = await readRights(RESTRICTED_LESSON);
+    const facts = await readFacts(RESTRICTED_LESSON);
 
-    expect(rights?.maxRestrictions).toContainEqual({
-      category: "media",
-      maxLevel: "restricted",
-    });
+    expect(facts?.restrictionLevels?.media).toContain("restricted");
   });
 
-  it.each(RIGHTS_FLAGGED_LESSONS)(
-    "reports a lesson marked %s",
-    async (flag, identity) => {
-      const rights = await readRights(identity);
+  it("reports a lesson's copyright conflict", async () => {
+    const facts = await readFacts(COPYRIGHT_CONFLICT_LESSON);
 
-      expect(rights).toMatchObject({ [flag]: true });
-    },
-  );
+    expect(facts?.restrictionLevels?.featureKeys).toContain("has_copyright_conflict");
+  });
+
+  it("reports an expired legacy lesson", async () => {
+    const facts = await readFacts(EXPIRED_LEGACY_LESSON);
+
+    expect(facts?.legacy).toBe(true);
+    expect(facts?.restrictionLevels?.featureKeys).toContain("expired");
+  });
+
+  it("reports every subject a lesson is taught in", async () => {
+    const facts = await readFacts(MULTI_SUBJECT_LESSON);
+    const lesson = await lessons.fetch(MULTI_SUBJECT_LESSON);
+
+    expect(facts?.subjectSlugs).toEqual(["chemistry", "combined-science"]);
+    expect(lesson.subjectSlugs).toEqual(["chemistry", "combined-science"]);
+  });
 });

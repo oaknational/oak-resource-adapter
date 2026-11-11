@@ -153,7 +153,7 @@ test(
     ).toHaveText(["Exploring linear equations"]);
     await expect(
       fixtures.locator('optgroup[label="Lesson fixtures"] option'),
-    ).toHaveCount(13);
+    ).toHaveCount(8);
     await fixtures.selectOption("forming-ions-for-ionic-bonding");
     await expect(page).not.toHaveURL(/fixture=forming-ions-for-ionic-bonding/);
     await page.getByRole("button", { name: "Show" }).click();

@@ -1,6 +1,8 @@
 import type { Lesson } from "@oaknational/resource-adapter-curriculum";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 
+import { applyLessonMaterialsRule } from "../lesson-rules";
+
 import {
   OAK_MATERIAL,
   oakMaterialIsAvailable,
@@ -72,9 +74,10 @@ export async function readOakMaterial(
   const material: Partial<Record<OakMaterialKey, OakMaterialValue>> = {};
   const omissions: Partial<Record<OakMaterialKey, string>> = {};
 
+  const ruledLesson = applyLessonMaterialsRule(lesson);
   const resolutions = await Promise.all(
     requirements.map(({ key }) =>
-      resolveOakMaterial(key, lesson, derivationDependencies),
+      resolveOakMaterial(key, ruledLesson, derivationDependencies),
     ),
   );
 

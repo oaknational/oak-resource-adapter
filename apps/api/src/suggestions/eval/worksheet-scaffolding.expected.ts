@@ -17,8 +17,8 @@ export type WorksheetExpectation = Readonly<{
 
 /**
  * The human decisions from the suggestion-agent review sheet. Verbal prompts are
- * left out because ORA has no such scaffold. Tasks with no question node in the
- * fixture (air resistance task A, rhythmic variation task C) cannot be targeted.
+ * left out because ORA has no such scaffold. A task with no question node in the
+ * fixture (air resistance task A) cannot be targeted.
  */
 export const worksheetScaffoldingExpectations: readonly WorksheetExpectation[] = [
   {
@@ -56,20 +56,6 @@ export const worksheetScaffoldingExpectations: readonly WorksheetExpectation[] =
     },
   },
   {
-    lessonSlug: "accidents-and-emergencies-er-verbs-in-the-perfect-tense-with-etre",
-    questions: {
-      "question-1": [],
-      "question-2": ["taskGlossary"],
-    },
-  },
-  {
-    lessonSlug: "actions-to-tackle-climate-change",
-    questions: {
-      "question-1": ["taskGlossary", "starters"],
-      "question-2": ["taskGlossary", "frames"],
-    },
-  },
-  {
     lessonSlug: "air-resistance-do-and-review",
     questions: {
       "question-1": ["taskGlossary", "wordBank", "frames"],
@@ -81,19 +67,6 @@ export const worksheetScaffoldingExpectations: readonly WorksheetExpectation[] =
       "question-1": [],
       "question-2": ["starters"],
       "question-3": ["taskGlossary", "frames"],
-    },
-  },
-  {
-    lessonSlug: "adrenaline-thyroxine-and-negative-feedback",
-    questions: {
-      "question-1": ["taskGlossary", "wordBank", "starters"],
-      "question-2": ["taskGlossary", "starters"],
-    },
-  },
-  {
-    lessonSlug: "adding-rhythmic-variation-to-ground-bass",
-    questions: {
-      "question-1": ["taskGlossary"],
     },
   },
 ];

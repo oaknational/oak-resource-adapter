@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
-import type { LessonRights } from "@oaknational/resource-adapter-curriculum";
+import type { LessonEligibilityFacts } from "@oaknational/resource-adapter-curriculum";
 
 import type { EligibilityResolver } from "../capabilities/service";
 import { resolveSourceDocumentLocator } from "./service";
@@ -42,19 +42,17 @@ const located = {
 
 const unavailable = { outcome: "unavailable" };
 
-const unrestricted: LessonRights = {
-  maxRestrictions: [],
-  copyrightRestricted: false,
-  legacyCopyright: false,
-  expired: false,
-  geoRestricted: false,
+const unrestricted: LessonEligibilityFacts = {
+  restrictionLevels: { works: [], media: [], downloadableFiles: [], featureKeys: [] },
+  subjectSlugs: ["english"],
+  legacy: false,
 };
 
 const adaptableWith =
-  (rights: LessonRights): EligibilityResolver =>
+  (facts: LessonEligibilityFacts): EligibilityResolver =>
   async (lesson) => ({
     lesson,
-    rights,
+    facts,
     originalFileResourceTypes: ["worksheet"],
     extractedResourceTypes: ["worksheet"],
   });
@@ -85,7 +83,7 @@ describe("resolveSourceDocumentLocator", () => {
     await expect(
       resolveSourceDocumentLocator(request, teacher, async (lesson) => ({
         lesson,
-        rights: unrestricted,
+        facts: unrestricted,
         originalFileResourceTypes: ["worksheet"],
         extractedResourceTypes: [],
       })),
@@ -118,19 +116,24 @@ it.each(["restricted", "highly-restricted"] as const)(
         teacher,
         adaptableWith({
           ...unrestricted,
-          maxRestrictions: [{ category: "media", maxLevel }],
+          restrictionLevels: {
+            works: [],
+            media: [maxLevel],
+            downloadableFiles: [],
+            featureKeys: [],
+          },
         }),
       ),
     ).resolves.toEqual(unavailable);
   },
 );
 
-it("does not locate copyright-restricted source material", async () => {
+it("does not locate source material in an excluded subject", async () => {
   await expect(
     resolveSourceDocumentLocator(
       request,
       teacher,
-      adaptableWith({ ...unrestricted, copyrightRestricted: true }),
+      adaptableWith({ ...unrestricted, subjectSlugs: ["geography"] }),
     ),
   ).resolves.toEqual(unavailable);
 });
@@ -148,7 +151,15 @@ it.each([
       resolveSourceDocumentLocator(
         request,
         teacher,
-        adaptableWith({ ...unrestricted, geoRestricted: true }),
+        adaptableWith({
+          ...unrestricted,
+          restrictionLevels: {
+            works: [],
+            media: [],
+            downloadableFiles: [],
+            featureKeys: ["agf__geo_restricted"],
+          },
+        }),
         { resolve },
       ),
     ).resolves.toEqual(expected);

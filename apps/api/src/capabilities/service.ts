@@ -1,9 +1,8 @@
 import {
-  createOakLessonRightsReader,
-  hasAdaptableRights,
+  createOakLessonEligibilityFactsReader,
   oakCurriculumConfigFromEnv,
-  type LessonRights,
 } from "@oaknational/resource-adapter-curriculum";
+import { raLogger } from "@oaknational/resource-adapter-logger";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 
 import type {
@@ -15,6 +14,7 @@ import type {
 } from "@oaknational/resource-adapter-contracts";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 
+import { lessonRefusal } from "../lesson-rules";
 import type { TeacherAccess } from "../teacher-access/access";
 import {
   teacherAccessResolver,
@@ -27,32 +27,23 @@ export type EligibilityResolver = (
   lesson: LessonContext,
 ) => Promise<EligibilityContext>;
 
-/** Capability-specific predicates cannot override the lesson's rights gate. */
-function isCapabilityEligible(
-  definition: CapabilityDefinition,
-  context: EligibilityContext,
-): boolean {
-  return (
-    context.rights !== null &&
-    hasAdaptableRights(context.rights) &&
-    definition.isEligible(context)
-  );
-}
+const log = raLogger("capabilities");
 
-function meetsGeoRestriction(
-  rights: Pick<LessonRights, "geoRestricted"> | null,
-  teacher: Pick<TeacherAccess, "inCopyrightRegion">,
-): boolean {
-  return rights?.geoRestricted !== true || teacher.inCopyrightRegion;
-}
-
+/** The lesson rules run before any capability's own predicate, which cannot override them. */
 export function evaluateCapabilities(
   definitions: ReadonlyArray<CapabilityDefinition>,
   context: EligibilityContext,
+  teacher: Pick<TeacherAccess, "inCopyrightRegion"> | undefined,
 ): Pick<ResourceAdapterCapabilitiesResponse, "capabilities"> {
+  const refusal = lessonRefusal(context.facts, teacher);
+  if (refusal !== null) {
+    const { lessonSlug, programmeSlug } = context.lesson;
+    log.info({ lessonSlug, programmeSlug, refusal }, "lesson refused");
+    return { capabilities: [] };
+  }
   return {
     capabilities: definitions
-      .filter((definition) => isCapabilityEligible(definition, context))
+      .filter((definition) => definition.isEligible(context))
       .map(({ id, label, resourceType }) => ({ id, label, resourceType })),
   };
 }
@@ -60,9 +51,9 @@ export function evaluateCapabilities(
 /** `originalFileResourceTypes` is caller-supplied, not resolved from Oak. */
 export const resolveEligibility: EligibilityResolver = async (lesson) => ({
   lesson,
-  rights: await createOakLessonRightsReader(oakCurriculumConfigFromEnv(process.env))(
-    lesson,
-  ),
+  facts: await createOakLessonEligibilityFactsReader(
+    oakCurriculumConfigFromEnv(process.env),
+  )(lesson),
   originalFileResourceTypes: lesson.availableResources,
   extractedResourceTypes: await originalResourceDocuments.listExtractedResourceTypes({
     source: "oak",
@@ -94,9 +85,11 @@ export async function resolveLessonEligibility(
   return {
     outcome: "ready",
     teacher,
-    capabilities: meetsGeoRestriction(context.rights, teacher)
-      ? evaluateCapabilities(Object.values(capabilityDefinitions), context).capabilities
-      : [],
+    capabilities: evaluateCapabilities(
+      Object.values(capabilityDefinitions),
+      context,
+      teacher,
+    ).capabilities,
   };
 }
 
@@ -126,7 +119,6 @@ export async function getCapabilities(
   };
 }
 
-/** Signed out, so a geo-restricted lesson counts: signing in may unlock it. */
 export async function hasCapabilities(
   { supportedCapabilityIds, ...lesson }: ResourceAdapterCapabilityAvailabilityRequest,
   resolveContext: EligibilityResolver = resolveEligibility,
@@ -134,6 +126,7 @@ export async function hasCapabilities(
   const { capabilities } = evaluateCapabilities(
     Object.values(capabilityDefinitions),
     await resolveContext(lesson),
+    undefined,
   );
   const renderable = supportedCapabilityIds
     ? capabilities.filter(({ id }) => supportedCapabilityIds.includes(id))

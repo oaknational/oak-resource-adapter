@@ -15,6 +15,7 @@ import {
   expectRowHeight,
   find,
   imageDocument,
+  inline,
   mediaFiles,
   one,
   paragraph,
@@ -32,11 +33,22 @@ setupDocxTests();
 
 describe("DOCX worksheetFixture() exports", () => {
   it("gives the rhythm grid a wider label column with matching cell widths", async () => {
-    const { expectedDocument } = await loadOriginalResourceDocumentFixture(
-      "adding-rhythmic-variation-to-ground-bass",
-    );
+    const cell = (value: string) => ({
+      kind: "content" as const,
+      content: inline(value),
+    });
+    const rhythmGrid: ResourceNode = {
+      id: "rhythm-grid",
+      type: "table",
+      role: "rhythm",
+      header: ["Variation", "1", "and", "2", "and", "3", "and", "4", "and"].map(cell),
+      rows: ["Tresillo", "Habanera"].map((label) => [
+        cell(label),
+        ...Array.from({ length: 8 }, () => ({ kind: "answer" as const })),
+      ]),
+    };
     const { body } = unpack(
-      await generateDocx(expectedDocument, { embedFigures: false }),
+      await generateDocx(documentWith([rhythmGrid]), { embedFigures: false }),
     );
     const grid = select(body, "w:tbl").find((node) => text(node).includes("Variation"));
     expect(grid).toBeDefined();
@@ -231,31 +243,23 @@ describe("DOCX worksheetFixture() exports", () => {
     expect(groups[1]).toEqual(groups[0]);
   });
 
-  it.each([
-    {
-      fixtureId: "school-life-singular-verbs-like-choisir-questions-with-qui",
-      prefix: "Parle, écoute et répète",
-    },
-    {
-      fixtureId: "what-greek-myths-can-tell-us-about-ancient-greece",
-      prefix: "Add notes to the diagram",
-    },
-  ])(
-    "keeps every stem paragraph with its table in $fixtureId",
-    async ({ fixtureId, prefix }) => {
-      const { expectedDocument } = await loadOriginalResourceDocumentFixture(fixtureId);
-      const { body } = unpack(
-        await generateDocx(expectedDocument, { embedFigures: false }),
-      );
-      const start = body.findIndex((node) => text(node).startsWith(prefix));
-      const table = body.findIndex(
-        (node, index) => index > start && Object.hasOwn(node, "w:tbl"),
-      );
-      const stem = body.slice(start, table);
-      expect(stem.length).toBeGreaterThan(1);
-      for (const node of stem) expect(enabled([node], "w:keepNext")).toHaveLength(1);
-    },
-  );
+  it("keeps every stem paragraph with its table", async () => {
+    const { expectedDocument } = await loadOriginalResourceDocumentFixture(
+      "what-greek-myths-can-tell-us-about-ancient-greece",
+    );
+    const { body } = unpack(
+      await generateDocx(expectedDocument, { embedFigures: false }),
+    );
+    const start = body.findIndex((node) =>
+      text(node).startsWith("Add notes to the diagram"),
+    );
+    const table = body.findIndex(
+      (node, index) => index > start && Object.hasOwn(node, "w:tbl"),
+    );
+    const stem = body.slice(start, table);
+    expect(stem.length).toBeGreaterThan(1);
+    for (const node of stem) expect(enabled([node], "w:keepNext")).toHaveLength(1);
+  });
 
   it.each(["codeBlock", "figure"] as const)(
     "keeps a question prompt with its following %s",
