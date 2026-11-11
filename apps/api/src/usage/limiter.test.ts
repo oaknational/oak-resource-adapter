@@ -34,6 +34,7 @@ describe("the model job limiter", () => {
     const limiter = createModelJobLimiter({
       access: accessResolving({
         onboarded: true,
+        termsAccepted: true,
         tier: "full",
         inCopyrightRegion: true,
       }),
@@ -50,8 +51,8 @@ describe("the model job limiter", () => {
   it("reports when a teacher at the limit can start work again", async () => {
     const limiter = createModelJobLimiter({
       access: accessResolving(
-        { onboarded: true, tier: "full", inCopyrightRegion: true },
-        { onboarded: true, tier: "full", inCopyrightRegion: true },
+        { onboarded: true, termsAccepted: true, tier: "full", inCopyrightRegion: true },
+        { onboarded: true, termsAccepted: true, tier: "full", inCopyrightRegion: true },
       ),
       limit: () => 7,
       retryAt: vi.fn().mockResolvedValue(new Date("2026-02-04T09:00:00.000Z")),
@@ -68,6 +69,7 @@ describe("the model job limiter", () => {
     const limiter = createModelJobLimiter({
       access: accessResolving({
         onboarded: true,
+        termsAccepted: true,
         tier: "limited",
         inCopyrightRegion: true,
         modelJobsPer24h: 250,
@@ -87,9 +89,10 @@ describe("the model job limiter", () => {
       .mockResolvedValueOnce(null);
     const limiter = createModelJobLimiter({
       access: accessResolving(
-        { onboarded: true, tier: "full", inCopyrightRegion: true },
+        { onboarded: true, termsAccepted: true, tier: "full", inCopyrightRegion: true },
         {
           onboarded: true,
+          termsAccepted: true,
           tier: "full",
           inCopyrightRegion: true,
           modelJobsPer24h: 250,

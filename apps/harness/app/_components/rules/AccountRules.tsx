@@ -7,7 +7,7 @@ import styles from "./RulesView.module.css";
 export function GateRows({ gates }: Readonly<{ gates: RuleCatalogue["gates"] }>) {
   return (
     <ul className={styles.rows}>
-      {gates.map(({ description, id, label, status, untilMet }) => (
+      {gates.map(({ config, description, id, label, status, untilMet }) => (
         <li
           className={`${styles.row} ${status === "planned" ? styles.planned : ""}`}
           id={ruleAnchor("gate", id)}
@@ -22,6 +22,9 @@ export function GateRows({ gates }: Readonly<{ gates: RuleCatalogue["gates"] }>)
           <p>Until then: {untilMet}</p>
           <Details>
             <DetailsItem term="Description">{description}</DetailsItem>
+            <DetailsItem term="Config">
+              <ConfigList config={config} />
+            </DetailsItem>
           </Details>
         </li>
       ))}

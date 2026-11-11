@@ -50,10 +50,6 @@ describe("getDevRuleCatalogue", () => {
     expect(transformation("identity")?.capabilityIds).toEqual([]);
   });
 
-  it("marks gates that are planned but not built", () => {
-    expect(catalogue.gates.find(({ id }) => id === "terms")?.status).toBe("planned");
-  });
-
   it("serves the declared choices a narrowing rule removes from", () => {
     expect(transformation("scaffold-add-word-bank")?.inputs).toBe(
       transformationDefinitions["scaffold-add-word-bank"].inputs,

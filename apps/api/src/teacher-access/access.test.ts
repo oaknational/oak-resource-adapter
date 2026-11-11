@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   OAK_MODEL_JOBS_PER_24H,
+  REQUIRED_ORA_TERMS_VERSION,
   RATE_LIMIT_ME_MODEL_JOBS_PER_24H,
   teacherAccessFromClerkUser,
   type ClerkUser,
@@ -141,12 +142,18 @@ describe("a teacher's daily limit override", () => {
   it.each([0, -1, 1.5, "250", null])("is ignored when it is %s", (modelJobsPer24h) => {
     expect(
       accessFor({ ora: { access: "full", usageLimits: { modelJobsPer24h } } }),
-    ).toEqual({ onboarded: false, tier: "full", inCopyrightRegion: false });
+    ).toEqual({
+      onboarded: false,
+      termsAccepted: false,
+      tier: "full",
+      inCopyrightRegion: false,
+    });
   });
 
   it("ignores Aila's custom rate limit", () => {
     expect(accessFor({ customRateLimit: 500 })).toEqual({
       onboarded: false,
+      termsAccepted: false,
       tier: "limited",
       inCopyrightRegion: false,
     });
@@ -177,6 +184,7 @@ describe("a verified Oak address", () => {
   ])("is not %s", (_, emailAddresses) => {
     expect(accessFor({}, ...emailAddresses)).toEqual({
       onboarded: false,
+      termsAccepted: false,
       tier: "limited",
       inCopyrightRegion: false,
     });
@@ -187,6 +195,7 @@ describe("an access-limit-me address", () => {
   it("makes a UK teacher limited, outside the copyright region, on the default daily limit", () => {
     expect(accessFor({ region: "GB" }, verified(accessLimitMe))).toEqual({
       onboarded: false,
+      termsAccepted: false,
       tier: "limited",
       inCopyrightRegion: false,
     });
@@ -222,6 +231,7 @@ describe("a rate-limit-me address", () => {
   it("is ignored when unverified", () => {
     expect(accessFor({ region: "GB" }, unverified(rateLimitMe))).toEqual({
       onboarded: false,
+      termsAccepted: false,
       tier: "full",
       inCopyrightRegion: true,
     });
@@ -244,5 +254,40 @@ describe("a rate-limit-me address", () => {
       inCopyrightRegion: false,
       modelJobsPer24h: RATE_LIMIT_ME_MODEL_JOBS_PER_24H,
     });
+  });
+});
+
+describe("a teacher's terms acceptance", () => {
+  it.each([
+    ["missing", {}],
+    [
+      "an older version",
+      { ora: { acceptedTerms: { version: REQUIRED_ORA_TERMS_VERSION - 1 } } },
+    ],
+    [
+      "malformed",
+      { ora: { acceptedTerms: { version: String(REQUIRED_ORA_TERMS_VERSION) } } },
+    ],
+  ])("is not accepted when %s", (_, privateMetadata) => {
+    expect(accessFor(privateMetadata).termsAccepted).toBe(false);
+  });
+
+  it("is accepted at the current version", () => {
+    expect(
+      accessFor({
+        ora: {
+          acceptedTerms: {
+            version: REQUIRED_ORA_TERMS_VERSION,
+            acceptedAt: "2026-11-11T10:00:00.000Z",
+          },
+        },
+      }).termsAccepted,
+    ).toBe(true);
+  });
+
+  it("keeps a grant when the acceptance is malformed", () => {
+    expect(
+      accessFor({ region: "US", ora: { access: "full", acceptedTerms: "yes" } }).tier,
+    ).toBe("full");
   });
 });

@@ -30,6 +30,9 @@ import {
   type WorksheetScaffoldingDismissRequest,
   type ResourceAdapterFeatureFlagsResponse,
   type TeacherAllowance,
+  type TermsState,
+  type TermsAcceptRequest,
+  termsAcceptRequestSchema,
   type WorksheetScaffoldingRetrySuggestionsRequest,
   worksheetScaffoldingRetrySuggestionsRequestSchema,
 } from "./internal-contract.js";
@@ -44,6 +47,14 @@ export type ResourceAdapterFeatureFlagService = Readonly<{
 
 export type TeacherAllowanceService = Readonly<{
   get: (target: ResourceAdapterAuthenticatedTeacher) => Promise<TeacherAllowance>;
+}>;
+
+export type TermsService = Readonly<{
+  get: (target: ResourceAdapterAuthenticatedTeacher) => Promise<TermsState>;
+  accept: (
+    request: TermsAcceptRequest,
+    target: ResourceAdapterAuthenticatedTeacher,
+  ) => Promise<TermsState>;
 }>;
 
 export type WorksheetScaffoldingService = Readonly<{
@@ -93,6 +104,7 @@ export type ResourceAdapterApiContextInternal = Readonly<{
   allowance: TeacherAllowanceService;
   authenticatedTeacher: ResourceAdapterAuthenticatedTeacher | null;
   featureFlags: ResourceAdapterFeatureFlagService;
+  terms: TermsService;
   worksheetScaffolding: WorksheetScaffoldingService;
 }>;
 
@@ -107,6 +119,10 @@ const teacherAllowanceSchema = z.discriminatedUnion("tier", [
     resetsAt: z.iso.datetime(),
   }),
 ]) satisfies z.ZodType<TeacherAllowance>;
+
+const termsStateSchema = z.object({
+  accepted: z.boolean(),
+}) satisfies z.ZodType<TermsState>;
 
 const worksheetScaffoldingStateSchema = z.object({
   adaptationId: z.string(),
@@ -152,6 +168,7 @@ const worksheetScaffoldingStateSchema = z.object({
 
 const worksheetScaffoldingEntrySchema = z.discriminatedUnion("outcome", [
   z.object({ outcome: z.literal("needsSetup") }),
+  z.object({ outcome: z.literal("needsTerms") }),
   z.object({
     allowance: teacherAllowanceSchema,
     outcome: z.literal("opened"),
@@ -222,6 +239,15 @@ export const internalRouter = t_internal.router({
     get: internalAuthenticatedProcedure
       .output(resourceAdapterFeatureFlagsResponseSchema)
       .query(({ ctx }) => ctx.featureFlags.getEnabledFlags(ctx.authenticatedTeacher)),
+  }),
+  terms: t_internal.router({
+    get: internalAuthenticatedProcedure
+      .output(termsStateSchema)
+      .query(({ ctx }) => ctx.terms.get(ctx.authenticatedTeacher)),
+    accept: internalAuthenticatedProcedure
+      .input(termsAcceptRequestSchema)
+      .output(termsStateSchema)
+      .mutation(({ ctx, input }) => ctx.terms.accept(input, ctx.authenticatedTeacher)),
   }),
   worksheetScaffolding: t_internal.router({
     prepareExport: internalAuthenticatedProcedure

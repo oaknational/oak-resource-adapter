@@ -12,6 +12,11 @@ import { hostRouter } from "./server.js";
 
 const fullAllowance = { get: () => Promise.resolve({ tier: "full" } as const) };
 
+const terms = {
+  get: () => Promise.resolve({ accepted: true }),
+  accept: () => Promise.resolve({ accepted: true }),
+} as const;
+
 const readyAccount = { state: "ready", tier: "full", inCopyrightRegion: true } as const;
 
 const sourceDocument: ResourceDocument = {
@@ -258,6 +263,7 @@ describe("Resource Adapter API contracts", () => {
       return internalRouter.createCaller({
         authenticatedTeacher: internalTeacher,
         allowance: fullAllowance,
+        terms,
         featureFlags: { getEnabledFlags: () => [] },
         worksheetScaffolding: { ...worksheetScaffolding, ...overrides },
       });
@@ -308,6 +314,7 @@ describe("Resource Adapter API contracts", () => {
       const anonymous = internalRouter.createCaller({
         authenticatedTeacher: null,
         allowance: fullAllowance,
+        terms,
         featureFlags: { getEnabledFlags: () => [] },
         worksheetScaffolding: { ...worksheetScaffolding, prepareExport },
       });
@@ -322,6 +329,25 @@ describe("Resource Adapter API contracts", () => {
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
+    it("calls the terms service through the typed router", async () => {
+      const get = vi.fn().mockResolvedValue({ accepted: false });
+      const accept = vi.fn().mockResolvedValue({ accepted: true });
+      const caller = internalRouter.createCaller({
+        authenticatedTeacher: internalTeacher,
+        allowance: fullAllowance,
+        terms: { get, accept },
+        featureFlags: { getEnabledFlags: () => [] },
+        worksheetScaffolding,
+      });
+
+      await expect(caller.terms.get()).resolves.toEqual({ accepted: false });
+      await expect(caller.terms.accept({ version: 1 })).resolves.toEqual({
+        accepted: true,
+      });
+      expect(get).toHaveBeenCalledWith(internalTeacher);
+      expect(accept).toHaveBeenCalledWith({ version: 1 }, internalTeacher);
+    });
+
     it("calls the feature flags service through the typed router", async () => {
       const caller = internalRouter.createCaller({
         authenticatedTeacher: {
@@ -329,6 +355,7 @@ describe("Resource Adapter API contracts", () => {
           teacherId: "teacher-456",
         },
         allowance: fullAllowance,
+        terms,
         featureFlags: {
           getEnabledFlags: () => ["feature-flags-smoke-test-enabled"],
         },
@@ -430,6 +457,7 @@ describe("Resource Adapter API contracts", () => {
       const caller = internalRouter.createCaller({
         authenticatedTeacher: null,
         allowance: fullAllowance,
+        terms,
         featureFlags: {
           getEnabledFlags: () => [],
         },
