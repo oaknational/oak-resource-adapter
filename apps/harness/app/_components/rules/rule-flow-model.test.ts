@@ -129,14 +129,14 @@ describe("buildRuleFlow", () => {
     expect(flow.lesson[0]?.outcome).toBeUndefined();
   });
 
-  it("lists scaffolds no teacher is offered separately, with their own rules", () => {
+  it("lists scaffolds no teacher is offered separately, with every rule", () => {
     expect(
       flow.notOfferedScaffolds.map(({ kind, rules }) => [
         kind,
         rules.map(({ rule: { id } }) => id),
       ]),
     ).toEqual([
-      ["chunking", ["key-stage"]],
+      ["chunking", ["status", "target", "key-stage"]],
       ["identity", []],
     ]);
   });

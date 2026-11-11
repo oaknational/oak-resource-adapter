@@ -122,19 +122,17 @@ function supersededNote(
     : undefined;
 }
 
-function ownRules(
-  { inputs, kind, rules }: CatalogueTransformation,
-  commonIds: ReadonlySet<string>,
+function scaffoldRows(
+  { inputs, kind }: CatalogueTransformation,
+  rules: readonly RuleDescription[],
   lessonSubjects: ReadonlySet<string>,
 ): FlowRow[] {
-  return rules
-    .filter(({ id }) => !commonIds.has(id))
-    .map((rule) => ({
-      anchor: ruleAnchor(transformationScope(kind), rule.id),
-      note: supersededNote(rule, lessonSubjects),
-      outcome: ruleOutcome(rule, inputs),
-      rule,
-    }));
+  return rules.map((rule) => ({
+    anchor: ruleAnchor(transformationScope(kind), rule.id),
+    note: supersededNote(rule, lessonSubjects),
+    outcome: ruleOutcome(rule, inputs),
+    rule,
+  }));
 }
 
 export function buildRuleFlow(catalogue: RuleCatalogue): RuleFlowModel {
@@ -177,7 +175,11 @@ export function buildRuleFlow(catalogue: RuleCatalogue): RuleFlowModel {
             ? []
             : [{ label: displayValuesLabel ?? ruleLabel, values: displayValues }],
         ),
-      rules: ownRules(transformation, commonIds, lessonSubjects),
+      rules: scaffoldRows(
+        transformation,
+        transformation.rules.filter(({ id }) => !commonIds.has(id)),
+        lessonSubjects,
+      ),
     })),
     notOfferedScaffolds: catalogue.transformations
       .filter((transformation) => !offered.includes(transformation))
@@ -185,7 +187,7 @@ export function buildRuleFlow(catalogue: RuleCatalogue): RuleFlowModel {
         kind: transformation.kind,
         label: transformation.label,
         status: transformation.status,
-        rules: ownRules(transformation, commonIds, lessonSubjects),
+        rules: scaffoldRows(transformation, transformation.rules, lessonSubjects),
       })),
   };
 }
