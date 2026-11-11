@@ -168,7 +168,7 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
         })) as typeof enqueueJob,
       getLatestJob: getLatestJobForConcurrencyKey,
       now: () => new Date(),
-      resolveSourceDocumentLocator: () => {
+      admitToCapability: () => {
         throw new Error("These requests do not check lesson eligibility.");
       },
       readSourceDocument: () => {

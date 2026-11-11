@@ -86,17 +86,17 @@ async function enter(
   const { lesson, replacing } = request;
   const { repository } = dependencies;
 
-  const location = await dependencies.resolveSourceDocumentLocator(
+  const admission = await dependencies.admitToCapability(
     { capabilityId: CAPABILITY.id, lesson },
     target,
   );
-  if (location.outcome === "unavailable") {
+  if (admission.outcome === "unavailable") {
     return null;
   }
-  if (location.outcome === "needsSetup") {
+  if (admission.outcome === "needsSetup") {
     return { outcome: "needsSetup" };
   }
-  const { locator } = location;
+  const { locator } = admission;
 
   if (replacing === undefined) {
     const recentAdaptationsOfLesson = {
