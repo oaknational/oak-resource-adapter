@@ -25,12 +25,6 @@ test(
     });
     await expect(signInPrompt).toBeVisible();
     await expect(
-      page.getByRole("heading", {
-        name: "What teachers see in OWA Live",
-        exact: true,
-      }),
-    ).toBeVisible();
-    await expect(
       page.getByRole("button", { name: "Add extra scaffolding" }),
     ).toHaveCount(0);
 
@@ -39,9 +33,6 @@ test(
     expect((await capabilities).status()).toBe(200);
     await expect(
       page.getByRole("button", { name: "Add extra scaffolding" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "What teachers see in OWA Live", exact: true }),
     ).toBeVisible();
   },
 );
@@ -82,7 +73,7 @@ for (const url of [
     async ({ page }) => {
       await signIn(page);
       await page.goto(url);
-      await page.getByRole("link", { name: "Signed-in teacher", exact: true }).click();
+      await page.getByRole("link", { name: "Signed-in view", exact: true }).click();
       await page.route(
         "**/adapter-proxy/trpc/internal/worksheetScaffolding.open*",
         (route) => route.fulfill({ status: 503, json: { error: "Unavailable" } }),
@@ -206,7 +197,7 @@ for (const signedOut of [false, true]) {
         await started.promise;
         await page
           .getByRole("link", {
-            name: signedOut ? "Signed-in teacher" : "Signed-out visitor",
+            name: signedOut ? "Signed-in view" : "Signed-out view",
             exact: true,
           })
           .click();

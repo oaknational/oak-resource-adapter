@@ -36,6 +36,10 @@
   background: #ebfbeb;
 }
 
+.pending {
+  visibility: hidden;
+}
+
 .scenarioSelectControls {
   display: flex;
   flex-wrap: wrap;
@@ -293,6 +297,10 @@
 .lesson a {
   color: #0d24c4;
   font-weight: 600;
+}
+
+.lesson .modeSwitch a:not([aria-current="page"]) {
+  color: #222222;
 }
 
 .eyebrow {

@@ -1,0 +1,29 @@
+.pageHeader .pageTitle {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  margin: 1rem 0 2rem;
+}
+
+.lessonPanel {
+  background: #dff9de;
+  border-radius: 1rem;
+  margin-top: 2rem;
+  padding: 2rem clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.programme {
+  margin: 0;
+}
+
+.loading {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  min-height: 3.25rem;
+}
+
+.lessonPanel .lessonTitle {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  line-height: 1.1;
+  margin: 1.5rem 0 2rem;
+  overflow-wrap: anywhere;
+}

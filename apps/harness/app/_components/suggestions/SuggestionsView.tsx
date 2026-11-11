@@ -5,6 +5,7 @@ import { SuggestionResults } from "./SuggestionResults";
 import { useSuggestionWorkbench } from "./useSuggestionWorkbench";
 import { ResourceDocumentInspector } from "../shared/ResourceDocumentInspector";
 import { ScenarioLayout } from "../shared/ScenarioLayout";
+import { lessonNavigationItems } from "../shared/ScenarioNavigation";
 import shared from "../shared/shared.module.css";
 import styles from "./SuggestionsView.module.css";
 import type {
@@ -26,11 +27,7 @@ export function SuggestionsView({
   return (
     <ScenarioLayout
       hrefFor={(id) => `/?view=suggestions&lesson=${id}`}
-      items={scenarioNavigation.map(({ id, keyStage, subject, title }) => ({
-        detail: `${keyStage} · ${subject}`,
-        id,
-        title,
-      }))}
+      items={lessonNavigationItems(scenarioNavigation)}
       label="Suggestion fixtures"
       selectedId={scenario.id}
     >

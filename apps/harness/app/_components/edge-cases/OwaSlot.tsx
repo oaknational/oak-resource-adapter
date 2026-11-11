@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import type { UseCapabilitiesResult } from "../../_hooks/useCapabilities";
 import styles from "./OwaSlot.module.css";
-import { ViewAsControl } from "./ViewAs";
+import { ViewAsControl } from "../shared/ViewAs";
 
 export type OwaSlotBadge = "Fixture" | "Live" | "Stand-in";
 

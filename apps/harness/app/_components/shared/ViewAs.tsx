@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import shared from "./shared.module.css";
-import styles from "./ViewAs.module.css";
 
 const SIGNED_OUT = "signed-out";
 
@@ -41,30 +40,35 @@ export function useViewAsHref(): (signedOut: boolean) => string {
 }
 
 export function ViewAsControl() {
-  const { isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
   const viewAsSignedOut = useViewAsSignedOut();
   const hrefFor = useViewAsHref();
 
-  if (!isSignedIn) {
+  if (isLoaded && !isSignedIn) {
     return null;
   }
 
+  // Holds its space while Clerk loads, so the page does not shift when it appears.
   return (
-    <nav aria-label="View as" className={shared.modeSwitch}>
-      <span className={styles.modeSwitchLabel}>View as</span>
+    <nav
+      aria-label="View as"
+      className={
+        isLoaded ? shared.modeSwitch : `${shared.modeSwitch} ${shared.pending}`
+      }
+    >
       <Link
         aria-current={viewAsSignedOut ? undefined : "page"}
         href={hrefFor(false)}
         scroll={false}
       >
-        Signed-in teacher
+        Signed-in view
       </Link>
       <Link
         aria-current={viewAsSignedOut ? "page" : undefined}
         href={hrefFor(true)}
         scroll={false}
       >
-        Signed-out visitor
+        Signed-out view
       </Link>
     </nav>
   );

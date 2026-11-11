@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { lessonHeading } from "./helpers.js";
+
 // @deployment-safe criteria: docs/DEVELOPMENT.md, "Testing a deployed candidate".
 
 /**
@@ -21,9 +23,7 @@ test(
     const toggle = navigation.getByRole("button", { name: "Lesson scenarios" });
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
     await expect(navigation.getByRole("list")).toBeHidden();
-    await expect(
-      page.getByRole("heading", { name: "What teachers see in OWA" }),
-    ).toBeInViewport();
+    await expect(lessonHeading(page)).toBeInViewport();
 
     await toggle.focus();
     await page.keyboard.press("Enter");
@@ -31,9 +31,7 @@ test(
     await navigation
       .getByRole("link", { name: /What we know about Ancient Greece/ })
       .click();
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "What we know about Ancient Greece",
-    );
+    await expect(lessonHeading(page)).toHaveText("What we know about Ancient Greece");
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
     await expect(navigation.getByRole("list")).toBeHidden();
 
@@ -51,24 +49,14 @@ test(
   async ({ page }) => {
     await page.goto("/");
 
-    await expect(
-      page.getByRole("heading", {
-        level: 1,
-        name: "The River Nile",
-      }),
-    ).toBeVisible();
+    await expect(lessonHeading(page)).toHaveText("The River Nile");
 
     await page
       .getByRole("navigation", { name: "Lesson scenarios" })
       .getByRole("link", { name: /Forming ions for ionic bonding/ })
       .click();
 
-    await expect(
-      page.getByRole("heading", {
-        level: 1,
-        name: "Forming ions for ionic bonding",
-      }),
-    ).toBeVisible();
+    await expect(lessonHeading(page)).toHaveText("Forming ions for ionic bonding");
     await expect(
       page.getByText("Structure and bonding", { exact: true }),
     ).toBeVisible();
@@ -187,7 +175,7 @@ test(
 
     for (const href of links) {
       await page.goto(href);
-      const title = await page.getByRole("heading", { level: 1 }).innerText();
+      const title = await lessonHeading(page).innerText();
       const worksheet = page.getByRole("article", {
         name: `Original worksheet: ${title}`,
       });

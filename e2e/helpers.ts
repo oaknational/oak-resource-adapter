@@ -150,7 +150,7 @@ export async function openFreshScaffolding(
   await signIn(page);
   await clearLessonAdaptations(lessonId);
   await page.goto(`/?lesson=${lessonId}`);
-  const title = await page.getByRole("heading", { level: 1 }).innerText();
+  const title = await lessonHeading(page).innerText();
   const entry = await openScaffolding(page);
   expect(entry.outcome).toBe("opened");
   const { adaptationId } = entry.state;
@@ -167,6 +167,10 @@ export async function openFreshScaffolding(
     title,
     worksheet: drawer.getByRole("article", { name: title }),
   };
+}
+
+export function lessonHeading(page: Page): Locator {
+  return page.getByRole("heading", { level: 2 }).first();
 }
 
 // Signed out, the sign-in prompt appears only once availability comes back true.

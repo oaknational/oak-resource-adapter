@@ -6,6 +6,7 @@ import { TransformationDocumentComparison } from "./TransformationDocumentCompar
 import { TransformationResults } from "./TransformationResults";
 import { useTransformationWorkbench } from "./useTransformationWorkbench";
 import { ScenarioLayout } from "../shared/ScenarioLayout";
+import { lessonNavigationItems } from "../shared/ScenarioNavigation";
 import shared from "../shared/shared.module.css";
 import type {
   LessonScenario,
@@ -26,11 +27,7 @@ export function TransformationsView({
   return (
     <ScenarioLayout
       hrefFor={(id) => `/?view=transformations&lesson=${id}`}
-      items={scenarioNavigation.map(({ id, keyStage, subject, title }) => ({
-        id,
-        title,
-        detail: `${keyStage} · ${subject}`,
-      }))}
+      items={lessonNavigationItems(scenarioNavigation)}
       label="Transformation fixtures"
       selectedId={scenario.id}
     >
