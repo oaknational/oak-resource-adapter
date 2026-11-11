@@ -4,10 +4,12 @@ import { redirect } from "next/navigation";
 
 import { SiteHeader } from "../_components/shared";
 import shared from "../_components/shared/shared.module.css";
+import { ClearTermsButton } from "./ClearTermsButton";
 import { clearOnboarding, completeOnboarding } from "./actions";
 import {
   NO_REGION,
   STAND_IN_REGIONS,
+  acceptedTermsOf,
   initialRegionChoice,
   isDevelopmentClerkInstance,
   isListedRegion,
@@ -20,6 +22,14 @@ type OnboardingPageProps = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>;
 
+function formatAcceptedAt(acceptedAt: string): string {
+  return new Date(acceptedAt).toLocaleString("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Europe/London",
+  });
+}
+
 /** Stands in for OWA's `/onboarding?returnTo=`, which the harness cannot reach. */
 export default async function OnboardingPage({ searchParams }: OnboardingPageProps) {
   const { returnTo: requested } = await searchParams;
@@ -30,6 +40,7 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
     return redirectToSignIn();
   }
   const { onboarded, region } = onboardingOf(user);
+  const acceptedTerms = acceptedTermsOf(user);
   // As OWA's onboarding layout does for a teacher who is already onboarded.
   if (onboarded && requested !== undefined) {
     redirect(returnTo);
@@ -59,6 +70,12 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
               <dd>{onboarded ? "Yes" : "No"}</dd>
               <dt>Region</dt>
               <dd>{region ?? "None"}</dd>
+              <dt>ORA's terms</dt>
+              <dd>
+                {acceptedTerms === null
+                  ? "Not accepted"
+                  : `Version ${acceptedTerms.version}, accepted ${formatAcceptedAt(acceptedTerms.acceptedAt)}`}
+              </dd>
             </dl>
           </section>
 
@@ -105,6 +122,14 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
                     </p>
                   ) : null}
                 </form>
+              </section>
+
+              <section aria-labelledby="terms-heading" className={styles.panel}>
+                <h2 id="terms-heading">Clear ORA's terms</h2>
+                <p className={styles.hint}>
+                  To see the terms again when you open ORA, clear your acceptance.
+                </p>
+                <ClearTermsButton />
               </section>
 
               {onboarded || region !== null ? (

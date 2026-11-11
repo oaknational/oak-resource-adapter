@@ -70,7 +70,11 @@ export async function openWorksheetScaffolding(
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingEntry | null> {
   const outcome = await enter(request, target, dependencies);
-  if (outcome === null || outcome.outcome === "needsSetup") {
+  if (
+    outcome === null ||
+    outcome.outcome === "needsSetup" ||
+    outcome.outcome === "needsTerms"
+  ) {
     return outcome;
   }
   return { ...outcome, allowance: await getTeacherAllowance(target, dependencies) };
@@ -81,7 +85,10 @@ async function enter(
   target: ResourceAdapterAuthenticatedTeacher,
   dependencies: WorksheetScaffoldingDependencies,
 ): Promise<
-  WorksheetScaffoldingEntryOutcome | Readonly<{ outcome: "needsSetup" }> | null
+  | WorksheetScaffoldingEntryOutcome
+  | Readonly<{ outcome: "needsSetup" }>
+  | Readonly<{ outcome: "needsTerms" }>
+  | null
 > {
   const { lesson, replacing } = request;
   const { repository } = dependencies;
@@ -93,8 +100,8 @@ async function enter(
   if (admission.outcome === "unavailable") {
     return null;
   }
-  if (admission.outcome === "needsSetup") {
-    return { outcome: "needsSetup" };
+  if (admission.outcome === "needsSetup" || admission.outcome === "needsTerms") {
+    return admission;
   }
   const { locator } = admission;
 

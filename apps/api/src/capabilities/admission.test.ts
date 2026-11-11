@@ -9,7 +9,12 @@ import { admitToCapability } from "./admission";
 vi.mock("../teacher-access/resolver", () => ({
   teacherAccessResolver: {
     resolve: () =>
-      Promise.resolve({ onboarded: true, tier: "full", inCopyrightRegion: true }),
+      Promise.resolve({
+        onboarded: true,
+        termsAccepted: true,
+        tier: "full",
+        inCopyrightRegion: true,
+      }),
   },
 }));
 
@@ -73,12 +78,26 @@ describe("admitToCapability", () => {
       admitToCapability(request, teacher, readContext, {
         resolve: vi.fn().mockResolvedValue({
           onboarded: false,
+          termsAccepted: true,
           tier: "full",
           inCopyrightRegion: true,
         }),
       }),
     ).resolves.toEqual({ outcome: "needsSetup" });
     expect(readContext).not.toHaveBeenCalled();
+  });
+
+  it("asks a teacher who has not accepted ORA's terms to accept them", async () => {
+    await expect(
+      admitToCapability(request, teacher, adaptableWith(unrestricted), {
+        resolve: vi.fn().mockResolvedValue({
+          onboarded: true,
+          termsAccepted: false,
+          tier: "full",
+          inCopyrightRegion: true,
+        }),
+      }),
+    ).resolves.toEqual({ outcome: "needsTerms" });
   });
 
   it("does not admit a teacher to an ineligible lesson", async () => {
@@ -142,9 +161,12 @@ it.each([
 ])(
   "%s a teacher to geo-restricted source material when inCopyrightRegion is %s",
   async (_, inCopyrightRegion, expected) => {
-    const resolve = vi
-      .fn()
-      .mockResolvedValue({ onboarded: true, tier: "full", inCopyrightRegion });
+    const resolve = vi.fn().mockResolvedValue({
+      onboarded: true,
+      termsAccepted: true,
+      tier: "full",
+      inCopyrightRegion,
+    });
     await expect(
       admitToCapability(
         request,

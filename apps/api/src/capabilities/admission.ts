@@ -15,6 +15,7 @@ import {
 
 export type CapabilityAdmission =
   | Readonly<{ outcome: "needsSetup" }>
+  | Readonly<{ outcome: "needsTerms" }>
   | Readonly<{ outcome: "unavailable" }>
   | Readonly<{ outcome: "admitted"; locator: OriginalResourceDocumentLocator }>;
 
@@ -31,6 +32,9 @@ export async function admitToCapability(
   const offer = await resolveLessonOffer(lesson, target.teacherId, readContext, access);
   if (offer.outcome === "needsSetup") {
     return offer;
+  }
+  if (!offer.teacher.termsAccepted) {
+    return { outcome: "needsTerms" };
   }
   const capability = offer.capabilities.find(({ id }) => id === capabilityId);
   if (capability === undefined) {

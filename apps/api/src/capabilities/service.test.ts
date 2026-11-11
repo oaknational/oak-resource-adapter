@@ -22,7 +22,12 @@ vi.mock("@oaknational/resource-adapter-curriculum", async (importOriginal) => ({
 vi.mock("../teacher-access/resolver", () => ({
   teacherAccessResolver: {
     resolve: () =>
-      Promise.resolve({ onboarded: true, tier: "full", inCopyrightRegion: true }),
+      Promise.resolve({
+        onboarded: true,
+        termsAccepted: true,
+        tier: "full",
+        inCopyrightRegion: true,
+      }),
   },
 }));
 
@@ -199,7 +204,12 @@ describe("getCapabilities", () => {
         worksheetLesson,
         teacher,
         readContext,
-        accessResolving({ onboarded: false, tier: "full", inCopyrightRegion: true }),
+        accessResolving({
+          onboarded: false,
+          termsAccepted: true,
+          tier: "full",
+          inCopyrightRegion: true,
+        }),
       ),
     ).resolves.toEqual({ account: { state: "needsSetup" }, capabilities: [] });
     expect(readContext).not.toHaveBeenCalled();
@@ -210,7 +220,12 @@ describe("getCapabilities", () => {
       worksheetLesson,
       teacher,
       resolverFor(["worksheet"], ["worksheet"]),
-      accessResolving({ onboarded: true, tier: "limited", inCopyrightRegion: false }),
+      accessResolving({
+        onboarded: true,
+        termsAccepted: true,
+        tier: "limited",
+        inCopyrightRegion: false,
+      }),
     );
 
     expect(account).toEqual({
@@ -457,6 +472,7 @@ describe("capability lesson rules", () => {
     it("offers the capability to a teacher in a copyright region", async () => {
       const access = accessResolving({
         onboarded: true,
+        termsAccepted: true,
         tier: "full",
         inCopyrightRegion: true,
       });
@@ -475,11 +491,21 @@ describe("capability lesson rules", () => {
     it.each<[string, TeacherAccess]>([
       [
         "a teacher outside the copyright regions",
-        { onboarded: true, tier: "limited", inCopyrightRegion: false },
+        {
+          onboarded: true,
+          termsAccepted: true,
+          tier: "limited",
+          inCopyrightRegion: false,
+        },
       ],
       [
         "a granted teacher outside the copyright regions",
-        { onboarded: true, tier: "full", inCopyrightRegion: false },
+        {
+          onboarded: true,
+          termsAccepted: true,
+          tier: "full",
+          inCopyrightRegion: false,
+        },
       ],
     ])("offers nothing to %s", async (_, access) => {
       await expect(

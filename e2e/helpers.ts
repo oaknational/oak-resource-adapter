@@ -116,7 +116,18 @@ export function suggestionIds(state: ScaffoldingState): string[] {
   return state.suggestions.map(({ id }) => id).toSorted((a, b) => a.localeCompare(b));
 }
 
-/** Opens the drawer and returns what `worksheetScaffolding.open` answered. */
+export async function scaffoldingEntryIn(
+  response: Response,
+): Promise<ScaffoldingEntry> {
+  expect(response.ok()).toBe(true);
+  const entry = await procedureData<ScaffoldingEntry>(
+    response,
+    "worksheetScaffolding.open",
+  );
+  if (entry === undefined) throw new Error("The open response had no entry.");
+  return entry;
+}
+
 export async function openScaffolding(page: Page): Promise<ScaffoldingEntry> {
   const opening = page.waitForResponse(
     (response) =>
@@ -126,14 +137,7 @@ export async function openScaffolding(page: Page): Promise<ScaffoldingEntry> {
   await page
     .getByRole("button", { name: "Add extra scaffolding", exact: true })
     .click();
-  const response = await opening;
-  expect(response.ok()).toBe(true);
-  const entry = await procedureData<ScaffoldingEntry>(
-    response,
-    "worksheetScaffolding.open",
-  );
-  if (entry === undefined) throw new Error("The open response had no entry.");
-  return entry;
+  return scaffoldingEntryIn(await opening);
 }
 
 export async function openFreshScaffolding(

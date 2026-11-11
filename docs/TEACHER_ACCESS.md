@@ -18,6 +18,29 @@ missing, has no region. They are ready, outside the copyright regions, and
 limited unless one of the other tier rules gives them full access. Onboarding
 again does not add a region, because OWA sends onboarded teachers straight back.
 
+## ORA's terms
+
+A teacher accepts ORA's terms before opening a capability from a lesson. The
+dialog asks `terms.get` the first time it opens and shows the terms before any
+capability, and opening worksheet scaffolding returns `needsTerms` until the
+teacher accepts. Work already open in the dialog carries on. Access is not cached
+before acceptance, so acceptance applies on the next request.
+
+The copy in `packages/ui/src/termsCopy.ts` carries the version it shows, and
+accepting records that version and the time in
+`privateMetadata.ora.acceptedTerms`. ORA records only versions from
+`REQUIRED_ORA_TERMS_VERSION` to `LATEST_ORA_TERMS_VERSION`. For an older version
+the dialog asks the teacher to reload.
+
+To ask every teacher again, raise `LATEST_ORA_TERMS_VERSION` and the copy's
+version with its wording, then raise `REQUIRED_ORA_TERMS_VERSION` once that UI is
+live. Raised first, it refuses every acceptance from the UI still showing the old
+copy.
+
+The harness's Account setup page clears acceptance through `DELETE /dev/terms`,
+which also drops the cached access on the server instance that answers. Other
+instances catch up within 10 seconds outside production.
+
 ## Tiers
 
 A teacher has `full` access when their Clerk user's `privateMetadata.region` is

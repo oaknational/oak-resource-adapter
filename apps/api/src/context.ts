@@ -6,6 +6,7 @@ import {
 import { requestAuthenticator, type RequestAuthenticator } from "./authentication";
 import { getCapabilities, hasCapabilities } from "./capabilities/service";
 import { getFeatureFlagService } from "./feature-flags/service";
+import { acceptTerms, getTermsState } from "./teacher-access/terms";
 import { getTeacherAllowance } from "./usage/allowance-service";
 import { openWorksheetScaffolding } from "./worksheet-scaffolding/entry-service";
 import { prepareWorksheetExport } from "./worksheet-scaffolding/export-service";
@@ -48,6 +49,10 @@ export async function createContextInternal(
     allowance: { get: (target) => getTeacherAllowance(target) },
     authenticatedTeacher: await authenticateRequest(request),
     featureFlags: getFeatureFlagService(),
+    terms: {
+      get: (target) => getTermsState(target),
+      accept: (request, target) => acceptTerms(request, target),
+    },
     worksheetScaffolding: {
       prepareExport: prepareWorksheetExport,
       accept: (input, target) => acceptWorksheetScaffoldingReview(input, target),

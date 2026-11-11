@@ -166,6 +166,7 @@ const responses: ReadonlyArray<readonly [string, z.ZodType, unknown]> = [
       ],
       gates: [
         {
+          config: {},
           description: "A signed-out teacher signs in to use ORA.",
           id: "signed-in",
           label: "Signed in",

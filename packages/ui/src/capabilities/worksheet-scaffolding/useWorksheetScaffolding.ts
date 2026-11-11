@@ -124,6 +124,7 @@ export function useWorksheetScaffolding({
   isOpen,
   lesson,
   onError,
+  onTermsRequired,
   track,
 }: Readonly<{
   apiBaseUrl: string;
@@ -131,6 +132,7 @@ export function useWorksheetScaffolding({
   isOpen: boolean;
   lesson: LessonContext;
   onError?: ResourceAdapterErrorHandler;
+  onTermsRequired: () => void;
   track: TrackAnalyticsEvent;
 }>) {
   const [state, dispatchEvent] = useReducer(workflowReducer, { status: "idle" });
@@ -146,6 +148,7 @@ export function useWorksheetScaffolding({
   const getTokenRef = useLatestRef(getToken);
   const lessonRef = useLatestRef(lesson);
   const onErrorRef = useLatestRef(onError);
+  const onTermsRequiredRef = useLatestRef(onTermsRequired);
   const trackRef = useLatestRef(track);
   const [analytics] = useState(() =>
     createWorksheetAnalyticsTracker((event) => trackRef.current(event)),
@@ -261,6 +264,10 @@ export function useWorksheetScaffolding({
       (entry) => {
         if (replacingRef.current === replacing) replacingRef.current = null;
         if (cancelled) return;
+        if (entry.outcome === "needsTerms") {
+          onTermsRequiredRef.current();
+          return;
+        }
         if (entry.outcome === "needsSetup") {
           offeredRef.current = null;
           dispatch({ type: "opened", entry });

@@ -3,12 +3,16 @@ import type {
   AccountGate,
 } from "@oaknational/resource-adapter-dev-api-contracts";
 
-import { FULL_ACCESS_REGIONS } from "../teacher-access/access";
+import {
+  FULL_ACCESS_REGIONS,
+  REQUIRED_ORA_TERMS_VERSION,
+} from "../teacher-access/access";
 import { adaptedResourcesPerMonthLimit } from "../usage/monthly-allowance";
 
 /** Built as descriptions rather than rules: each leads to its own outcome, not a refusal. */
 export const ACCOUNT_GATES: readonly AccountGate[] = [
   {
+    config: {},
     id: "signed-in",
     label: "Sign in",
     description:
@@ -17,6 +21,7 @@ export const ACCOUNT_GATES: readonly AccountGate[] = [
     status: "in-place",
   },
   {
+    config: {},
     id: "onboarded",
     label: "Finish Oak onboarding",
     description:
@@ -25,12 +30,13 @@ export const ACCOUNT_GATES: readonly AccountGate[] = [
     status: "in-place",
   },
   {
+    config: { termsVersion: REQUIRED_ORA_TERMS_VERSION },
     id: "terms",
     label: "Accept ORA's terms",
     description:
-      "A teacher accepts ORA's terms the first time they open ORA (ADAPT-150).",
+      "A teacher accepts ORA's terms before opening a capability from a lesson. Raising the version asks every teacher again when they next open one.",
     untilMet: "shown the terms",
-    status: "planned",
+    status: "in-place",
   },
 ];
 
