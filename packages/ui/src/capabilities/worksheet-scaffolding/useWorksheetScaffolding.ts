@@ -192,7 +192,6 @@ export function useWorksheetScaffolding({
   const settle = useCallback(
     (
       response: Promise<WorksheetScaffoldingState>,
-      type: "received" | "resumed",
       request: TrackedRequest,
       onSucceeded?: (value: WorksheetScaffoldingState) => void,
     ) => {
@@ -200,7 +199,7 @@ export function useWorksheetScaffolding({
       void response.then(
         (value) => {
           if (sessionRef.current !== session) return;
-          dispatch({ type, value });
+          dispatch({ type: "received", value });
           onSucceeded?.(value);
           analytics.observeUsageLimit(value.modelWorkBlocked, request);
         },
@@ -370,7 +369,7 @@ export function useWorksheetScaffolding({
   useEffect(() => {
     if (!isOpen || ready === null) return;
     analytics.observeJob(ready.value);
-    if (ready.documentIsVisible) analytics.observeDisplay(ready.value);
+    analytics.observeDisplay(ready.value);
   }, [analytics, isOpen, ready]);
 
   const pollFailed = useCallback(
@@ -434,7 +433,6 @@ export function useWorksheetScaffolding({
           ...(params === undefined ? {} : { params }),
           suggestionId,
         }),
-        "received",
         { requestAction: "apply", adaptationId: appliedAdaptationId },
       );
     },
@@ -448,7 +446,6 @@ export function useWorksheetScaffolding({
     dispatch({ type: "loading" });
     settle(
       fetchState(resumable.adaptationId),
-      "resumed",
       { requestAction: "resume", adaptationId: resumable.adaptationId },
       (value) => {
         analytics.ignoreHistoricalJob(value);
@@ -494,7 +491,6 @@ export function useWorksheetScaffolding({
       dispatch({ type: "actionStarted" });
       settle(
         request({ ...selected, ...connection }),
-        "received",
         { ...requestFor(action), adaptationId: actionAdaptationId },
         () => {
           if (succeeded !== null) trackRef.current(succeeded);

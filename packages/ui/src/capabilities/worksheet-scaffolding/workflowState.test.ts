@@ -90,31 +90,6 @@ describe("workflowReducer", () => {
     ).toMatchObject({ actionIsPending: false });
   });
 
-  it("hides the worksheet only while its first suggestions are generated", () => {
-    const generating = value({ job: job("suggestions.generate", "running") });
-
-    expect(run(opened(generating)).documentIsVisible).toBe(false);
-    expect(
-      run(
-        opened(generating),
-        received(value({ job: job("suggestions.generate", "succeeded") })),
-      ).documentIsVisible,
-    ).toBe(true);
-    expect(run(opened(value()), received(generating)).documentIsVisible).toBe(true);
-  });
-
-  it("shows resumed work while its suggestions are still generated", () => {
-    expect(
-      run(
-        { type: "loading" },
-        {
-          type: "resumed",
-          value: value({ job: job("suggestions.generate", "running") }),
-        },
-      ).documentIsVisible,
-    ).toBe(true);
-  });
-
   it("forgets local progress when the workflow leaves the ready state", () => {
     expect(
       run(

@@ -14,8 +14,7 @@ export type WorkflowStatus = Readonly<{
 }>;
 
 export const LOADING_STATUS = {
-  message: "Getting your worksheet ready.",
-  title: "Loading worksheet",
+  message: "Loading your worksheet…",
   tone: "working",
 } as const satisfies WorkflowStatus;
 
@@ -23,6 +22,11 @@ export const NEEDS_SETUP_STATUS = {
   message: "Finish setting up your account to adapt this lesson.",
   title: "Your account isn't set up yet",
   tone: "neutral",
+} as const satisfies WorkflowStatus;
+
+export const PREPARING_SCAFFOLDS_STATUS = {
+  message: "Preparing your scaffolds…",
+  tone: "working",
 } as const satisfies WorkflowStatus;
 
 export const MONTHLY_RESET_STATUS = {
@@ -63,11 +67,7 @@ const BUSY_STATUSES = {
     title: "Applying scaffold",
     tone: "working",
   },
-  "suggestions.generate": {
-    message: "Reviewing the worksheet for useful scaffolds.",
-    title: "Considering scaffold selections for practice tasks",
-    tone: "working",
-  },
+  "suggestions.generate": PREPARING_SCAFFOLDS_STATUS,
   "transformations.dismiss": {
     message: "Updating the worksheet's scaffold choices.",
     title: "Updating scaffold choices",

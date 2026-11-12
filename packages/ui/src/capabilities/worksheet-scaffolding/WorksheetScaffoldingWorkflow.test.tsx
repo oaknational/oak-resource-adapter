@@ -28,6 +28,7 @@ import type {
   WorksheetScaffoldingEntry,
 } from "@oaknational/resource-adapter-contracts/internal";
 import type { LessonContext, ResourceAdapterCapability } from "../../publicTypes.js";
+import { SCAFFOLD_TIPS } from "./scaffoldTips.js";
 
 // Full-dialog renders share CPU with the package's other jsdom workers.
 vi.setConfig({ testTimeout: 10_000 });
@@ -387,18 +388,23 @@ describe("WorksheetScaffoldingWorkflow", () => {
     const announcement = await screen.findByRole("status", {
       name: "Worksheet status",
     });
-    expect(announcement).toHaveTextContent(
-      "Loading worksheet. Getting your worksheet ready.",
+    expect(announcement).toHaveTextContent(/^Loading your worksheet…$/);
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Loading your worksheet…" }),
+      ).toHaveFocus(),
     );
-    const spinner = screen.getByTestId("worksheet-scaffolding-loading-spinner");
-    expect(spinner).toBeVisible();
     await act(async () => {
       open.resolve(opened(readyState()));
     });
-    expect(
-      await screen.findByRole("article", { name: "Adding fractions worksheet" }),
-    ).toBeVisible();
+    const worksheet = await screen.findByRole("article", {
+      name: "Adding fractions worksheet",
+    });
+    expect(worksheet).toBeVisible();
     expect(screen.getByRole("status", { name: "Worksheet status" })).toBe(announcement);
+    await waitFor(() =>
+      expect(screen.getByTestId("worksheet-scaffolding-workflow")).toHaveFocus(),
+    );
     expect(screen.getByText("What is one half plus one quarter?")).toBeVisible();
     expect(openWorksheetScaffoldingMock).toHaveBeenCalledWith({
       apiBaseUrl: props.apiBaseUrl,
@@ -707,7 +713,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
       getWorksheetScaffoldingMock.mockReturnValueOnce(pending.promise);
       renderDialog();
 
-      await screen.findByText("Considering scaffold selections for practice tasks");
+      await screen.findByRole("heading", { name: "Preparing your scaffolds…" });
       expect(
         screen.queryByRole("button", { name: "Generate new suggestions" }),
       ).not.toBeInTheDocument();
@@ -864,7 +870,54 @@ describe("WorksheetScaffoldingWorkflow", () => {
     ).toBeVisible();
   });
 
-  it("shows resumed work while its suggestions are still being generated", async () => {
+  it("keeps one loading screen from loading into preparing suggestions", async () => {
+    vi.spyOn(Math, "random").mockReturnValueOnce(0.99).mockReturnValue(0);
+    const open = deferred<WorksheetScaffoldingEntry>();
+    openWorksheetScaffoldingMock.mockReturnValueOnce(open.promise);
+    getWorksheetScaffoldingMock.mockReturnValue(
+      deferred<WorksheetScaffoldingState>().promise,
+    );
+    renderDialog();
+
+    const heading = await screen.findByRole("heading", {
+      name: "Loading your worksheet…",
+    });
+    await waitFor(() => expect(heading).toHaveFocus());
+    await act(async () => {
+      open.resolve(opened(readyState({ job: { ...generatedJob, status: "running" } })));
+    });
+
+    expect(heading).toHaveTextContent("Preparing your scaffolds…");
+    expect(heading).toHaveFocus();
+    expect(screen.getByText(SCAFFOLD_TIPS[4])).toBeVisible();
+  });
+
+  it("moves focus to the resume choice once it has loaded", async () => {
+    const open = deferred<WorksheetScaffoldingEntry>();
+    openWorksheetScaffoldingMock.mockReturnValueOnce(open.promise);
+    renderDialog();
+
+    await screen.findByRole("heading", { name: "Loading your worksheet…" });
+    await act(async () => {
+      open.resolve({
+        allowance: fullAccess,
+        outcome: "resumable",
+        resumable: {
+          adaptationId: "adaptation-9",
+          pendingScaffoldCount: 0,
+          scaffoldCount: 1,
+          updatedAt: "2026-02-03T09:00:00.000Z",
+        },
+      });
+    });
+
+    await screen.findByRole("button", { name: "Carry on" });
+    await waitFor(() =>
+      expect(screen.getByTestId("worksheet-scaffolding-workflow")).toHaveFocus(),
+    );
+  });
+
+  it("shows the loading screen when resumed work is still generating suggestions", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce({
       allowance: fullAccess,
       outcome: "resumable",
@@ -891,11 +944,9 @@ describe("WorksheetScaffoldingWorkflow", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Carry on" }));
 
     expect(
-      await screen.findByRole("article", { name: "Adding fractions worksheet" }),
+      await screen.findByRole("heading", { name: "Preparing your scaffolds…" }),
     ).toBeVisible();
-    expect(
-      screen.getByText("Considering scaffold selections for practice tasks"),
-    ).toBeVisible();
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
   });
 
   it("replaces the declined adaptation when the teacher starts from the original", async () => {
@@ -1533,68 +1584,91 @@ describe("WorksheetScaffoldingWorkflow", () => {
     );
   });
 
-  it("shows suggestion generation as a distinct live loading status", async () => {
+  it("replaces the worksheet with a loading screen while suggestions are generated", async () => {
+    vi.spyOn(Math, "random").mockReturnValueOnce(0.99).mockReturnValue(0);
+    const generating = readyState({ job: { ...generatedJob, status: "queued" } });
     const pending = deferred<WorksheetScaffoldingState>();
-    openWorksheetScaffoldingMock.mockResolvedValueOnce(
-      opened(
-        readyState({
-          job: {
-            failureMessage: null,
-            id: "job-1",
-            kind: "suggestions.generate",
-            status: "running",
-          },
-        }),
-      ),
-    );
-    getWorksheetScaffoldingMock.mockReturnValue(pending.promise);
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(generating));
+    getWorksheetScaffoldingMock
+      .mockResolvedValueOnce({
+        ...generating,
+        job: { ...generatedJob, status: "running" },
+      })
+      .mockReturnValueOnce(pending.promise);
     renderDialog();
 
-    expect(
-      await screen.findByText("Considering scaffold selections for practice tasks"),
-    ).toBeVisible();
-    expect(
-      screen.getByText("Reviewing the worksheet for useful scaffolds."),
-    ).toBeVisible();
-    const spinner = screen.getByTestId("worksheet-scaffolding-loading-spinner");
-    expect(spinner).toBeVisible();
-    expect(spinner).toHaveStyle({ borderTopStyle: "solid" });
+    const heading = await screen.findByRole("heading", {
+      name: "Preparing your scaffolds…",
+    });
+    await waitFor(() => expect(heading).toHaveFocus());
     expect(screen.getByRole("status", { name: "Worksheet status" })).toHaveTextContent(
-      "Considering scaffold selections for practice tasks. Reviewing the worksheet for useful scaffolds.",
+      /^Preparing your scaffolds…$/,
+    );
+    expect(screen.getByTestId("placeholder-scaffold-illustration")).toHaveAttribute(
+      "aria-hidden",
+      "true",
     );
     expect(screen.queryByRole("article")).not.toBeInTheDocument();
     expect(
-      screen.queryByText("Review the worksheet and choose any scaffolds"),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Start again" }),
+      screen.queryByRole("button", { name: "Download worksheet" }),
     ).not.toBeInTheDocument();
 
-    pending.resolve(readyState());
+    await waitFor(() => expect(getWorksheetScaffoldingMock).toHaveBeenCalledTimes(2));
+    expect(screen.getByText(SCAFFOLD_TIPS[4])).toBeVisible();
+    expect(heading).toHaveFocus();
+
+    pending.resolve(readyWithSuggestion);
     expect(
       await screen.findByRole("article", { name: "Adding fractions worksheet" }),
     ).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByTestId("worksheet-scaffolding-status")).toHaveFocus(),
+    );
   });
 
-  it("keeps the worksheet visible while finding subsequent suggestions", async () => {
+  it("moves focus to the failure when suggestions cannot be generated", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(readyState({ job: { ...generatedJob, status: "running" } })),
+    );
+    getWorksheetScaffoldingMock.mockResolvedValueOnce(
+      readyState({
+        job: { ...generatedJob, failureMessage: "failed", status: "failed" },
+      }),
+    );
+    renderDialog();
+
+    await screen.findByRole("heading", { name: "Preparing your scaffolds…" });
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveFocus());
+    expect(screen.getByRole("alert")).toHaveTextContent("We couldn't find scaffolds");
+  });
+
+  it("moves focus to the error when checking on suggestions fails", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(readyState({ job: { ...generatedJob, status: "running" } })),
+    );
+    getWorksheetScaffoldingMock.mockRejectedValueOnce(new Error("poll failed"));
+    renderDialog();
+
+    await screen.findByRole("heading", { name: "Preparing your scaffolds…" });
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("resource-adapter-worksheet-scaffolding-error"),
+      ).toHaveFocus(),
+    );
+  });
+
+  it("shows the loading screen while finding subsequent suggestions", async () => {
     const polledDocument = {
       ...sourceDocument,
       metadata: { title: "Polled adding fractions worksheet" },
     };
-    const generating = readyState({
-      job: {
-        failureMessage: null,
-        id: "job-2",
-        kind: "suggestions.generate",
-        status: "running",
-      },
-    });
     openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
-    applySuggestionMock.mockResolvedValueOnce(generating);
-    getWorksheetScaffoldingMock.mockResolvedValueOnce({
-      ...generating,
-      document: polledDocument,
-    });
+    applySuggestionMock.mockResolvedValueOnce(
+      readyState({ job: { ...generatedJob, id: "job-2", status: "running" } }),
+    );
+    getWorksheetScaffoldingMock.mockResolvedValueOnce(
+      readyState({ document: polledDocument }),
+    );
     renderDialog();
 
     await userEvent.click(
@@ -1602,9 +1676,9 @@ describe("WorksheetScaffoldingWorkflow", () => {
     );
 
     expect(
-      await screen.findByText("Considering scaffold selections for practice tasks"),
+      await screen.findByRole("heading", { name: "Preparing your scaffolds…" }),
     ).toBeVisible();
-    await waitFor(() => expect(getWorksheetScaffoldingMock).toHaveBeenCalledOnce());
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
     expect(
       await screen.findByRole("article", {
         name: "Polled adding fractions worksheet",
@@ -1828,7 +1902,7 @@ it.each(["available", "review", "busy"] as const)(
   },
 );
 
-it("downloads the accepted worksheet while new suggestions are still running", async () => {
+it("downloads the accepted worksheet once its new suggestions are ready", async () => {
   openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithPendingReview));
   const accepted = {
     ...readyWithAcceptedScaffold,
@@ -1836,22 +1910,23 @@ it("downloads the accepted worksheet while new suggestions are still running", a
     job: { ...generatedJob, status: "running" as const },
   };
   acceptReviewMock.mockResolvedValueOnce(accepted);
-  getWorksheetScaffoldingMock.mockResolvedValue(accepted);
+  getWorksheetScaffoldingMock.mockResolvedValue({ ...accepted, job: generatedJob });
   vi.mocked(prepareWorksheetExport).mockRejectedValueOnce(
     new Error("preparation test stop"),
   );
   renderDialog();
   await userEvent.click(await screen.findByRole("button", { name: "Accept" }));
+  await screen.findByRole("heading", { name: "Preparing your scaffolds…" });
+  expect(
+    screen.queryByRole("button", { name: "Download worksheet" }),
+  ).not.toBeInTheDocument();
+
   const download = await screen.findByRole("button", { name: "Download worksheet" });
   await waitFor(() => expect(download).toBeEnabled());
-  expect(screen.getByRole("status", { name: "Worksheet status" })).toHaveTextContent(
-    "Considering scaffold selections",
-  );
   await userEvent.click(download);
   expect(prepareWorksheetExport).toHaveBeenCalledWith(
     expect.objectContaining({ resourceDocumentId: accepted.resourceDocumentId }),
   );
-  await waitFor(() => expect(getWorksheetScaffoldingMock).toHaveBeenCalled());
 });
 
 it.each(["resolve", "reject"] as const)(

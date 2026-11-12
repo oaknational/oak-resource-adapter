@@ -482,7 +482,9 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "capabilities/worksheet-scaffolding/useWorksheetScaffolding.js",
     "capabilities/worksheet-scaffolding/useWorksheetScaffoldingPolling.js",
     "capabilities/worksheet-scaffolding/AllowanceSummary.js",
+    "capabilities/worksheet-scaffolding/LoadingScreen.js",
     "capabilities/worksheet-scaffolding/PendingReviewControls.js",
+    "capabilities/worksheet-scaffolding/PlaceholderScaffoldIllustration.js",
     "capabilities/worksheet-scaffolding/ResumeChoice.js",
     "capabilities/worksheet-scaffolding/SuggestionGroup.js",
     "capabilities/worksheet-scaffolding/WorkflowStatusBanner.js",
@@ -511,6 +513,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "resource-document/ResourceNodeRenderer.js",
     "capabilities/worksheet-scaffolding/workflowState.js",
     "capabilities/worksheet-scaffolding/workflowStatus.js",
+    "capabilities/worksheet-scaffolding/scaffoldTips.js",
   ];
 
   for (const file of clientModules) {
