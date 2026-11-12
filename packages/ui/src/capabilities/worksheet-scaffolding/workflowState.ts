@@ -85,6 +85,18 @@ function suggestionApplicationIsBusy(state: WorksheetScaffoldingState): boolean 
   return state.job?.kind === "suggestions.apply" && jobIsBusy(state);
 }
 
+export function downloadAvailability(
+  state: ReadyWorkflow,
+): WorksheetScaffoldingState["downloadAvailability"] {
+  const documentIsChanging =
+    state.applyingSuggestion !== null ||
+    state.actionIsPending ||
+    documentUpdateIsBusy(state.value);
+  return state.value.downloadAvailability === "available" && documentIsChanging
+    ? "busy"
+    : state.value.downloadAvailability;
+}
+
 export function worksheetWasRefreshed(state: ReadyWorkflow): boolean {
   return state.refreshedResourceDocumentId === state.value.resourceDocumentId;
 }

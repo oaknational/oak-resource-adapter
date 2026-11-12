@@ -37,7 +37,7 @@ import {
   WorkflowStatusBanner,
 } from "./WorkflowStatusBanner.js";
 import {
-  documentUpdateIsBusy,
+  downloadAvailability,
   jobIsBusy,
   suggestionGenerationIsBusy,
   type WorkflowState,
@@ -243,13 +243,6 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   const { applyingSuggestion } = state;
   const isWorking =
     applyingSuggestion !== null || state.actionIsPending || jobIsBusy(state.value);
-  const downloadAvailability =
-    state.value.downloadAvailability === "available" &&
-    (applyingSuggestion !== null ||
-      state.actionIsPending ||
-      documentUpdateIsBusy(state.value))
-      ? "busy"
-      : state.value.downloadAvailability;
   const failedJob = state.value.job?.status === "failed" ? state.value.job : undefined;
   const listedSuggestions =
     applyingSuggestion?.listedSuggestions ?? state.value.suggestions;
@@ -398,7 +391,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
         getToken={props.getToken}
         adaptationId={state.value.adaptationId}
         resourceDocumentId={state.value.resourceDocumentId}
-        availability={downloadAvailability}
+        availability={downloadAvailability(state)}
         onRefresh={refresh}
         worksheetWasRefreshed={worksheetWasRefreshed(state)}
         onError={props.onError}
