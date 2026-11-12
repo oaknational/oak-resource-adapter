@@ -1,6 +1,5 @@
 type Link = Readonly<{ label: string; href: string }>;
 
-/** Placeholder until product agrees the wording. */
 export const termsCopy = {
   /**
    * Raise it with the wording. ORA records it when the teacher accepts, only up
@@ -10,7 +9,7 @@ export const termsCopy = {
   heading: "Before you adapt with AI",
   paragraphs: [
     [
-      "By using your Oak account, you've agreed to our ",
+      "The ",
       {
         label: "terms and conditions",
         href: "https://www.thenational.academy/legal/terms-and-conditions",
@@ -20,11 +19,9 @@ export const termsCopy = {
         label: "privacy policy",
         href: "https://www.thenational.academy/legal/privacy-policy",
       },
-      ". They apply when you adapt resources with AI too.",
+      " for your Oak account also apply when you adapt resources with AI.",
     ],
-    [
-      "AI can get things wrong. Check each adapted resource before you use it with your pupils.",
-    ],
+    ["AI can make mistakes. Review content before use."],
   ] satisfies ReadonlyArray<ReadonlyArray<string | Link>>,
   accept: "Accept and continue",
   back: "Back to lesson",
