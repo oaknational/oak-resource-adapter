@@ -35,10 +35,12 @@ function StatusLine({ status }: Readonly<{ status: WorkflowStatus }>) {
 
 export function SummaryAction({
   children,
+  disabled,
   iconName,
   onClick,
 }: Readonly<{
   children: string;
+  disabled: boolean;
   iconName: OakIconName;
   onClick: () => void;
 }>) {
@@ -46,6 +48,7 @@ export function SummaryAction({
     <OakLink
       $font="body-3"
       color="text-subdued"
+      disabled={disabled}
       element="button"
       iconName={iconName}
       onClick={onClick}

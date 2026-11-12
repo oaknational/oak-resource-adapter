@@ -294,9 +294,7 @@ function WorkflowContent({
     !modelWorkRefused &&
     (hasScaffoldsInDocument || hasSuggestedScaffolds || noScaffoldsFound);
   const showActions =
-    (canAskForNewSuggestions || hasScaffoldsInDocument) &&
-    !isWorking &&
-    failedJob === undefined;
+    (canAskForNewSuggestions || hasScaffoldsInDocument) && failedJob === undefined;
 
   const canRetryFailedSuggestions =
     failedJob?.kind === "suggestions.generate" &&
@@ -312,6 +310,7 @@ function WorkflowContent({
               <>
                 {hasScaffoldsInDocument && (
                   <SummaryAction
+                    disabled={isWorking}
                     iconName="retake"
                     onClick={() =>
                       startFresh(
@@ -325,6 +324,7 @@ function WorkflowContent({
                 )}
                 {canAskForNewSuggestions && (
                   <SummaryAction
+                    disabled={isWorking}
                     iconName="ai"
                     onClick={() => retrySuggestions("generate_new_suggestions_button")}
                   >

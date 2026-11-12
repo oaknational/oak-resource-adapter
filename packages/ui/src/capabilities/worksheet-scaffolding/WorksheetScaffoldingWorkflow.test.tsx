@@ -480,9 +480,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(
       screen.queryByRole("button", { name: "Start again" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "New suggestions" }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New suggestions" })).toBeDisabled();
     expect(screen.queryByText("Applying scaffold")).not.toBeInTheDocument();
     expect(screen.getByRole("status", { name: "Worksheet status" })).toHaveTextContent(
       "There is one suggested scaffold. Review and accept to add it to a practice task.",
@@ -744,9 +742,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
       renderDialog();
 
       await screen.findByText("Considering scaffold selections for practice tasks");
-      expect(
-        screen.queryByRole("button", { name: "New suggestions" }),
-      ).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "New suggestions" })).toBeDisabled();
       expect(retrySuggestionsMock).not.toHaveBeenCalled();
     },
   );
