@@ -482,6 +482,8 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "capabilities/worksheet-scaffolding/PendingReviewControls.js",
     "capabilities/worksheet-scaffolding/ResumeChoice.js",
     "capabilities/worksheet-scaffolding/SuggestionGroup.js",
+    "capabilities/worksheet-scaffolding/SummaryPanel.js",
+    "capabilities/worksheet-scaffolding/ViewHeader.js",
     "capabilities/worksheet-scaffolding/WorkflowStatusBanner.js",
     "capabilities/worksheet-scaffolding/styles.js",
   ];

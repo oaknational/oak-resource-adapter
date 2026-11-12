@@ -34,7 +34,7 @@ export async function expectRenderedWorksheet(drawer: Locator, title: string) {
 export async function expectSuggestionsReady(drawer: Locator) {
   const failure = drawer.getByRole("heading", { name: "We couldn't find scaffolds" });
   const ready = drawer.getByRole("status").filter({
-    hasText: /There (are|is) .+ suggested scaffolds? for this worksheet\./,
+    hasText: /There (are|is) .+ suggested scaffolds?\. Review and accept/,
   });
   await expect(ready.or(failure).first()).toBeVisible({ timeout: 30_000 });
   await expect(failure).toHaveCount(0);
