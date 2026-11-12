@@ -173,6 +173,7 @@ function ResourceAdapterDialogInner({
           {terms.status === "accepted" && (
             <Workflow
               apiBaseUrl={apiBaseUrl}
+              capabilityLabel={capability.label}
               getToken={getToken}
               isOpen={isOpen}
               lesson={lesson}

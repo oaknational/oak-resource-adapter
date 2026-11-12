@@ -1,3 +1,6 @@
+/* Not next/font: it registers a hashed family name, and oak-components looks up "Lexend". */
+@import url("https://fonts.googleapis.com/css2?family=Lexend:wght@300..700&display=swap");
+
 * {
   box-sizing: border-box;
 }
