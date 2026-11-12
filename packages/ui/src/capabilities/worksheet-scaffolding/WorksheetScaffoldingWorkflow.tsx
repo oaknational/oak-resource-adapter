@@ -198,8 +198,8 @@ function WorkflowContent({
           cta={
             <OakPrimaryButton
               onClick={() => {
-                rememberOnboardingTrip(props.lesson);
-                props.onFinishSetup();
+                rememberOnboardingTrip(workflowProps.lesson);
+                workflowProps.onFinishSetup();
               }}
             >
               Finish setup
