@@ -141,9 +141,11 @@ function ResourceAdapterDialogInner({
           >
             <Workflow
               apiBaseUrl={apiBaseUrl}
+              capabilityLabel={capability.label}
               getToken={getToken}
               isOpen={isOpen}
               lesson={lesson}
+              onClose={onClose}
               {...(onError ? { onError } : {})}
               track={track}
             />

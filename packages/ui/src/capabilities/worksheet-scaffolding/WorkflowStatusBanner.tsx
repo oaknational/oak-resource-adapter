@@ -65,7 +65,7 @@ export function WorkflowFrame({
   );
 }
 
-export function LoadingStatusBanner({
+function LoadingStatusBanner({
   message,
   title,
 }: Readonly<{ message: string; title: string }>) {

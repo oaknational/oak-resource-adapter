@@ -28,6 +28,7 @@ import type {
   WorksheetScaffoldingEntry,
 } from "@oaknational/resource-adapter-contracts/internal";
 import type { LessonContext, ResourceAdapterCapability } from "../../publicTypes.js";
+import { FEEDBACK_FORM_URL } from "./ViewHeader.js";
 
 // Full-dialog renders share CPU with the package's other jsdom workers.
 vi.setConfig({ testTimeout: 10_000 });
@@ -404,26 +405,70 @@ describe("WorksheetScaffoldingWorkflow", () => {
     const worksheet = await screen.findByRole("article", {
       name: "Adding fractions worksheet",
     });
-    const workflowContainer = worksheet.parentElement?.parentElement;
+    const workflowContainer = worksheet.parentElement?.parentElement?.parentElement;
 
     expect(workflowContainer).toHaveStyle({ minWidth: "0", width: "100%" });
+    expect(screen.getByRole("dialog").getAttribute("style")).toContain(
+      "height: calc(100vh - 1.5rem)",
+    );
     expect(screen.getByTestId("modal-main-content")).toHaveStyle({
       scrollbarGutter: "stable",
     });
+  });
+
+  it("heads the summary panel with the capability and holds the download in it", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    renderDialog();
+
+    await screen.findByRole("article", { name: "Adding fractions worksheet" });
+    const panel = screen.getByTestId("worksheet-scaffolding-summary");
+
+    expect(
+      within(panel).getByRole("heading", { level: 3, name: "Add extra scaffolding" }),
+    ).toBeVisible();
+    expect(
+      await within(panel).findByRole("button", { name: "Download worksheet" }),
+    ).toBeVisible();
+  });
+
+  it("goes back to the lesson through the dialog's close path", async () => {
+    const onAnalyticsEvent = vi.fn();
+    const { props } = renderDialog({ onAnalyticsEvent });
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Back to lesson" }),
+    );
+
+    expect(props.onClose).toHaveBeenCalledOnce();
+    expect(onAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "Resource Adapter Closed",
+        componentType: "resource_adapter_dialog",
+      }),
+    );
+  });
+
+  it("opens the feedback form in a new tab and says so", async () => {
+    renderDialog();
+
+    const link = await screen.findByRole("link", {
+      name: "your feedback (opens in a new tab)",
+    });
+
+    expect(link).toHaveAttribute("href", FEEDBACK_FORM_URL);
+    expect(link).toHaveAttribute("target", "_blank");
   });
 
   it("shows a suggestion beside its question and applies the chosen level", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
     renderDialog();
 
-    const readyBanner = await screen.findByTestId("worksheet-scaffolding-status");
+    await screen.findByRole("article", { name: "Adding fractions worksheet" });
+    const readyBanner = screen.getByTestId("worksheet-scaffolding-summary");
     expect(readyBanner).toBeVisible();
-    expect(readyBanner).toHaveStyle({
-      position: "sticky",
-      top: "0px",
-    });
+    expect(readyBanner).not.toHaveStyle({ position: "sticky" });
     expect(screen.getByRole("status", { name: "Worksheet status" })).toHaveTextContent(
-      "There is one suggested scaffold for this worksheet.",
+      "There is one suggested scaffold. Review and accept to add it to a practice task.",
     );
     await userEvent.click(
       await screen.findByRole("button", { name: "Add a word bank" }),
@@ -431,9 +476,15 @@ describe("WorksheetScaffoldingWorkflow", () => {
 
     expect(screen.getByTestId("worksheet-scaffolding-local-spinner")).toBeVisible();
     expect(screen.getByText("Working on it…")).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Start again" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "New suggestions" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Applying scaffold")).not.toBeInTheDocument();
     expect(screen.getByRole("status", { name: "Worksheet status" })).toHaveTextContent(
-      "There is one suggested scaffold for this worksheet.",
+      "There is one suggested scaffold. Review and accept to add it to a practice task.",
     );
     expect(applySuggestionMock).toHaveBeenCalledWith({
       adaptationId: "adaptation-1",
@@ -510,14 +561,14 @@ describe("WorksheetScaffoldingWorkflow", () => {
     renderDialog();
 
     await screen.findByText("Added support");
-    const statusBanner = screen.getByTestId("worksheet-scaffolding-status");
+    const statusBanner = screen.getByTestId("worksheet-scaffolding-summary");
     expect(
       within(statusBanner).getByText(
-        "There is one suggested scaffold for this worksheet. One scaffold has been added.",
+        "There is one suggested scaffold. Review and accept to add it to a practice task. One scaffold has been added.",
       ),
     ).toBeVisible();
     expect(screen.getByRole("status", { name: "Worksheet status" })).toHaveTextContent(
-      "There is one suggested scaffold for this worksheet. One scaffold has been added.",
+      "There is one suggested scaffold. Review and accept to add it to a practice task. One scaffold has been added.",
     );
     expect(
       screen.queryByText(
@@ -563,7 +614,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
     renderDialog();
 
     await userEvent.click(
-      await screen.findByRole("button", { name: "Generate new suggestions" }),
+      await screen.findByRole("button", { name: "New suggestions" }),
     );
 
     expect(retrySuggestionsMock).toHaveBeenCalledWith({
@@ -581,7 +632,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
     await screen.findByRole("button", { name: "Accept" });
 
     expect(
-      screen.queryByRole("button", { name: "Generate new suggestions" }),
+      screen.queryByRole("button", { name: "New suggestions" }),
     ).not.toBeInTheDocument();
   });
 
@@ -610,7 +661,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
       screen.getByRole("article", { name: "Adding fractions worksheet" }),
     ).toBeVisible();
     expect(
-      screen.queryByRole("button", { name: "Generate new suggestions" }),
+      screen.queryByRole("button", { name: "New suggestions" }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add a word bank" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "No scaffold required" })).toBeEnabled();
@@ -633,11 +684,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
       await screen.findByRole("button", { name: "Add a word bank" }),
     ).toBeDisabled();
     expect(
-      await screen.findByRole(
-        "button",
-        { name: "Generate new suggestions" },
-        { timeout: 5000 },
-      ),
+      await screen.findByRole("button", { name: "New suggestions" }, { timeout: 5000 }),
     ).toBeEnabled();
     expect(screen.getByRole("button", { name: "Add a word bank" })).toBeEnabled();
     expect(
@@ -697,7 +744,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
 
       await screen.findByText("Considering scaffold selections for practice tasks");
       expect(
-        screen.queryByRole("button", { name: "Generate new suggestions" }),
+        screen.queryByRole("button", { name: "New suggestions" }),
       ).not.toBeInTheDocument();
       expect(retrySuggestionsMock).not.toHaveBeenCalled();
     },
@@ -752,7 +799,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
     const worksheet = await screen.findByRole("article", {
       name: "Adding fractions worksheet",
     });
-    const removeAll = screen.getByRole("button", { name: "Remove all scaffolds" });
+    const removeAll = screen.getByRole("button", { name: "Start again" });
     expect(removeAll.compareDocumentPosition(worksheet)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
@@ -792,7 +839,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Accept" }));
     await userEvent.click(
-      await screen.findByRole("button", { name: "Generate new suggestions" }),
+      await screen.findByRole("button", { name: "New suggestions" }),
     );
 
     expect(retrySuggestionsMock).toHaveBeenCalledWith(
@@ -1625,7 +1672,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
     renderDialog();
 
     await userEvent.click(
-      await screen.findByRole("button", { name: "Generate new suggestions" }),
+      await screen.findByRole("button", { name: "New suggestions" }),
     );
 
     expect(retrySuggestionsMock).toHaveBeenCalledWith(
@@ -1711,7 +1758,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
       "Try again to keep the scaffolds you have added, or start again to reopen the original worksheet.",
     );
     expect(
-      screen.queryByRole("button", { name: "Generate new suggestions" }),
+      screen.queryByRole("button", { name: "New suggestions" }),
     ).not.toBeInTheDocument();
 
     await userEvent.click(within(alert).getByRole("button", { name: "Try again" }));
@@ -2056,7 +2103,7 @@ describe("analytics", () => {
     const onAnalyticsEvent = renderTracked();
 
     await userEvent.click(
-      await screen.findByRole("button", { name: "Generate new suggestions" }),
+      await screen.findByRole("button", { name: "New suggestions" }),
     );
 
     await waitFor(() =>
@@ -2091,7 +2138,7 @@ describe("analytics", () => {
     const onAnalyticsEvent = renderTracked();
 
     await userEvent.click(
-      await screen.findByRole("button", { name: "Generate new suggestions" }),
+      await screen.findByRole("button", { name: "New suggestions" }),
     );
 
     await waitFor(() =>
@@ -2279,9 +2326,7 @@ describe("analytics", () => {
     );
     const onAnalyticsEvent = renderTracked();
 
-    await userEvent.click(
-      await screen.findByRole("button", { name: "Remove all scaffolds" }),
-    );
+    await userEvent.click(await screen.findByRole("button", { name: "Start again" }));
 
     expect(onAnalyticsEvent).toHaveBeenCalledWith({
       adaptationId: "adaptation-1",
@@ -2322,7 +2367,7 @@ describe("analytics", () => {
     const onAnalyticsEvent = renderTracked();
 
     await userEvent.click(
-      await screen.findByRole("button", { name: "Generate new suggestions" }),
+      await screen.findByRole("button", { name: "New suggestions" }),
     );
     await waitFor(() =>
       expect(onAnalyticsEvent).toHaveBeenCalledWith(
@@ -2393,7 +2438,7 @@ describe("analytics", () => {
     });
     const onAnalyticsEvent = renderTracked();
     await userEvent.click(
-      await screen.findByRole("button", { name: "Generate new suggestions" }),
+      await screen.findByRole("button", { name: "New suggestions" }),
     );
     await waitFor(() =>
       expect(onAnalyticsEvent).toHaveBeenCalledWith(
