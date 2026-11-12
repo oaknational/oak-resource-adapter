@@ -117,6 +117,9 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   if (workflow.state.status === "idle") {
     return null;
   }
+  if (workflow.state.status === "allowanceNotice") {
+    return <WorkflowContent workflowProps={props} workflow={workflow} />;
+  }
 
   return (
     <OakFlex $flexDirection="column" $gap="spacing-32">
@@ -286,9 +289,7 @@ function WorkflowContent({
     !modelWorkRefused &&
     (hasScaffoldsInDocument || hasSuggestedScaffolds || noScaffoldsFound);
   const showActions =
-    (canAskForNewSuggestions || hasScaffoldsInDocument) &&
-    !isWorking &&
-    failedJob === undefined;
+    (canAskForNewSuggestions || hasScaffoldsInDocument) && failedJob === undefined;
 
   const canRetryFailedSuggestions =
     failedJob?.kind === "suggestions.generate" &&
@@ -303,6 +304,7 @@ function WorkflowContent({
             <>
               {hasScaffoldsInDocument && (
                 <SummaryAction
+                  disabled={isWorking}
                   iconName="retake"
                   onClick={() =>
                     startFresh(state.value.adaptationId, "remove_all_scaffolds_button")
@@ -313,6 +315,7 @@ function WorkflowContent({
               )}
               {canAskForNewSuggestions && (
                 <SummaryAction
+                  disabled={isWorking}
                   iconName="ai"
                   onClick={() => retrySuggestions("generate_new_suggestions_button")}
                 >
@@ -335,7 +338,9 @@ function WorkflowContent({
             track={workflowProps.track}
           />
         }
-        focusRef={failedJob === undefined ? focusAfter.target : undefined}
+        focusRef={
+          status !== null && failedJob === undefined ? focusAfter.target : undefined
+        }
         heading={workflowProps.capabilityLabel}
         status={status}
       />

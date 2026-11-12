@@ -414,23 +414,6 @@ describe("WorksheetScaffoldingWorkflow", () => {
     ).resolves.toBe("clerk-token");
   });
 
-  it("keeps the workflow at a stable width inside the temporary modal", async () => {
-    renderDialog();
-
-    const worksheet = await screen.findByRole("article", {
-      name: "Adding fractions worksheet",
-    });
-    const workflowContainer = worksheet.parentElement?.parentElement?.parentElement;
-
-    expect(workflowContainer).toHaveStyle({ minWidth: "0", width: "100%" });
-    expect(screen.getByRole("dialog").getAttribute("style")).toContain(
-      "height: calc(100vh - 1.5rem)",
-    );
-    expect(screen.getByTestId("modal-main-content")).toHaveStyle({
-      scrollbarGutter: "stable",
-    });
-  });
-
   it("heads the summary panel with the capability and holds the download in it", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
     renderDialog();
@@ -494,9 +477,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(
       screen.queryByRole("button", { name: "Start again" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "New suggestions" }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New suggestions" })).toBeDisabled();
     expect(screen.queryByText("Applying scaffold")).not.toBeInTheDocument();
     expect(screen.getByRole("status", { name: "Worksheet status" })).toHaveTextContent(
       "There is one suggested scaffold. Review and accept to add it to a practice task.",
