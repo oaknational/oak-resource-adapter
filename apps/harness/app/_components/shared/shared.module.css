@@ -295,6 +295,10 @@
   font-weight: 600;
 }
 
+.lesson .modeSwitch a:not([aria-current="page"]) {
+  color: #222222;
+}
+
 .eyebrow {
   font-weight: 600;
   margin: 0;

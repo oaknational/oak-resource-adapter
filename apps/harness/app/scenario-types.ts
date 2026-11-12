@@ -30,7 +30,6 @@ export type LessonScenarioNavigationItem = Readonly<{
 
 export type LessonScenario = Readonly<{
   id: string;
-  description: string;
   lesson: LessonContext;
   programme: {
     examBoard: string | null;

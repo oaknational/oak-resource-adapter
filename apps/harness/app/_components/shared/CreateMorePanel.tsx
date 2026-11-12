@@ -40,7 +40,7 @@ export function CreateMorePanel<TCapability extends ResourceAdapterCapabilityOpt
     return null;
   }
 
-  // Bare on purpose. The OWA slot renders this panel to show only what OWA itself
-  // renders, so any harness framing belongs to the page that wants it.
+  // Bare on purpose: this panel shows only what OWA itself renders, so any harness
+  // framing belongs to the page that wants it.
   return <ResourceAdapterLauncher account={account} {...launcher} />;
 }

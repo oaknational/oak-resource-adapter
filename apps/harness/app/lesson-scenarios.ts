@@ -49,7 +49,6 @@ export async function loadLessonScenario(id: string): Promise<LessonScenario> {
 
   return {
     id: entry.id,
-    description: entry.description,
     lesson: {
       lessonSlug: oakLesson.lessonSlug,
       programmeSlug: oakLesson.programmeSlug,

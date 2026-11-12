@@ -9,7 +9,7 @@ import { EligibilityPanel } from "./EligibilityPanel";
 import { CreateMorePanel } from "../shared/CreateMorePanel";
 import { ExtractionNotes } from "../shared/ExtractionNotes";
 import { ScenarioLayout } from "../shared/ScenarioLayout";
-import { OwaSlot, owaSlotBadge } from "../shared/OwaSlot";
+import { OwaSlot, owaSlotBadge } from "./OwaSlot";
 import shared from "../shared/shared.module.css";
 import { useAdapterLauncher } from "../../_hooks/useAdapterLauncher";
 import type { EdgeCase, EdgeCaseNavigationItem } from "../../scenario-types";

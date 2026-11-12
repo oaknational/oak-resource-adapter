@@ -8,6 +8,7 @@ import { test } from "./fixtures.js";
 import {
   expectRenderedWorksheet,
   expectSuggestionsReady,
+  lessonHeading,
   openFreshScaffolding,
   openScaffolding,
   suggestionIds,
@@ -46,7 +47,7 @@ test("shows the API state, a capability-based trigger, and the adapter sidebar",
   const capabilitiesResponse = waitForCapabilities(page);
   await page.goto(`/?lesson=${scaffoldingLessons.openingTheDrawer}`);
   expect((await capabilitiesResponse).status()).toBe(200);
-  const title = await page.getByRole("heading", { level: 1 }).innerText();
+  const title = await lessonHeading(page).innerText();
 
   await expect(page.getByRole("banner").getByRole("status")).toHaveText("API: Ready");
   const createMoreButton = page.getByRole("button", {

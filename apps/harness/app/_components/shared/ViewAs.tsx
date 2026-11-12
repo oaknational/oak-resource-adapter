@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import shared from "./shared.module.css";
-import styles from "./ViewAs.module.css";
 
 const SIGNED_OUT = "signed-out";
 
@@ -51,20 +50,19 @@ export function ViewAsControl() {
 
   return (
     <nav aria-label="View as" className={shared.modeSwitch}>
-      <span className={styles.modeSwitchLabel}>View as</span>
       <Link
         aria-current={viewAsSignedOut ? undefined : "page"}
         href={hrefFor(false)}
         scroll={false}
       >
-        Signed-in teacher
+        Signed-in view
       </Link>
       <Link
         aria-current={viewAsSignedOut ? "page" : undefined}
         href={hrefFor(true)}
         scroll={false}
       >
-        Signed-out visitor
+        Signed-out view
       </Link>
     </nav>
   );

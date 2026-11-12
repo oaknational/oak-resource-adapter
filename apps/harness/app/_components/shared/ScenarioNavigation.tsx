@@ -5,12 +5,23 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { useKeepViewAs } from "./ViewAs";
 import styles from "./ScenarioNavigation.module.css";
+import type { LessonScenarioNavigationItem } from "../../scenario-types";
 
 export type ScenarioNavigationItem = Readonly<{
   id: string;
   title: string;
   detail: string;
 }>;
+
+export function lessonNavigationItems(
+  lessons: readonly LessonScenarioNavigationItem[],
+): ScenarioNavigationItem[] {
+  return lessons.map(({ id, keyStage, subject, title }) => ({
+    id,
+    title,
+    detail: `${subject} · ${keyStage}`,
+  }));
+}
 
 export function ScenarioNavigation({
   hrefFor,
