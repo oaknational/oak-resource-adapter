@@ -15,8 +15,8 @@ export function ViewHeader({
   onBackToLesson,
 }: Readonly<{ onBackToLesson: () => void }>) {
   return (
-    <OakFlex $flexDirection="column"  $gap="spacing-24">
-      <OakFlex $alignItems="flex-start"  $gap="spacing-12">
+    <OakFlex $flexDirection="column" $gap="spacing-24">
+      <OakFlex $alignItems="flex-start" $gap="spacing-12">
         <OakTagFunctional
           $background="bg-decorative3-main"
           $borderRadius="border-radius-s"
@@ -38,7 +38,6 @@ export function ViewHeader({
           element="button"
           iconName="chevron-left"
           onClick={onBackToLesson}
-    
         >
           Back to lesson
         </OakSmallTertiaryInvertedButton>
