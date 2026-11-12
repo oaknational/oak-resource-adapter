@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import {
   OakFlex,
   OakHeading,
@@ -55,17 +55,32 @@ function WorkflowAnnouncement({ status }: Readonly<{ status: WorkflowStatus | nu
  */
 export function WorkflowFrame({
   children,
+  frameRef,
   status,
-}: Readonly<{ children: ReactNode; status: WorkflowStatus | null }>) {
+}: Readonly<{
+  children: ReactNode;
+  /** Takes focus when the view that held it goes and the next one names no target. */
+  frameRef?: RefObject<HTMLDivElement | null>;
+  status: WorkflowStatus | null;
+}>) {
   return (
-    <OakFlex $flexDirection="column" $gap="spacing-16">
+    <OakFlex
+      $flexDirection="column"
+      $gap="spacing-16"
+      data-testid="worksheet-scaffolding-workflow"
+      // oak-components types its ref against React 18, which rejects a React 19 ref object.
+      ref={(node: HTMLDivElement | null) => {
+        if (frameRef) frameRef.current = node;
+      }}
+      tabIndex={-1}
+    >
       <WorkflowAnnouncement status={status} />
       {children}
     </OakFlex>
   );
 }
 
-export function LoadingStatusBanner({
+function LoadingStatusBanner({
   message,
   title,
 }: Readonly<{ message: string; title: string }>) {
