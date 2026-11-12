@@ -1,8 +1,6 @@
 import {
   contentGuidanceSchema,
-  featuresSchema,
   lessonAssetsSchema,
-  lessonDataSchema,
   lessonContentSchema,
   mvLessonRestrictionLevelsSchema,
   programmeFieldsSchema,
@@ -12,14 +10,14 @@ import {
 } from "@oaknational/oak-curriculum-schema";
 import { z } from "zod";
 
+import { distinctSorted } from "../distinct-sorted.js";
 import type { LessonResource, LessonResourceType } from "../resource/resource.js";
 import type {
-  CategoryMaxRestriction,
   LessonKeyword,
   LessonMisconception,
+  LessonRestrictionLevels,
   Programme,
   RestrictionLevel,
-  ThirdPartyMaterialCategory,
   Unit,
 } from "./lesson.js";
 
@@ -51,6 +49,19 @@ export const browseRowSchema = syntheticUnitvariantLessonsByKsSchema
     },
   }));
 
+const contentGuidanceColumnSchema = z
+  .array(contentGuidanceSchema.pick({ contentguidance_label: true }))
+  .nullable()
+  .transform((rows): readonly string[] =>
+    (rows ?? []).flatMap(({ contentguidance_label }) =>
+      contentguidance_label === null ? [] : [contentguidance_label],
+    ),
+  );
+
+export const eligibilityContentRowSchema = z
+  .object({ content_guidance: contentGuidanceColumnSchema })
+  .transform(({ content_guidance }) => content_guidance);
+
 export const contentRowSchema = lessonContentSchema
   .pick({
     key_learning_points: true,
@@ -60,9 +71,7 @@ export const contentRowSchema = lessonContentSchema
     transcript_sentences: true,
   })
   .extend({
-    content_guidance: z
-      .array(contentGuidanceSchema.pick({ contentguidance_label: true }))
-      .nullable(),
+    content_guidance: contentGuidanceColumnSchema,
     lesson_title: z.string().min(1),
   })
   .transform(
@@ -77,9 +86,7 @@ export const contentRowSchema = lessonContentSchema
       title: string;
       transcript: string | null;
     } => ({
-      contentGuidance: (row.content_guidance ?? []).flatMap((guidance) =>
-        guidance.contentguidance_label === null ? [] : [guidance.contentguidance_label],
-      ),
+      contentGuidance: row.content_guidance,
       keyLearningPoints: (row.key_learning_points ?? []).map(
         ({ key_learning_point }) => key_learning_point,
       ),
@@ -212,54 +219,75 @@ const RESTRICTION_LEVELS = {
   Restricted: "restricted",
 } as const satisfies Record<PublishedRestrictionLevel, RestrictionLevel>;
 
-const CATEGORY_BY_MAX_RESTRICTION_COLUMN = {
-  tpc_downloadablefiles_max_restriction: "downloadable-files",
-  tpc_media_max_restriction: "media",
-  tpc_quizimages_max_restriction: "quiz-images",
-  tpc_works_max_restriction: "works",
-} as const satisfies Record<string, ThirdPartyMaterialCategory>;
+/** The restriction levels view column each field of `LessonRestrictionLevels` reads. */
+export const RESTRICTION_LEVEL_COLUMNS = {
+  downloadableFiles: "tpc_downloadablefiles_max_restriction",
+  featureKeys: "features",
+  media: "tpc_media_max_restriction",
+  works: "tpc_works_max_restriction",
+} as const satisfies Record<keyof LessonRestrictionLevels, string>;
 
-type MaxRestrictionColumn = keyof typeof CATEGORY_BY_MAX_RESTRICTION_COLUMN;
-
-export const RESTRICTION_COLUMNS: readonly string[] = Object.keys(
-  CATEGORY_BY_MAX_RESTRICTION_COLUMN,
+export const RESTRICTION_COLUMNS: readonly string[] = Object.values(
+  RESTRICTION_LEVEL_COLUMNS,
 );
+
+// A null column is a category the lesson carries no material of, not a restriction.
+function levelsOf(level: PublishedRestrictionLevel | null): RestrictionLevel[] {
+  return level === null ? [] : [RESTRICTION_LEVELS[level]];
+}
 
 export const restrictionRowSchema = mvLessonRestrictionLevelsSchema
   .pick({
+    features: true,
     tpc_downloadablefiles_max_restriction: true,
     tpc_media_max_restriction: true,
-    tpc_quizimages_max_restriction: true,
     tpc_works_max_restriction: true,
   })
-  // A null column is a category the lesson carries no material of, not a restriction.
-  .transform((row): readonly CategoryMaxRestriction[] =>
-    Object.entries(CATEGORY_BY_MAX_RESTRICTION_COLUMN).flatMap(([column, category]) => {
-      const level = row[column as MaxRestrictionColumn];
-      return level === null ? [] : [{ category, maxLevel: RESTRICTION_LEVELS[level] }];
-    }),
-  );
-
-/** Matched exactly, as OWA does when it withholds a legacy lesson's downloads. */
-const LEGACY_COPYRIGHT_NOTICE = "This lesson contains copyright material.";
-
-export const rightsBrowseRowSchema = z
-  .object({
-    // The pinned schema predates `agf__has_copyright_restrictions`.
-    features: featuresSchema
-      .pick({ agf__geo_restricted: true })
-      .extend({ agf__has_copyright_restrictions: z.boolean().nullish() })
-      .nullish(),
-    copyright_content: lessonDataSchema.shape.copyright_content.optional(),
-  })
-  .transform(({ features, copyright_content }) => ({
-    copyrightRestricted: features?.agf__has_copyright_restrictions === true,
-    geoRestricted: features?.agf__geo_restricted === true,
-    legacyCopyright: (copyright_content ?? []).some(
-      ({ copyright_info }) => copyright_info === LEGACY_COPYRIGHT_NOTICE,
+  .transform((row): LessonRestrictionLevels => ({
+    works: levelsOf(row[RESTRICTION_LEVEL_COLUMNS.works]),
+    media: levelsOf(row[RESTRICTION_LEVEL_COLUMNS.media]),
+    downloadableFiles: levelsOf(row[RESTRICTION_LEVEL_COLUMNS.downloadableFiles]),
+    featureKeys: distinctSorted(
+      Object.entries(row[RESTRICTION_LEVEL_COLUMNS.featureKeys] ?? {}).flatMap(
+        ([key, value]) => (value === false ? [] : [key]),
+      ),
     ),
   }));
 
-export const rightsContentRowSchema = z
-  .object({ expired: z.boolean().nullish() })
-  .transform(({ expired }) => ({ expired: expired === true }));
+export function combineRestrictionLevels(
+  rows: readonly LessonRestrictionLevels[],
+): LessonRestrictionLevels | null {
+  if (rows.length === 0) {
+    return null;
+  }
+
+  return {
+    works: distinctSorted(rows.flatMap(({ works }) => works)),
+    media: distinctSorted(rows.flatMap(({ media }) => media)),
+    downloadableFiles: distinctSorted(
+      rows.flatMap(({ downloadableFiles }) => downloadableFiles),
+    ),
+    featureKeys: distinctSorted(rows.flatMap(({ featureKeys }) => featureKeys)),
+  };
+}
+
+const subjectSlugSchema = programmeFieldsSchema.shape.subject_slug;
+
+export const subjectMembershipRowSchema = z
+  .object({ subject_slug: subjectSlugSchema })
+  .transform(({ subject_slug }) => subject_slug);
+
+// Labels arrive alongside numbers and nulls; only the labels are kept.
+const subjectCategoriesSchema = z
+  .array(z.union([z.string(), z.number(), z.null()]))
+  .nullable()
+  .transform((categories): string[] =>
+    (categories ?? []).filter((category) => typeof category === "string"),
+  );
+
+export const eligibilityBrowseRowSchema = syntheticUnitvariantLessonsByKsSchema
+  .pick({ is_legacy: true, programme_slug: true })
+  .extend({
+    subject_slug: subjectSlugSchema,
+    subject_categories: subjectCategoriesSchema,
+  });

@@ -41,11 +41,19 @@ Resource Adapter needs no storage credential of its own. Two things follow:
   maps each of our resource types to the `selection` to ask for and the filename to
   expect, because that API names resources by format and calls the starter quiz the
   intro quiz.
-- **A gated lesson cannot be read.** Its authorisation wants a signed-in teacher's
-  Clerk token and its issuer allowlist admits only OWA, so this service has no
-  identity it accepts. Every gated lesson is also marked
-  `agf__has_copyright_restrictions`, so `hasAdaptableRights` refuses it before a
-  download is attempted.
+- **A gated lesson cannot be read.** For a lesson Oak marks `agf__geo_restricted`
+  or `agf__login_required`, its authorisation wants a signed-in teacher's Clerk
+  token and its issuer allowlist admits only OWA, so this service has no identity
+  it accepts.
+
+## Lesson eligibility facts
+
+`createOakLessonEligibilityFactsReader` returns what Oak records about a lesson for ORA's
+rules to judge: the lesson rules in
+[`apps/api/src/lesson-rules`](../apps/api/src/lesson-rules), and capability and
+transformation rules that read the lesson. Unlike the lesson's other views, restriction and content rows that disagree
+are combined rather than refused: a lesson is as restricted as all its published
+rows together, and carries every content guidance label any of them records.
 
 The canonical semantic contract is a separate concern in
 `@oaknational/resource-document`. ORA retrieves a validated instance of that

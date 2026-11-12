@@ -19,6 +19,12 @@ export const LOADING_STATUS = {
   tone: "working",
 } as const satisfies WorkflowStatus;
 
+export const NEEDS_SETUP_STATUS = {
+  message: "Finish setting up your account to adapt this lesson.",
+  title: "Your account isn't set up yet",
+  tone: "neutral",
+} as const satisfies WorkflowStatus;
+
 export const MONTHLY_RESET_STATUS = {
   message: "You can try starting this adaptation again.",
   title: "Your monthly allowance has reset",

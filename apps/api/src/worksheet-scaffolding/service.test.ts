@@ -37,6 +37,7 @@ import {
 } from "./test-doubles";
 import { ConcurrencyConflictError } from "../jobs/job-repository";
 import type { TeacherAccess } from "../teacher-access/access";
+import { withoutSupportLevels } from "../transformations/narrowing";
 import { transformationDefinitions } from "../transformations/registry";
 import {
   getResourceNodesByType,
@@ -83,14 +84,16 @@ function stubDependencies(
   overrides: Partial<WorksheetScaffoldingDependencies> = {},
 ): WorksheetScaffoldingDependencies {
   return {
-    access: accessResolving({ tier: "full", inCopyrightRegion: true }),
+    access: accessResolving({ onboarded: true, tier: "full", inCopyrightRegion: true }),
     adaptedResourcesPerMonth: () => 3,
     adaptedResourcesSince: vi.fn().mockResolvedValue([]),
     enqueue: vi.fn().mockResolvedValue({ job: generateJob(), outcome: "enqueued" }),
     getLatestJob: vi.fn().mockResolvedValue(null),
     now: () => new Date("2026-10-12T10:00:00.000Z"),
     resumableCutoff: () => new Date("2026-01-01T00:00:00.000Z"),
-    resolveSourceDocumentLocator: vi.fn().mockResolvedValue(sourceLocator),
+    resolveSourceDocumentLocator: vi
+      .fn()
+      .mockResolvedValue({ outcome: "located", locator: sourceLocator }),
     readSourceDocument: vi.fn().mockResolvedValue(worksheet),
     repository: stubRepository(),
     ...overrides,
@@ -129,7 +132,11 @@ describe("the monthly allowance when opening worksheet scaffolding", () => {
       { lesson },
       teacher,
       stubDependencies({
-        access: accessResolving({ tier: "limited", inCopyrightRegion: true }),
+        access: accessResolving({
+          onboarded: true,
+          tier: "limited",
+          inCopyrightRegion: true,
+        }),
         repository,
       }),
     );
@@ -146,7 +153,11 @@ describe("the monthly allowance when opening worksheet scaffolding", () => {
       createAdaptationWithSourceDocument: vi.fn().mockResolvedValue(limitReached),
     });
     const dependencies = stubDependencies({
-      access: accessResolving({ tier: "limited", inCopyrightRegion: true }),
+      access: accessResolving({
+        onboarded: true,
+        tier: "limited",
+        inCopyrightRegion: true,
+      }),
       adaptedResourcesSince: adaptedResources(3),
       repository,
     });
@@ -172,7 +183,11 @@ describe("the monthly allowance when opening worksheet scaffolding", () => {
   it("reports the allowance left after the new adaptation", async () => {
     const repository = stubRepository();
     const dependencies = stubDependencies({
-      access: accessResolving({ tier: "limited", inCopyrightRegion: true }),
+      access: accessResolving({
+        onboarded: true,
+        tier: "limited",
+        inCopyrightRegion: true,
+      }),
       adaptedResourcesSince: adaptedResources(1),
       repository,
     });
@@ -200,8 +215,8 @@ describe("the monthly allowance when opening worksheet scaffolding", () => {
     });
     const dependencies = stubDependencies({
       access: accessResolving(
-        { tier: "limited", inCopyrightRegion: true },
-        { tier: "full", inCopyrightRegion: true },
+        { onboarded: true, tier: "limited", inCopyrightRegion: true },
+        { onboarded: true, tier: "full", inCopyrightRegion: true },
       ),
       repository,
     });
@@ -218,12 +233,41 @@ describe("the monthly allowance when opening worksheet scaffolding", () => {
 describe("opening worksheet scaffolding", () => {
   it("declines a lesson the teacher cannot adapt", async () => {
     const dependencies = stubDependencies({
-      resolveSourceDocumentLocator: vi.fn().mockResolvedValue(null),
+      resolveSourceDocumentLocator: vi
+        .fn()
+        .mockResolvedValue({ outcome: "unavailable" }),
     });
 
     await expect(
       openWorksheetScaffolding({ lesson }, teacher, dependencies),
     ).resolves.toBeNull();
+    expect(dependencies.readSourceDocument).not.toHaveBeenCalled();
+    expect(dependencies.enqueue).not.toHaveBeenCalled();
+  });
+
+  it("asks a teacher who is not onboarded to finish setting up", async () => {
+    const repository = stubRepository({
+      findResumableAdaptation: vi.fn().mockResolvedValue({
+        id: ADAPTATION_ID,
+        pendingScaffoldCount: 1,
+        scaffoldCount: 2,
+        updatedAt: new Date("2026-02-03T09:00:00.000Z"),
+      }),
+    });
+    const dependencies = stubDependencies({
+      resolveSourceDocumentLocator: vi
+        .fn()
+        .mockResolvedValue({ outcome: "needsSetup" }),
+      repository,
+    });
+
+    await expect(
+      openWorksheetScaffolding({ lesson }, teacher, dependencies),
+    ).resolves.toEqual({ outcome: "needsSetup" });
+    expect(dependencies.access.resolve).not.toHaveBeenCalled();
+    expect(dependencies.access.recheck).not.toHaveBeenCalled();
+    expect(dependencies.adaptedResourcesSince).not.toHaveBeenCalled();
+    expect(repository.findResumableAdaptation).not.toHaveBeenCalled();
     expect(dependencies.readSourceDocument).not.toHaveBeenCalled();
     expect(dependencies.enqueue).not.toHaveBeenCalled();
   });
@@ -239,7 +283,9 @@ describe("opening worksheet scaffolding", () => {
       findReopenableAdaptation: vi.fn().mockResolvedValue({ id: ADAPTATION_ID }),
     });
     const dependencies = stubDependencies({
-      resolveSourceDocumentLocator: vi.fn().mockResolvedValue(null),
+      resolveSourceDocumentLocator: vi
+        .fn()
+        .mockResolvedValue({ outcome: "unavailable" }),
       repository,
     });
 
@@ -585,12 +631,14 @@ describe("reading worksheet scaffolding state", () => {
     });
   });
 
-  it("omits inputs for a transformation that declares none", async () => {
+  it("omits inputs when the suggestion offered no choice", async () => {
     const dependencies = stubDependencies({
       repository: stubRepository({
         listOpenSuggestions: vi
           .fn()
-          .mockResolvedValue([storedSuggestion({ kind: "identity", params: {} })]),
+          .mockResolvedValue([
+            storedSuggestion({ inputs: [], kind: "identity", params: {} }),
+          ]),
       }),
     });
 
@@ -933,6 +981,33 @@ describe("accepting a suggestion", () => {
         {
           adaptationId: ADAPTATION_ID,
           params: { supportLevel: "enormous" },
+          suggestionId: SUGGESTION_ID,
+        },
+        teacher,
+        dependencies,
+      ),
+    ).rejects.toThrow();
+    expect(dependencies.enqueue).not.toHaveBeenCalled();
+  });
+
+  it("refuses a support level the suggestion did not offer", async () => {
+    const narrowed = withoutSupportLevels(
+      transformationDefinitions["scaffold-add-word-bank"],
+      ["mid"],
+    );
+    const dependencies = stubDependencies({
+      repository: stubRepository({
+        getOpenSuggestion: vi
+          .fn()
+          .mockResolvedValue(storedSuggestion({ inputs: narrowed?.inputs })),
+      }),
+    });
+
+    await expect(
+      enqueueSuggestionApplication(
+        {
+          adaptationId: ADAPTATION_ID,
+          params: { supportLevel: "mid" },
           suggestionId: SUGGESTION_ID,
         },
         teacher,

@@ -50,8 +50,8 @@ const oakOriginalFileResourceTypesWithSupplementary =
 
 const oakLessonBaseUrl = "https://www.thenational.academy/teachers/lessons";
 const oakRights =
-  "Oak worksheet verified: every recorded third-party material restriction is OGL compatible or OGL equivalent, or no restriction is recorded, and Oak does not mark the lesson copyright-restricted, legacy copyright or expired.";
-const rightsCheckedOn = "2026-10-13";
+  "Oak worksheet verified: the lesson passes ORA's lesson rules for a teacher outside every copyright region.";
+const rightsCheckedOn = "2026-11-09";
 
 function oakWorksheetFixture(
   lesson: Readonly<{
@@ -112,19 +112,6 @@ export const originalResourceDocumentFixtureManifest = [
     rights: "Synthetic test content committed under the repository licence.",
   },
   oakWorksheetFixture({
-    lessonSlug: "actions-to-tackle-climate-change",
-    title: "Actions to tackle climate change",
-    description:
-      "Provisional worksheet excerpt for Oak KS3 Geography; tables and diagrams adapted for parser coverage.",
-    programmeSlug: "geography-secondary-ks3",
-    keyStage: "KS3",
-    keyStageSlug: "ks3",
-    subject: "Geography",
-    subjectSlug: "geography",
-    unitSlug: "weather-and-climate-why-does-our-weather-and-climate-change",
-    unitTitle: "Weather and climate: how do they vary?",
-  }),
-  oakWorksheetFixture({
     lessonSlug:
       "explain-how-the-quotient-is-affected-when-the-divisor-is-equal-to-the-dividend",
     title:
@@ -178,20 +165,6 @@ export const originalResourceDocumentFixtureManifest = [
     unitTitle: "Programming: iteration",
   }),
   oakWorksheetFixture({
-    lessonSlug: "accidents-and-emergencies-er-verbs-in-the-perfect-tense-with-etre",
-    title: "Accidents and emergencies: -er verbs in the perfect tense with 'être'",
-    description:
-      "Provisional worksheet excerpt for Oak KS3 French; tables and diagrams adapted for parser coverage.",
-    programmeSlug: "french-secondary-ks3",
-    keyStage: "KS3",
-    keyStageSlug: "ks3",
-    subject: "French",
-    subjectSlug: "french",
-    unitSlug: "past-and-present-events-perfect-tense-negation-questions",
-    unitTitle: "Past and present events: perfect tense, negation, questions",
-    originalFileResourceTypes: oakOriginalFileResourceTypesWithSupplementary,
-  }),
-  oakWorksheetFixture({
     lessonSlug: "air-resistance-do-and-review",
     title: "Air resistance: do and review",
     description:
@@ -218,48 +191,6 @@ export const originalResourceDocumentFixtureManifest = [
     subjectSlug: "history",
     unitSlug: "ancient-egypt-what-stayed-the-same-across-3-000-years",
     unitTitle: "Ancient Egypt: what stayed the same across 3,000 years?",
-  }),
-  oakWorksheetFixture({
-    lessonSlug: "adrenaline-thyroxine-and-negative-feedback",
-    title: "Adrenaline, thyroxine and negative feedback",
-    description:
-      "Provisional worksheet excerpt for Oak KS4 Biology; tables and diagrams adapted for parser coverage.",
-    programmeSlug: "biology-secondary-ks4-higher-aqa",
-    keyStage: "KS4",
-    keyStageSlug: "ks4",
-    subject: "Biology",
-    subjectSlug: "biology",
-    unitSlug: "coordination-and-control-hormones-and-the-human-endocrine-system",
-    unitTitle: "Coordination and control: hormones and the human endocrine system",
-    examBoard: "AQA",
-    tier: "higher",
-  }),
-  oakWorksheetFixture({
-    lessonSlug: "adding-rhythmic-variation-to-ground-bass",
-    title: "Adding rhythmic variation to ground bass",
-    description:
-      "Provisional worksheet excerpt for Oak KS3 Music; tables and diagrams adapted for parser coverage.",
-    programmeSlug: "music-secondary-ks3",
-    keyStage: "KS3",
-    keyStageSlug: "ks3",
-    subject: "Music",
-    subjectSlug: "music",
-    unitSlug: "harmonic-progressions-bass-lines-and-shuffle",
-    unitTitle: "Harmonic progressions and bass lines",
-  }),
-  oakWorksheetFixture({
-    lessonSlug: "school-life-singular-verbs-like-choisir-questions-with-qui",
-    title: "School life: singular verbs like 'choisir', questions with 'qui'",
-    description:
-      "Provisional worksheet extraction for Oak KS3 French; tables and diagrams adapted for parser coverage.",
-    programmeSlug: "french-secondary-ks3",
-    keyStage: "KS3",
-    keyStageSlug: "ks3",
-    subject: "French",
-    subjectSlug: "french",
-    unitSlug: "school-life-ir-verbs-in-the-present-uses-of-vous-and-on",
-    unitTitle: "School life: -IR verbs in the present, uses of 'vous' and 'on'",
-    originalFileResourceTypes: oakOriginalFileResourceTypesWithSupplementary,
   }),
   oakWorksheetFixture({
     lessonSlug: "what-greek-myths-can-tell-us-about-ancient-greece",

@@ -5,6 +5,7 @@ import type {
   ResourceAdapterOpeningControl,
 } from "@oaknational/resource-adapter";
 
+import { EligibilityPanel } from "./EligibilityPanel";
 import { CreateMorePanel } from "../shared/CreateMorePanel";
 import { ExtractionNotes } from "../shared/ExtractionNotes";
 import { ScenarioLayout } from "../shared/ScenarioLayout";
@@ -24,12 +25,15 @@ export function EdgeCaseView({
 }>) {
   const lesson = edgeCase.lesson;
   const {
+    account,
     capabilities,
     dialog,
-    exitSignedOutPreview,
+    finishSetup,
     hasAvailableCapabilities,
+    inCopyrightRegion,
     reload,
     selectCapability,
+    signIn,
     state,
   } = useAdapterLauncher({
     apiBaseUrl: edgeCase.brokenApiPath ? `${apiBaseUrl}-unreachable` : apiBaseUrl,
@@ -87,29 +91,49 @@ export function EdgeCaseView({
             badge={
               showCapabilityFixture
                 ? "Fixture"
-                : owaSlotBadge({ capabilities, hasAvailableCapabilities, state })
+                : owaSlotBadge({
+                    account,
+                    capabilities,
+                    hasAvailableCapabilities,
+                    state,
+                  })
             }
           >
             {showCapabilityFixture ? (
               <CreateMorePanel
+                account={account}
                 capabilities={fixtureCapabilities}
                 hasAvailableCapabilities={hasAvailableCapabilities}
-                onSelectCapability={selectFixtureCapability}
+                lesson={lesson}
+                onFinishSetup={finishSetup}
                 onRetry={reload}
-                onPreviewSignIn={exitSignedOutPreview}
+                onSelectCapability={selectFixtureCapability}
+                onSignIn={signIn}
                 state={state}
               />
             ) : (
               <CreateMorePanel
+                account={account}
                 capabilities={capabilities}
                 hasAvailableCapabilities={hasAvailableCapabilities}
-                onSelectCapability={selectCapability}
+                lesson={lesson}
+                onFinishSetup={finishSetup}
                 onRetry={reload}
-                onPreviewSignIn={exitSignedOutPreview}
+                onSelectCapability={selectCapability}
+                onSignIn={signIn}
                 state={state}
               />
             )}
           </OwaSlot>
+
+          {!edgeCase.brokenApiPath && (
+            <EligibilityPanel
+              account={account}
+              capabilitiesFailed={state === "error"}
+              inCopyrightRegion={inCopyrightRegion}
+              lesson={lesson}
+            />
+          )}
 
           <ExtractionNotes
             diagnostics={edgeCase.diagnostics}

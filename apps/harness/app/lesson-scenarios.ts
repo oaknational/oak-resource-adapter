@@ -18,6 +18,8 @@ const oakLessonFixtureEntries = originalResourceDocumentFixtureManifest.filter(
   (entry) => "oakLesson" in entry,
 );
 
+export const defaultLessonScenarioId = "the-river-nile";
+
 export const lessonScenarioNavigation: readonly LessonScenarioNavigationItem[] =
   oakLessonFixtureEntries.map((entry) => ({
     id: entry.id,

@@ -34,21 +34,14 @@ export type Unit = Readonly<{
 export type RestrictionLevel =
   "highly-restricted" | "ogl-compatible" | "ogl-equivalent" | "restricted";
 
-export type ThirdPartyMaterialCategory =
-  "downloadable-files" | "media" | "quiz-images" | "works";
-
-export type CategoryMaxRestriction = Readonly<{
-  category: ThirdPartyMaterialCategory;
-  /** The most restrictive level across the lesson's material in this category. */
-  maxLevel: RestrictionLevel;
-}>;
-
 export type Lesson = Readonly<{
   identity: LessonIdentity;
   title: string;
   /** The spoken lesson, where Oak publishes a video for it. */
   transcript: string | null;
   programme: Programme;
+  /** Every subject the lesson is taught in, across all its programmes. */
+  subjectSlugs: readonly string[];
   unit: Unit;
   resources: readonly LessonResource[];
   contentGuidance: readonly string[];
@@ -63,30 +56,25 @@ export interface LessonRepository {
   fetch(identity: LessonIdentity): Promise<Lesson>;
 }
 
-export type LessonRights = Readonly<{
-  maxRestrictions: readonly CategoryMaxRestriction[];
-  /** `agf__has_copyright_restrictions` */
-  copyrightRestricted: boolean;
-  /** `copyright_content` carries Oak's older whole-lesson copyright notice. */
-  legacyCopyright: boolean;
-  expired: boolean;
-  /** `agf__geo_restricted` */
-  geoRestricted: boolean;
+/**
+ * Every published restriction-levels row combined: a lesson is as restricted as
+ * all its rows together.
+ */
+export type LessonRestrictionLevels = Readonly<{
+  works: readonly RestrictionLevel[];
+  media: readonly RestrictionLevel[];
+  downloadableFiles: readonly RestrictionLevel[];
+  /** `features` keys present and not `false`, as the data team's `_has_key` query reads them. */
+  featureKeys: readonly string[];
 }>;
 
-const ADAPTABLE_RESTRICTION_LEVELS: ReadonlySet<RestrictionLevel> = new Set([
-  "ogl-compatible",
-  "ogl-equivalent",
-]);
-
-/** The caller must also check geo restrictions against the teacher's region. */
-export function hasAdaptableRights(rights: LessonRights): boolean {
-  return (
-    rights.maxRestrictions.every(({ maxLevel }) =>
-      ADAPTABLE_RESTRICTION_LEVELS.has(maxLevel),
-    ) &&
-    !rights.copyrightRestricted &&
-    !rights.legacyCopyright &&
-    !rights.expired
-  );
-}
+export type LessonEligibilityFacts = Readonly<{
+  /** `null` when Oak publishes no restriction levels for the lesson. */
+  restrictionLevels: LessonRestrictionLevels | null;
+  /** Every subject the lesson is taught in, across all its programmes. */
+  subjectSlugs: readonly string[];
+  /** Every unit's subject categories, across all its programmes. */
+  subjectCategories: readonly string[];
+  legacy: boolean;
+  contentGuidance: readonly string[];
+}>;

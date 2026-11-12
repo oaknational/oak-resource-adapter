@@ -11,6 +11,8 @@ const lesson = {
   availableResources: ["worksheet"] as const,
 };
 
+const account = { state: "needsSetup" } as const;
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -23,6 +25,7 @@ describe("getResourceAdapterCapabilities", () => {
           {
             result: {
               data: {
+                account,
                 capabilities: [
                   {
                     id: "worksheetScaffolding",
@@ -71,6 +74,7 @@ describe("getResourceAdapterCapabilities", () => {
             {
               result: {
                 data: {
+                  account,
                   capabilities: [
                     {
                       id: "unknownAdapter",
@@ -92,7 +96,7 @@ describe("getResourceAdapterCapabilities", () => {
         getToken: async () => null,
         lesson,
       }),
-    ).resolves.toEqual({ capabilities: [] });
+    ).resolves.toEqual({ account, capabilities: [] });
   });
 
   it("resolves the public endpoint from apiBaseUrl", async () => {
@@ -102,6 +106,7 @@ describe("getResourceAdapterCapabilities", () => {
           {
             result: {
               data: {
+                account,
                 capabilities: [],
               },
             },

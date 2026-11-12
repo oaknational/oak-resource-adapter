@@ -50,6 +50,13 @@
       "when": 1792503922947,
       "tag": "0006_retire_task_vocabulary_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794311073521,
+      "tag": "0007_suggestion_offered_inputs",
+      "breakpoints": true
     }
   ]
 }

@@ -9,6 +9,7 @@ import {
 import { describe, expect, it } from "vitest";
 
 import { createOpenAIModelInvoker } from "../../ai/dev-invoker";
+import { readLessonFacts } from "../../curriculum/read-lesson-facts";
 import { resolveApplicationMaterial } from "../../transformations/application-material-resolver";
 import { transformationDefinitions } from "../../transformations/registry";
 import { worksheetScaffoldingSuggestionFlow } from "../definitions/worksheet-scaffolding";
@@ -69,13 +70,14 @@ async function runWorksheet(manifest: OakWorksheetFixtureEntry): Promise<
     lesson,
     createOpenAIModelInvoker,
   );
+  const facts = await readLessonFacts(lesson);
   const runs = await Promise.all(
     Array.from({ length: RUNS }, async () =>
       (
         await generateSuggestions(worksheetScaffoldingSuggestionFlow, document, [], {
           correlationKey: `suggestion-eval-${manifest.id}`,
           createInvoker: createOpenAIModelInvoker,
-          material,
+          lesson: { identity: lesson, material, facts },
         })
       ).filter(chosenByAgent),
     ),

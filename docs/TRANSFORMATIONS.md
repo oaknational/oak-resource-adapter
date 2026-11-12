@@ -50,7 +50,7 @@ A definition carries:
 | `supportLevels`        | The levels of support it offers, weakest first.                                                       |
 | `barriers`             | The pupil barriers it addresses.                                                                      |
 | `materialRequirements` | The parts of the Oak lesson it consumes, and whether each is required.                                |
-| `isAvailable`          | Whether to offer the kind, given the work so far.                                                     |
+| `rules`                | Its own rules, checked after the rules every kind shares.                                             |
 | `execution`            | `deterministic` with an `apply`, or `model` with a prompt.                                            |
 
 `supportLevels` and `barriers` are optional: a kind that offers no support dial,
@@ -114,7 +114,10 @@ A part is read from the lesson or, where Oak holds no such field, derived for th
 run. `lesson.transcriptSummary` is derived by summarising the transcript with a
 model, and its `.learningCycleTitles`, `.practiceTasksWithFeedback` and
 `.checksForUnderstanding` siblings are projections of that one summary. A
-derivation that cannot run warns and omits the part.
+derivation that cannot run warns and omits the part. A lesson taught in a subject
+listed in [`lesson-materials.ts`](../apps/api/src/lesson-rules/lesson-materials.ts)
+has its transcript withheld, so no summary is generated and a transcript part
+must be optional.
 
 Required material is checked in `transformations/required-material.ts`. A
 transformation cannot run if its request is missing a required part.
@@ -206,12 +209,28 @@ single source for both direct offerings and that capability's suggestion flow,
 and may include kinds that are not active. Being registered exposes nothing on
 its own.
 
-`isAvailable` decides whether a listed kind is offered for a particular document
-and adaptation. The rules live in `availability.ts` and compose: `always`,
-`disabled`, `notAlreadyApplied`, `notAlreadyAppliedToTarget`, and `all` to
-combine them. Availability history carries kind, params, target and contribution
-identity, so target-scoped rules need not treat applying a scaffold to two
-different questions as the same work.
+Rules decide whether a listed kind is offered for a particular document,
+adaptation and lesson. They share the shape in
+[`rules/rule.ts`](../apps/api/src/rules/rule.ts) with the lesson and capability
+rules: an id, a description, plain-data config, and a check that returns a reason
+or `null`. `transformationRulesFor` in
+[`evaluate-transformation.ts`](../apps/api/src/transformations/evaluate-transformation.ts)
+gives every rule a kind is checked against, in order: the common rules in
+[`rules/common-rules.ts`](../apps/api/src/transformations/rules/common-rules.ts)
+(status, material source, target and `excludes`, configured from the
+definition's own fields), then the kind's own `rules`.
+The first reason refuses the kind.
+
+A rule wrapped with `removingSupportLevels` narrows the kind instead of refusing
+it. The levels are removed from its `supportLevels`, its `supportLevel` input and
+its params schema together, and the kind is refused only when no level remains.
+A narrowing rule reads only the lesson, so every target is offered the same
+choices.
+
+Rules that read the lesson read `lesson` and `facts`, which are `null` without one.
+Availability history carries kind, params, target and contribution identity, so
+target-scoped rules need not treat applying a scaffold to two different
+questions as the same work.
 
 `listTransformationsForCapability` in `service.ts` resolves a capability's kinds
 and applies those rules, returning what a teacher needs to choose between them.
@@ -225,9 +244,13 @@ therefore makes it eligible everywhere the capability uses its catalogue.
 
 The model receives each candidate's `suggestion` guidance, targets, barriers and
 the options of its `inputs`. Its structured response is validated again through
-the transformation's params, target and availability rules. An offer that fails
+params derived from those `inputs`, and the target and availability rules. An offer that fails
 that second pass, or repeats a change already offered for the same target, is
 dropped rather than failing the batch. Returning no suggestions is valid.
+
+Each stored suggestion keeps the `inputs` it offered. The teacher's choice is
+shown from them, and acceptance checks it against both them and the current
+definition, so neither a level a rule removed nor one since withdrawn is accepted.
 
 A kind whose `suggestion` declares `offer: "always"` is never shown to the model.
 It is offered at each of its eligible targets with its fixed `reason`, ahead of

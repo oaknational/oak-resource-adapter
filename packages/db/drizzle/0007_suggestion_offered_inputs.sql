@@ -1,0 +1,1 @@
+ALTER TABLE "resource_adapter"."suggested_transformations" ADD COLUMN "inputs" jsonb DEFAULT '[]'::jsonb NOT NULL;

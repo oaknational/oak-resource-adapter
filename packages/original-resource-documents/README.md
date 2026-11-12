@@ -30,9 +30,9 @@ must parse into. Only the markup is served; the JSON is a conformance assertion,
 regenerated with `pnpm fixtures:generate` and reviewed as a contract change.
 
 The corpus is a snapshot. Each Oak fixture records the date it last passed
-`scripts/verify-original-resource-document-fixture-rights.mjs`, which checks
-against live curriculum data that Oak publishes the worksheet and passes the
-shared lesson-level rights policy. Re-run it when adding a fixture.
+`pnpm fixtures:rights:check`, which checks against live curriculum data that Oak
+publishes the worksheet and that ORA's lesson rules allow it. Re-run it when
+adding a fixture.
 
 Kept separate from `@oaknational/resource-document` so that package stays a
 portable schema and parsing library, with no fixture data or server-side I/O in

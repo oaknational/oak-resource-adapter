@@ -5,7 +5,11 @@ import {
 
 import { HarnessPageClient } from "./_components/HarnessPageClient";
 import { edgeCaseNavigation, loadEdgeCase } from "./edge-cases";
-import { lessonScenarioNavigation, loadLessonScenario } from "./lesson-scenarios";
+import {
+  defaultLessonScenarioId,
+  lessonScenarioNavigation,
+  loadLessonScenario,
+} from "./lesson-scenarios";
 import type { HarnessSection, HarnessView } from "./scenario-types";
 
 type SearchParamValue = string | string[] | undefined;
@@ -27,6 +31,7 @@ function parseSection(view: SearchParam): HarnessSection {
     view === "edge-cases" ||
     view === "suggestions" ||
     view === "exports" ||
+    view === "rules" ||
     view === "transformations"
   ) {
     return view;
@@ -56,7 +61,7 @@ async function resolveView(
   lessonId: string,
   parameters: Record<string, SearchParam>,
 ): Promise<HarnessView> {
-  if (section === "capabilities" || section === "smoke-tests") {
+  if (section === "capabilities" || section === "rules" || section === "smoke-tests") {
     return { section };
   }
 
@@ -129,7 +134,7 @@ export default async function HarnessPage({ searchParams }: HarnessPageProps) {
   );
   const section = parseSection(parameters.view);
   const lessonId = resolveId(
-    parameters.lesson,
+    parameters.lesson ?? defaultLessonScenarioId,
     lessonScenarioNavigation,
     "The harness has no lesson scenarios.",
   );

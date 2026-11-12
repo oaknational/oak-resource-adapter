@@ -450,6 +450,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "ResourceAdapterButton",
     "ResourceAdapterDialog",
     "ResourceAdapterErrorBoundary",
+    "ResourceAdapterLauncher",
     "ResourceDocumentRenderer",
   ]) {
     if (!rootDeclaration.includes(exportName)) {
@@ -468,6 +469,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "ResourceAdapterButton.js",
     "ResourceAdapterDialog.js",
     "ResourceAdapterErrorBoundary.js",
+    "ResourceAdapterLauncher.js",
     "resource-document/ResourceDocumentRenderer.js",
     "resource-document/TaskAccordion.js",
     "capabilities/workflowRegistry.js",
@@ -501,6 +503,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "capabilities.js",
     "publicTypes.js",
     "requestId.js",
+    "onboardingTrip.js",
     "resource-document/InlineContentRenderer.js",
     "resource-document/ResourceNodeRenderer.js",
     "capabilities/worksheet-scaffolding/workflowState.js",

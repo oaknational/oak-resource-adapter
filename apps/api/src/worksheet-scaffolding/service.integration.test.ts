@@ -40,7 +40,7 @@ const lessonReference = {
 } as const;
 
 const fullAccess = () =>
-  Promise.resolve({ tier: "full", inCopyrightRegion: true } as const);
+  Promise.resolve({ onboarded: true, tier: "full", inCopyrightRegion: true } as const);
 const access = { recheck: fullAccess, resolve: fullAccess };
 
 const limitOfOne = createModelJobLimiter({
@@ -125,6 +125,7 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
       resourceDocumentId,
       suggestions: [
         {
+          inputs: [],
           kind: "scaffold-add-word-bank",
           params: { supportLevel: "low" },
           reason: "Vocabulary support would help here.",

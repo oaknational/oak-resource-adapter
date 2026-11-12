@@ -2,6 +2,7 @@ import { buildLesson } from "@oaknational/resource-adapter-curriculum";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ResourceAdapterModelInvoker } from "@/ai/model-roles";
+import { LESSON_MATERIALS_RULE } from "@/lesson-rules/lesson-materials";
 import { readOakMaterial, renderOakMaterial } from "../requirements";
 import { createTranscriptSummariser } from "./invoke";
 import { transcriptSummarySchema } from "./schema";
@@ -66,6 +67,22 @@ describe("transcript summaries", () => {
     expect(rendered).toContain(expected);
     expect(rendered).not.toContain("Equivalent fractions have the same value.");
   });
+
+  it.each(LESSON_MATERIALS_RULE.config.transcriptWithheldSubjectSlugs)(
+    "does not invoke the summariser for a lesson taught in %s",
+    async (slug) => {
+      const summariseTranscript = vi.fn();
+
+      const resolution = await readOakMaterial(
+        [...requirement, { key: "lesson.transcript", required: false }],
+        buildLesson({ transcript: "Today we read a poem.", subjectSlugs: [slug] }),
+        { summariseTranscript },
+      );
+
+      expect(summariseTranscript).not.toHaveBeenCalled();
+      expect(resolution.material).toEqual({});
+    },
+  );
 
   it("does not invoke the summariser when the lesson has no transcript", async () => {
     const summariseTranscript = vi.fn();

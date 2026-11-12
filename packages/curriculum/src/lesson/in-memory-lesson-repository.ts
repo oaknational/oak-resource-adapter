@@ -21,6 +21,7 @@ export function buildLesson(overrides: Partial<Lesson> = {}): Lesson {
       tier: null,
     },
     resources: [{ type: "worksheet" }],
+    subjectSlugs: ["maths"],
     title: "Adding fractions",
     transcript: null,
     unit: { slug: "fractions", title: "Fractions" },

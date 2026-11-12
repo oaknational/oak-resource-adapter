@@ -3,43 +3,52 @@ import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 
 import {
-  isCapabilityEligible,
-  meetsGeoRestriction,
   resolveEligibility,
+  resolveLessonEligibility,
   type EligibilityResolver,
 } from "../capabilities/service";
 import { capabilityDefinitions } from "../capabilities/registry";
-import type { CapabilityDefinition } from "../capabilities/types";
 import {
   teacherAccessResolver,
   type TeacherAccessResolver,
 } from "../teacher-access/resolver";
 
-/** Returns null when the capability is unavailable to this teacher. */
+export type SourceDocumentLocation =
+  | Readonly<{ outcome: "needsSetup" }>
+  | Readonly<{ outcome: "unavailable" }>
+  | Readonly<{ outcome: "located"; locator: OriginalResourceDocumentLocator }>;
+
 export async function resolveSourceDocumentLocator(
   { capabilityId, lesson }: Readonly<{ capabilityId: string; lesson: LessonContext }>,
   target: ResourceAdapterAuthenticatedTeacher,
   resolveContext: EligibilityResolver = resolveEligibility,
   access: Pick<TeacherAccessResolver, "resolve"> = teacherAccessResolver,
-): Promise<OriginalResourceDocumentLocator | null> {
+): Promise<SourceDocumentLocation> {
   if (!Object.hasOwn(capabilityDefinitions, capabilityId)) {
-    return null;
+    return { outcome: "unavailable" };
   }
-  const definition: CapabilityDefinition =
-    capabilityDefinitions[capabilityId as keyof typeof capabilityDefinitions];
 
-  const context = await resolveContext(lesson);
-  if (
-    !isCapabilityEligible(definition, context) ||
-    !(await meetsGeoRestriction(context.rights, target.teacherId, access))
-  ) {
-    return null;
+  const eligibility = await resolveLessonEligibility(
+    lesson,
+    target.teacherId,
+    resolveContext,
+    access,
+  );
+  if (eligibility.outcome === "needsSetup") {
+    return eligibility;
+  }
+  const capability = eligibility.capabilities.find(({ id }) => id === capabilityId);
+  if (capability === undefined) {
+    return { outcome: "unavailable" };
   }
 
   return {
-    source: "oak",
-    lessonSlug: lesson.lessonSlug,
-    programmeSlug: lesson.programmeSlug,
-    resourceType: definition.resourceType,
+    outcome: "located",
+    locator: {
+      source: "oak",
+      lessonSlug: lesson.lessonSlug,
+      programmeSlug: lesson.programmeSlug,
+      resourceType: capability.resourceType,
+    },
   };
 }

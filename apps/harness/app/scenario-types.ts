@@ -11,6 +11,7 @@ export type HarnessSection =
   | "smoke-tests"
   | "suggestions"
   | "exports"
+  | "rules"
   | "transformations";
 
 export type ExtractionDiagnostic = Readonly<{
@@ -114,4 +115,5 @@ export type HarnessView =
       fixtures: readonly Readonly<{ id: string; title: string; group: string }>[];
     }>
   | Readonly<{ section: "capabilities" }>
+  | Readonly<{ section: "rules" }>
   | Readonly<{ section: "smoke-tests" }>;

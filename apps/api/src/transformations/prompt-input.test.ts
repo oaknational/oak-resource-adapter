@@ -8,7 +8,6 @@ import {
   serialiseResourceNodeForPrompt,
   transformationPromptVariables,
 } from "./prompt-input";
-import { always } from "./availability";
 import type { QuestionNode, ResourceDocument } from "@oaknational/resource-document";
 
 let worksheet: ResourceDocument;
@@ -109,7 +108,7 @@ describe("transformationPromptVariables", () => {
     suggestion: { description: "Test", useWhen: "Test", avoidWhen: "Test" },
     target: { scope: "document" },
     outputs: ["revised-resource"],
-    isAvailable: always,
+    rules: [],
     execution: {
       strategy: "deterministic",
       apply: (document) => [document],

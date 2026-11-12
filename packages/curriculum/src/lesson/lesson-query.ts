@@ -9,14 +9,18 @@ const LESSON_VIEWS = {
   assets: "published_mv_lesson_assets_1",
   browseData: "published_mv_synthetic_unitvariant_lessons_by_keystage_18_0_0",
   content: "published_mv_lesson_content_published_9_0_0",
-  restrictionLevels: "published_mv_lesson_restriction_levels_1",
+  restrictionLevels: "published_mv_lesson_restriction_levels_2",
 } as const;
+
+export const BROWSE_DATA_VIEW = LESSON_VIEWS.browseData;
+export const RESTRICTION_LEVELS_VIEW = LESSON_VIEWS.restrictionLevels;
 
 /**
  * The whole lesson: only the columns the schemas read. Every view except browse
- * data is keyed by lesson alone; only browse data distinguishes programmes. The
- * content view carries a row per `_state`, so it is filtered to published rows;
- * assets has no such column.
+ * data is keyed by lesson alone; only browse data distinguishes programmes, and
+ * `subjectMemberships` reads it across every programme the lesson is taught in.
+ * The content view carries a row per `_state`, so it is filtered to published
+ * rows; assets has no such column.
  */
 export const LESSON_BY_SLUG_QUERY = `
   query LessonBySlug($lessonSlug: String!, $programmeSlug: String!) {
@@ -29,6 +33,11 @@ export const LESSON_BY_SLUG_QUERY = `
       programme_fields
       unit_data
       unit_slug
+    }
+    subjectMemberships: ${LESSON_VIEWS.browseData}(
+      where: { lesson_slug: { _eq: $lessonSlug } }
+    ) {
+      subject_slug: programme_fields(path: "subject_slug")
     }
     content: ${LESSON_VIEWS.content}(
       where: { lesson_slug: { _eq: $lessonSlug }, _state: { _eq: "published" } }
@@ -50,31 +59,30 @@ export const LESSON_BY_SLUG_QUERY = `
 `;
 
 /**
- * Rights alone, for the availability call OWA makes on every lesson page.
- * Despite its name the restriction levels view carries a row per `_state`, and
- * an unpublished row can record different levels from the published one, so
- * `atMostOne` cannot resolve the lesson without the published filter.
+ * Eligibility facts alone, for the availability call OWA makes on every lesson page.
+ * Browse data is read across every programme the lesson is taught in. Despite
+ * its name the restriction levels view carries a row per `_state`, and an
+ * unpublished row can record different levels from the published one.
  */
-export const LESSON_RIGHTS_QUERY = `
-  query LessonRights($lessonSlug: String!, $programmeSlug: String!) {
+export const LESSON_ELIGIBILITY_FACTS_QUERY = `
+  query LessonEligibilityFacts($lessonSlug: String!) {
     browseData: ${LESSON_VIEWS.browseData}(
-      where: {
-        lesson_slug: { _eq: $lessonSlug }
-        programme_slug: { _eq: $programmeSlug }
-      }
+      where: { lesson_slug: { _eq: $lessonSlug } }
     ) {
-      features
-      copyright_content: lesson_data(path: "copyright_content")
-    }
-    content: ${LESSON_VIEWS.content}(
-      where: { lesson_slug: { _eq: $lessonSlug }, _state: { _eq: "published" } }
-    ) {
-      expired: deprecated_fields(path: "expired")
+      is_legacy
+      programme_slug
+      subject_slug: programme_fields(path: "subject_slug")
+      subject_categories: unit_data(path: "subjectcategories")
     }
     restrictionLevels: ${LESSON_VIEWS.restrictionLevels}(
       where: { slug: { _eq: $lessonSlug }, _state: { _eq: "published" } }
     ) {
       ${RESTRICTION_COLUMNS.join("\n      ")}
+    }
+    content: ${LESSON_VIEWS.content}(
+      where: { lesson_slug: { _eq: $lessonSlug }, _state: { _eq: "published" } }
+    ) {
+      content_guidance
     }
   }
 `;

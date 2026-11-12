@@ -1,12 +1,10 @@
-import { notAlreadyAppliedToTarget } from "../../availability";
 import { defineTransformation } from "../../define-transformation";
+import { APPLIED_ONCE_PER_TARGET_RULE } from "../../rules/common-rules";
 import { sentenceStartersContribution } from "./contribution";
 import { addSentenceStartersPrompt } from "./prompt";
 
-const KIND = "scaffold-add-sentence-starters";
-
 export const addSentenceStartersTransformation = defineTransformation({
-  kind: KIND,
+  kind: "scaffold-add-sentence-starters",
   label: "Add sentence starters",
   status: "active",
   suggestion: {
@@ -25,7 +23,7 @@ export const addSentenceStartersTransformation = defineTransformation({
     { key: "lesson.keywords", required: false },
   ],
   outputs: ["revised-resource"],
-  isAvailable: notAlreadyAppliedToTarget(KIND),
+  rules: [APPLIED_ONCE_PER_TARGET_RULE],
   execution: {
     strategy: "model",
     prompt: addSentenceStartersPrompt,

@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { afterEach, describe, beforeEach, expect, it, vi } from "vitest";
 import { ModelInvocationError } from "@oaknational/resource-adapter-ai";
+import type { LessonEligibilityFacts } from "@oaknational/resource-adapter-curriculum";
 import {
   resourceAdapterApiContractVersion,
   resourceAdapterApiContractVersionHeader,
@@ -43,6 +44,13 @@ vi.mock("./authentication", async (importOriginal) => {
   };
 });
 
+vi.mock("./teacher-access/resolver", () => ({
+  teacherAccessResolver: {
+    resolve: () =>
+      Promise.resolve({ onboarded: true, tier: "full", inCopyrightRegion: true }),
+  },
+}));
+
 // Fully stubbed so these tests can never make a paid OpenAI call.
 vi.mock("./ai/dev-invoker", () => ({
   invokeDevSmokeText: vi.fn(),
@@ -56,13 +64,19 @@ vi.mock("@oaknational/resource-adapter-curriculum", async (importOriginal) => ({
     endpoint: "https://curriculum.test",
     apiKey: "test",
   }),
-  createOakLessonRightsReader: () => async () => ({
-    maxRestrictions: [],
-    copyrightRestricted: false,
-    legacyCopyright: false,
-    expired: false,
-    geoRestricted: false,
-  }),
+  createOakLessonEligibilityFactsReader: () => async () =>
+    ({
+      restrictionLevels: {
+        works: [],
+        media: [],
+        downloadableFiles: [],
+        featureKeys: [],
+      },
+      subjectSlugs: ["english"],
+      subjectCategories: [],
+      legacy: false,
+      contentGuidance: [],
+    }) satisfies LessonEligibilityFacts,
 }));
 
 // Must stay a lesson the fixture corpus holds a worksheet extraction for.

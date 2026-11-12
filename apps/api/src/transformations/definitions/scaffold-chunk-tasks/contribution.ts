@@ -26,25 +26,23 @@ const stepSchema = z
   .transform((step) => step.replace(/^(?:step\s+)?\d+[.):]\s*/i, ""))
   .pipe(z.string().trim().min(1).max(200));
 
+const PRIMARY_STEPS: StepRange = { maximum: 3, minimum: 2 };
+const SECONDARY_STEPS: StepRange = { maximum: 5, minimum: 3 };
+
+const STEP_RANGES: Readonly<Record<string, StepRange>> = {
+  ks1: PRIMARY_STEPS,
+  ks2: PRIMARY_STEPS,
+  ks3: SECONDARY_STEPS,
+  ks4: SECONDARY_STEPS,
+};
+
+export const CHUNKING_KEY_STAGES = Object.keys(STEP_RANGES);
+
 function stepRange(document: ResourceDocument): StepRange | undefined {
   const { metadata } = document;
   const keyStage =
     "keyStage" in metadata ? metadata.keyStage?.id.toLowerCase() : undefined;
-
-  switch (keyStage) {
-    case "ks1":
-    case "ks2":
-      return { maximum: 3, minimum: 2 };
-    case "ks3":
-    case "ks4":
-      return { maximum: 5, minimum: 3 };
-    default:
-      return undefined;
-  }
-}
-
-export function supportsChunkingKeyStage(document: ResourceDocument): boolean {
-  return stepRange(document) !== undefined;
+  return keyStage === undefined ? undefined : STEP_RANGES[keyStage];
 }
 
 function text(value: string): InlineContent {

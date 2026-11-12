@@ -1,9 +1,10 @@
-import type { LessonRights } from "@oaknational/resource-adapter-curriculum";
+import type { LessonEligibilityFacts } from "@oaknational/resource-adapter-curriculum";
 import type {
   LessonContext,
   ResourceAdapterCapability,
 } from "@oaknational/resource-adapter-contracts";
 
+import type { Rule } from "../rules/rule";
 import type { RegisteredTransformationKind } from "../transformations/registry";
 import type { RegisteredSuggestionFlowId } from "../suggestions/flow-ids";
 
@@ -11,29 +12,17 @@ import type { RegisteredSuggestionFlowId } from "../suggestions/flow-ids";
 export type EligibilityContext = Readonly<{
   lesson: LessonContext;
   /** `null` when Oak publishes no such lesson in the programme. */
-  rights: LessonRights | null;
+  facts: LessonEligibilityFacts | null;
   originalFileResourceTypes: readonly string[];
   extractedResourceTypes: readonly string[];
 }>;
 
 export type CapabilityDefinition = Readonly<
   ResourceAdapterCapability & {
-    isEligible: (context: EligibilityContext) => boolean;
+    /** Checked in order, after the lesson rules, which they cannot override. */
+    rules: readonly Rule<EligibilityContext>[];
     /** Every kind owned by this capability, including drafts, in display order. */
     transformationKinds: readonly RegisteredTransformationKind[];
     suggestionFlowId?: RegisteredSuggestionFlowId;
   }
 >;
-
-export function hasResourceInputs(
-  {
-    extractedResourceTypes,
-    originalFileResourceTypes,
-  }: Pick<EligibilityContext, "extractedResourceTypes" | "originalFileResourceTypes">,
-  resourceType: string,
-): boolean {
-  return (
-    originalFileResourceTypes.includes(resourceType) &&
-    extractedResourceTypes.includes(resourceType)
-  );
-}

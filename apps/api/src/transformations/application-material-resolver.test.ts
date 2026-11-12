@@ -21,11 +21,9 @@ const cache = vi.hoisted(() => {
 });
 
 vi.mock("@oaknational/resource-adapter-curriculum", async () => ({
-  buildLesson: (
-    await vi.importActual<typeof import("@oaknational/resource-adapter-curriculum")>(
-      "@oaknational/resource-adapter-curriculum",
-    )
-  ).buildLesson,
+  ...(await vi.importActual<typeof import("@oaknational/resource-adapter-curriculum")>(
+    "@oaknational/resource-adapter-curriculum",
+  )),
   createOakLessonRepository: () => ({ fetch: curriculum.fetch }),
   oakCurriculumConfigFromEnv: () => ({
     apiKey: "test-key",

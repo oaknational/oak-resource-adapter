@@ -1,12 +1,10 @@
-import { notAlreadyAppliedToTarget } from "../../availability";
 import { defineTransformation } from "../../define-transformation";
+import { APPLIED_ONCE_PER_TARGET_RULE } from "../../rules/common-rules";
 import { sentenceFramesContribution } from "./contribution";
 import { addSentenceFramesPrompt } from "./prompt";
 
-const KIND = "scaffold-add-sentence-frames";
-
 export const addSentenceFramesTransformation = defineTransformation({
-  kind: KIND,
+  kind: "scaffold-add-sentence-frames",
   label: "Add sentence frames",
   status: "active",
   suggestion: {
@@ -26,7 +24,7 @@ export const addSentenceFramesTransformation = defineTransformation({
     { key: "lesson.transcriptSummary", required: false },
   ],
   outputs: ["revised-resource"],
-  isAvailable: notAlreadyAppliedToTarget(KIND),
+  rules: [APPLIED_ONCE_PER_TARGET_RULE],
   execution: {
     strategy: "model",
     prompt: addSentenceFramesPrompt,

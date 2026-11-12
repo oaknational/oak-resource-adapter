@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test";
  * that stops rendering cannot quietly shrink the sweep below; a new fixture is
  * expected to update it.
  */
-const oakLessonFixtureCount = 13;
+const oakLessonFixtureCount = 8;
 
 test(
   "collapses scenario navigation in small windows and restores the desktop sidebar",
@@ -54,28 +54,28 @@ test(
     await expect(
       page.getByRole("heading", {
         level: 1,
-        name: "Actions to tackle climate change",
+        name: "The River Nile",
       }),
     ).toBeVisible();
 
     await page
       .getByRole("navigation", { name: "Lesson scenarios" })
-      .getByRole("link", { name: /Adding rhythmic variation to ground bass/ })
+      .getByRole("link", { name: /Forming ions for ionic bonding/ })
       .click();
 
     await expect(
       page.getByRole("heading", {
         level: 1,
-        name: "Adding rhythmic variation to ground bass",
+        name: "Forming ions for ionic bonding",
       }),
     ).toBeVisible();
     await expect(
-      page.getByText("Harmonic progressions and bass lines", { exact: true }),
+      page.getByText("Structure and bonding", { exact: true }),
     ).toBeVisible();
     await page.getByText("Browse extracted markup").click();
     await expect(
-      page.getByLabel("Extracted markup for Adding rhythmic variation to ground bass"),
-    ).toContainText("oak-rhythm-grid");
+      page.getByLabel("Extracted markup for Forming ions for ionic bonding"),
+    ).toContainText("oak-ion-table");
   },
 );
 

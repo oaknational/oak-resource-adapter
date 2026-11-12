@@ -50,11 +50,14 @@ export function LessonScenarioView({
 
           <OwaSlot badge={owaSlotBadge(launcher)}>
             <CreateMorePanel
+              account={launcher.account}
               capabilities={launcher.capabilities}
               hasAvailableCapabilities={launcher.hasAvailableCapabilities}
-              onSelectCapability={launcher.selectCapability}
+              lesson={lesson}
+              onFinishSetup={launcher.finishSetup}
               onRetry={launcher.reload}
-              onPreviewSignIn={launcher.exitSignedOutPreview}
+              onSelectCapability={launcher.selectCapability}
+              onSignIn={launcher.signIn}
               state={launcher.state}
             />
           </OwaSlot>

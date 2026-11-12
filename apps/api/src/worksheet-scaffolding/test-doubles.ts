@@ -1,6 +1,8 @@
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
 import type { Job } from "@oaknational/resource-adapter-db";
 import type { ResourceDocument } from "@oaknational/resource-document";
+
+import { transformationDefinitions } from "../transformations/registry";
 import type {
   AcceptedSuggestion,
   PendingReview,
@@ -95,6 +97,7 @@ export function storedSuggestion(
     acceptedTransformationId: null,
     createdAt: fixtureTimestamp,
     id: SUGGESTION_ID,
+    inputs: transformationDefinitions["scaffold-add-word-bank"].inputs,
     kind: "scaffold-add-word-bank",
     params: { supportLevel: "low" },
     position: 0,

@@ -7,16 +7,15 @@ export {
   createInMemoryLessonRepository,
 } from "./lesson/in-memory-lesson-repository.js";
 export type {
-  CategoryMaxRestriction,
   Lesson,
   LessonIdentity,
   LessonKeyword,
   LessonMisconception,
   LessonRepository,
-  LessonRights,
+  LessonRestrictionLevels,
+  LessonEligibilityFacts,
   Programme,
   RestrictionLevel,
-  ThirdPartyMaterialCategory,
   Unit,
 } from "./lesson/lesson.js";
 export { createOakLessonRepository } from "./lesson/oak-lesson-repository.js";
@@ -35,5 +34,6 @@ export type {
   ResourceStore,
 } from "./resource/resource.js";
 
-export { hasAdaptableRights } from "./lesson/lesson.js";
-export { createOakLessonRightsReader } from "./lesson/oak-lesson-repository.js";
+export { createOakLessonEligibilityFactsReader } from "./lesson/oak-lesson-repository.js";
+export { RESTRICTION_LEVELS_VIEW } from "./lesson/lesson-query.js";
+export { RESTRICTION_LEVEL_COLUMNS } from "./lesson/lesson-schema.js";

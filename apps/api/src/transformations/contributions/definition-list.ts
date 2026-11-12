@@ -57,7 +57,7 @@ function escapeRegExp(value: string): string {
 /**
  * Fits Oak's wording to "term – definition": drops an opening that restates the
  * term, and lower-cases an opening article. Other capitals are left alone
- * because a definition can open with a proper noun ("French -ir verb …").
+ * because a definition can open with a proper noun.
  */
 export function tidyKeywordDefinition(keyword: string, description: string): string {
   const restatement = new RegExp(

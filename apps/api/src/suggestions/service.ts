@@ -15,7 +15,6 @@ import { evaluateTransformations } from "../transformations/service";
 import type {
   AlwaysOfferedSuggestionGuidance,
   AppliedTransformationSummary,
-  AvailableTransformation,
   ChosenSuggestionGuidance,
   TransformationDefinition,
 } from "../transformations/types";
@@ -23,11 +22,15 @@ import {
   dismissedTargetIds,
   documentDismissesTransformations,
 } from "../transformations/dismissal";
-import type { OakMaterial, OakMaterialRequirement } from "../oak-material/material";
+import type { OakMaterialRequirement } from "../oak-material/material";
 import { missingRequiredMaterial } from "../transformations/required-material";
 import { suggestionLessonPart } from "./prompt-parts/lesson.part";
 import { suggestionPedagogyPart } from "./prompt-parts/pedagogy.part";
-import type { SuggestionFlowDefinition, TransformationSuggestion } from "./types";
+import type {
+  SuggestionFlowDefinition,
+  SuggestionLessonContext,
+  TransformationSuggestion,
+} from "./types";
 
 type RawSuggestion = Readonly<{
   kind: string;
@@ -47,19 +50,22 @@ export type EligibleSuggestionTargets =
   | Readonly<{ scope: "document" }>
   | Readonly<{ blockIds: readonly [string, ...string[]]; scope: "node" }>;
 
-export type SuggestionCandidate = AvailableTransformation &
-  Readonly<{ eligibleTargets: EligibleSuggestionTargets }>;
+export type SuggestionCandidate = Readonly<{
+  /** As offered for this document and lesson, after any rule narrowed it. */
+  definition: TransformationDefinition;
+  eligibleTargets: EligibleSuggestionTargets;
+}>;
 
 type AlwaysOfferedCandidate = SuggestionCandidate &
-  Readonly<{ suggestion: AlwaysOfferedSuggestionGuidance }>;
+  Readonly<{ definition: Readonly<{ suggestion: AlwaysOfferedSuggestionGuidance }> }>;
 
 type ChosenCandidate = SuggestionCandidate &
-  Readonly<{ suggestion: ChosenSuggestionGuidance }>;
+  Readonly<{ definition: Readonly<{ suggestion: ChosenSuggestionGuidance }> }>;
 
 function isAlwaysOffered(
   candidate: SuggestionCandidate,
 ): candidate is AlwaysOfferedCandidate {
-  return "offer" in candidate.suggestion;
+  return "offer" in candidate.definition.suggestion;
 }
 
 function isChosen(candidate: SuggestionCandidate): candidate is ChosenCandidate {
@@ -80,17 +86,15 @@ function targetBlockIdSchemaFor(candidate: SuggestionCandidate) {
 function rawSuggestionSchemaFor(
   candidates: readonly SuggestionCandidate[],
 ): z.ZodType<RawSuggestion> {
-  const options = candidates.map((candidate) => {
-    if (!isRegisteredTransformationKind(candidate.kind)) {
-      throw new Error(`Unknown transformation ${candidate.kind}.`);
-    }
-    return z.strictObject({
-      kind: z.literal(candidate.kind),
-      params: transformationDefinitions[candidate.kind].params,
-      reason: z.string().trim().min(1).max(240),
-      targetBlockId: targetBlockIdSchemaFor(candidate),
-    }) as z.ZodType<RawSuggestion>;
-  });
+  const options = candidates.map(
+    (candidate) =>
+      z.strictObject({
+        kind: z.literal(candidate.definition.kind),
+        params: candidate.definition.params,
+        reason: z.string().trim().min(1).max(240),
+        targetBlockId: targetBlockIdSchemaFor(candidate),
+      }) as z.ZodType<RawSuggestion>,
+  );
   const [first, second, ...rest] = options;
   if (first === undefined) {
     throw new Error("A suggestion schema needs at least one candidate.");
@@ -133,12 +137,12 @@ export function suggestionMaterialRequirements(
 
 function renderCandidates(candidates: readonly ChosenCandidate[]): string {
   return candidates
-    .map((candidate) => {
+    .map(({ definition, eligibleTargets }) => {
       const target =
-        candidate.eligibleTargets.scope === "document"
+        eligibleTargets.scope === "document"
           ? "whole document"
-          : `one of these eligible node IDs: ${candidate.eligibleTargets.blockIds.join(", ")}`;
-      const inputs = candidate.inputs
+          : `one of these eligible node IDs: ${eligibleTargets.blockIds.join(", ")}`;
+      const inputs = definition.inputs
         ?.map(
           (input) =>
             `${input.label}: ${input.options
@@ -146,16 +150,16 @@ function renderCandidates(candidates: readonly ChosenCandidate[]): string {
               .join("; ")}`,
         )
         .join("\n");
-      const excluded = (transformationDefinitionFor(candidate.kind).excludes ?? []).map(
+      const excluded = (definition.excludes ?? []).map(
         (kind) => transformationDefinitionFor(kind).label,
       );
 
       return [
-        `Kind: ${candidate.kind}`,
-        `Label: ${candidate.label}`,
-        `Description: ${candidate.suggestion.description}`,
-        `Use when: ${candidate.suggestion.useWhen}`,
-        `Avoid when: ${candidate.suggestion.avoidWhen}`,
+        `Kind: ${definition.kind}`,
+        `Label: ${definition.label}`,
+        `Description: ${definition.suggestion.description}`,
+        `Use when: ${definition.suggestion.useWhen}`,
+        `Avoid when: ${definition.suggestion.avoidWhen}`,
         `Target: ${target}`,
         ...(inputs === undefined ? [] : [inputs]),
         ...(excluded.length === 0
@@ -172,7 +176,7 @@ function candidateForDefinition(
   appliedTransformations: readonly AppliedTransformationSummary[],
   flow: SuggestionFlowDefinition,
   dismissedTargets: ReadonlySet<string>,
-  material: OakMaterial,
+  { identity, material, facts }: SuggestionLessonContext,
 ): SuggestionCandidate | null {
   if (
     missingRequiredMaterial(definition.materialRequirements ?? [], material).length > 0
@@ -183,15 +187,17 @@ function candidateForDefinition(
     appliedTransformations,
     capabilityId: flow.capabilityId,
     document,
+    facts,
+    lesson: identity,
   };
   if (definition.target.scope === "document") {
     if (documentDismissesTransformations(document)) {
       return null;
     }
-    const [candidate] = evaluateTransformations([definition], context);
-    return candidate === undefined
+    const [offered] = evaluateTransformations([definition], context);
+    return offered === undefined
       ? null
-      : { ...candidate, eligibleTargets: { scope: "document" } };
+      : { definition: offered, eligibleTargets: { scope: "document" } };
   }
 
   const [firstTargetBlockId, ...remainingTargetBlockIds] =
@@ -211,15 +217,15 @@ function candidateForDefinition(
     return null;
   }
 
-  const [candidate] = evaluateTransformations([definition], {
+  const [offered] = evaluateTransformations([definition], {
     ...context,
     targetBlockId: firstTargetBlockId,
   });
-  if (candidate === undefined) {
+  if (offered === undefined) {
     throw new Error(`${definition.kind} lost its eligible target.`);
   }
   return {
-    ...candidate,
+    definition: offered,
     eligibleTargets: {
       blockIds: [firstTargetBlockId, ...remainingTargetBlockIds],
       scope: "node",
@@ -231,7 +237,7 @@ export async function prepareSuggestionFlow(
   flow: SuggestionFlowDefinition,
   document: ResourceDocument,
   appliedTransformations: readonly AppliedTransformationSummary[],
-  material: OakMaterial,
+  lesson: SuggestionLessonContext,
   prepare: PrepareSuggestionPrompt = preparePrompt,
 ): Promise<SuggestionPreparation> {
   const definitions = flow.transformationKinds.map(
@@ -246,7 +252,7 @@ export async function prepareSuggestionFlow(
         appliedTransformations,
         flow,
         dismissedTargets,
-        material,
+        lesson,
       ),
     )
     .filter((candidate): candidate is SuggestionCandidate => candidate !== null);
@@ -255,7 +261,11 @@ export async function prepareSuggestionFlow(
     template: flow.prompt,
     variables: {
       document: serialiseResourceDocumentForPrompt(document),
-      lesson: suggestionLessonPart(document, flow.materialRequirements, material),
+      lesson: suggestionLessonPart(
+        document,
+        flow.materialRequirements,
+        lesson.material,
+      ),
       pedagogy: suggestionPedagogyPart(),
       transformations: renderCandidates(chosen),
     },
@@ -279,15 +289,17 @@ function validatedSuggestion(
   document: ResourceDocument,
   flow: SuggestionFlowDefinition,
   appliedTransformations: readonly AppliedTransformationSummary[],
+  { identity, facts }: SuggestionLessonContext,
 ): TransformationSuggestion | null {
-  const candidate = candidates.find(({ kind }) => kind === raw.kind);
-  if (candidate === undefined || !isRegisteredTransformationKind(candidate.kind)) {
+  const candidate = candidates.find(({ definition }) => definition.kind === raw.kind);
+  if (
+    candidate === undefined ||
+    !isRegisteredTransformationKind(candidate.definition.kind)
+  ) {
     return null;
   }
 
-  const definition = transformationDefinitions[
-    candidate.kind
-  ] as TransformationDefinition;
+  const { definition } = candidate;
   const params = definition.params.safeParse(raw.params);
   const targetIsEligible =
     candidate.eligibleTargets.scope === "document"
@@ -297,19 +309,25 @@ function validatedSuggestion(
   if (!params.success || !targetIsEligible) {
     return null;
   }
-  const stillAvailable = evaluateTransformations([definition], {
-    appliedTransformations,
-    capabilityId: flow.capabilityId,
-    document,
-    targetBlockId: raw.targetBlockId ?? undefined,
-  });
+  const stillAvailable = evaluateTransformations(
+    [transformationDefinitionFor(definition.kind)],
+    {
+      appliedTransformations,
+      capabilityId: flow.capabilityId,
+      document,
+      facts,
+      lesson: identity,
+      targetBlockId: raw.targetBlockId ?? undefined,
+    },
+  );
   if (stillAvailable.length === 0) {
     return null;
   }
 
   return {
-    kind: candidate.kind,
-    label: candidate.label,
+    inputs: definition.inputs ?? [],
+    kind: candidate.definition.kind,
+    label: definition.label,
     params: params.data,
     reason: raw.reason,
     targetBlockId: raw.targetBlockId,
@@ -319,14 +337,16 @@ function validatedSuggestion(
 function offeredAtEveryTarget(
   candidate: AlwaysOfferedCandidate,
 ): readonly TransformationSuggestion[] {
-  if (!isRegisteredTransformationKind(candidate.kind)) {
-    throw new Error(`Unknown transformation ${candidate.kind}.`);
+  const { definition, eligibleTargets } = candidate;
+  const { kind, label, suggestion } = definition;
+  if (!isRegisteredTransformationKind(kind)) {
+    throw new Error(`Unknown transformation ${kind}.`);
   }
-  const { kind, label, eligibleTargets, suggestion } = candidate;
   const targets =
     eligibleTargets.scope === "document" ? [null] : eligibleTargets.blockIds;
 
   return targets.map((targetBlockId) => ({
+    inputs: [],
     kind,
     label,
     params: {},
@@ -350,7 +370,7 @@ export async function generateSuggestions(
   appliedTransformations: readonly AppliedTransformationSummary[],
   config: Readonly<{
     prepare?: PrepareSuggestionPrompt | undefined;
-    material: OakMaterial;
+    lesson: SuggestionLessonContext;
     correlationKey?: string | undefined;
     signal?: AbortSignal | undefined;
   }> &
@@ -360,7 +380,7 @@ export async function generateSuggestions(
     flow,
     document,
     appliedTransformations,
-    config.material,
+    config.lesson,
     config.prepare,
   );
   const kept: TransformationSuggestion[] = alwaysOffered.flatMap(offeredAtEveryTarget);
@@ -396,6 +416,7 @@ export async function generateSuggestions(
       document,
       flow,
       appliedTransformations,
+      config.lesson,
     );
     if (suggestion !== null && !kept.some((earlier) => overlaps(earlier, suggestion))) {
       kept.push(suggestion);

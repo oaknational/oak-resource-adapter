@@ -1,10 +1,13 @@
 import type { PromptTemplate } from "@oaknational/resource-adapter-ai";
+import type { LessonEligibilityFacts } from "@oaknational/resource-adapter-curriculum";
 import type { TransformationInput } from "@oaknational/resource-adapter-contracts/internal";
 import type { TransformationStatus } from "@oaknational/resource-adapter-dev-api-contracts";
 import type { ResourceDocument, ResourceNode } from "@oaknational/resource-document";
 import type { z } from "zod";
 
 import type { TransformationModelRole } from "../ai/model-roles";
+import type { LessonFactsContext, LessonIdentityContext } from "../rules/context";
+import type { Rule } from "../rules/rule";
 import type { TransformationContribution } from "./contributions/contribution";
 import type { OakMaterialRequirement } from "../oak-material/material";
 import type { SupportLevel, SupportLevelOptions } from "./support-level";
@@ -110,9 +113,26 @@ export type TransformationAvailabilityContext = Readonly<{
   capabilityId: string;
   /** The adaptation head: the document a new transformation would read. */
   document: ResourceDocument;
+  facts: LessonEligibilityFacts | null;
+  lesson: LessonIdentityContext["lesson"];
   /** Set when listing the kinds offered against one node. */
   targetBlockId?: string | undefined;
 }>;
+
+/** Each rule sees the definition as earlier rules have narrowed it. */
+export type TransformationRuleContext = TransformationAvailabilityContext &
+  Readonly<{ definition: TransformationDefinition }>;
+
+/**
+ * A matching narrowing rule removes its levels, and refuses only if none would
+ * remain. It reads only the lesson, so every target is offered the same choices.
+ */
+export type NarrowingRule = Rule<LessonFactsContext> &
+  Readonly<{ removesSupportLevels: readonly [SupportLevel, ...SupportLevel[]] }>;
+
+export type TransformationRule =
+  | (Rule<TransformationRuleContext> & Readonly<{ removesSupportLevels?: never }>)
+  | NarrowingRule;
 
 export type TransformationDefinition<
   TKind extends string = string,
@@ -126,7 +146,8 @@ export type TransformationDefinition<
   inputs?: readonly TransformationInput[];
   /** Kinds that may not share a target with this one. Declared on both sides. */
   excludes?: readonly string[];
-  isAvailable: (context: TransformationAvailabilityContext) => boolean;
+  /** Kind-specific rules, checked in order after the common rules. */
+  rules: readonly TransformationRule[];
   /** Keys `transformations.kind` and `suggested_transformations.kind`. */
   kind: TKind;
   /** Teacher-facing. */

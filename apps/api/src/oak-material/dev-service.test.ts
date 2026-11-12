@@ -6,12 +6,10 @@ const curriculum = vi.hoisted(() => ({
 }));
 
 vi.mock("@oaknational/resource-adapter-curriculum", async () => ({
+  ...(await vi.importActual<typeof import("@oaknational/resource-adapter-curriculum")>(
+    "@oaknational/resource-adapter-curriculum",
+  )),
   createOakLessonRepository: () => ({ fetch: curriculum.fetch }),
-  buildLesson: (
-    await vi.importActual<typeof import("@oaknational/resource-adapter-curriculum")>(
-      "@oaknational/resource-adapter-curriculum",
-    )
-  ).buildLesson,
   oakCurriculumConfigFromEnv: () => ({
     apiKey: "test-key",
     endpoint: "https://curriculum.example/v1/graphql",

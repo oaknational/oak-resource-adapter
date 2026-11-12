@@ -1,7 +1,10 @@
 import {
   supportLevels,
+  transformationInputSchema,
   type SupportLevel,
+  type TransformationInput,
 } from "@oaknational/resource-adapter-contracts/internal";
+import { z } from "zod";
 
 import type { JobJsonValue } from "../jobs/domain";
 
@@ -11,6 +14,12 @@ export function asParams(value: unknown): Readonly<Record<string, JobJsonValue>>
     throw new Error("Stored transformation parameters are not an object.");
   }
   return value as Readonly<Record<string, JobJsonValue>>;
+}
+
+const storedInputsSchema = z.array(transformationInputSchema).readonly();
+
+export function storedInputs(value: unknown): readonly TransformationInput[] {
+  return storedInputsSchema.parse(value);
 }
 
 /** A transformation without a support-level choice stores none. */
