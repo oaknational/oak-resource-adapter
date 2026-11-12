@@ -182,18 +182,20 @@ test("adapts, accepts, downloads, resumes and removes a scaffold without losing 
   });
   await worksheet.getByRole("button", { name: "Accept", exact: true }).click();
   await expect(drawer.getByRole("status", { name: "Worksheet status" })).toContainText(
-    "Considering scaffold selections",
+    "Preparing your scaffolds…",
   );
+  const downloadButton = drawer.getByRole("button", {
+    name: "Download worksheet",
+    exact: true,
+  });
+  await expect(downloadButton).toHaveCount(0);
+  holdSuggestionProgress = false;
 
   let preparations = 0;
   page.on("request", (request) => {
     if (request.url().includes("worksheetScaffolding.prepareExport")) preparations += 1;
   });
-  const downloadButton = drawer.getByRole("button", {
-    name: "Download worksheet",
-    exact: true,
-  });
-  await expect(downloadButton).toBeEnabled();
+  await expect(downloadButton).toBeEnabled({ timeout: 30_000 });
   await page.route(
     "**/adapter-proxy/resource-artifacts/*",
     (route) => route.fulfill({ status: 503 }),
@@ -207,10 +209,6 @@ test("adapts, accepts, downloads, resumes and removes a scaffold without losing 
   expect(firstXml).toContain("Vocabulary you could include:");
   expect(firstXml).toContain("compare");
   expect(preparations).toBe(1);
-  await expect(drawer.getByRole("status", { name: "Worksheet status" })).toContainText(
-    "Considering scaffold selections",
-  );
-  holdSuggestionProgress = false;
 
   await page.reload();
   await page

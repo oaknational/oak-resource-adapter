@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, type RefObject } from "react";
 import {
   OakInlineBanner,
   OakPrimaryButton,
@@ -23,6 +24,7 @@ import type {
   ResourceAdapterErrorHandler,
 } from "../../publicTypes.js";
 import { AllowanceSummary } from "./AllowanceSummary.js";
+import { LoadingScreen } from "./LoadingScreen.js";
 import { PendingReviewControls } from "./PendingReviewControls.js";
 import { ResumeChoice } from "./ResumeChoice.js";
 import { SuggestionGroup, groupSuggestionsByTarget } from "./SuggestionGroup.js";
@@ -30,14 +32,14 @@ import { ActionRow } from "./styles.js";
 import { useWorksheetScaffolding } from "./useWorksheetScaffolding.js";
 import { WorksheetDownload } from "./WorksheetDownload.js";
 import {
-  LoadingStatusBanner,
   StickyWorkflowStatus,
   WorkflowFrame,
   WorkflowStatusBanner,
 } from "./WorkflowStatusBanner.js";
 import {
-  documentUpdateIsBusy,
+  downloadAvailability,
   jobIsBusy,
+  suggestionGenerationIsBusy,
   type WorkflowState,
   worksheetWasRefreshed,
 } from "./workflowState.js";
@@ -46,6 +48,7 @@ import {
   LOADING_STATUS,
   MONTHLY_RESET_STATUS,
   NEEDS_SETUP_STATUS,
+  PREPARING_SCAFFOLDS_STATUS,
   failureMessage,
   foundNoScaffolds,
   readyStatus,
@@ -66,12 +69,14 @@ export type WorksheetScaffoldingWorkflowProps = Readonly<{
 
 function ResumeChoiceWorkflow({
   allowance,
+  frameRef,
   onAllowanceDisplayed,
   onResume,
   onStartFresh,
   state,
 }: Readonly<{
   allowance: TeacherAllowance | null;
+  frameRef: RefObject<HTMLDivElement | null>;
   onAllowanceDisplayed: (allowance: TeacherAllowance) => void;
   onResume: () => void;
   onStartFresh: () => void;
@@ -79,7 +84,7 @@ function ResumeChoiceWorkflow({
 }>) {
   const status = state.usageLimit === null ? null : usageLimitStatus(state.usageLimit);
   return (
-    <WorkflowFrame status={status}>
+    <WorkflowFrame frameRef={frameRef} status={status}>
       {status === null ? (
         <AllowanceSummary allowance={allowance} onDisplayed={onAllowanceDisplayed} />
       ) : (
@@ -96,9 +101,11 @@ function ResumeChoiceWorkflow({
 }
 
 function MonthlyLimitWorkflow({
+  frameRef,
   onTryAgain,
   state,
 }: Readonly<{
+  frameRef: RefObject<HTMLDivElement | null>;
   onTryAgain: () => void;
   state: Extract<WorkflowState, { status: "monthlyLimitReached" }>;
 }>) {
@@ -106,7 +113,7 @@ function MonthlyLimitWorkflow({
     ? MONTHLY_RESET_STATUS
     : usageLimitStatus(state.usageLimit);
   return (
-    <WorkflowFrame status={status}>
+    <WorkflowFrame frameRef={frameRef} status={status}>
       <WorkflowStatusBanner
         cta={
           state.expired ? (
@@ -117,6 +124,28 @@ function MonthlyLimitWorkflow({
       />
     </WorkflowFrame>
   );
+}
+
+/**
+ * The loading screen's heading takes focus, so focus needs a new home when it
+ * goes: the next view's target, or else its frame. A view that focuses itself
+ * on mount, such as the error message, keeps that focus.
+ */
+function useFocusAfterLoadingScreen(showing: boolean) {
+  const frame = useRef<HTMLDivElement>(null);
+  const target = useRef<HTMLDivElement>(null);
+  const wasShowing = useRef(false);
+  useEffect(() => {
+    if (
+      wasShowing.current &&
+      !showing &&
+      !frame.current?.contains(document.activeElement)
+    ) {
+      (target.current ?? frame.current)?.focus();
+    }
+    wasShowing.current = showing;
+  }, [showing]);
+  return { frame, target };
 }
 
 export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflowProps) {
@@ -136,26 +165,30 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     tryAgain,
     undoReview,
   } = useWorksheetScaffolding(props);
+  const showsLoadingScreen =
+    state.status === "loading" ||
+    (state.status === "ready" && suggestionGenerationIsBusy(state.value));
+  const focusAfter = useFocusAfterLoadingScreen(showsLoadingScreen);
 
   if (state.status === "idle") {
     return null;
   }
 
-  if (state.status === "loading") {
+  // Loading and preparing share one mounted screen, so its tip and focus carry
+  // over when loading leads straight into preparing.
+  if (showsLoadingScreen) {
+    const status =
+      state.status === "loading" ? LOADING_STATUS : PREPARING_SCAFFOLDS_STATUS;
     return (
-      <WorkflowFrame status={LOADING_STATUS}>
-        <StickyWorkflowStatus>
-          <LoadingStatusBanner
-            message={LOADING_STATUS.message}
-            title={LOADING_STATUS.title}
-          />
-        </StickyWorkflowStatus>
+      <WorkflowFrame frameRef={focusAfter.frame} status={status}>
+        <LoadingScreen heading={status.message} />
       </WorkflowFrame>
     );
   }
   if (state.status === "choosing") {
     return (
       <ResumeChoiceWorkflow
+        frameRef={focusAfter.frame}
         allowance={allowance}
         onAllowanceDisplayed={observeAllowance}
         onResume={resume}
@@ -167,11 +200,17 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     );
   }
   if (state.status === "monthlyLimitReached") {
-    return <MonthlyLimitWorkflow onTryAgain={tryAgain} state={state} />;
+    return (
+      <MonthlyLimitWorkflow
+        frameRef={focusAfter.frame}
+        onTryAgain={tryAgain}
+        state={state}
+      />
+    );
   }
   if (state.status === "needsSetup") {
     return (
-      <WorkflowFrame status={NEEDS_SETUP_STATUS}>
+      <WorkflowFrame frameRef={focusAfter.frame} status={NEEDS_SETUP_STATUS}>
         <WorkflowStatusBanner
           cta={
             <OakPrimaryButton
@@ -190,8 +229,9 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   }
   if (state.status === "error") {
     return (
-      <WorkflowFrame status={null}>
+      <WorkflowFrame frameRef={focusAfter.frame} status={null}>
         <ResourceAdapterUnavailableMessage
+          focusOnMount
           message="Worksheet scaffolding could not be loaded."
           onTryAgain={tryAgain}
           testId="resource-adapter-worksheet-scaffolding-error"
@@ -203,13 +243,6 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   const { applyingSuggestion } = state;
   const isWorking =
     applyingSuggestion !== null || state.actionIsPending || jobIsBusy(state.value);
-  const downloadAvailability =
-    state.value.downloadAvailability === "available" &&
-    (applyingSuggestion !== null ||
-      state.actionIsPending ||
-      documentUpdateIsBusy(state.value))
-      ? "busy"
-      : state.value.downloadAvailability;
   const failedJob = state.value.job?.status === "failed" ? state.value.job : undefined;
   const listedSuggestions =
     applyingSuggestion?.listedSuggestions ?? state.value.suggestions;
@@ -279,9 +312,13 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     pendingReview === null;
 
   return (
-    <WorkflowFrame status={status}>
+    <WorkflowFrame frameRef={focusAfter.frame} status={status}>
       {status !== null && (
-        <StickyWorkflowStatus data-testid="worksheet-scaffolding-status">
+        <StickyWorkflowStatus
+          data-testid="worksheet-scaffolding-status"
+          ref={failedJob === undefined ? focusAfter.target : undefined}
+          tabIndex={-1}
+        >
           <WorkflowStatusBanner
             cta={
               showWorkflowCta ? (
@@ -319,7 +356,12 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
         </StickyWorkflowStatus>
       )}
       {failedJob !== undefined && (
-        <StickyWorkflowStatus aria-atomic="true" role="alert">
+        <StickyWorkflowStatus
+          aria-atomic="true"
+          ref={focusAfter.target}
+          role="alert"
+          tabIndex={-1}
+        >
           <OakInlineBanner
             isOpen
             cta={
@@ -344,26 +386,22 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
         </StickyWorkflowStatus>
       )}
       <AllowanceSummary allowance={allowance} onDisplayed={observeAllowance} />
-      {state.documentIsVisible && (
-        <>
-          <WorksheetDownload
-            apiBaseUrl={props.apiBaseUrl}
-            getToken={props.getToken}
-            adaptationId={state.value.adaptationId}
-            resourceDocumentId={state.value.resourceDocumentId}
-            availability={downloadAvailability}
-            onRefresh={refresh}
-            worksheetWasRefreshed={worksheetWasRefreshed(state)}
-            onError={props.onError}
-            track={props.track}
-          />
-          {renderSuggestionGroup(null)}
-          <ResourceDocumentRenderer
-            decorations={decorations}
-            document={state.value.document}
-          />
-        </>
-      )}
+      <WorksheetDownload
+        apiBaseUrl={props.apiBaseUrl}
+        getToken={props.getToken}
+        adaptationId={state.value.adaptationId}
+        resourceDocumentId={state.value.resourceDocumentId}
+        availability={downloadAvailability(state)}
+        onRefresh={refresh}
+        worksheetWasRefreshed={worksheetWasRefreshed(state)}
+        onError={props.onError}
+        track={props.track}
+      />
+      {renderSuggestionGroup(null)}
+      <ResourceDocumentRenderer
+        decorations={decorations}
+        document={state.value.document}
+      />
     </WorkflowFrame>
   );
 }
