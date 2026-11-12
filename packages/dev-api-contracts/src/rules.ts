@@ -49,6 +49,7 @@ export type RuleDescription = z.infer<typeof ruleSchema>;
 /** A step the teacher completes before ORA starts work. */
 const accountGateSchema = z
   .object({
+    config: ruleConfigSchema,
     description: z.string(),
     id: z.string(),
     label: z.string(),

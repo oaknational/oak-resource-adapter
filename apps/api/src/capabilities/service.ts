@@ -21,7 +21,7 @@ import {
 import { capabilityDefinitions } from "./registry";
 import type { CapabilityDefinition, EligibilityContext } from "./types";
 
-export type EligibilityResolver = (
+export type EligibilityContextReader = (
   lesson: LessonContext,
 ) => Promise<EligibilityContext>;
 
@@ -89,7 +89,7 @@ export function evaluateCapabilities(
 }
 
 /** `originalFileResourceTypes` is caller-supplied, not resolved from Oak. */
-export const resolveEligibility: EligibilityResolver = async (lesson) => ({
+export const readEligibilityContext: EligibilityContextReader = async (lesson) => ({
   lesson,
   facts: await readLessonFacts(lesson),
   originalFileResourceTypes: lesson.availableResources,
@@ -100,7 +100,7 @@ export const resolveEligibility: EligibilityResolver = async (lesson) => ({
   }),
 });
 
-export type LessonEligibility =
+export type LessonOffer =
   | Readonly<{ outcome: "needsSetup" }>
   | Readonly<{
       outcome: "ready";
@@ -109,17 +109,17 @@ export type LessonEligibility =
     }>;
 
 /** The rules every signed-in lesson entry point applies. */
-export async function resolveLessonEligibility(
+export async function resolveLessonOffer(
   lesson: LessonContext,
   teacherId: string,
-  resolveContext: EligibilityResolver = resolveEligibility,
+  readContext: EligibilityContextReader = readEligibilityContext,
   access: Pick<TeacherAccessResolver, "resolve"> = teacherAccessResolver,
-): Promise<LessonEligibility> {
+): Promise<LessonOffer> {
   const teacher = await access.resolve(teacherId);
   if (!teacher.onboarded) {
     return { outcome: "needsSetup" };
   }
-  const context = await resolveContext(lesson);
+  const context = await readContext(lesson);
   return {
     outcome: "ready",
     teacher,
@@ -134,19 +134,14 @@ export async function resolveLessonEligibility(
 export async function getCapabilities(
   lesson: LessonContext,
   target: ResourceAdapterAuthenticatedTeacher,
-  resolveContext: EligibilityResolver = resolveEligibility,
+  readContext: EligibilityContextReader = readEligibilityContext,
   access: Pick<TeacherAccessResolver, "resolve"> = teacherAccessResolver,
 ): Promise<ResourceAdapterCapabilitiesResponse> {
-  const eligibility = await resolveLessonEligibility(
-    lesson,
-    target.teacherId,
-    resolveContext,
-    access,
-  );
-  if (eligibility.outcome === "needsSetup") {
+  const offer = await resolveLessonOffer(lesson, target.teacherId, readContext, access);
+  if (offer.outcome === "needsSetup") {
     return { account: { state: "needsSetup" }, capabilities: [] };
   }
-  const { teacher, capabilities } = eligibility;
+  const { teacher, capabilities } = offer;
   return {
     account: {
       state: "ready",
@@ -159,11 +154,11 @@ export async function getCapabilities(
 
 export async function hasCapabilities(
   { supportedCapabilityIds, ...lesson }: ResourceAdapterCapabilityAvailabilityRequest,
-  resolveContext: EligibilityResolver = resolveEligibility,
+  readContext: EligibilityContextReader = readEligibilityContext,
 ): Promise<ResourceAdapterCapabilityAvailabilityResponse> {
   const { capabilities } = evaluateCapabilities(
     Object.values(capabilityDefinitions),
-    await resolveContext(lesson),
+    await readContext(lesson),
     undefined,
   );
   const renderable = supportedCapabilityIds

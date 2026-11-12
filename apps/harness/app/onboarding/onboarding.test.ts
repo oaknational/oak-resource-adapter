@@ -4,6 +4,7 @@ import {
   NO_REGION,
   initialRegionChoice,
   isDevelopmentClerkInstance,
+  acceptedTermsOf,
   onboardingOf,
   parseRegion,
   safeReturnTo,
@@ -83,5 +84,22 @@ describe("onboardingOf", () => {
       onboarded: false,
       region: null,
     });
+  });
+});
+
+describe("acceptedTermsOf", () => {
+  it("reads the version and time ORA recorded", () => {
+    const acceptedTerms = { version: 1, acceptedAt: "2026-11-11T10:00:00.000Z" };
+
+    expect(acceptedTermsOf({ privateMetadata: { ora: { acceptedTerms } } })).toEqual(
+      acceptedTerms,
+    );
+  });
+
+  it.each([
+    ["missing", { privateMetadata: {} }],
+    ["malformed", { privateMetadata: { ora: { acceptedTerms: "yes" } } }],
+  ])("is null when %s", (_, user) => {
+    expect(acceptedTermsOf(user)).toBeNull();
   });
 });

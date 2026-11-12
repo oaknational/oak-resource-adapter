@@ -6,7 +6,7 @@ import type {
 } from "@oaknational/resource-adapter-dev-api-contracts";
 
 import { capabilityDefinitions } from "../capabilities/registry";
-import { explainEligibility, resolveEligibility } from "../capabilities/service";
+import { explainEligibility, readEligibilityContext } from "../capabilities/service";
 import { LESSON_MATERIALS_RULE } from "../lesson-rules/lesson-materials";
 import { LESSON_RULES } from "../lesson-rules/rules";
 import type { Rule } from "../rules/rule";
@@ -103,7 +103,7 @@ export async function evaluateDevEligibility({
 }: EligibilityEvaluationRequest): Promise<EligibilityEvaluationResponse> {
   return explainEligibility(
     Object.values(capabilityDefinitions),
-    await resolveEligibility(lesson),
+    await readEligibilityContext(lesson),
     teacher,
   );
 }

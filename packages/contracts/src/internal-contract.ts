@@ -139,10 +139,12 @@ export type WorksheetScaffoldingEntryOutcome =
 
 /**
  * `needsSetup`: the teacher has not completed OWA onboarding.
+ * `needsTerms`: the teacher has not accepted the current version of ORA's terms.
  * `allowance` is read after any use the request spent.
  */
 export type WorksheetScaffoldingEntry =
   | Readonly<{ outcome: "needsSetup" }>
+  | Readonly<{ outcome: "needsTerms" }>
   | (WorksheetScaffoldingEntryOutcome & Readonly<{ allowance: TeacherAllowance }>);
 
 export const transformationInputSchema = z.readonly(
@@ -196,6 +198,18 @@ export type UsageLimitReached<TKind extends UsageLimitKind = UsageLimitKind> =
     /** Earliest retry time in ISO format; another request can consume the freed allowance. */
     retryAt: string;
   }>;
+
+/**
+ * Whether the teacher has accepted the current version of ORA's terms. From
+ * `terms.accept`, false means the version they were shown is out of date.
+ */
+export type TermsState = Readonly<{ accepted: boolean }>;
+
+/** The version of the terms the teacher was shown. */
+export const termsAcceptRequestSchema = z.object({
+  version: z.number().check(z.int(), z.positive()),
+});
+export type TermsAcceptRequest = z.infer<typeof termsAcceptRequestSchema>;
 
 export type TeacherAllowance =
   | Readonly<{ tier: "full" }>

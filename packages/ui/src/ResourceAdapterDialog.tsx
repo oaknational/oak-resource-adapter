@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { OakModalCenter, OakModalCenterBody } from "@oaknational/oak-components";
+import { OakModalCenter, OakModalCenterBody, OakP } from "@oaknational/oak-components";
 
 import {
   createAnalyticsTracker,
@@ -13,6 +13,8 @@ import {
   ResourceAdapterErrorBoundary,
   ResourceAdapterUnavailableMessage,
 } from "./ResourceAdapterErrorBoundary.js";
+import { TermsView } from "./TermsView.js";
+import { useTermsGate } from "./useTermsGate.js";
 import type {
   GetToken,
   LessonContext,
@@ -110,6 +112,7 @@ function ResourceAdapterDialogInner({
 }: ResourceAdapterDialogInnerProps) {
   const Workflow = capabilityWorkflows[capability.id];
   const titleId = `resource-adapter-${capability.id}-title`;
+  const terms = useTermsGate({ apiBaseUrl, getToken, isOpen, onError });
 
   return (
     <OakModalCenter
@@ -142,15 +145,45 @@ function ResourceAdapterDialogInner({
             {...(onError ? { onError } : {})}
             resetKeys={resetKeys}
           >
-            <Workflow
-              apiBaseUrl={apiBaseUrl}
-              getToken={getToken}
-              isOpen={isOpen}
-              lesson={lesson}
-              {...(onError ? { onError } : {})}
-              onFinishSetup={onFinishSetup}
-              track={track}
-            />
+            {terms.status === "checking" && (
+              <OakP $font="body-2" role="status">
+                Loading&hellip;
+              </OakP>
+            )}
+            {terms.status === "checkFailed" && (
+              <ResourceAdapterUnavailableMessage
+                message="We couldn't check your account. The rest of the page still works."
+                onTryAgain={terms.retry}
+                testId="resource-adapter-terms-error"
+              />
+            )}
+            {(terms.status === "required" ||
+              terms.status === "accepting" ||
+              terms.status === "acceptFailed" ||
+              terms.status === "outdated") && (
+              <TermsView
+                isAccepting={terms.status === "accepting"}
+                onAccept={terms.accept}
+                onBack={onClose}
+                problem={
+                  terms.status === "acceptFailed" || terms.status === "outdated"
+                    ? terms.status
+                    : null
+                }
+              />
+            )}
+            {terms.status === "accepted" && (
+              <Workflow
+                apiBaseUrl={apiBaseUrl}
+                getToken={getToken}
+                isOpen={isOpen}
+                lesson={lesson}
+                {...(onError ? { onError } : {})}
+                onFinishSetup={onFinishSetup}
+                onTermsRequired={terms.require}
+                track={track}
+              />
+            )}
           </ResourceAdapterErrorBoundary>
         </div>
       </OakModalCenterBody>

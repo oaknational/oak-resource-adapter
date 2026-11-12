@@ -70,7 +70,11 @@ export async function openWorksheetScaffolding(
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingEntry | null> {
   const outcome = await enter(request, target, dependencies);
-  if (outcome === null || outcome.outcome === "needsSetup") {
+  if (
+    outcome === null ||
+    outcome.outcome === "needsSetup" ||
+    outcome.outcome === "needsTerms"
+  ) {
     return outcome;
   }
   return { ...outcome, allowance: await getTeacherAllowance(target, dependencies) };
@@ -81,22 +85,25 @@ async function enter(
   target: ResourceAdapterAuthenticatedTeacher,
   dependencies: WorksheetScaffoldingDependencies,
 ): Promise<
-  WorksheetScaffoldingEntryOutcome | Readonly<{ outcome: "needsSetup" }> | null
+  | WorksheetScaffoldingEntryOutcome
+  | Readonly<{ outcome: "needsSetup" }>
+  | Readonly<{ outcome: "needsTerms" }>
+  | null
 > {
   const { lesson, replacing } = request;
   const { repository } = dependencies;
 
-  const location = await dependencies.resolveSourceDocumentLocator(
+  const admission = await dependencies.admitToCapability(
     { capabilityId: CAPABILITY.id, lesson },
     target,
   );
-  if (location.outcome === "unavailable") {
+  if (admission.outcome === "unavailable") {
     return null;
   }
-  if (location.outcome === "needsSetup") {
-    return { outcome: "needsSetup" };
+  if (admission.outcome === "needsSetup" || admission.outcome === "needsTerms") {
+    return admission;
   }
-  const { locator } = location;
+  const { locator } = admission;
 
   if (replacing === undefined) {
     const recentAdaptationsOfLesson = {

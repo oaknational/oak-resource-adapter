@@ -5,10 +5,16 @@ import type { TeacherAccess } from "./access";
 
 const limited: TeacherAccess = {
   onboarded: true,
+  termsAccepted: true,
   tier: "limited",
   inCopyrightRegion: false,
 };
-const full: TeacherAccess = { onboarded: true, tier: "full", inCopyrightRegion: true };
+const full: TeacherAccess = {
+  onboarded: true,
+  termsAccepted: true,
+  tier: "full",
+  inCopyrightRegion: true,
+};
 
 describe("the cached teacher access resolver", () => {
   it("serves a lookup until it expires", async () => {
@@ -41,6 +47,55 @@ describe("the cached teacher access resolver", () => {
     await expect(resolver.resolve("user_a")).resolves.toEqual(notOnboarded);
     await expect(resolver.resolve("user_a")).resolves.toEqual(full);
     await expect(resolver.resolve("user_a")).resolves.toEqual(full);
+    expect(lookUp).toHaveBeenCalledTimes(2);
+  });
+
+  it("looks up a teacher who has not accepted the terms on every request", async () => {
+    const notAccepted: TeacherAccess = { ...full, termsAccepted: false };
+    const lookUp = vi
+      .fn<() => Promise<TeacherAccess>>()
+      .mockResolvedValueOnce(notAccepted)
+      .mockResolvedValueOnce(full);
+    const resolver = createCachedTeacherAccessResolver(lookUp);
+
+    await expect(resolver.resolve("user_a")).resolves.toEqual(notAccepted);
+    await expect(resolver.resolve("user_a")).resolves.toEqual(full);
+    await expect(resolver.resolve("user_a")).resolves.toEqual(full);
+    expect(lookUp).toHaveBeenCalledTimes(2);
+  });
+
+  it("looks a forgotten teacher up again", async () => {
+    const lookUp = vi
+      .fn<() => Promise<TeacherAccess>>()
+      .mockResolvedValueOnce(full)
+      .mockResolvedValueOnce(limited);
+    const resolver = createCachedTeacherAccessResolver(lookUp);
+
+    await resolver.resolve("user_a");
+    resolver.forget("user_a");
+    await expect(resolver.resolve("user_a")).resolves.toEqual(limited);
+  });
+
+  it("does not let a lookup started before forgetting refill the cache", async () => {
+    let finishStaleLookUp: (access: TeacherAccess) => void = () => {};
+    const lookUp = vi
+      .fn<() => Promise<TeacherAccess>>()
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          finishStaleLookUp = resolve;
+        }),
+      )
+      .mockResolvedValue({ ...full, termsAccepted: false });
+    const resolver = createCachedTeacherAccessResolver(lookUp);
+
+    const stale = resolver.resolve("user_a");
+    resolver.forget("user_a");
+    finishStaleLookUp(full);
+    await stale;
+
+    await expect(resolver.resolve("user_a")).resolves.toMatchObject({
+      termsAccepted: false,
+    });
     expect(lookUp).toHaveBeenCalledTimes(2);
   });
 
