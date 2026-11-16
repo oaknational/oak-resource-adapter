@@ -30,7 +30,9 @@ export type ModerationCategory = (typeof MODERATION_CATEGORIES)[number];
 /** 5 means the content is not involved in the category, 1 means it is heavily involved. */
 export type ModerationScore = 1 | 2 | 3 | 4 | 5;
 
-export type ModerationScores = Readonly<Record<ModerationCategory, ModerationScore>>;
+export type ModerationScores = Readonly<
+  Partial<Record<ModerationCategory, ModerationScore>>
+>;
 
 const knownCategories: ReadonlySet<string> = new Set(MODERATION_CATEGORIES);
 

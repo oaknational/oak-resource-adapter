@@ -1,19 +1,36 @@
 import { z } from "zod";
 
-import { MODERATION_CATEGORIES, type ModerationCategory } from "./categories.js";
+import {
+  isModerationCategory,
+  type ModerationCategory,
+  type ModerationScore,
+  type ModerationScores,
+} from "./categories.js";
 
 const scoreSchema = z.literal([1, 2, 3, 4, 5]);
 
-// Unknown score keys are stripped, so a category added upstream doesn't fail the parse.
-const scoresSchema = z.object(
-  Object.fromEntries(
-    MODERATION_CATEGORIES.map((category) => [category, scoreSchema]),
-  ) as Record<ModerationCategory, typeof scoreSchema>,
-);
+function knownScores(value: unknown): ModerationScores {
+  if (typeof value !== "object" || value === null) {
+    return {};
+  }
+  const scores: Partial<Record<ModerationCategory, ModerationScore>> = {};
+  for (const [category, score] of Object.entries(value)) {
+    const parsed = scoreSchema.safeParse(score);
+    if (isModerationCategory(category) && parsed.success) {
+      scores[category] = parsed.data;
+    }
+  }
+  return scores;
+}
 
+/**
+ * Only `flagged_categories` decides an outcome, so it is the only field whose
+ * absence makes a response unusable. A score the service adds, drops or puts
+ * out of range is left out instead.
+ */
 export const moderationResponseSchema = z.object({
-  scores: scoresSchema,
   flagged_categories: z.array(z.string()),
-  prompt_version: z.string(),
-  moderation_id: z.string().optional(),
+  scores: z.unknown().optional().transform(knownScores),
+  prompt_version: z.string().optional().catch(undefined),
+  moderation_id: z.string().optional().catch(undefined),
 });

@@ -19,7 +19,7 @@ export type ModerationOutcome =
   | Readonly<{
       outcome: "PASSED";
       scores: ModerationScores;
-      promptVersion: string;
+      promptVersion?: string;
       moderationId?: string;
     }>
   | Readonly<{
@@ -27,7 +27,7 @@ export type ModerationOutcome =
       flaggedCategories: readonly ModerationCategory[];
       unrecognisedCategories: readonly string[];
       scores: ModerationScores;
-      promptVersion: string;
+      promptVersion?: string;
       moderationId?: string;
     }>
   | Readonly<{
