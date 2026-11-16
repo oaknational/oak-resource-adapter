@@ -9,7 +9,7 @@ import {
 } from "@oaknational/oak-components";
 import { styled } from "styled-components";
 
-import { VisibleLoadingSpinner } from "./styles.js";
+import { VisibleLoadingSpinner } from "../../VisibleLoadingSpinner.js";
 import type { WorkflowStatus } from "./workflowStatus.js";
 
 export const StickyWorkflowStatus = styled.div`

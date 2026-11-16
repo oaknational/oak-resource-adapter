@@ -465,6 +465,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
   // with whatever the source says, so a directive added to a server-safe module
   // by mistake would pass. Adding a module means choosing a list for it.
   const clientModules = [
+    "DialogLoading.js",
     "DialogNotice.js",
     "FeatureFlag.js",
     "ResourceAdapterButton.js",
@@ -479,6 +480,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "capabilities/worksheet-scaffolding/WorksheetScaffoldingWorkflow.js",
     "capabilities/worksheet-scaffolding/WorksheetDownload.js",
     "useResourceDownload.js",
+    "VisibleLoadingSpinner.js",
     "capabilities/worksheet-scaffolding/useWorksheetScaffolding.js",
     "capabilities/worksheet-scaffolding/useWorksheetScaffoldingPolling.js",
     "capabilities/worksheet-scaffolding/AllowanceSummary.js",
