@@ -225,6 +225,23 @@ export type LimitedTeacherAllowance = Readonly<{
 
 export type TeacherAllowance = Readonly<{ tier: "full" }> | LimitedTeacherAllowance;
 
+/** A moderation category code with a plain-language name for it. */
+export type ContentGuidance = Readonly<{ category: string; label: string }>;
+
+export const withheldSafetyResults = ["highly-sensitive", "toxic"] as const;
+
+export type WithheldSafetyResult = (typeof withheldSafetyResults)[number];
+
+/** A generated scaffold that moderation kept off the worksheet. */
+export type WithheldScaffold = Readonly<{
+  attemptId: string;
+  categories: readonly string[];
+  kind: string;
+  label: string;
+  safetyResult: WithheldSafetyResult;
+  targetBlockId: string | null;
+}>;
+
 export type WorksheetScaffoldingState = Readonly<{
   adaptationId: string;
   /** A refusal for this request; null does not imply remaining allowance. */
@@ -233,6 +250,8 @@ export type WorksheetScaffoldingState = Readonly<{
   resourceDocumentId: string;
   downloadAvailability: WorksheetDownloadAvailability;
   job: null | Readonly<{
+    /** The attempt a failed scaffold job ran, which a retry can run again. */
+    attemptId?: string;
     failureMessage: string | null;
     id: string;
     kind: WorksheetScaffoldingJobKind;
@@ -241,6 +260,8 @@ export type WorksheetScaffoldingState = Readonly<{
   /** The generated revision at the head, while the teacher has yet to decide on it. */
   pendingReview: null | Readonly<{
     attemptId: string;
+    /** Areas moderation asked the teacher to check before using the scaffold. */
+    contentGuidance?: readonly ContentGuidance[];
     contributionId: string;
     kind: string;
     label: string;
@@ -248,6 +269,8 @@ export type WorksheetScaffoldingState = Readonly<{
     supportLevel: SupportLevel | null;
     targetBlockId: string | null;
   }>;
+  /** The latest scaffold moderation withheld, until other work happens on this worksheet. */
+  withheld?: WithheldScaffold | null;
   suggestions: readonly Readonly<{
     id: string;
     inputs?: readonly TransformationInput[];
