@@ -4,7 +4,8 @@ export interface ResourceDocumentTraversalOptions {
   includeAnswerContent?: boolean;
 }
 
-function* walkNodes(nodes: readonly ResourceNode[]): Generator<ResourceNode> {
+/** Walks each node followed by its descendants, in reading order. */
+export function* walkNodes(nodes: readonly ResourceNode[]): Generator<ResourceNode> {
   for (const node of nodes) {
     yield node;
 

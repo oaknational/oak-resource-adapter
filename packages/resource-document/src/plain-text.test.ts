@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resourceDocumentToPlainText } from "./plain-text.js";
+import { resourceDocumentToPlainText, resourceNodesToPlainText } from "./plain-text.js";
 import type {
   AnswerAnnotation,
   Asset,
@@ -222,5 +222,45 @@ describe("resourceDocumentToPlainText", () => {
     };
 
     expect(resourceDocumentToPlainText(document)).toBe("Notes");
+  });
+});
+
+describe("resourceNodesToPlainText", () => {
+  it("flattens each node with its descendants and no title", () => {
+    const nodes: ResourceNode[] = [
+      {
+        id: "support",
+        type: "callout",
+        role: "note",
+        content: [{ type: "text", text: "Vocabulary you could include:" }],
+      },
+      {
+        id: "section",
+        type: "section",
+        children: [
+          paragraph("first", "compare"),
+          { id: "figure", type: "figure", assetId: "graph" },
+        ],
+      },
+    ];
+    const assets = [
+      asset("graph", { kind: "text", text: "A bar chart", origin: "source" }),
+    ];
+
+    expect(resourceNodesToPlainText(nodes, assets).split("\n")).toEqual([
+      "Vocabulary you could include:",
+      "compare",
+      "A bar chart",
+    ]);
+  });
+
+  it("is empty when the nodes carry no text", () => {
+    expect(resourceNodesToPlainText([], [])).toBe("");
+    expect(
+      resourceNodesToPlainText(
+        [{ id: "space", type: "responseSpace", kind: "lines", lines: 3 }],
+        [],
+      ),
+    ).toBe("");
   });
 });

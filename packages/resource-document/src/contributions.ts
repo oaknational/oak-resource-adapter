@@ -1,4 +1,8 @@
-import type { NamespacedExtensions, ResourceDocument } from "./schema/types.js";
+import type {
+  NamespacedExtensions,
+  ResourceDocument,
+  ResourceNode,
+} from "./schema/types.js";
 import { walkResourceDocument } from "./traversal.js";
 
 /** Namespaced so a contribution stays identifiable in an exported document. */
@@ -9,6 +13,35 @@ export function contributionIdOf(
 ): string | undefined {
   const id = extensions?.[CONTRIBUTION_EXTENSION_KEY];
   return typeof id === "string" ? id : undefined;
+}
+
+function* topMostContributed(
+  nodes: readonly ResourceNode[],
+  contributionId: string,
+): Generator<ResourceNode> {
+  for (const node of nodes) {
+    if (contributionIdOf(node.extensions) === contributionId) {
+      yield node;
+    } else if ("children" in node) {
+      yield* topMostContributed(node.children, contributionId);
+    }
+  }
+}
+
+/**
+ * The outermost nodes one contribution added, at any depth, in content then
+ * answers. Each node's descendants come with it, so nothing is returned twice.
+ */
+export function contributedNodes(
+  document: ResourceDocument,
+  contributionId: string,
+): readonly ResourceNode[] {
+  return [
+    ...topMostContributed(document.content, contributionId),
+    ...document.answers.flatMap((answer) => [
+      ...topMostContributed(answer.content, contributionId),
+    ]),
+  ];
 }
 
 /** IDs of generated contributions still present in this document revision. */

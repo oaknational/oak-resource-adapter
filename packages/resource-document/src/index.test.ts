@@ -8,12 +8,14 @@ describe("resource-document public API", () => {
   it("exports the intentionally small root surface", () => {
     expect(Object.keys(publicApi).sort()).toEqual([
       "CONTRIBUTION_EXTENSION_KEY",
+      "contributedNodes",
       "contributionIdOf",
       "contributionIdsInDocument",
       "filterResourceNodes",
       "getResourceNodeById",
       "getResourceNodesByType",
       "resourceDocumentToPlainText",
+      "resourceNodesToPlainText",
       "resourceVocabulary",
       "updateResourceNodeById",
       "validateResourceDocumentInvariants",

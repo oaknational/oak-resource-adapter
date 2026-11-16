@@ -7,6 +7,7 @@ import type {
 } from "./schema/types.js";
 import {
   CONTRIBUTION_EXTENSION_KEY,
+  contributedNodes,
   contributionIdOf,
   contributionIdsInDocument,
 } from "./contributions.js";
@@ -93,10 +94,24 @@ describe("resource document contributions", () => {
     ]);
   });
 
+  it("returns the outermost nodes of one contribution, in content then answers", () => {
+    expect(contributedNodes(document, "repeated").map(({ id }) => id)).toEqual([
+      "section",
+    ]);
+    expect(contributedNodes(document, "nested").map(({ id }) => id)).toEqual([
+      "support",
+    ]);
+    expect(contributedNodes(document, "answer-content").map(({ id }) => id)).toEqual([
+      "answer-text",
+    ]);
+    expect(contributedNodes(document, "missing")).toEqual([]);
+  });
+
   it("does not mutate the document", () => {
     const before = structuredClone(document);
 
     contributionIdsInDocument(document);
+    contributedNodes(document, "repeated");
 
     expect(document).toEqual(before);
   });
