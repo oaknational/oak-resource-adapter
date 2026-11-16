@@ -51,6 +51,12 @@ OpenAI and requires `OPENAI_API_KEY`; other values fail configuration validation
 access and a local test database are still needed. Deployments are unaffected: the
 browser job does not set it, and `VERCEL_ENV=production` rejects it outright.
 
+They also set `MODERATION_TRANSPORT=deterministic`, so scaffolds are moderated
+without calling the moderation service. Unset or `service` calls it and requires
+`MODERATION_API_URL`. See
+[deterministic moderation](MODERATION.md#deterministic-moderation) for the result
+each scaffold reaches.
+
 Playwright reuses an already-running API server, so restart yours after changing
 the value or it will keep the transport it started with.
 
