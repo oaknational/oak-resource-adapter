@@ -23,12 +23,10 @@ function pendingReviewSentence(count: number): string {
 }
 
 export function ResumeChoice({
-  canStartFresh,
   onResume,
   onStartFresh,
   resumable,
 }: Readonly<{
-  canStartFresh: boolean;
   onResume: () => void;
   onStartFresh: () => void;
   resumable: WorksheetScaffoldingResumable;
@@ -63,7 +61,7 @@ export function ResumeChoice({
 
       <OakFlex $flexWrap="wrap" $gap="spacing-8">
         <OakPrimaryButton onClick={onResume}>Carry on</OakPrimaryButton>
-        <OakSecondaryButton disabled={!canStartFresh} onClick={onStartFresh}>
+        <OakSecondaryButton onClick={onStartFresh}>
           Start from the original
         </OakSecondaryButton>
       </OakFlex>

@@ -11,6 +11,8 @@ type AllowanceTransaction = Pick<DatabaseClient, "execute" | "selectDistinct">;
 export type AdaptationAllowance =
   "unlimited" | Readonly<{ limit: number; since: Date }>;
 
+export type ResourceToAdapt = Readonly<{ capabilityId: string; lesson: LessonContext }>;
+
 export type AdaptedResource = Readonly<{
   capabilityId: string;
   lessonSlug: string | null;
@@ -35,13 +37,26 @@ export async function adaptedResourcesSince(
     );
 }
 
+/** The spend check and `isWithinAllowance` must agree, so both use this. */
+export function isCounted(
+  counted: readonly AdaptedResource[],
+  { capabilityId, lesson }: ResourceToAdapt,
+): boolean {
+  return counted.some(
+    (resource) =>
+      resource.capabilityId === capabilityId &&
+      resource.lessonSlug === lesson.lessonSlug &&
+      resource.programmeSlug === lesson.programmeSlug,
+  );
+}
+
 /**
  * Holds the teacher's lock until the transaction ends, so concurrent requests
  * cannot both take the last use.
  */
 export async function isWithinAllowance(
   transaction: AllowanceTransaction,
-  input: Readonly<{ capabilityId: string; lesson: LessonContext; teacherId: string }>,
+  input: ResourceToAdapt & Readonly<{ teacherId: string }>,
   allowance: AdaptationAllowance,
 ): Promise<boolean> {
   if (allowance === "unlimited") {
@@ -56,11 +71,5 @@ export async function isWithinAllowance(
     allowance.since,
     transaction,
   );
-  const alreadyCounted = counted.some(
-    (resource) =>
-      resource.capabilityId === input.capabilityId &&
-      resource.lessonSlug === input.lesson.lessonSlug &&
-      resource.programmeSlug === input.lesson.programmeSlug,
-  );
-  return alreadyCounted || counted.length < allowance.limit;
+  return isCounted(counted, input) || counted.length < allowance.limit;
 }

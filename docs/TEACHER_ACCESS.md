@@ -63,6 +63,10 @@ counts once a month however often the teacher opens it. Starting again on work
 from an earlier month counts in the new month.
 Resuming and downloading existing work remain available after the allowance is used.
 
+An open that would count returns `needsSpendConfirmation` with the allowance,
+and the dialog shows it before the teacher goes on. The open is sent again with
+`spendConfirmed`. With none left, the open refuses instead.
+
 The daily model job limit ([background jobs](BACKGROUND_JOBS.md#usage-limits))
 applies to both tiers. A teacher with a verified Oak address gets 1000
 (`OAK_MODEL_JOBS_PER_24H`) instead. `privateMetadata.ora.usageLimits.modelJobsPer24h`

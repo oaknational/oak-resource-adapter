@@ -110,14 +110,16 @@ export type ResourceAdapterApiContextInternal = Readonly<{
 
 const t_internal = initTRPC.context<ResourceAdapterApiContextInternal>().create();
 
+const limitedTeacherAllowanceSchema = z.object({
+  tier: z.literal("limited"),
+  limit: z.number().check(z.int(), z.positive()),
+  remaining: z.number().check(z.int(), z.nonnegative()),
+  resetsAt: z.iso.datetime(),
+});
+
 const teacherAllowanceSchema = z.discriminatedUnion("tier", [
   z.object({ tier: z.literal("full") }),
-  z.object({
-    tier: z.literal("limited"),
-    limit: z.number().check(z.int(), z.positive()),
-    remaining: z.number().check(z.int(), z.nonnegative()),
-    resetsAt: z.iso.datetime(),
-  }),
+  limitedTeacherAllowanceSchema,
 ]) satisfies z.ZodType<TeacherAllowance>;
 
 const termsStateSchema = z.object({
@@ -169,6 +171,10 @@ const worksheetScaffoldingStateSchema = z.object({
 const worksheetScaffoldingEntrySchema = z.discriminatedUnion("outcome", [
   z.object({ outcome: z.literal("needsSetup") }),
   z.object({ outcome: z.literal("needsTerms") }),
+  z.object({
+    allowance: limitedTeacherAllowanceSchema,
+    outcome: z.literal("needsSpendConfirmation"),
+  }),
   z.object({
     allowance: teacherAllowanceSchema,
     outcome: z.literal("opened"),

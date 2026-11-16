@@ -3,14 +3,11 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   supportLevels,
-  type TeacherAllowance,
   type WorksheetScaffoldingApplyRequest,
   type WorksheetScaffoldingEntry,
-  type WorksheetScaffoldingResumable,
   type WorksheetScaffoldingState,
 } from "@oaknational/resource-adapter-contracts/internal";
 
-import { getTeacherAllowance } from "../../allowance.js";
 import { scheduleAt } from "../../scheduleAt.js";
 import type {
   AdaptationRequest,
@@ -48,6 +45,10 @@ type OpenRequest = Readonly<{
 }>;
 
 type ReplacementRequest = Readonly<{ adaptationId: string; requestId: string }>;
+
+function openAction(lessonKey: string, replacing: ReplacementRequest | null): string {
+  return `${lessonKey}:${replacing?.requestId ?? ""}`;
+}
 
 type Connection = Readonly<{ apiBaseUrl: string; getToken: GetToken }>;
 
@@ -137,10 +138,11 @@ export function useWorksheetScaffolding({
 }>) {
   const [state, dispatchEvent] = useReducer(workflowReducer, { status: "idle" });
   const [openCount, setOpenCount] = useState(0);
-  const [allowance, setAllowance] = useState<TeacherAllowance | null>(null);
   const openRequestRef = useRef<OpenRequest | null>(null);
   const replacingRef = useRef<ReplacementRequest | null>(null);
-  const offeredRef = useRef<WorksheetScaffoldingResumable | null>(null);
+  // The open the teacher agreed to spend on. Retries of it stay confirmed; no
+  // other lesson or replacement inherits it.
+  const spendConfirmedForRef = useRef<string | null>(null);
   // Responses from before the workflow last (re)opened are dropped.
   const sessionRef = useRef(0);
   // A refresh response is dropped if anything else changed state after it started.
@@ -217,36 +219,23 @@ export function useWorksheetScaffolding({
     [analytics, dispatch, failWith, trackRef],
   );
 
-  const loadAllowance = useCallback(
-    (isCurrent: () => boolean) => {
-      void getTeacherAllowance(connection).then(
-        (value) => {
-          if (isCurrent()) setAllowance(value);
-        },
-        (error: unknown) => {
-          if (isCurrent()) reportToHost(onErrorRef.current, error);
-        },
-      );
-    },
-    [connection, onErrorRef],
-  );
-
   useEffect(() => {
     let cancelled = false;
     sessionRef.current += 1;
-    setAllowance(null);
     if (!isOpen) {
       analytics.resetDisplays();
       openRequestRef.current = null;
       replacingRef.current = null;
-      offeredRef.current = null;
+      spendConfirmedForRef.current = null;
       dispatch({ type: "closed" });
       return;
     }
 
     dispatch({ type: "loading" });
     const replacing = replacingRef.current;
-    const requestKey = `${connection.apiBaseUrl}:${lessonKey}:${openCount}:${replacing?.requestId ?? ""}`;
+    const action = openAction(lessonKey, replacing);
+    const spendConfirmed = spendConfirmedForRef.current === action;
+    const requestKey = `${connection.apiBaseUrl}:${action}:${openCount}:${spendConfirmed}`;
     const request =
       openRequestRef.current?.key === requestKey
         ? openRequestRef.current
@@ -256,35 +245,29 @@ export function useWorksheetScaffolding({
               ...connection,
               lesson: lessonRef.current,
               ...(replacing === null ? {} : { replacing }),
+              spendConfirmed,
             }),
           };
     openRequestRef.current = request;
     void request.promise.then(
       (entry) => {
-        if (replacingRef.current === replacing) replacingRef.current = null;
+        if (entry.outcome !== "needsSpendConfirmation") {
+          if (replacingRef.current === replacing) replacingRef.current = null;
+          if (spendConfirmedForRef.current === action)
+            spendConfirmedForRef.current = null;
+        }
         if (cancelled) return;
         if (entry.outcome === "needsTerms") {
           onTermsRequiredRef.current();
           return;
         }
-        if (entry.outcome === "needsSetup") {
-          offeredRef.current = null;
-          dispatch({ type: "opened", entry });
-          return;
+        dispatch({ type: "opened", entry });
+        if (
+          entry.outcome === "needsSpendConfirmation" ||
+          entry.outcome === "usageLimitReached"
+        ) {
+          analytics.observeAllowance(entry.allowance);
         }
-        const offered = offeredRef.current;
-        if (entry.outcome === "resumable") {
-          offeredRef.current = entry.resumable;
-        } else if (entry.outcome !== "usageLimitReached") {
-          // A refused start-over returns to the offer it declined.
-          offeredRef.current = null;
-        }
-        const declined =
-          offered !== null && offered.adaptationId === replacing?.adaptationId
-            ? offered
-            : null;
-        setAllowance(entry.allowance);
-        dispatch({ type: "opened", entry, ...(declined === null ? {} : { declined }) });
         if (entry.outcome === "opened" || entry.outcome === "reopened") {
           const { adaptationId: openedAdaptationId, modelWorkBlocked } = entry.state;
           trackRef.current({
@@ -343,28 +326,6 @@ export function useWorksheetScaffolding({
     if (retryAt === null) return;
     return scheduleAt(Date.parse(retryAt), () => dispatch({ type: "refusalExpired" }));
   }, [dispatch, retryAt]);
-
-  const monthlyRefusal =
-    state.status === "choosing" ||
-    (state.status === "monthlyLimitReached" && !state.expired)
-      ? state.usageLimit
-      : null;
-  const allowanceResetsAt = allowance?.tier === "limited" ? allowance.resetsAt : null;
-  useEffect(() => {
-    if (!isOpen || allowanceResetsAt === null) return;
-    const session = sessionRef.current;
-    return scheduleAt(Date.parse(allowanceResetsAt), () =>
-      loadAllowance(() => sessionRef.current === session),
-    );
-  }, [allowanceResetsAt, isOpen, loadAllowance]);
-
-  // A new refusal can carry the same retry time as the previous one.
-  useEffect(() => {
-    if (!isOpen || monthlyRefusal === null) return;
-    return scheduleAt(Date.parse(monthlyRefusal.retryAt), () =>
-      dispatch({ type: "monthlyRefusalExpired" }),
-    );
-  }, [dispatch, isOpen, monthlyRefusal]);
 
   useEffect(() => {
     if (!isOpen || ready === null) return;
@@ -642,6 +603,11 @@ export function useWorksheetScaffolding({
     [reopen, trackRef],
   );
 
+  const confirmSpend = useCallback(() => {
+    spendConfirmedForRef.current = openAction(lessonKey, replacingRef.current);
+    setOpenCount((count) => count + 1);
+  }, [lessonKey]);
+
   const tryAgain = useCallback(() => {
     if (ready?.value.job?.status === "failed") {
       startFresh(ready.value.adaptationId, "start_again_button");
@@ -652,10 +618,9 @@ export function useWorksheetScaffolding({
 
   return {
     acceptReview,
-    allowance,
     applySuggestion,
+    confirmSpend,
     dismissTarget,
-    observeAllowance: analytics.observeAllowance,
     refresh,
     removeContribution,
     resume,

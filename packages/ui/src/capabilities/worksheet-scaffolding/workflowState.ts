@@ -1,7 +1,7 @@
 import {
   documentChangingJobKinds,
+  type LimitedTeacherAllowance,
   type TeacherAllowance,
-  type UsageLimitReached,
   type WorksheetScaffoldingEntry,
   type WorksheetScaffoldingResumable,
   type WorksheetScaffoldingState,
@@ -28,8 +28,6 @@ export type ReadyWorkflow = Readonly<{
   refreshedResourceDocumentId: string | null;
 }>;
 
-type MonthlyLimitReached = UsageLimitReached<"adapted_resources_month">;
-
 export type WorkflowState =
   | Readonly<{ status: "idle" }>
   | Readonly<{ status: "loading" }>
@@ -38,14 +36,8 @@ export type WorkflowState =
       status: "choosing";
       resumable: WorksheetScaffoldingResumable;
       accessTier: TeacherAllowance["tier"];
-      /** Set when starting again was refused, so only carrying on is offered. */
-      usageLimit: MonthlyLimitReached | null;
     }>
-  | Readonly<{
-      status: "monthlyLimitReached";
-      usageLimit: MonthlyLimitReached;
-      expired: boolean;
-    }>
+  | Readonly<{ status: "allowanceNotice"; allowance: LimitedTeacherAllowance }>
   | ReadyWorkflow
   | Readonly<{ status: "error" }>;
 
@@ -56,14 +48,12 @@ export type WorkflowEvent =
   | Readonly<{
       type: "opened";
       entry: Exclude<WorksheetScaffoldingEntry, Readonly<{ outcome: "needsTerms" }>>;
-      declined?: WorksheetScaffoldingResumable;
     }>
   | Readonly<{ type: "received"; value: WorksheetScaffoldingState }>
   | Readonly<{ type: "refreshed"; value: WorksheetScaffoldingState }>
   | Readonly<{ type: "applyStarted"; suggestion: WorksheetSuggestion }>
   | Readonly<{ type: "actionStarted" }>
-  | Readonly<{ type: "refusalExpired" }>
-  | Readonly<{ type: "monthlyRefusalExpired" }>;
+  | Readonly<{ type: "refusalExpired" }>;
 
 export function jobIsBusy(state: WorksheetScaffoldingState): boolean {
   return state.job?.status === "queued" || state.job?.status === "running";
@@ -123,29 +113,26 @@ function received(
 
 function opened(
   state: WorkflowState,
-  { declined, entry }: Extract<WorkflowEvent, { type: "opened" }>,
+  { entry }: Extract<WorkflowEvent, { type: "opened" }>,
 ): WorkflowState {
   if (entry.outcome === "needsSetup") {
     return { status: "needsSetup" };
   }
-  const accessTier = entry.allowance.tier;
+  if (entry.outcome === "needsSpendConfirmation") {
+    return { status: "allowanceNotice", allowance: entry.allowance };
+  }
   if (entry.outcome === "resumable") {
     return {
       status: "choosing",
       resumable: entry.resumable,
-      accessTier,
-      usageLimit: null,
+      accessTier: entry.allowance.tier,
     };
   }
   if (entry.outcome === "usageLimitReached") {
-    return declined === undefined
-      ? { status: "monthlyLimitReached", usageLimit: entry.usageLimit, expired: false }
-      : {
-          status: "choosing",
-          resumable: declined,
-          accessTier,
-          usageLimit: entry.usageLimit,
-        };
+    // Full access granted since the refusal, so trying again opens it.
+    return entry.allowance.tier === "limited"
+      ? { status: "allowanceNotice", allowance: entry.allowance }
+      : { status: "error" };
   }
   return received(state, entry.state);
 }
@@ -189,11 +176,6 @@ export function workflowReducer(
     case "refusalExpired":
       return state.status === "ready"
         ? { ...state, value: { ...state.value, modelWorkBlocked: null } }
-        : state;
-    case "monthlyRefusalExpired":
-      if (state.status === "choosing") return { ...state, usageLimit: null };
-      return state.status === "monthlyLimitReached"
-        ? { ...state, expired: true }
         : state;
   }
 }

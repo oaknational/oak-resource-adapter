@@ -23,12 +23,14 @@ export function openWorksheetScaffolding(
     Readonly<{
       lesson: LessonContext;
       replacing?: { adaptationId: string; requestId: string } | undefined;
+      spendConfirmed?: boolean;
     }>,
 ): Promise<WorksheetScaffoldingEntry> {
   return callApi("Resource Adapter could not open worksheet scaffolding.", () =>
     createResourceAdapterInternalClient(options).worksheetScaffolding.open.mutate({
       lesson: options.lesson,
       ...(options.replacing === undefined ? {} : { replacing: options.replacing }),
+      ...(options.spendConfirmed === true ? { spendConfirmed: true } : {}),
     }),
   );
 }
