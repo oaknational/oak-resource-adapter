@@ -3,6 +3,7 @@ import {
   check,
   foreignKey,
   integer,
+  text,
   timestamp,
   unique,
   uuid,
@@ -11,6 +12,23 @@ import {
 import { jobs } from "./jobs.js";
 import { resourceAdapterSchema } from "./pg-schema.js";
 import { transformations } from "./transformations.js";
+
+export const moderationResultEnum = resourceAdapterSchema.enum("moderation_result", [
+  "safe",
+  "guidance-required",
+  "highly-sensitive",
+  "toxic",
+]);
+
+export const ModerationResult = {
+  GUIDANCE_REQUIRED: "guidance-required",
+  HIGHLY_SENSITIVE: "highly-sensitive",
+  SAFE: "safe",
+  TOXIC: "toxic",
+} as const;
+
+export type ModerationResultValue =
+  (typeof ModerationResult)[keyof typeof ModerationResult];
 
 /** One execution of a transformation: its initial run or a retry. */
 export const transformationAttempts = resourceAdapterSchema.table(
@@ -29,6 +47,10 @@ export const transformationAttempts = resourceAdapterSchema.table(
       .primaryKey()
       .default(sql`gen_random_uuid()`),
     jobId: uuid("job_id").notNull().unique(),
+    /** The category codes the moderation service flagged, empty when it flagged none. */
+    moderationCategories: text("moderation_categories").array(),
+    /** Null when the attempt produced nothing to moderate. */
+    moderationResult: moderationResultEnum("moderation_result"),
     transformationId: uuid("transformation_id").notNull(),
     updatedAt: timestamp("updated_at", { precision: 3, withTimezone: true })
       .notNull()
@@ -43,6 +65,10 @@ export const transformationAttempts = resourceAdapterSchema.table(
     check(
       "transformation_attempts_acceptance_check",
       sql`${table.acceptedAt} IS NULL OR ${table.completedAt} IS NOT NULL`,
+    ),
+    check(
+      "transformation_attempts_moderation_check",
+      sql`(${table.moderationResult} IS NULL) = (${table.moderationCategories} IS NULL)`,
     ),
     unique("transformation_attempts_number_key").on(
       table.transformationId,
