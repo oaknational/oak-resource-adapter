@@ -519,6 +519,21 @@ export function useWorksheetScaffolding({
     [runAction],
   );
 
+  /** Reruns a scaffold that moderation withheld or whose job failed. */
+  const retryAttempt = useCallback(
+    (attemptId: string) =>
+      runAction(
+        "retryTransformation",
+        ({ adaptationId, pendingReview }) =>
+          pendingReview === null
+            ? { adaptationId, attemptId, requestId: newRequestId() }
+            : null,
+        retryWorksheetScaffoldingTransformation,
+        () => null,
+      ),
+    [runAction],
+  );
+
   const dismissTarget = useCallback(
     (targetBlockId: string | null) =>
       runAction(
@@ -625,6 +640,7 @@ export function useWorksheetScaffolding({
     removeContribution,
     resume,
     retrySuggestions,
+    retryAttempt,
     retryTransformationReview,
     startFresh,
     state,

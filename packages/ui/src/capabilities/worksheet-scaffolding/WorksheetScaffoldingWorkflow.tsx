@@ -30,6 +30,7 @@ import { ActionRow } from "./styles.js";
 import { SummaryAction, SummaryPanel } from "./SummaryPanel.js";
 import { useWorksheetScaffolding } from "./useWorksheetScaffolding.js";
 import { ViewHeader } from "./ViewHeader.js";
+import { WithheldScaffoldNotice } from "./WithheldScaffoldNotice.js";
 import { WorksheetDownload } from "./WorksheetDownload.js";
 import {
   StickyWorkflowStatus,
@@ -155,6 +156,7 @@ function WorkflowContent({
     removeContribution,
     refresh,
     resume,
+    retryAttempt,
     retrySuggestions,
     retryTransformationReview,
     startFresh,
@@ -164,6 +166,15 @@ function WorkflowContent({
     undoReview,
   } = workflow;
   const focusAfter = useFocusAfterLoadingScreen(showsLoadingScreen);
+  const isWorking =
+    state.status === "ready" &&
+    (state.applyingSuggestion !== null ||
+      state.actionIsPending ||
+      jobIsBusy(state.value));
+  const wasWorking = useRef(false);
+  useEffect(() => {
+    wasWorking.current = isWorking;
+  });
 
   if (state.status === "idle") {
     return null;
@@ -234,8 +245,6 @@ function WorkflowContent({
   }
 
   const { applyingSuggestion } = state;
-  const isWorking =
-    applyingSuggestion !== null || state.actionIsPending || jobIsBusy(state.value);
   const failedJob = state.value.job?.status === "failed" ? state.value.job : undefined;
   const listedSuggestions =
     applyingSuggestion?.listedSuggestions ?? state.value.suggestions;
@@ -265,11 +274,31 @@ function WorkflowContent({
   };
 
   const { pendingReview } = state.value;
+  const withheld = state.value.withheld ?? null;
+
+  const renderWithheldNotice = (targetBlockId: string | null) =>
+    withheld?.targetBlockId !== targetBlockId ? null : (
+      <WithheldScaffoldNotice
+        disabled={isWorking || modelWorkRefused}
+        keepsEarlierVersion={pendingReview !== null}
+        key={withheld.attemptId}
+        onTryAgain={() => retryAttempt(withheld.attemptId)}
+        safetyResult={withheld.safetyResult}
+        wasWorking={wasWorking}
+      />
+    );
+
   const decorations = {
-    renderAfterNode: (node: ResourceNode) => renderSuggestionGroup(node.id),
+    renderAfterNode: (node: ResourceNode) => (
+      <>
+        {renderWithheldNotice(node.id)}
+        {renderSuggestionGroup(node.id)}
+      </>
+    ),
     renderContributionControls: (contributionId: string) =>
       pendingReview?.contributionId === contributionId ? (
         <PendingReviewControls
+          contentGuidance={pendingReview.contentGuidance ?? []}
           disabled={isWorking}
           onAccept={acceptReview}
           onRetry={retryTransformationReview}
@@ -304,6 +333,18 @@ function WorkflowContent({
     failedJob?.kind === "suggestions.generate" &&
     hasScaffoldsInDocument &&
     pendingReview === null;
+  const failedAttemptId =
+    pendingReview === null && failedJob !== undefined && !canRetryFailedSuggestions
+      ? (failedJob.attemptId ?? null)
+      : null;
+  const canTryFailedJobAgain = canRetryFailedSuggestions || failedAttemptId !== null;
+  const tryFailedJobAgain = () => {
+    if (failedAttemptId === null) {
+      retrySuggestions("try_again_button");
+    } else {
+      retryAttempt(failedAttemptId);
+    }
+  };
 
   return (
     <WorkflowFrame frameRef={focusAfter.frame} status={status}>
@@ -364,10 +405,10 @@ function WorkflowContent({
             isOpen
             cta={
               <ActionRow>
-                {canRetryFailedSuggestions && (
+                {canTryFailedJobAgain && (
                   <OakSecondaryButton
                     disabled={isWorking || modelWorkRefused}
-                    onClick={() => retrySuggestions("try_again_button")}
+                    onClick={tryFailedJobAgain}
                   >
                     Try again
                   </OakSecondaryButton>
@@ -375,7 +416,10 @@ function WorkflowContent({
                 <OakSecondaryButton onClick={tryAgain}>Start again</OakSecondaryButton>
               </ActionRow>
             }
-            message={failureMessage(failedJob.kind, canRetryFailedSuggestions)}
+            message={failureMessage(failedJob.kind, {
+              canTryAgain: canTryFailedJobAgain,
+              hasPendingReview: pendingReview !== null,
+            })}
             title={FAILURE_TITLES[failedJob.kind]}
             titleTag="h3"
             type="error"
@@ -383,6 +427,7 @@ function WorkflowContent({
           />
         </StickyWorkflowStatus>
       )}
+      {renderWithheldNotice(null)}
       {renderSuggestionGroup(null)}
       <ResourceDocumentRenderer
         decorations={decorations}
