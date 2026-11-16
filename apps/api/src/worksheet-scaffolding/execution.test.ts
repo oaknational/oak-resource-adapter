@@ -28,6 +28,8 @@ import {
   retryJob,
   removeJob,
   dismissJob,
+  storedAttempt,
+  storedDocument,
   teacher,
 } from "./test-doubles";
 import {
@@ -39,6 +41,7 @@ import {
   CONTRIBUTION_EXTENSION_KEY,
   type ResourceDocument,
 } from "@oaknational/resource-document";
+import type { ModerationOutcome } from "@oaknational/resource-adapter-moderation";
 
 beforeAll(loadWorksheet);
 
@@ -62,6 +65,8 @@ function stubDependencies(
 ): WorksheetScaffoldingJobDependencies {
   return {
     createInvoker: vi.fn(),
+    createModerator: moderatorReturning({ outcome: "PASSED", scores: {} })
+      .createModerator,
     executeTransformation: vi.fn(),
     generate: vi.fn().mockResolvedValue([]),
     readFacts: vi.fn().mockResolvedValue(null),
@@ -239,14 +244,23 @@ describe("generating suggestions", () => {
   });
 });
 
-describe("applying an accepted suggestion", () => {
-  const appliedRun = {
+async function appliedRun(document?: ResourceDocument) {
+  return {
     run: {
       outcome: "APPLIED",
-      outputs: [{ document: undefined, purpose: "revised-resource" }],
+      outputs: [
+        { document: document ?? (await contributed()), purpose: "revised-resource" },
+      ],
     },
   };
+}
 
+function moderatorReturning(outcome: ModerationOutcome) {
+  const moderate = vi.fn().mockResolvedValue(outcome);
+  return { createModerator: vi.fn().mockReturnValue({ moderate }), moderate };
+}
+
+describe("applying an accepted suggestion", () => {
   it("refuses a job of the wrong kind", async () => {
     const dependencies = stubDependencies({
       readJob: vi.fn().mockResolvedValue(generateJob()),
@@ -260,7 +274,7 @@ describe("applying an accepted suggestion", () => {
   it("runs the transformation and advances the head", async () => {
     const repository = stubRepository();
     const dependencies = stubDependencies({
-      executeTransformation: vi.fn().mockResolvedValue(appliedRun),
+      executeTransformation: vi.fn().mockResolvedValue(await appliedRun()),
       readJob: vi.fn().mockResolvedValue(applyJob()),
       repository,
     });
@@ -277,7 +291,7 @@ describe("applying an accepted suggestion", () => {
 
   it("attributes its model calls to the adaptation's teacher", async () => {
     const dependencies = stubDependencies({
-      executeTransformation: vi.fn().mockResolvedValue(appliedRun),
+      executeTransformation: vi.fn().mockResolvedValue(await appliedRun()),
       readJob: vi.fn().mockResolvedValue(applyJob()),
     });
 
@@ -326,7 +340,7 @@ describe("applying an accepted suggestion", () => {
       ),
     });
     const dependencies = stubDependencies({
-      executeTransformation: vi.fn().mockResolvedValue(appliedRun),
+      executeTransformation: vi.fn().mockResolvedValue(await appliedRun()),
       readJob: vi.fn().mockResolvedValue(
         applyJob({
           input: {
@@ -377,19 +391,12 @@ describe("applying an accepted suggestion", () => {
 });
 
 describe("retrying an applied scaffold", () => {
-  const retriedRun = {
-    run: {
-      outcome: "APPLIED",
-      outputs: [{ document: undefined, purpose: "revised-resource" }],
-    },
-  };
-
   it("reruns the same transformation against its primary input", async () => {
     const repository = stubRepository({
       getPendingReview: vi.fn().mockResolvedValue(pendingReview()),
     });
     const dependencies = stubDependencies({
-      executeTransformation: vi.fn().mockResolvedValue(retriedRun),
+      executeTransformation: vi.fn().mockResolvedValue(await appliedRun()),
       readJob: vi.fn().mockResolvedValue(retryJob()),
       repository,
     });
@@ -420,7 +427,7 @@ describe("retrying an applied scaffold", () => {
 
   it("attributes its model calls to the adaptation's teacher", async () => {
     const dependencies = stubDependencies({
-      executeTransformation: vi.fn().mockResolvedValue(retriedRun),
+      executeTransformation: vi.fn().mockResolvedValue(await appliedRun()),
       readJob: vi.fn().mockResolvedValue(retryJob()),
       repository: stubRepository({
         getPendingReview: vi.fn().mockResolvedValue(pendingReview()),
@@ -439,12 +446,203 @@ describe("retrying an applied scaffold", () => {
   it("refuses a retry after its result stops being the current pending head", async () => {
     const dependencies = stubDependencies({
       readJob: vi.fn().mockResolvedValue(retryJob()),
+      repository: stubRepository({
+        getPendingReview: vi
+          .fn()
+          .mockResolvedValue(
+            pendingReview({ attempt: { id: "88888888-8888-4888-8888-888888888888" } }),
+          ),
+      }),
     });
 
     await expect(executeRetryTransformation(JOB_ID, dependencies)).rejects.toThrow(
       "no longer targets a pending transformation",
     );
     expect(dependencies.executeTransformation).not.toHaveBeenCalled();
+  });
+});
+
+describe("retrying a withheld or failed scaffold", () => {
+  const earlier = () => ({
+    attempt: storedAttempt({
+      completedAt: new Date("2026-02-03T09:01:00.000Z"),
+      moderationCategories: ["t/encourages-harmful-behaviour"],
+      moderationResult: "toxic",
+    }),
+    transformation: acceptedSuggestion().transformation,
+  });
+
+  it("reruns it from the head it started from, with no review to replace", async () => {
+    const repository = stubRepository({
+      getAdaptationAttempt: vi.fn().mockResolvedValue(earlier()),
+    });
+    const dependencies = stubDependencies({
+      executeTransformation: vi.fn().mockResolvedValue(await appliedRun()),
+      readJob: vi.fn().mockResolvedValue(retryJob()),
+      repository,
+    });
+
+    await executeRetryTransformation(JOB_ID, dependencies);
+
+    expect(repository.getAdaptationAttempt).toHaveBeenCalledWith(ADAPTATION_ID, {
+      attemptId: ATTEMPT_ID,
+    });
+    expect(repository.createRetryAttempt).toHaveBeenCalledWith({
+      jobId: JOB_ID,
+      transformationId: TRANSFORMATION_ID,
+    });
+    const stored = vi.mocked(repository.storeOutputsAndAdvanceHead).mock.calls[0]?.[0];
+    expect(stored).toMatchObject({ expectedHeadId: DOCUMENT_ID });
+    expect(stored).not.toHaveProperty("expectedPendingAttemptId");
+  });
+
+  it("refuses once the worksheet has moved on from where the scaffold started", async () => {
+    const dependencies = stubDependencies({
+      readJob: vi.fn().mockResolvedValue(retryJob()),
+      repository: stubRepository({
+        getAdaptationAttempt: vi.fn().mockResolvedValue(earlier()),
+        getPrimaryTransformationInput: vi
+          .fn()
+          .mockResolvedValue(storedDocument("77777777-7777-4777-8777-777777777777")),
+      }),
+    });
+
+    await expect(executeRetryTransformation(JOB_ID, dependencies)).rejects.toThrow(
+      "no longer starts from the head",
+    );
+    expect(dependencies.executeTransformation).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["an attempt of another adaptation", null],
+    [
+      "an accepted attempt",
+      {
+        ...earlier(),
+        attempt: storedAttempt({ acceptedAt: new Date(), completedAt: new Date() }),
+      },
+    ],
+  ])("refuses %s", async (_name, found) => {
+    const dependencies = stubDependencies({
+      readJob: vi.fn().mockResolvedValue(retryJob()),
+      repository: stubRepository({
+        getAdaptationAttempt: vi.fn().mockResolvedValue(found),
+      }),
+    });
+
+    await expect(executeRetryTransformation(JOB_ID, dependencies)).rejects.toThrow(
+      "no longer targets a transformation of this adaptation",
+    );
+  });
+});
+
+describe("moderating a generated scaffold", () => {
+  const flagged = (codes: string[]): ModerationOutcome => ({
+    outcome: "FLAGGED",
+    flaggedCategories: [],
+    unrecognisedCategories: codes,
+    scores: {},
+  });
+
+  async function apply(outcome: ModerationOutcome, document?: ResourceDocument) {
+    const { createModerator, moderate } = moderatorReturning(outcome);
+    const repository = stubRepository();
+    const dependencies = stubDependencies({
+      createModerator,
+      executeTransformation: vi.fn().mockResolvedValue(await appliedRun(document)),
+      readJob: vi.fn().mockResolvedValue(applyJob()),
+      repository,
+    });
+    const applied = executeApplySuggestion(JOB_ID, dependencies);
+    return { applied, moderate, repository };
+  }
+
+  it("sends only the scaffold's own text, with the adaptation and attempt", async () => {
+    const { applied, moderate } = await apply({ outcome: "PASSED", scores: {} });
+    await applied;
+
+    expect(moderate).toHaveBeenCalledWith({
+      content: "Added support",
+      context: { sessionId: ADAPTATION_ID, messageId: ATTEMPT_ID },
+    });
+  });
+
+  it.each([
+    [{ outcome: "PASSED", scores: {} } as const, "safe", []],
+    [
+      flagged(["p/practical-activities"]),
+      "guidance-required",
+      ["p/practical-activities"],
+    ],
+  ])("stores a shown result with the head: %j", async (outcome, result, categories) => {
+    const { applied, repository } = await apply(outcome);
+    await applied;
+
+    expect(repository.storeOutputsAndAdvanceHead).toHaveBeenCalledWith(
+      expect.objectContaining({ moderation: { result, categories } }),
+    );
+    expect(repository.completeWithheldAttempt).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [["n/self-harm-suicide"], "highly-sensitive"],
+    [["n/self-harm-suicide", "t/encourages-harmful-behaviour"], "toxic"],
+  ])("withholds %j as %s and leaves the head alone", async (codes, result) => {
+    const { applied, repository } = await apply(flagged(codes));
+    await applied;
+
+    expect(repository.completeWithheldAttempt).toHaveBeenCalledWith({
+      attemptId: ATTEMPT_ID,
+      moderation: { result, categories: codes },
+    });
+    expect(repository.storeOutputsAndAdvanceHead).not.toHaveBeenCalled();
+  });
+
+  it("fails the step when moderation fails, naming only the reason", async () => {
+    const { applied, repository } = await apply({
+      outcome: "FAILED",
+      reason: "TIMED_OUT",
+      cause: new Error("Added support"),
+    });
+
+    await expect(applied).rejects.toThrow(
+      "Moderating the generated scaffold failed: TIMED_OUT.",
+    );
+    await expect(applied).rejects.not.toThrow("Added support");
+    expect(repository.storeOutputsAndAdvanceHead).not.toHaveBeenCalled();
+    expect(repository.completeWithheldAttempt).not.toHaveBeenCalled();
+  });
+
+  it("fails the step rather than passing a scaffold with no text", async () => {
+    const { applied, moderate, repository } = await apply(
+      { outcome: "PASSED", scores: {} },
+      await loadWorksheet(),
+    );
+
+    await expect(applied).rejects.toThrow("no text to moderate");
+    expect(moderate).not.toHaveBeenCalled();
+    expect(repository.storeOutputsAndAdvanceHead).not.toHaveBeenCalled();
+  });
+
+  it("moderates a retried scaffold before it replaces the pending one", async () => {
+    const { createModerator } = moderatorReturning(flagged(["t/new-code"]));
+    const repository = stubRepository({
+      getPendingReview: vi.fn().mockResolvedValue(pendingReview()),
+    });
+    const dependencies = stubDependencies({
+      createModerator,
+      executeTransformation: vi.fn().mockResolvedValue(await appliedRun()),
+      readJob: vi.fn().mockResolvedValue(retryJob()),
+      repository,
+    });
+
+    await executeRetryTransformation(JOB_ID, dependencies);
+
+    expect(repository.completeWithheldAttempt).toHaveBeenCalledWith({
+      attemptId: ATTEMPT_ID,
+      moderation: { result: "toxic", categories: ["t/new-code"] },
+    });
+    expect(repository.storeOutputsAndAdvanceHead).not.toHaveBeenCalled();
   });
 });
 

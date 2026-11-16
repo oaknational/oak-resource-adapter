@@ -1,5 +1,6 @@
 import {
   getDatabaseClient,
+  type ModerationResultValue,
   resourceDocuments,
   suggestedTransformations,
   transformationAttempts,
@@ -15,15 +16,39 @@ export type Transaction = Parameters<
   Parameters<ReturnType<typeof getDatabaseClient>["transaction"]>[0]
 >[0];
 
+/** What moderation decided about an attempt's generated content. */
+export type AttemptModeration<
+  Result extends ModerationResultValue = ModerationResultValue,
+> = Readonly<{ result: Result; categories: readonly string[] }>;
+
+/** A result that lets the generated content reach the head. */
+export type ShownModeration = AttemptModeration<"safe" | "guidance-required">;
+
+export type WithheldModeration = AttemptModeration<"highly-sensitive" | "toxic">;
+
+export function moderationColumns(moderation: AttemptModeration | undefined) {
+  return moderation === undefined
+    ? {}
+    : {
+        moderationCategories: [...moderation.categories],
+        moderationResult: moderation.result,
+      };
+}
+
 export function markAttemptComplete(
   transaction: Transaction,
   attemptId: string,
   review: "accepted" | "pending" = "pending",
+  moderation?: ShownModeration,
 ) {
   const completedAt = new Date();
   return transaction
     .update(transformationAttempts)
-    .set({ completedAt, ...(review === "pending" ? {} : { acceptedAt: completedAt }) })
+    .set({
+      completedAt,
+      ...(review === "pending" ? {} : { acceptedAt: completedAt }),
+      ...moderationColumns(moderation),
+    })
     .where(eq(transformationAttempts.id, attemptId));
 }
 

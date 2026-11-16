@@ -5,6 +5,7 @@ import {
 } from "@oaknational/resource-adapter-ai";
 import { z } from "zod";
 
+import { deterministicModerationTriggers } from "../moderation/deterministic-moderator";
 import {
   isRegisteredTransformationKind,
   transformationDefinitions,
@@ -39,20 +40,40 @@ const steps = [
   "Complete the task and check your answer.",
 ];
 
+const triggers = deterministicModerationTriggers;
+
+/**
+ * Each scaffold that should not pass moderation carries one of the
+ * deterministic moderator's triggers. See docs/MODERATION.md for the result
+ * each scaffold reaches.
+ */
 const scaffoldResponses: Readonly<Record<string, JsonValue>> = {
   word_bank_low: { entries: [{ term: vocabulary.term }] },
   word_bank_mid: {
-    entries: [{ term: vocabulary.term, definition: vocabulary.definition }],
+    entries: [
+      { term: vocabulary.term, definition: vocabulary.definition },
+      {
+        term: triggers.guidance,
+        definition: "A gas burner that heats things during a practical.",
+      },
+    ],
   },
   task_glossary: {
-    entries: [{ term: vocabulary.term, definition: vocabulary.definition }],
+    entries: [
+      {
+        term: vocabulary.term,
+        definition: `${vocabulary.definition} (${triggers.highlySensitive})`,
+      },
+    ],
   },
   prompt_questions: {
     questions: ["What do you remember from the lesson that could help you begin?"],
   },
-  sentence_starters: { lines: ["When I compare the two approaches, I can see that…"] },
+  sentence_starters: {
+    lines: [`When I compare the two approaches, I can see that… (${triggers.toxic})`],
+  },
   sentence_frames: {
-    lines: ["I think that … because … which means that …"],
+    lines: [`I think that … because … which means that … (${triggers.failure})`],
   },
   chunk_tasks_2_3: { steps },
   chunk_tasks_3_5: { steps },

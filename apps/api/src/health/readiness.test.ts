@@ -46,6 +46,8 @@ beforeEach(() => {
   vi.stubEnv("MODEL_TRANSPORT", undefined);
   vi.stubEnv("OPENAI_API_KEY", undefined);
   vi.stubEnv("VERCEL_ENV", undefined);
+  vi.stubEnv("MODERATION_TRANSPORT", undefined);
+  vi.stubEnv("MODERATION_API_URL", "https://moderation.test");
   vi.stubEnv("RESOURCE_ARTIFACTS_BUCKET", "oak-ow-staging-ldn-ora-artifacts");
   vi.stubEnv("RESOURCE_ADAPTER_ALLOWED_ORIGINS", "http://localhost:3000");
   vi.stubGlobal(
@@ -80,6 +82,11 @@ describe("configuration readiness", () => {
             label: "Model configuration",
             status: "ready",
             message: "OpenAI transport configured.",
+          },
+          moderationConfiguration: {
+            label: "Moderation configuration",
+            status: "ready",
+            message: "Moderation service configured.",
           },
           artifactStorage: configuredStorage,
         },
@@ -182,6 +189,81 @@ describe("configuration readiness", () => {
     expect(preflight.status).toBe(204);
     expect(preflight.headers.get("Access-Control-Allow-Methods")).toBe("GET, OPTIONS");
   });
+});
+
+describe("moderation readiness", () => {
+  const configuredModel = () => {
+    vi.stubEnv("MODEL_TRANSPORT", "deterministic");
+  };
+
+  it("accepts the deterministic moderator outside production without a service URL", async () => {
+    configuredModel();
+    vi.stubEnv("MODERATION_TRANSPORT", "deterministic");
+    vi.stubEnv("MODERATION_API_URL", undefined);
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      checks: {
+        moderationConfiguration: {
+          status: "ready",
+          message: "Deterministic moderation configured.",
+        },
+      },
+    });
+  });
+
+  it.each([
+    {
+      selector: undefined,
+      url: " ",
+      vercel: undefined,
+      code: "MISSING_MODERATION_API_URL",
+      message: "MODERATION_API_URL is not configured.",
+    },
+    {
+      selector: "secret-value-in-the-wrong-variable",
+      url: "https://moderation.test",
+      vercel: undefined,
+      code: "UNKNOWN_MODERATION_TRANSPORT",
+      message: "MODERATION_TRANSPORT must be service or deterministic.",
+    },
+    {
+      selector: "deterministic",
+      url: "https://moderation.test",
+      vercel: "production",
+      code: "DETERMINISTIC_MODERATION_FORBIDDEN",
+      message: "Deterministic moderation is not allowed in production.",
+    },
+  ])(
+    "reports $code as needing intervention without exposing environment values",
+    async ({ selector, url, vercel, code, message }) => {
+      vi.stubEnv("MODEL_TRANSPORT", "openai");
+      vi.stubEnv("OPENAI_API_KEY", "test-value-not-validated-with-provider");
+      vi.stubEnv("MODERATION_TRANSPORT", selector);
+      vi.stubEnv("MODERATION_API_URL", url);
+      vi.stubEnv("VERCEL_ENV", vercel);
+
+      const response = await GET(request());
+      const body = await response.json();
+
+      expect(response.status).toBe(503);
+      expect(body).toMatchObject({
+        status: "not-ready",
+        checks: {
+          moderationConfiguration: {
+            label: "Moderation configuration",
+            status: "not-ready",
+            code,
+            message,
+            retryable: false,
+          },
+        },
+      });
+      expect(JSON.stringify(body)).not.toContain("secret-");
+    },
+  );
 });
 
 describe("database readiness", () => {

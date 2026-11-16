@@ -6,6 +6,7 @@ import {
 
 import { createApplicationModelInvoker } from "../ai/application-invoker";
 import { getJob } from "../jobs/job-repository";
+import { createApplicationModerator } from "../moderation/moderation-configuration";
 import { applySuggestionJob } from "../jobs/suggestions/apply-definition";
 import { generateSuggestionsJob } from "../jobs/suggestions/generate-definition";
 import { removeTransformationJob } from "../jobs/transformations/remove-definition";
@@ -37,7 +38,9 @@ import {
   DISMISSAL_OPERATION_KIND,
   suggestionOperationKey,
 } from "./capability";
+import { moderateScaffold } from "./moderate-scaffold";
 import * as scaffoldingRepository from "./repository";
+import type { GeneratedOutput } from "./repository";
 import { asParams } from "./stored-params";
 
 const REVISED_RESOURCE = "revised-resource";
@@ -49,6 +52,7 @@ const REVISED_RESOURCE = "revised-resource";
  */
 export type WorksheetScaffoldingJobDependencies = {
   createInvoker: typeof createApplicationModelInvoker;
+  createModerator: typeof createApplicationModerator;
   executeTransformation: typeof executeRegisteredTransformation;
   generate: typeof generateSuggestions;
   readFacts: typeof readLessonFacts;
@@ -60,9 +64,11 @@ export type WorksheetScaffoldingJobDependencies = {
 export type WorksheetScaffoldingExecutionRepository = Pick<
   typeof scaffoldingRepository,
   | "acceptSuggestion"
+  | "completeWithheldAttempt"
   | "createOperationAttempt"
   | "createRetryAttempt"
   | "getAcceptedSuggestion"
+  | "getAdaptationAttempt"
   | "getAdaptationHead"
   | "getAttemptForJob"
   | "getOpenSuggestion"
@@ -78,6 +84,7 @@ export type WorksheetScaffoldingExecutionRepository = Pick<
 
 const defaultDependencies: WorksheetScaffoldingJobDependencies = {
   createInvoker: createApplicationModelInvoker,
+  createModerator: createApplicationModerator,
   executeTransformation: executeRegisteredTransformation,
   generate: generateSuggestions,
   readFacts: readLessonFacts,
@@ -223,6 +230,53 @@ export async function executeGenerateSuggestions(
   });
 }
 
+/**
+ * Generated content reaches the head only once moderation shows it. Withheld
+ * content completes the attempt and leaves the head where it was.
+ */
+async function moderateAndStore(
+  dependencies: WorksheetScaffoldingJobDependencies,
+  input: Readonly<{
+    adaptationId: string;
+    attemptId: string;
+    contributionId: string;
+    expectedHeadId: string;
+    expectedPendingAttemptId?: string;
+    outputs: readonly GeneratedOutput[];
+    revisedPosition: number;
+  }>,
+): Promise<void> {
+  const revised = input.outputs[input.revisedPosition];
+  if (revised === undefined) {
+    throw new Error("The transformation did not produce a revised resource.");
+  }
+  const moderated = await moderateScaffold(dependencies.createModerator(), {
+    adaptationId: input.adaptationId,
+    attemptId: input.attemptId,
+    contributionId: input.contributionId,
+    document: revised.document,
+  });
+  if (!moderated.shown) {
+    await dependencies.repository.completeWithheldAttempt({
+      attemptId: input.attemptId,
+      moderation: moderated.moderation,
+    });
+    return;
+  }
+
+  await dependencies.repository.storeOutputsAndAdvanceHead({
+    adaptationId: input.adaptationId,
+    attemptId: input.attemptId,
+    expectedHeadId: input.expectedHeadId,
+    ...(input.expectedPendingAttemptId === undefined
+      ? {}
+      : { expectedPendingAttemptId: input.expectedPendingAttemptId }),
+    moderation: moderated.moderation,
+    outputs: input.outputs,
+    revisedPosition: input.revisedPosition,
+  });
+}
+
 async function resolveAcceptedSuggestion(
   jobId: string,
   input: {
@@ -310,13 +364,56 @@ export async function executeApplySuggestion(
     throw new Error(`The accepted transformation ended with ${run.outcome}.`);
   }
 
-  await repository.storeOutputsAndAdvanceHead({
+  await moderateAndStore(dependencies, {
     adaptationId: input.adaptationId,
     attemptId: attempt.id,
+    contributionId: transformation.id,
     expectedHeadId: sourceDocument.id,
     outputs: run.outputs,
     revisedPosition,
   });
+}
+
+type RetryTarget = Readonly<{
+  /** Set when the retry replaces a scaffold still awaiting review. */
+  pendingAttemptId?: string;
+  transformation: scaffoldingRepository.StoredTransformation;
+}>;
+
+/**
+ * A retry replaces the scaffold awaiting review or, with none pending, reruns a
+ * scaffold that was withheld or failed. The rerun must start from the current
+ * head, or its result would drop whatever reached the worksheet since.
+ */
+async function resolveRetryTarget(
+  repository: WorksheetScaffoldingJobDependencies["repository"],
+  input: Readonly<{ adaptationId: string; attemptId: string }>,
+  headId: string,
+): Promise<RetryTarget> {
+  const pending = await repository.getPendingReview(headId);
+  if (pending !== null) {
+    if (pending.attempt.id !== input.attemptId) {
+      throw new Error("The retry no longer targets a pending transformation.");
+    }
+    return {
+      pendingAttemptId: pending.attempt.id,
+      transformation: pending.transformation,
+    };
+  }
+
+  const earlier = await repository.getAdaptationAttempt(input.adaptationId, {
+    attemptId: input.attemptId,
+  });
+  if (earlier?.attempt.acceptedAt !== null) {
+    throw new Error("The retry no longer targets a transformation of this adaptation.");
+  }
+  const source = await repository.getPrimaryTransformationInput(
+    earlier.transformation.id,
+  );
+  if (source?.id !== headId) {
+    throw new Error("The retried transformation no longer starts from the head.");
+  }
+  return { transformation: earlier.transformation };
 }
 
 export async function executeRetryTransformation(
@@ -341,40 +438,40 @@ export async function executeRetryTransformation(
   if (head?.storedDocument.id !== input.resourceDocumentId) {
     throw new Error("The retry no longer targets the adaptation head.");
   }
-  const pending = await repository.getPendingReview(head.storedDocument.id);
-
-  if (
-    pending?.attempt.id !== input.attemptId ||
-    !isRegisteredTransformationKind(pending.transformation.kind)
-  ) {
-    throw new Error("The retry no longer targets a pending transformation.");
+  const { pendingAttemptId, transformation } = await resolveRetryTarget(
+    repository,
+    input,
+    head.storedDocument.id,
+  );
+  if (!isRegisteredTransformationKind(transformation.kind)) {
+    throw new Error("The retry targets an unknown transformation.");
   }
 
   const attempt =
     existingAttempt ??
     (await repository.createRetryAttempt({
       jobId,
-      transformationId: pending.transformation.id,
+      transformationId: transformation.id,
     }));
   const sourceDocument = await repository.getPrimaryTransformationInput(
-    pending.transformation.id,
+    transformation.id,
   );
   if (sourceDocument === null) {
     throw new Error("The transformation input for the retry is missing.");
   }
 
-  const params = transformationDefinitions[pending.transformation.kind].params.parse(
-    asParams(pending.transformation.params),
+  const params = transformationDefinitions[transformation.kind].params.parse(
+    asParams(transformation.params),
   );
-  const revisedPosition = revisedOutputPosition(pending.transformation.kind);
+  const revisedPosition = revisedOutputPosition(transformation.kind);
   const { run } = await dependencies.executeTransformation(
     {
-      contributionId: pending.transformation.id,
+      contributionId: transformation.id,
       document: sourceDocument.document,
-      kind: pending.transformation.kind,
+      kind: transformation.kind,
       lesson: lessonOf(head.adaptation),
       params,
-      targetBlockId: pending.transformation.targetBlockId ?? undefined,
+      targetBlockId: transformation.targetBlockId ?? undefined,
     },
     {
       createInvoker: () =>
@@ -386,11 +483,14 @@ export async function executeRetryTransformation(
     throw new Error(`The retried transformation ended with ${run.outcome}.`);
   }
 
-  await repository.storeOutputsAndAdvanceHead({
+  await moderateAndStore(dependencies, {
     adaptationId: input.adaptationId,
     attemptId: attempt.id,
+    contributionId: transformation.id,
     expectedHeadId: input.resourceDocumentId,
-    expectedPendingAttemptId: input.attemptId,
+    ...(pendingAttemptId === undefined
+      ? {}
+      : { expectedPendingAttemptId: pendingAttemptId }),
     outputs: run.outputs,
     revisedPosition,
   });

@@ -33,8 +33,11 @@ import {
   repositoryDefaults,
   generateJob,
   retryJob,
+  storedAttempt,
+  storedDocument,
   teacher,
 } from "./test-doubles";
+import type { StoredAttempt } from "./repository";
 import { ConcurrencyConflictError } from "../jobs/job-repository";
 import type { TeacherAccess } from "../teacher-access/access";
 import { withoutSupportLevels } from "../transformations/narrowing";
@@ -921,6 +924,268 @@ describe("reading worksheet scaffolding state", () => {
   });
 });
 
+describe("reading moderation results", () => {
+  const applyJob = (status: "failed" | "succeeded") =>
+    ({
+      failureMessage: status === "failed" ? "The background job failed." : null,
+      id: JOB_ID,
+      kind: "suggestions.apply",
+      status,
+    }) as const;
+
+  const withheldAttempt = (overrides: Partial<StoredAttempt> = {}) => ({
+    attempt: storedAttempt({
+      completedAt: new Date("2026-02-03T09:01:00.000Z"),
+      moderationCategories: ["n/self-harm-suicide"],
+      moderationResult: "highly-sensitive",
+      ...overrides,
+    }),
+    transformation: pendingReview().transformation,
+  });
+
+  it("names the areas a guidance result asks the teacher to check", async () => {
+    const dependencies = stubDependencies({
+      repository: stubRepository({
+        getPendingReview: vi.fn().mockResolvedValue(
+          pendingReview({
+            attempt: {
+              moderationCategories: ["p/practical-activities", "x/new-code"],
+              moderationResult: "guidance-required",
+            },
+          }),
+        ),
+      }),
+    });
+
+    await expect(
+      getWorksheetScaffoldingState(ADAPTATION_ID, teacher, dependencies),
+    ).resolves.toMatchObject({
+      pendingReview: {
+        contentGuidance: [
+          {
+            category: "p/practical-activities",
+            label: "Practical equipment and activities",
+          },
+          { category: "x/new-code", label: "Other content guidance" },
+        ],
+      },
+    });
+  });
+
+  it("reports no guidance for a scaffold that passed", async () => {
+    const dependencies = stubDependencies({
+      repository: stubRepository({
+        getPendingReview: vi.fn().mockResolvedValue(
+          pendingReview({
+            attempt: { moderationCategories: [], moderationResult: "safe" },
+          }),
+        ),
+      }),
+    });
+
+    await expect(
+      getWorksheetScaffoldingState(ADAPTATION_ID, teacher, dependencies),
+    ).resolves.toMatchObject({
+      pendingReview: { contentGuidance: [] },
+      withheld: null,
+    });
+  });
+
+  it("reports the latest scaffold moderation withheld, at its target", async () => {
+    const getAdaptationAttempt = vi.fn().mockResolvedValue(withheldAttempt());
+    const dependencies = stubDependencies({
+      getLatestJob: vi.fn().mockResolvedValue(applyJob("succeeded")),
+      repository: stubRepository({ getAdaptationAttempt }),
+    });
+
+    const state = await getWorksheetScaffoldingState(
+      ADAPTATION_ID,
+      teacher,
+      dependencies,
+    );
+
+    expect(getAdaptationAttempt).toHaveBeenCalledWith(ADAPTATION_ID, { jobId: JOB_ID });
+    expect(state?.withheld).toEqual({
+      attemptId: ATTEMPT_ID,
+      categories: ["n/self-harm-suicide"],
+      kind: "scaffold-add-word-bank",
+      label: "Add a word bank",
+      safetyResult: "highly-sensitive",
+      targetBlockId: pendingReview().transformation.targetBlockId,
+    });
+  });
+
+  it("reports nothing withheld once another kind of job is the latest", async () => {
+    const getAdaptationAttempt = vi.fn().mockResolvedValue(withheldAttempt());
+    const dependencies = stubDependencies({
+      getLatestJob: vi.fn().mockResolvedValue(generateJob({ status: "succeeded" })),
+      repository: stubRepository({ getAdaptationAttempt }),
+    });
+
+    const state = await getWorksheetScaffoldingState(
+      ADAPTATION_ID,
+      teacher,
+      dependencies,
+    );
+
+    expect(state?.withheld).toBeNull();
+    expect(getAdaptationAttempt).not.toHaveBeenCalled();
+  });
+
+  it("offers the attempt of a failed application for a retry", async () => {
+    const dependencies = stubDependencies({
+      getLatestJob: vi.fn().mockResolvedValue(applyJob("failed")),
+      repository: stubRepository({
+        getAdaptationAttempt: vi
+          .fn()
+          .mockResolvedValue({ ...withheldAttempt(), attempt: storedAttempt() }),
+      }),
+    });
+
+    await expect(
+      getWorksheetScaffoldingState(ADAPTATION_ID, teacher, dependencies),
+    ).resolves.toMatchObject({
+      job: { attemptId: ATTEMPT_ID, kind: "suggestions.apply", status: "failed" },
+      withheld: null,
+    });
+  });
+
+  describe("after a retry of a scaffold that never landed fails", () => {
+    const RETRY_ATTEMPT_ID = "99999999-9999-4999-8999-999999999999";
+    const failedRetry = retryJob({
+      failureMessage: "The background job failed while executing.",
+      status: "failed",
+    });
+    const latestJobs = vi.fn((_: string, kinds: readonly string[]) =>
+      Promise.resolve(
+        kinds.length === 1 ? generateJob({ status: "succeeded" }) : failedRetry,
+      ),
+    );
+    const retryAttempts = vi.fn(
+      (_: string, by: { attemptId: string } | { jobId: string }) =>
+        Promise.resolve({
+          ...withheldAttempt(),
+          attempt: storedAttempt({ id: "jobId" in by ? RETRY_ATTEMPT_ID : ATTEMPT_ID }),
+        }),
+    );
+
+    it("keeps the failure and its Try again while the scaffold starts from the head", async () => {
+      const dependencies = stubDependencies({
+        getLatestJob: latestJobs,
+        repository: stubRepository({ getAdaptationAttempt: retryAttempts }),
+      });
+
+      await expect(
+        getWorksheetScaffoldingState(ADAPTATION_ID, teacher, dependencies),
+      ).resolves.toMatchObject({
+        job: {
+          attemptId: RETRY_ATTEMPT_ID,
+          id: failedRetry.id,
+          kind: "transformations.retry",
+          status: "failed",
+        },
+        withheld: null,
+      });
+    });
+
+    it("hides the failure once the scaffold no longer starts from the head", async () => {
+      const dependencies = stubDependencies({
+        getLatestJob: latestJobs,
+        repository: stubRepository({
+          getAdaptationAttempt: retryAttempts,
+          getPrimaryTransformationInput: vi
+            .fn()
+            .mockResolvedValue(storedDocument(NEXT_DOCUMENT_ID)),
+        }),
+      });
+
+      const state = await getWorksheetScaffoldingState(
+        ADAPTATION_ID,
+        teacher,
+        dependencies,
+      );
+
+      expect(state?.job).toMatchObject({
+        kind: "suggestions.generate",
+        status: "succeeded",
+      });
+      expect(state?.job).not.toHaveProperty("attemptId");
+    });
+  });
+
+  describe("retrying", () => {
+    const retry = (dependencies: WorksheetScaffoldingDependencies) =>
+      enqueueWorksheetScaffoldingRetryTransformation(
+        { adaptationId: ADAPTATION_ID, attemptId: ATTEMPT_ID, requestId: REQUEST_ID },
+        teacher,
+        dependencies,
+      );
+
+    it.each([
+      ["a withheld scaffold", "succeeded", withheldAttempt()],
+      [
+        "a failed application",
+        "failed",
+        { ...withheldAttempt(), attempt: storedAttempt() },
+      ],
+    ] as const)(
+      "queues a retry of %s on the current head",
+      async (_, status, found) => {
+        const dependencies = stubDependencies({
+          getLatestJob: vi.fn().mockResolvedValue(applyJob(status)),
+          repository: stubRepository({
+            getAdaptationAttempt: vi.fn().mockResolvedValue(found),
+          }),
+        });
+
+        await retry(dependencies);
+
+        expect(dependencies.enqueue).toHaveBeenCalledWith(
+          expect.objectContaining({
+            input: expect.objectContaining({
+              attemptId: ATTEMPT_ID,
+              resourceDocumentId: DOCUMENT_ID,
+            }),
+            kind: "transformations.retry",
+          }),
+        );
+      },
+    );
+
+    it.each([
+      ["a scaffold that passed", "succeeded", { moderationResult: "safe" } as const],
+      ["a later attempt", "failed", { id: "88888888-8888-4888-8888-888888888888" }],
+    ] as const)("refuses to retry %s", async (_, status, overrides) => {
+      const dependencies = stubDependencies({
+        getLatestJob: vi.fn().mockResolvedValue(applyJob(status)),
+        repository: stubRepository({
+          getAdaptationAttempt: vi.fn().mockResolvedValue(withheldAttempt(overrides)),
+        }),
+      });
+
+      await expect(retry(dependencies)).resolves.toBeNull();
+      expect(dependencies.enqueue).not.toHaveBeenCalled();
+    });
+
+    it("refuses to retry a scaffold that no longer starts from the head", async () => {
+      const dependencies = stubDependencies({
+        getLatestJob: vi.fn().mockResolvedValue(applyJob("failed")),
+        repository: stubRepository({
+          getAdaptationAttempt: vi
+            .fn()
+            .mockResolvedValue({ ...withheldAttempt(), attempt: storedAttempt() }),
+          getPrimaryTransformationInput: vi
+            .fn()
+            .mockResolvedValue(storedDocument(NEXT_DOCUMENT_ID)),
+        }),
+      });
+
+      await expect(retry(dependencies)).resolves.toBeNull();
+      expect(dependencies.enqueue).not.toHaveBeenCalled();
+    });
+  });
+});
+
 describe("accepting a suggestion", () => {
   it("declines an adaptation the teacher does not own", async () => {
     const dependencies = stubDependencies({
@@ -1401,7 +1666,15 @@ describe("reviewing an applied scaffold", () => {
       .mockResolvedValue(null);
     const repository = stubRepository({
       acceptPendingReview: vi.fn().mockResolvedValue(true),
+      getAdaptationAttempt: vi.fn().mockResolvedValue({
+        attempt: storedAttempt(),
+        transformation: pendingReview().transformation,
+      }),
       getPendingReview,
+      // The accepted scaffold was generated from the version before the head.
+      getPrimaryTransformationInput: vi
+        .fn()
+        .mockResolvedValue(storedDocument(NEXT_DOCUMENT_ID)),
     });
     const dependencies = stubDependencies({
       getLatestJob: vi.fn((_, kinds: readonly string[]) =>

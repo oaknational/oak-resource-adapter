@@ -168,22 +168,25 @@ test("prints no check detail it cannot recognise", async () => {
   assert.ok(!printed.includes("described"));
 });
 
-for (const code of [
-  "MISSING_OPENAI_API_KEY",
-  "UNKNOWN_MODEL_TRANSPORT",
-  "DETERMINISTIC_TRANSPORT_FORBIDDEN",
+for (const [check, code] of [
+  ["modelConfiguration", "MISSING_OPENAI_API_KEY"],
+  ["modelConfiguration", "UNKNOWN_MODEL_TRANSPORT"],
+  ["modelConfiguration", "DETERMINISTIC_TRANSPORT_FORBIDDEN"],
+  ["moderationConfiguration", "MISSING_MODERATION_API_URL"],
+  ["moderationConfiguration", "UNKNOWN_MODERATION_TRANSPORT"],
+  ["moderationConfiguration", "DETERMINISTIC_MODERATION_FORBIDDEN"],
 ]) {
-  test(`allows only the modelConfiguration pairing for ${code}`, async () => {
+  test(`allows only the ${check} pairing for ${code}`, async () => {
     const deps = dependencies(() =>
       notReady({
-        modelConfiguration: { status: "not-ready", code, retryable: false },
+        [check]: { status: "not-ready", code, retryable: false },
         otherCheck: { status: "not-ready", code, retryable: false },
       }),
     );
     assert.equal(await checkDeploymentReadiness(config, deps), false);
     assert.equal(
       deps.logs[0],
-      `Readiness attempt 1/5: HTTP 503 (modelConfiguration=${code}, unrecognised failing check).`,
+      `Readiness attempt 1/5: HTTP 503 (${check}=${code}, unrecognised failing check).`,
     );
   });
 }

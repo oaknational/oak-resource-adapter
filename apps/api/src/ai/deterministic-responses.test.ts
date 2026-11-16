@@ -37,6 +37,7 @@ import {
   type RegisteredTransformationKind,
 } from "../transformations/registry";
 import { definedTermsSchema } from "../transformations/contributions/definition-list";
+import { deterministicModerationTriggers } from "../moderation/deterministic-moderator";
 import { resolveDeterministicResponse } from "./deterministic-responses";
 import { rebindModelRoles } from "./model-roles";
 
@@ -440,21 +441,32 @@ describe("deterministic transformation contributions", () => {
       const bank = getResourceNodesByType(revised, "definitionList").find(
         ({ id }) => id === `${contributionId}-vocabulary`,
       );
-      expect(bank?.entries).toEqual([
-        {
-          term: [{ type: "text", text: "compare" }],
-          ...(supportLevel === "low"
-            ? {}
-            : {
+      expect(bank?.entries).toEqual(
+        supportLevel === "low"
+          ? [{ term: [{ type: "text", text: "compare" }] }]
+          : [
+              {
+                term: [
+                  { type: "text", text: deterministicModerationTriggers.guidance },
+                ],
+                definition: [
+                  {
+                    type: "text",
+                    text: "A gas burner that heats things during a practical.",
+                  },
+                ],
+              },
+              {
+                term: [{ type: "text", text: "compare" }],
                 definition: [
                   {
                     type: "text",
                     text: "Identify what is the same and what is different.",
                   },
                 ],
-              }),
-        },
-      ]);
+              },
+            ],
+      );
       expectValidRecording(config.recorder, `word_bank_${supportLevel}`);
       expect(document).toEqual(before);
     },
@@ -481,7 +493,10 @@ describe("deterministic transformation contributions", () => {
       {
         term: [{ type: "text", text: "compare" }],
         definition: [
-          { type: "text", text: "Identify what is the same and what is different." },
+          {
+            type: "text",
+            text: `Identify what is the same and what is different. (${deterministicModerationTriggers.highlySensitive})`,
+          },
         ],
       },
     ]);
