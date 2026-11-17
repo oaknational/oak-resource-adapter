@@ -25,7 +25,6 @@ export type ReadyWorkflow = Readonly<{
   value: WorksheetScaffoldingState;
   applyingSuggestion: ApplyingSuggestion | null;
   actionIsPending: boolean;
-  documentIsVisible: boolean;
   refreshedResourceDocumentId: string | null;
 }>;
 
@@ -59,7 +58,6 @@ export type WorkflowEvent =
       entry: Exclude<WorksheetScaffoldingEntry, Readonly<{ outcome: "needsTerms" }>>;
       declined?: WorksheetScaffoldingResumable;
     }>
-  | Readonly<{ type: "resumed"; value: WorksheetScaffoldingState }>
   | Readonly<{ type: "received"; value: WorksheetScaffoldingState }>
   | Readonly<{ type: "refreshed"; value: WorksheetScaffoldingState }>
   | Readonly<{ type: "applyStarted"; suggestion: WorksheetSuggestion }>
@@ -79,12 +77,24 @@ export function documentUpdateIsBusy(state: WorksheetScaffoldingState): boolean 
   );
 }
 
-function suggestionGenerationIsBusy(state: WorksheetScaffoldingState): boolean {
+export function suggestionGenerationIsBusy(state: WorksheetScaffoldingState): boolean {
   return state.job?.kind === "suggestions.generate" && jobIsBusy(state);
 }
 
 function suggestionApplicationIsBusy(state: WorksheetScaffoldingState): boolean {
   return state.job?.kind === "suggestions.apply" && jobIsBusy(state);
+}
+
+export function downloadAvailability(
+  state: ReadyWorkflow,
+): WorksheetScaffoldingState["downloadAvailability"] {
+  const documentIsChanging =
+    state.applyingSuggestion !== null ||
+    state.actionIsPending ||
+    documentUpdateIsBusy(state.value);
+  return state.value.downloadAvailability === "available" && documentIsChanging
+    ? "busy"
+    : state.value.downloadAvailability;
 }
 
 export function worksheetWasRefreshed(state: ReadyWorkflow): boolean {
@@ -93,8 +103,7 @@ export function worksheetWasRefreshed(state: ReadyWorkflow): boolean {
 
 /**
  * Local progress markers outlive the response that started them: each clears
- * once the server reports its job finished. The worksheet stays hidden only
- * while the first suggestions are generated.
+ * once the server reports its job finished.
  */
 function received(
   previous: WorkflowState,
@@ -108,8 +117,6 @@ function received(
       ? (ready?.applyingSuggestion ?? null)
       : null,
     actionIsPending: documentUpdateIsBusy(value) && (ready?.actionIsPending ?? false),
-    documentIsVisible:
-      (ready?.documentIsVisible ?? false) || !suggestionGenerationIsBusy(value),
     refreshedResourceDocumentId: ready?.refreshedResourceDocumentId ?? null,
   };
 }
@@ -156,8 +163,6 @@ export function workflowReducer(
       return { status: "error" };
     case "opened":
       return opened(state, event);
-    case "resumed":
-      return { ...received(state, event.value), documentIsVisible: true };
     case "received":
       return received(state, event.value);
     case "refreshed":

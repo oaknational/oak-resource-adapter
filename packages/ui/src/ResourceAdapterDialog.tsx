@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { OakModalCenter, OakModalCenterBody, OakP } from "@oaknational/oak-components";
+import { OakModalCenter, OakModalCenterBody } from "@oaknational/oak-components";
 
 import {
   createAnalyticsTracker,
@@ -9,6 +9,7 @@ import {
   type TrackAnalyticsEvent,
 } from "./analytics.js";
 import { capabilityWorkflows } from "./capabilities/workflowRegistry.js";
+import { DialogLoading } from "./DialogLoading.js";
 import {
   ResourceAdapterErrorBoundary,
   ResourceAdapterUnavailableMessage,
@@ -145,11 +146,7 @@ function ResourceAdapterDialogInner({
             {...(onError ? { onError } : {})}
             resetKeys={resetKeys}
           >
-            {terms.status === "checking" && (
-              <OakP $font="body-2" role="status">
-                Loading&hellip;
-              </OakP>
-            )}
+            {terms.status === "checking" && <DialogLoading heading="Loading…" />}
             {terms.status === "checkFailed" && (
               <ResourceAdapterUnavailableMessage
                 message="We couldn't check your account. The rest of the page still works."

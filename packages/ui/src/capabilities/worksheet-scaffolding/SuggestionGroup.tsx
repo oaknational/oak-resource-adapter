@@ -5,7 +5,7 @@ import { OakP, OakSecondaryButton, parseColor } from "@oaknational/oak-component
 import type { WorksheetScaffoldingState } from "@oaknational/resource-adapter-contracts/internal";
 import { styled } from "styled-components";
 
-import { VisibleLoadingSpinner } from "./styles.js";
+import { VisibleLoadingSpinner } from "../../VisibleLoadingSpinner.js";
 
 type ScaffoldSuggestion = WorksheetScaffoldingState["suggestions"][number];
 
