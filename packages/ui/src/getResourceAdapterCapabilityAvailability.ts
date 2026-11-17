@@ -4,6 +4,15 @@ import type { LessonContext } from "./publicTypes.js";
 import { supportedCapabilityIds } from "./capabilities.js";
 import { callApi, createResourceAdapterClient } from "./client.js";
 import { ResourceAdapterApiError } from "./errors.js";
+import {
+  getSupportedTeachingMaterialIds,
+  type ResourceAdapterTeachingMaterialId,
+} from "./teachingMaterials.js";
+
+export type ResourceAdapterCapabilityAvailability = Readonly<{
+  available: boolean;
+  teachingMaterials: readonly ResourceAdapterTeachingMaterialId[];
+}>;
 
 export type ResourceAdapterCapabilityAvailabilityProps = Readonly<{
   apiBaseUrl: string;
@@ -18,7 +27,7 @@ export type ResourceAdapterCapabilityAvailabilityProps = Readonly<{
 export async function getResourceAdapterCapabilityAvailability({
   apiBaseUrl,
   lesson,
-}: ResourceAdapterCapabilityAvailabilityProps): Promise<boolean> {
+}: ResourceAdapterCapabilityAvailabilityProps): Promise<ResourceAdapterCapabilityAvailability> {
   return callApi(
     "Resource Adapter could not load capability availability.",
     async () => {
@@ -38,7 +47,12 @@ export async function getResourceAdapterCapabilityAvailability({
         );
       }
 
-      return parsedResponse.data.available;
+      return {
+        available: parsedResponse.data.available,
+        teachingMaterials: getSupportedTeachingMaterialIds(
+          parsedResponse.data.teachingMaterials,
+        ),
+      };
     },
   );
 }

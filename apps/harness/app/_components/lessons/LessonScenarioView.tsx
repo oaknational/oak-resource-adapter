@@ -2,7 +2,7 @@
 
 import { OakLoadingSpinner } from "@oaknational/oak-components";
 
-import { CreateMorePanel } from "../shared/CreateMorePanel";
+import { LessonAiPanel } from "../shared/LessonAiPanel";
 import { LessonMetadata } from "./LessonMetadata";
 import { OakMaterialPanel } from "./OakMaterialPanel";
 import { ScenarioLayout } from "../shared/ScenarioLayout";
@@ -61,16 +61,19 @@ export function LessonScenarioView({
                 <output>Loading…</output>
               </div>
             ) : (
-              <CreateMorePanel
+              <LessonAiPanel
                 account={launcher.account}
+                available={launcher.available}
                 capabilities={launcher.capabilities}
-                hasAvailableCapabilities={launcher.hasAvailableCapabilities}
                 lesson={lesson}
+                onAnalyticsEvent={launcher.trackAnalyticsEvent}
+                onError={launcher.reportError}
                 onFinishSetup={launcher.finishSetup}
                 onRetry={launcher.reload}
                 onSelectCapability={launcher.selectCapability}
                 onSignIn={launcher.signIn}
                 state={launcher.state}
+                teachingMaterials={launcher.teachingMaterials}
               />
             )}
           </div>

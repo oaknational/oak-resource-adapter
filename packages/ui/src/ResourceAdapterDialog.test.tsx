@@ -39,7 +39,7 @@ vi.mock("@oaknational/oak-components", async (importOriginal) => {
 
 const capability: ResourceAdapterCapability = {
   id: "worksheetScaffolding",
-  label: "Add extra scaffolding",
+  label: "Scaffold practice tasks",
   resourceType: "worksheet",
 };
 

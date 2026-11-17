@@ -8,6 +8,7 @@ import {
   type LessonContext,
   type ResourceAdapterCapabilitiesResponse,
   type ResourceAdapterCapability,
+  type ResourceAdapterCapabilityAvailability,
   type ResourceAdapterLauncherAccount,
 } from "@oaknational/resource-adapter";
 import { useAuth } from "@clerk/nextjs";
@@ -22,18 +23,26 @@ export type UseCapabilitiesResult = Readonly<{
   /** Null until the state is `signedOut` or `ready`. */
   account: ResourceAdapterLauncherAccount | null;
   capabilities: readonly ResourceAdapterCapability[];
-  /** Set while signed out too, when `capabilities` cannot be read. */
-  hasAvailableCapabilities: boolean;
+  available: boolean;
   /** Null unless a signed-in account is ready. */
   inCopyrightRegion: boolean | null;
   reload: () => void;
   state: CapabilitiesState;
+  teachingMaterials: ResourceAdapterCapabilityAvailability["teachingMaterials"];
 }>;
+
+const noAvailability: ResourceAdapterCapabilityAvailability = {
+  available: false,
+  teachingMaterials: [],
+};
 
 type SignedInAccount = Exclude<ResourceAdapterLauncherAccount, "signedOut">;
 
 type Loaded =
-  | Readonly<{ state: "signedOut"; available: boolean }>
+  | Readonly<{
+      state: "signedOut";
+      availability: ResourceAdapterCapabilityAvailability;
+    }>
   | Readonly<{ state: "ready"; response: ResourceAdapterCapabilitiesResponse }>;
 
 async function loadCapabilities({
@@ -48,11 +57,11 @@ async function loadCapabilities({
   signedOut: boolean;
 }>): Promise<Loaded> {
   if (signedOut) {
-    const available = await getResourceAdapterCapabilityAvailability({
+    const availability = await getResourceAdapterCapabilityAvailability({
       apiBaseUrl,
       lesson,
     });
-    return { state: "signedOut", available };
+    return { state: "signedOut", availability };
   }
   const response = await getResourceAdapterCapabilities({
     apiBaseUrl,
@@ -85,7 +94,8 @@ export function useCapabilities({
   >([]);
   const [state, setState] = useState<CapabilitiesState>("loading");
   const [signedInAccount, setSignedInAccount] = useState<SignedInAccount | null>(null);
-  const [hasAvailableCapabilities, setHasAvailableCapabilities] = useState(false);
+  const [availability, setAvailability] =
+    useState<ResourceAdapterCapabilityAvailability>(noAvailability);
   const [inCopyrightRegion, setInCopyrightRegion] = useState<boolean | null>(null);
 
   const [attempt, setAttempt] = useState(0);
@@ -96,7 +106,7 @@ export function useCapabilities({
 
     async function load() {
       setCapabilities([]);
-      setHasAvailableCapabilities(false);
+      setAvailability(noAvailability);
       setState("loading");
 
       if (!isLoaded) {
@@ -114,10 +124,10 @@ export function useCapabilities({
           return;
         }
         if (loaded.state === "signedOut") {
-          setHasAvailableCapabilities(loaded.available);
+          setAvailability(loaded.availability);
         } else {
           setCapabilities(loaded.response.capabilities);
-          setHasAvailableCapabilities(loaded.response.capabilities.length > 0);
+          setAvailability(loaded.response);
           setSignedInAccount(loaded.response.account.state);
           setInCopyrightRegion(
             loaded.response.account.state === "ready"
@@ -147,10 +157,11 @@ export function useCapabilities({
 
   return {
     account: accountFor(state, signedInAccount),
+    available: availability.available,
     capabilities,
-    hasAvailableCapabilities,
     inCopyrightRegion: state === "ready" ? inCopyrightRegion : null,
     reload: () => setAttempt((value) => value + 1),
     state,
+    teachingMaterials: availability.teachingMaterials,
   };
 }

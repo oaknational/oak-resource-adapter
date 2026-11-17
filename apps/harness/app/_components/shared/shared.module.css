@@ -290,7 +290,11 @@
   margin-top: 2.5rem;
 }
 
-.lesson a {
+/*
+ * oak-components marks its button-styled links `internal-button`. `:where` keeps
+ * this at `.lesson a` specificity, below the view switch's current-page rule.
+ */
+.lesson a:where(:not(:global(.internal-button))) {
   color: #0d24c4;
   font-weight: 600;
 }

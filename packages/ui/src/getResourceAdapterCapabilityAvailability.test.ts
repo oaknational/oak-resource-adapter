@@ -33,7 +33,7 @@ describe("getResourceAdapterCapabilityAvailability", () => {
 
     await expect(
       getResourceAdapterCapabilityAvailability({ apiBaseUrl, lesson }),
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ available: true, teachingMaterials: [] });
 
     const [url, request] = fetchMock.mock.calls[0] ?? [];
     expect(String(url)).toContain(
@@ -51,11 +51,29 @@ describe("getResourceAdapterCapabilityAvailability", () => {
 
     await expect(
       getResourceAdapterCapabilityAvailability({ apiBaseUrl, lesson }),
-    ).resolves.toBe(false);
+    ).resolves.toEqual({ available: false, teachingMaterials: [] });
 
     const [, request] = fetchMock.mock.calls[0] ?? [];
     expect(JSON.parse(String((request as RequestInit).body))).toEqual({
       "0": { ...lesson, supportedCapabilityIds: ["worksheetScaffolding"] },
+    });
+  });
+
+  it("returns the teaching materials this package can link to, in menu order", async () => {
+    respondWith({
+      available: false,
+      teachingMaterials: [
+        "additional-exit-quiz",
+        "unknown-material",
+        "additional-glossary",
+      ],
+    });
+
+    await expect(
+      getResourceAdapterCapabilityAvailability({ apiBaseUrl, lesson }),
+    ).resolves.toEqual({
+      available: false,
+      teachingMaterials: ["additional-glossary", "additional-exit-quiz"],
     });
   });
 

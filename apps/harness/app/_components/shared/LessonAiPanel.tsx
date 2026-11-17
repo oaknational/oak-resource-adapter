@@ -7,36 +7,31 @@ import {
 } from "@oaknational/resource-adapter";
 import { OakSecondaryButton } from "@oaknational/oak-components";
 
-import styles from "./CreateMorePanel.module.css";
+import styles from "./LessonAiPanel.module.css";
 import type { UseCapabilitiesResult } from "../../_hooks/useCapabilities";
 
-export function CreateMorePanel<TCapability extends ResourceAdapterCapabilityOption>({
+export function LessonAiPanel<TCapability extends ResourceAdapterCapabilityOption>({
   account,
-  hasAvailableCapabilities,
   onRetry,
   state,
   ...launcher
 }: Omit<ResourceAdapterLauncherProps<TCapability>, "account"> &
-  Pick<UseCapabilitiesResult, "account" | "hasAvailableCapabilities" | "state"> &
+  Pick<UseCapabilitiesResult, "account" | "state"> &
   Readonly<{ onRetry: () => void }>) {
   if (state === "error") {
     return (
       <section
         aria-labelledby="resource-adapter-unavailable-heading"
-        className={styles.createMore}
+        className={styles.panel}
       >
-        <h2 id="resource-adapter-unavailable-heading">
-          Create more with Aila is unavailable
-        </h2>
+        <h2 id="resource-adapter-unavailable-heading">Adapt with AI is unavailable</h2>
         <p>The harness could not load Resource Adapter capabilities.</p>
         <OakSecondaryButton onClick={onRetry}>Try again</OakSecondaryButton>
       </section>
     );
   }
 
-  // Nothing behind the prompt means no prompt: signing in to find an empty
-  // dialog is worse than never being asked.
-  if (account === null || (account === "signedOut" && !hasAvailableCapabilities)) {
+  if (account === null) {
     return null;
   }
 

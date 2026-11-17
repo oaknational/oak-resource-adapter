@@ -4,7 +4,6 @@ import {
   ResourceAdapterDialog,
   type LessonContext,
   type ResourceAdapterCapability,
-  type ResourceAdapterOpeningControl,
 } from "@oaknational/resource-adapter";
 import { useAuth, useClerk } from "@clerk/nextjs";
 import { raLogger } from "@oaknational/resource-adapter-logger";
@@ -17,13 +16,17 @@ import { useHarnessAnalytics } from "./useHarnessAnalytics";
 
 const log = raLogger("harness");
 
+function reportError(error: Error) {
+  log.error(error);
+}
+
 export function useAdapterLauncher({
   apiBaseUrl,
   lesson,
   resetKey,
 }: Readonly<{ apiBaseUrl: string; lesson: LessonContext; resetKey: string }>) {
   const { getToken, isSignedIn } = useAuth();
-  const { trackAnalyticsEvent, trackAdapterOpened } = useHarnessAnalytics();
+  const { trackAnalyticsEvent } = useHarnessAnalytics();
   const { openSignIn } = useClerk();
   const router = useRouter();
   const viewAsSignedOut = useViewAsSignedOut();
@@ -40,13 +43,9 @@ export function useAdapterLauncher({
     setSelectedCapability(undefined);
   }, [resetKey, viewAsSignedOut, isSignedIn]);
 
-  function selectCapability(
-    capability: ResourceAdapterCapability,
-    control: ResourceAdapterOpeningControl,
-  ) {
+  function selectCapability(capability: ResourceAdapterCapability) {
     setSelectedCapability(capability);
     setIsDialogOpen(true);
-    trackAdapterOpened(capability.id, control);
   }
 
   function finishSetup() {
@@ -79,7 +78,7 @@ export function useAdapterLauncher({
         lesson={lesson}
         onAnalyticsEvent={trackAnalyticsEvent}
         onClose={() => setIsDialogOpen(false)}
-        onError={(error) => log.error(error)}
+        onError={reportError}
         onFinishSetup={finishSetup}
       />
     ) : null;
@@ -88,7 +87,9 @@ export function useAdapterLauncher({
     ...capabilities,
     dialog,
     finishSetup,
+    reportError,
     selectCapability,
     signIn,
+    trackAnalyticsEvent,
   };
 }

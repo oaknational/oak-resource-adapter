@@ -3,7 +3,12 @@ import { expect } from "@playwright/test";
 
 import { createMutableAccount } from "./clerk-accounts.js";
 import { test } from "./fixtures.js";
-import { openScaffolding, scaffoldingEntryIn, scaffoldingLessons } from "./helpers.js";
+import {
+  chooseFromAiMenu,
+  openScaffolding,
+  scaffoldingEntryIn,
+  scaffoldingLessons,
+} from "./helpers.js";
 
 const lesson = scaffoldingLessons.openingTheDrawer;
 let account: Awaited<ReturnType<typeof createMutableAccount>> | undefined;
@@ -27,9 +32,7 @@ test("asks a new teacher to accept ORA's terms, then shows their allowance, befo
   await clerk.signIn({ page, emailAddress: account.emailAddress });
 
   await page.goto(`/?lesson=${lesson}`);
-  await page
-    .getByRole("button", { name: "Add extra scaffolding", exact: true })
-    .click();
+  await chooseFromAiMenu(page, "Scaffold practice tasks");
   const dialog = page.getByRole("dialog", { name: "Aila | Oak's AI" });
   const terms = dialog.getByRole("heading", {
     level: 3,

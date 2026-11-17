@@ -31,25 +31,26 @@ function setup(apiKey = "phc_test") {
 }
 
 describe("harness analytics", () => {
-  it.each(["resource_adapter_button", "resource_adapter_menu_item"] as const)(
-    "sends the host-owned opening event from %s through the existing sender",
-    (componentType) => {
-      const { client, analytics } = setup();
-      analytics.captureOpened("worksheetScaffolding", componentType);
-      expect(client.capture).toHaveBeenCalledExactlyOnceWith(
-        "Resource Adapter Opened",
-        {
-          "Analytics Use Case": "Teacher",
-          "Capability Id": "worksheetScaffolding",
-          "Component Type": componentType,
-          "Engagement Intent": "explore",
-          "Event Version": "2.0.0",
-          Platform: "harness",
-          Product: "resource adapter",
-        },
-      );
-    },
-  );
+  it("sends menu events under Oak destination property names", () => {
+    const { client, analytics } = setup();
+    analytics.capture({
+      name: "Teaching Materials Selected",
+      packageVersion: "0.1.0",
+      teachingMaterialType: "glossary",
+    });
+    expect(client.capture).toHaveBeenCalledExactlyOnceWith(
+      "Teaching Materials Selected",
+      {
+        "Analytics Use Case": "Teacher",
+        "Engagement Intent": "explore",
+        "Event Version": "2.0.0",
+        "Package Version": "0.1.0",
+        Platform: "harness",
+        Product: "resource adapter",
+        "Teaching Material Type": "glossary",
+      },
+    );
+  });
 
   it("uses Oak destination property names and core properties", () => {
     expect(toPostHogProperties(event)).toEqual({
@@ -73,27 +74,9 @@ describe("harness analytics", () => {
     const { client, analytics } = setup("");
     analytics.identify("teacher-1");
     analytics.capture(event);
-    analytics.captureOpened("worksheetScaffolding", "resource_adapter_button");
     expect(client.init).not.toHaveBeenCalled();
     expect(client.identify).not.toHaveBeenCalled();
     expect(client.capture).not.toHaveBeenCalled();
-  });
-
-  it("contains an opening-event failure so the launcher can still open the dialog", () => {
-    const { client, analytics } = setup();
-    const error = new Error("analytics unavailable");
-    const reportError = vi.spyOn(console, "error").mockImplementation(() => {});
-    client.capture.mockImplementation(() => {
-      throw error;
-    });
-    try {
-      expect(() =>
-        analytics.captureOpened("worksheetScaffolding", "resource_adapter_button"),
-      ).not.toThrow();
-      expect(reportError).toHaveBeenCalledWith(error);
-    } finally {
-      reportError.mockRestore();
-    }
   });
 
   it("initialises once, with automatic content capture disabled", () => {

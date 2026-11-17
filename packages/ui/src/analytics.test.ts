@@ -2,6 +2,7 @@ import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import {
   createAnalyticsTracker,
+  type LessonAiMenuAnalyticsEvent,
   type ResourceAdapterAnalyticsEvent,
 } from "./analytics.js";
 
@@ -33,6 +34,17 @@ type ReviewedProperty =
   | "supportLevel"
   | "transformationKind"
   | "transformationKinds";
+
+it("carries only reviewed properties on menu events", () => {
+  expectTypeOf<EventProperty<LessonAiMenuAnalyticsEvent>>().toEqualTypeOf<
+    | "accountState"
+    | "capabilityId"
+    | "componentType"
+    | "name"
+    | "packageVersion"
+    | "teachingMaterialType"
+  >();
+});
 
 describe("createAnalyticsTracker", () => {
   it("carries only reviewed properties", () => {

@@ -1,73 +1,70 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
-import {
-  OakFlex,
-  OakHeading,
-  OakP,
-  OakPrimaryButton,
-} from "@oaknational/oak-components";
+import { useEffect, useMemo, useState } from "react";
+import { OakFlex, OakP } from "@oaknational/oak-components";
 import type { ResourceAdapterAccount } from "@oaknational/resource-adapter-contracts";
 
+import {
+  createLessonAiMenuTracker,
+  type LessonAiMenuAnalyticsHandler,
+} from "./analytics.js";
+import { LessonAiMenu, type LessonAiMenuItem } from "./LessonAiMenu.js";
 import {
   forgetOnboardingTrip,
   rememberOnboardingTrip,
   wasOnboardingTripFrom,
   type OnboardingTripLesson,
 } from "./onboardingTrip.js";
-import {
-  ResourceAdapterButton,
-  type ResourceAdapterButtonProps,
-  type ResourceAdapterCapabilityOption,
-} from "./ResourceAdapterButton.js";
+import type {
+  ResourceAdapterCapabilityId,
+  ResourceAdapterErrorHandler,
+} from "./publicTypes.js";
+import type { ResourceAdapterTeachingMaterialId } from "./teachingMaterials.js";
 
 export type ResourceAdapterLauncherAccount =
   "signedOut" | ResourceAdapterAccount["state"];
 
+export type ResourceAdapterCapabilityOption = Readonly<{
+  id: ResourceAdapterCapabilityId;
+  label: string;
+}>;
+
 export type ResourceAdapterLauncherProps<
   TCapability extends ResourceAdapterCapabilityOption = ResourceAdapterCapabilityOption,
-> = ResourceAdapterButtonProps<TCapability> &
-  Readonly<{
-    account: ResourceAdapterLauncherAccount;
-    lesson: OnboardingTripLesson;
-    /** Must bring the teacher back to this lesson, through onboarding if needed. */
-    onSignIn: () => void;
-    /** Must send the teacher to onboarding and back to this lesson. */
-    onFinishSetup: () => void;
-  }>;
+> = Readonly<{
+  account: ResourceAdapterLauncherAccount;
+  /**
+   * Whether ORA has anything for the lesson once the teacher is signed in and set
+   * up: from the availability response when signed out, the capabilities response
+   * otherwise. Not read for a ready account.
+   */
+  available: boolean;
+  capabilities: readonly TCapability[];
+  lesson: OnboardingTripLesson;
+  onAnalyticsEvent?: LessonAiMenuAnalyticsHandler;
+  onError?: ResourceAdapterErrorHandler;
+  /** Must send the teacher to onboarding and back to this lesson. */
+  onFinishSetup: () => void;
+  onSelectCapability: (capability: TCapability) => void;
+  /** Must bring the teacher back to this lesson, through onboarding if needed. */
+  onSignIn: () => void;
+  teachingMaterials: readonly ResourceAdapterTeachingMaterialId[];
+}>;
 
-const PROMPTS = {
-  signedOut: {
-    action: "Sign in",
-    heading: "Sign in to create more with Aila",
-    message: "You can adapt this lesson's resources with AI once you're signed in.",
-  },
-  needsSetup: {
-    action: "Finish setup",
-    heading: "Finish setting up your account",
-    message:
-      "Add a few details about yourself, then you can adapt this lesson's resources with AI.",
-  },
-  setupIncomplete: {
-    action: "Try again",
-    heading: "Your account setup isn't finished",
-    message: "Finish setting up your account to adapt this lesson's resources with AI.",
-  },
-} as const;
-
-/**
- * The lesson-page entry point for every account state: a prompt to sign in or
- * finish setting up, or the capability button once the teacher is ready.
- */
+/** The lesson-page entry point for every account state. */
 export function ResourceAdapterLauncher<
   TCapability extends ResourceAdapterCapabilityOption,
 >({
   account,
+  available,
   capabilities,
   lesson,
+  onAnalyticsEvent,
+  onError,
   onFinishSetup,
   onSelectCapability,
   onSignIn,
+  teachingMaterials,
 }: ResourceAdapterLauncherProps<TCapability>) {
   const { lessonSlug, programmeSlug } = lesson;
   const [arrival, setArrival] = useState<Readonly<
@@ -85,54 +82,66 @@ export function ResourceAdapterLauncher<
     forgetOnboardingTrip();
     setArrival({ account, lessonSlug, programmeSlug });
   }, [account, lessonSlug, programmeSlug]);
-  const headingId = useId();
-  const returned =
+  const track = useMemo(
+    () => createLessonAiMenuTracker(onAnalyticsEvent, onError),
+    [onAnalyticsEvent, onError],
+  );
+
+  let adaptItems: readonly LessonAiMenuItem[] = [];
+  if (account === "ready") {
+    adaptItems = capabilities.map((capability) => ({
+      key: capability.id,
+      label: capability.label,
+      onSelect: () => {
+        track({
+          name: "Resource Adapter Opened",
+          componentType: "lesson_ai_menu_item",
+          capabilityId: capability.id,
+        });
+        onSelectCapability(capability);
+      },
+    }));
+  } else if (available) {
+    const leave = account === "signedOut" ? onSignIn : onFinishSetup;
+    adaptItems = [
+      {
+        key: account,
+        label: account === "signedOut" ? "Sign in to adapt" : "Finish setup to adapt",
+        onSelect: () => {
+          track({
+            name: "Adapt Onboarding Selected",
+            componentType: "lesson_ai_menu_item",
+            accountState: account,
+          });
+          rememberOnboardingTrip(lesson);
+          leave();
+        },
+      },
+    ];
+  }
+
+  const menu = (
+    <LessonAiMenu
+      adaptItems={adaptItems}
+      lesson={lesson}
+      teachingMaterials={teachingMaterials}
+      track={track}
+    />
+  );
+  const returnedReady =
+    account === "ready" &&
     arrival?.account === account &&
     arrival.lessonSlug === lessonSlug &&
     arrival.programmeSlug === programmeSlug;
-
-  if (account === "ready") {
-    const button = (
-      <ResourceAdapterButton
-        capabilities={capabilities}
-        onSelectCapability={onSelectCapability}
-      />
-    );
-    if (capabilities.length === 0 || !returned) {
-      return button;
-    }
-    return (
-      <OakFlex $alignItems="flex-start" $flexDirection="column" $gap="spacing-8">
-        <OakP $font="body-2" role="status">
-          Your account is ready. Adapt this lesson&apos;s resources below.
-        </OakP>
-        {button}
-      </OakFlex>
-    );
+  if (!returnedReady || capabilities.length === 0) {
+    return menu;
   }
-
-  let prompt: (typeof PROMPTS)[keyof typeof PROMPTS] = PROMPTS.signedOut;
-  if (account === "needsSetup") {
-    prompt = returned ? PROMPTS.setupIncomplete : PROMPTS.needsSetup;
-  }
-  const leave = account === "signedOut" ? onSignIn : onFinishSetup;
-
   return (
-    <section aria-labelledby={headingId}>
-      <OakFlex $alignItems="flex-start" $flexDirection="column" $gap="spacing-8">
-        <OakHeading $font="heading-6" id={headingId} tag="h2">
-          {prompt.heading}
-        </OakHeading>
-        <OakP $font="body-2">{prompt.message}</OakP>
-        <OakPrimaryButton
-          onClick={() => {
-            rememberOnboardingTrip(lesson);
-            leave();
-          }}
-        >
-          {prompt.action}
-        </OakPrimaryButton>
-      </OakFlex>
-    </section>
+    <OakFlex $alignItems="flex-start" $flexDirection="column" $gap="spacing-8">
+      <OakP $font="body-2" role="status">
+        Your account is ready. Adapt this lesson&apos;s resources below.
+      </OakP>
+      {menu}
+    </OakFlex>
   );
 }

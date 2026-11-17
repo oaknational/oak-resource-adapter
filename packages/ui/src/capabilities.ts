@@ -4,6 +4,11 @@ import type {
   ResourceAdapterCapability as ServiceCapability,
 } from "@oaknational/resource-adapter-contracts";
 
+import {
+  getSupportedTeachingMaterialIds,
+  type ResourceAdapterTeachingMaterialId,
+} from "./teachingMaterials.js";
+
 export const supportedCapabilityIds = ["worksheetScaffolding"] as const;
 
 export type ResourceAdapterCapabilityId = (typeof supportedCapabilityIds)[number];
@@ -12,6 +17,9 @@ export type ResourceAdapterCapability = Omit<ServiceCapability, "id"> &
 export type ResourceAdapterCapabilitiesResponse = Readonly<{
   account: ResourceAdapterAccount;
   capabilities: readonly ResourceAdapterCapability[];
+  /** For `needsSetup`, whether ORA has anything for the lesson once setup is done. */
+  available: boolean;
+  teachingMaterials: readonly ResourceAdapterTeachingMaterialId[];
 }>;
 
 function isSupportedCapability(
@@ -31,5 +39,7 @@ export function getSupportedCapabilities(
   return {
     account: response.account,
     capabilities: response.capabilities.filter(isSupportedCapability),
+    available: response.available,
+    teachingMaterials: getSupportedTeachingMaterialIds(response.teachingMaterials),
   };
 }

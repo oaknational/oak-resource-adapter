@@ -74,7 +74,7 @@ const lesson: LessonContext = {
 
 const capability: ResourceAdapterCapability = {
   id: "worksheetScaffolding",
-  label: "Add extra scaffolding",
+  label: "Scaffold practice tasks",
   resourceType: "worksheet",
 };
 
@@ -429,7 +429,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
     const panel = screen.getByTestId("worksheet-scaffolding-summary");
 
     expect(
-      within(panel).getByRole("heading", { level: 3, name: "Add extra scaffolding" }),
+      within(panel).getByRole("heading", { level: 3, name: "Scaffold practice tasks" }),
     ).toBeVisible();
     expect(
       await within(panel).findByRole("button", { name: "Download worksheet" }),
