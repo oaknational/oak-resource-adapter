@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { OakFlex, OakHeading, OakIcon, OakModal } from "@oaknational/oak-components";
+import {
+  OakFlex,
+  OakGrid,
+  OakGridArea,
+  OakHeading,
+  OakIcon,
+  OakModal,
+} from "@oaknational/oak-components";
 
 import {
   createAnalyticsTracker,
@@ -96,12 +103,11 @@ export function ResourceAdapterDialog(props: ResourceAdapterDialogProps) {
 type ResourceAdapterDialogInnerProps = ResourceAdapterDialogProps &
   Readonly<{ resetKeys: readonly unknown[]; track: TrackAnalyticsEvent }>;
 
-// No Oak tokens for these. OakModal's content box only grows to fit its children,
+// No Oak token for this. OakModal's content box only grows to fit its children,
 // so the min-height fills the rest of the screen for a DialogNotice to centre in:
-// 4rem header, 1px border and 3.5rem padding above and below. Remove the
-// min-height with ADAPT-231.
+// 4rem header, 1px border and 3.5rem padding above and below. Remove it with
+// ADAPT-231.
 const workflowContainerStyle = {
-  maxWidth: "96rem",
   minHeight: "calc(100dvh - 11rem - 1px)",
 } as const;
 
@@ -135,57 +141,63 @@ function ResourceAdapterDialogInner({
       headerVariant="inverted"
       isOpen={isOpen}
       onClose={onClose}
+      // The views focus their own headings, marked with data-autofocus so the
+      // modal's focus lock doesn't move focus to the close button after them.
+      focusCloseButtonOnOpen={false}
       position="fullscreen"
     >
-      <OakFlex
-        $flexDirection="column"
-        $mh="auto"
-        $width="100%"
-        style={workflowContainerStyle}
-      >
-        <ResourceAdapterErrorBoundary
-          {...(onError ? { onError } : {})}
-          resetKeys={resetKeys}
+      <OakGrid style={workflowContainerStyle}>
+        <OakGridArea
+          $colSpan={[12, 12, 8]}
+          $colStart={[1, 1, 3]}
+          // Grid items default to min-width: auto, so wide worksheet content
+          // would stretch the column past its 8 columns.
+          $minWidth="spacing-0"
         >
-          {terms.status === "checking" && <DialogLoading heading="Loading…" />}
-          {terms.status === "checkFailed" && (
-            <ResourceAdapterUnavailableMessage
-              message="We couldn't check your account. The rest of the page still works."
-              onTryAgain={terms.retry}
-              testId="resource-adapter-terms-error"
-            />
-          )}
-          {(terms.status === "required" ||
-            terms.status === "accepting" ||
-            terms.status === "acceptFailed" ||
-            terms.status === "outdated") && (
-            <TermsView
-              isAccepting={terms.status === "accepting"}
-              onAccept={terms.accept}
-              onBack={onClose}
-              problem={
-                terms.status === "acceptFailed" || terms.status === "outdated"
-                  ? terms.status
-                  : null
-              }
-            />
-          )}
-          {terms.status === "accepted" && (
-            <Workflow
-              apiBaseUrl={apiBaseUrl}
-              capabilityLabel={capability.label}
-              getToken={getToken}
-              isOpen={isOpen}
-              lesson={lesson}
-              onClose={onClose}
-              {...(onError ? { onError } : {})}
-              onFinishSetup={onFinishSetup}
-              onTermsRequired={terms.require}
-              track={track}
-            />
-          )}
-        </ResourceAdapterErrorBoundary>
-      </OakFlex>
+          <ResourceAdapterErrorBoundary
+            {...(onError ? { onError } : {})}
+            resetKeys={resetKeys}
+          >
+            {terms.status === "checking" && <DialogLoading heading="Loading…" />}
+            {terms.status === "checkFailed" && (
+              <ResourceAdapterUnavailableMessage
+                message="We couldn't check your account. The rest of the page still works."
+                onTryAgain={terms.retry}
+                testId="resource-adapter-terms-error"
+              />
+            )}
+            {(terms.status === "required" ||
+              terms.status === "accepting" ||
+              terms.status === "acceptFailed" ||
+              terms.status === "outdated") && (
+              <TermsView
+                isAccepting={terms.status === "accepting"}
+                onAccept={terms.accept}
+                onBack={onClose}
+                problem={
+                  terms.status === "acceptFailed" || terms.status === "outdated"
+                    ? terms.status
+                    : null
+                }
+              />
+            )}
+            {terms.status === "accepted" && (
+              <Workflow
+                apiBaseUrl={apiBaseUrl}
+                capabilityLabel={capability.label}
+                getToken={getToken}
+                isOpen={isOpen}
+                lesson={lesson}
+                onClose={onClose}
+                {...(onError ? { onError } : {})}
+                onFinishSetup={onFinishSetup}
+                onTermsRequired={terms.require}
+                track={track}
+              />
+            )}
+          </ResourceAdapterErrorBoundary>
+        </OakGridArea>
+      </OakGrid>
     </OakModal>
   );
 }

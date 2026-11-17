@@ -113,26 +113,38 @@ function useFocusAfterLoadingScreen(showing: boolean) {
 
 export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflowProps) {
   const workflow = useWorksheetScaffolding(props);
+  const { state } = workflow;
 
-  if (workflow.state.status === "idle") {
+  if (state.status === "idle") {
     return null;
   }
-  if (workflow.state.status === "allowanceNotice") {
-    return <WorkflowContent workflowProps={props} workflow={workflow} />;
-  }
 
+  const showsLoadingScreen =
+    state.status === "loading" ||
+    (state.status === "ready" && suggestionGenerationIsBusy(state.value));
+
+  // The header toggles inside one wrapper: remounting WorkflowContent when
+  // loading ends would lose the focus that useFocusAfterLoadingScreen restores.
   return (
     <OakFlex $flexDirection="column" $gap="spacing-32">
-      <ViewHeader onBackToLesson={props.onClose} />
-      <WorkflowContent workflowProps={props} workflow={workflow} />
+      {!showsLoadingScreen && state.status !== "allowanceNotice" && (
+        <ViewHeader onBackToLesson={props.onClose} />
+      )}
+      <WorkflowContent
+        showsLoadingScreen={showsLoadingScreen}
+        workflowProps={props}
+        workflow={workflow}
+      />
     </OakFlex>
   );
 }
 
 function WorkflowContent({
+  showsLoadingScreen,
   workflowProps,
   workflow,
 }: Readonly<{
+  showsLoadingScreen: boolean;
   workflowProps: WorksheetScaffoldingWorkflowProps;
   workflow: ReturnType<typeof useWorksheetScaffolding>;
 }>) {
@@ -151,9 +163,6 @@ function WorkflowContent({
     tryAgain,
     undoReview,
   } = workflow;
-  const showsLoadingScreen =
-    state.status === "loading" ||
-    (state.status === "ready" && suggestionGenerationIsBusy(state.value));
   const focusAfter = useFocusAfterLoadingScreen(showsLoadingScreen);
 
   if (state.status === "idle") {
@@ -162,7 +171,7 @@ function WorkflowContent({
 
   // Loading and preparing share one mounted screen, so its tip and focus carry
   // over when loading leads straight into preparing.
-  if (showsLoadingScreen) {
+  if (showsLoadingScreen || state.status === "loading") {
     const status =
       state.status === "loading" ? LOADING_STATUS : PREPARING_SCAFFOLDS_STATUS;
     return (

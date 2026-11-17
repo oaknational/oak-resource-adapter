@@ -391,6 +391,10 @@ describe("WorksheetScaffoldingWorkflow", () => {
         screen.getByRole("heading", { name: "Loading your worksheet…" }),
       ).toHaveFocus(),
     );
+    expect(
+      screen.queryByRole("button", { name: "Back to lesson" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Beta")).not.toBeInTheDocument();
     await act(async () => {
       open.resolve(opened(readyState()));
     });
@@ -403,6 +407,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
       expect(screen.getByTestId("worksheet-scaffolding-workflow")).toHaveFocus(),
     );
     expect(screen.getByText("What is one half plus one quarter?")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Back to lesson" })).toBeVisible();
     expect(openWorksheetScaffoldingMock).toHaveBeenCalledWith({
       apiBaseUrl: props.apiBaseUrl,
       getToken: expect.any(Function),

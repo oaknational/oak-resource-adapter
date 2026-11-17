@@ -53,6 +53,7 @@ export function DialogLoading({
             as="h3"
             $font="heading-5"
             $ma="spacing-0"
+            data-autofocus
             ref={headingRef}
             tabIndex={-1}
           >

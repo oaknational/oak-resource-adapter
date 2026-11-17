@@ -185,9 +185,7 @@ describe("ORA's terms in the dialog", () => {
     expect(openWorksheetScaffolding).not.toHaveBeenCalled();
   });
 
-  // OakModalCenter's focus lock sometimes moves focus to its close button after
-  // the heading takes it. Re-enable with ADAPT-113, which replaces the modal.
-  it.skip("shows the terms before the capability, with focus on their heading", async () => {
+  it("shows the terms before the capability, with focus on their heading", async () => {
     renderDialog();
 
     const heading = await screen.findByRole("heading", {
