@@ -16,7 +16,8 @@ test.afterAll(async () => {
   await account?.remove();
 });
 
-test("asks a teacher to accept ORA's terms before any work starts", async ({
+// The account is new and has no region, so it is limited with nothing used yet.
+test("asks a new teacher to accept ORA's terms, then shows their allowance, before any work starts", async ({
   page,
   trackAdaptation,
 }) => {
@@ -40,23 +41,41 @@ test("asks a teacher to accept ORA's terms before any work starts", async ({
     dialog.getByRole("link", { name: /^terms and conditions/ }),
   ).toBeFocused();
 
-  const opening = page.waitForResponse(
+  const asking = page.waitForResponse(
     (response) =>
       response.url().includes("worksheetScaffolding.open") &&
       response.request().method() === "POST",
   );
   await dialog.getByRole("button", { name: "Accept and continue" }).click();
-  const { state } = await scaffoldingEntryIn(await opening);
-  trackAdaptation(state.adaptationId);
+  expect(await scaffoldingEntryIn(await asking)).toMatchObject({
+    outcome: "needsSpendConfirmation",
+  });
+  const allowance = dialog.getByRole("heading", {
+    level: 3,
+    name: /^You can adapt up to \d+ resources? a month$/,
+  });
+  await expect(allowance).toBeFocused();
   await expect(terms).toBeHidden();
 
-  // Acceptance is stored, so the next visit goes straight to the work it started.
+  const opening = page.waitForResponse(
+    (response) =>
+      response.url().includes("worksheetScaffolding.open") &&
+      response.request().method() === "POST",
+  );
+  await dialog.getByRole("button", { name: "Start adapting" }).click();
+  const { state } = await scaffoldingEntryIn(await opening);
+  trackAdaptation(state.adaptationId);
+  await expect(allowance).toBeHidden();
+
+  // Acceptance is stored and the lesson is counted this month, so the next
+  // visit goes straight to the work it started.
   await page.reload();
   expect(await openScaffolding(page)).toMatchObject({
     outcome: "reopened",
     state: { adaptationId: state.adaptationId },
   });
   await expect(terms).toBeHidden();
+  await expect(allowance).toBeHidden();
 
   await page.goto("/onboarding");
   await expect(page.getByText(/^Version \d+, accepted /)).toBeVisible();

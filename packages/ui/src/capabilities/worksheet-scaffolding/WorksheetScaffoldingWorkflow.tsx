@@ -12,8 +12,7 @@ import {
   type ResourceNode,
 } from "@oaknational/resource-document";
 
-import type { TeacherAllowance } from "@oaknational/resource-adapter-contracts/internal";
-
+import { AllowanceNotice } from "../../AllowanceNotice.js";
 import { rememberOnboardingTrip } from "../../onboardingTrip.js";
 import { ResourceAdapterUnavailableMessage } from "../../ResourceAdapterErrorBoundary.js";
 import { ResourceDocumentRenderer } from "../../resource-document/ResourceDocumentRenderer.js";
@@ -23,7 +22,6 @@ import type {
   LessonContext,
   ResourceAdapterErrorHandler,
 } from "../../publicTypes.js";
-import { AllowanceSummary } from "./AllowanceSummary.js";
 import { LoadingScreen } from "./LoadingScreen.js";
 import { PendingReviewControls } from "./PendingReviewControls.js";
 import { ResumeChoice } from "./ResumeChoice.js";
@@ -46,13 +44,11 @@ import {
 import {
   FAILURE_TITLES,
   LOADING_STATUS,
-  MONTHLY_RESET_STATUS,
   NEEDS_SETUP_STATUS,
   PREPARING_SCAFFOLDS_STATUS,
   failureMessage,
   foundNoScaffolds,
   readyStatus,
-  usageLimitStatus,
 } from "./workflowStatus.js";
 
 export type WorksheetScaffoldingWorkflowProps = Readonly<{
@@ -60,6 +56,7 @@ export type WorksheetScaffoldingWorkflowProps = Readonly<{
   getToken: GetToken;
   isOpen: boolean;
   lesson: LessonContext;
+  onClose: () => void;
   onError?: ResourceAdapterErrorHandler;
   onFinishSetup: () => void;
   /** Shows ORA's terms in place of the workflow. */
@@ -68,59 +65,22 @@ export type WorksheetScaffoldingWorkflowProps = Readonly<{
 }>;
 
 function ResumeChoiceWorkflow({
-  allowance,
   frameRef,
-  onAllowanceDisplayed,
   onResume,
   onStartFresh,
   state,
 }: Readonly<{
-  allowance: TeacherAllowance | null;
   frameRef: RefObject<HTMLDivElement | null>;
-  onAllowanceDisplayed: (allowance: TeacherAllowance) => void;
   onResume: () => void;
   onStartFresh: () => void;
   state: Extract<WorkflowState, { status: "choosing" }>;
 }>) {
-  const status = state.usageLimit === null ? null : usageLimitStatus(state.usageLimit);
   return (
-    <WorkflowFrame frameRef={frameRef} status={status}>
-      {status === null ? (
-        <AllowanceSummary allowance={allowance} onDisplayed={onAllowanceDisplayed} />
-      ) : (
-        <WorkflowStatusBanner cta={null} status={status} />
-      )}
+    <WorkflowFrame frameRef={frameRef} status={null}>
       <ResumeChoice
-        canStartFresh={state.usageLimit === null}
         onResume={onResume}
         onStartFresh={onStartFresh}
         resumable={state.resumable}
-      />
-    </WorkflowFrame>
-  );
-}
-
-function MonthlyLimitWorkflow({
-  frameRef,
-  onTryAgain,
-  state,
-}: Readonly<{
-  frameRef: RefObject<HTMLDivElement | null>;
-  onTryAgain: () => void;
-  state: Extract<WorkflowState, { status: "monthlyLimitReached" }>;
-}>) {
-  const status = state.expired
-    ? MONTHLY_RESET_STATUS
-    : usageLimitStatus(state.usageLimit);
-  return (
-    <WorkflowFrame frameRef={frameRef} status={status}>
-      <WorkflowStatusBanner
-        cta={
-          state.expired ? (
-            <OakSecondaryButton onClick={onTryAgain}>Try again</OakSecondaryButton>
-          ) : null
-        }
-        status={status}
       />
     </WorkflowFrame>
   );
@@ -151,9 +111,8 @@ function useFocusAfterLoadingScreen(showing: boolean) {
 export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflowProps) {
   const {
     acceptReview,
-    allowance,
     applySuggestion,
-    observeAllowance,
+    confirmSpend,
     removeContribution,
     refresh,
     resume,
@@ -189,8 +148,6 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     return (
       <ResumeChoiceWorkflow
         frameRef={focusAfter.frame}
-        allowance={allowance}
-        onAllowanceDisplayed={observeAllowance}
         onResume={resume}
         onStartFresh={() =>
           startFresh(state.resumable.adaptationId, "start_from_original_button")
@@ -199,12 +156,12 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
       />
     );
   }
-  if (state.status === "monthlyLimitReached") {
+  if (state.status === "allowanceNotice") {
     return (
-      <MonthlyLimitWorkflow
-        frameRef={focusAfter.frame}
-        onTryAgain={tryAgain}
-        state={state}
+      <AllowanceNotice
+        allowance={state.allowance}
+        onBack={props.onClose}
+        onContinue={confirmSpend}
       />
     );
   }
@@ -385,7 +342,6 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           />
         </StickyWorkflowStatus>
       )}
-      <AllowanceSummary allowance={allowance} onDisplayed={observeAllowance} />
       <WorksheetDownload
         apiBaseUrl={props.apiBaseUrl}
         getToken={props.getToken}

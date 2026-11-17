@@ -1,4 +1,7 @@
-import type { TeacherAllowance } from "@oaknational/resource-adapter-contracts/internal";
+import type {
+  LimitedTeacherAllowance,
+  TeacherAllowance,
+} from "@oaknational/resource-adapter-contracts/internal";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 
 import { type CalendarMonth, ukCalendarMonth } from "../calendar/uk-calendar-month";
@@ -9,7 +12,10 @@ import {
 } from "../teacher-access/resolver";
 import {
   type AdaptationAllowance,
+  type AdaptedResource,
   adaptedResourcesSince,
+  isCounted,
+  type ResourceToAdapt,
 } from "./adaptation-allowance";
 import { adaptedResourcesPerMonthLimit } from "./monthly-allowance";
 
@@ -43,27 +49,53 @@ const defaultDependencies: TeacherAllowanceDependencies = {
   adaptedResourcesSince,
 };
 
-export async function getTeacherAllowance(
+type MonthlyUsage = Readonly<{
+  allowance: LimitedTeacherAllowance;
+  counted: readonly AdaptedResource[];
+}>;
+
+async function usageThisMonth(
   target: ResourceAdapterAuthenticatedTeacher,
   {
     access,
     adaptedResourcesPerMonth,
     adaptedResourcesSince,
     now,
-  }: TeacherAllowanceDependencies = defaultDependencies,
-): Promise<TeacherAllowance> {
+  }: TeacherAllowanceDependencies,
+): Promise<MonthlyUsage | null> {
   const cached = await access.resolve(target.teacherId);
   // A cached lookup can predate a grant.
   const current =
     cached.tier === "limited" ? await access.recheck(target.teacherId) : cached;
   const month = ukCalendarMonth(now());
   const allowance = adaptationAllowanceFor(current, month, adaptedResourcesPerMonth());
-  if (allowance === "unlimited") return { tier: "full" };
-  const adapted = await adaptedResourcesSince(target.teacherId, allowance.since);
+  if (allowance === "unlimited") return null;
+  const counted = await adaptedResourcesSince(target.teacherId, allowance.since);
   return {
-    limit: allowance.limit,
-    remaining: Math.max(0, allowance.limit - adapted.length),
-    resetsAt: month.resetsAt.toISOString(),
-    tier: "limited",
+    allowance: {
+      limit: allowance.limit,
+      remaining: Math.max(0, allowance.limit - counted.length),
+      resetsAt: month.resetsAt.toISOString(),
+      tier: "limited",
+    },
+    counted,
   };
+}
+
+export async function getTeacherAllowance(
+  target: ResourceAdapterAuthenticatedTeacher,
+  dependencies: TeacherAllowanceDependencies = defaultDependencies,
+): Promise<TeacherAllowance> {
+  const usage = await usageThisMonth(target, dependencies);
+  return usage?.allowance ?? { tier: "full" };
+}
+
+/** Null when opening the resource would not spend an adaptation. */
+export async function allowanceIfSpending(
+  target: ResourceAdapterAuthenticatedTeacher,
+  resource: ResourceToAdapt,
+  dependencies: TeacherAllowanceDependencies = defaultDependencies,
+): Promise<LimitedTeacherAllowance | null> {
+  const usage = await usageThisMonth(target, dependencies);
+  return usage === null || isCounted(usage.counted, resource) ? null : usage.allowance;
 }

@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { getTeacherAllowance } from "../../allowance.js";
 import { ResourceAdapterApiError } from "../../errors.js";
 import { type ReactNode } from "react";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
@@ -33,7 +32,6 @@ import { SCAFFOLD_TIPS } from "./scaffoldTips.js";
 // Full-dialog renders share CPU with the package's other jsdom workers.
 vi.setConfig({ testTimeout: 10_000 });
 
-vi.mock("../../allowance.js", () => ({ getTeacherAllowance: vi.fn() }));
 vi.mock("../../terms.js", () => ({
   acceptTerms: () => Promise.resolve({ accepted: true }),
   getTermsState: () => Promise.resolve({ accepted: true }),
@@ -53,7 +51,6 @@ vi.mock("../../worksheetScaffolding.js", () => ({
 }));
 
 const openWorksheetScaffoldingMock = vi.mocked(openWorksheetScaffolding);
-const getTeacherAllowanceMock = vi.mocked(getTeacherAllowance);
 const removeContributionMock = vi.mocked(enqueueWorksheetScaffoldingRemoval);
 const getWorksheetScaffoldingMock = vi.mocked(getWorksheetScaffolding);
 const applySuggestionMock = vi.mocked(applyWorksheetScaffoldingSuggestion);
@@ -318,7 +315,6 @@ const readyWithPendingReviewBesideAccepted = readyState({
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
   openWorksheetScaffoldingMock.mockResolvedValue(opened(readyState()));
-  getTeacherAllowanceMock.mockResolvedValue({ tier: "full" });
   applySuggestionMock.mockResolvedValue(
     readyState({
       job: {
@@ -410,6 +406,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
       apiBaseUrl: props.apiBaseUrl,
       getToken: expect.any(Function),
       lesson: props.lesson,
+      spendConfirmed: false,
     });
     await expect(
       openWorksheetScaffoldingMock.mock.calls[0]?.[0].getToken(),
@@ -981,64 +978,6 @@ describe("WorksheetScaffoldingWorkflow", () => {
     ).toBeVisible();
   });
 
-  it("shows a limited teacher how many adaptations they have left this month", async () => {
-    openWorksheetScaffoldingMock.mockResolvedValueOnce(
-      opened(readyState(), limitedAllowance(2)),
-    );
-    renderDialog();
-
-    const allowance = await screen.findByTestId("worksheet-scaffolding-allowance");
-    expect(
-      within(allowance).getByRole("heading", {
-        name: "2 of 3 adaptations left this month",
-      }),
-    ).toBeVisible();
-    expect(allowance).toHaveTextContent("Your allowance resets on 1 November.");
-  });
-
-  it("draws no bar for a limit too large to show as segments", async () => {
-    openWorksheetScaffoldingMock.mockResolvedValueOnce(
-      opened(readyState(), {
-        limit: 100_000,
-        remaining: 99_999,
-        resetsAt: "2099-11-01T00:00:00.000Z",
-        tier: "limited",
-      }),
-    );
-    renderDialog();
-
-    await screen.findByTestId("worksheet-scaffolding-allowance");
-    expect(
-      screen.queryByTestId("worksheet-scaffolding-allowance-bar"),
-    ).not.toBeInTheDocument();
-  });
-
-  it("tells a limited teacher with no adaptations left that their work stays open", async () => {
-    openWorksheetScaffoldingMock.mockResolvedValueOnce(
-      opened(readyState(), limitedAllowance(0)),
-    );
-    renderDialog();
-
-    const allowance = await screen.findByTestId("worksheet-scaffolding-allowance");
-    expect(
-      within(allowance).getByRole("heading", {
-        name: "No adaptations left this month",
-      }),
-    ).toBeVisible();
-    expect(allowance).toHaveTextContent(
-      "You can keep working on worksheets you've started. Your allowance resets on 1 November.",
-    );
-  });
-
-  it("shows no allowance to a teacher with full access", async () => {
-    renderDialog();
-
-    await screen.findByRole("article", { name: "Adding fractions worksheet" });
-    expect(
-      screen.queryByTestId("worksheet-scaffolding-allowance"),
-    ).not.toBeInTheDocument();
-  });
-
   it("asks a teacher who is not onboarded to finish setting up their account", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce({ outcome: "needsSetup" });
     const onFinishSetup = vi.fn();
@@ -1048,68 +987,6 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(screen.queryByRole("article")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Finish setup" }));
     expect(onFinishSetup).toHaveBeenCalledOnce();
-  });
-
-  it("says when the teacher can start again once this month's adaptations are used", async () => {
-    const usageLimit = {
-      kind: "adapted_resources_month",
-      retryAt: anHourFromNow(),
-    } as const;
-    openWorksheetScaffoldingMock.mockResolvedValueOnce({
-      allowance: fullAccess,
-      outcome: "usageLimitReached",
-      usageLimit,
-    });
-    renderDialog();
-
-    expect(
-      await screen.findByText("You've used this month's adaptations"),
-    ).toBeVisible();
-    expect(
-      screen.getByText(
-        `You can start a new adaptation on ${new Intl.DateTimeFormat("en-GB", {
-          day: "numeric",
-          month: "long",
-          timeZone: "Europe/London",
-        }).format(new Date(usageLimit.retryAt))}.`,
-      ),
-    ).toBeVisible();
-    expect(screen.queryByRole("article")).not.toBeInTheDocument();
-  });
-
-  it("keeps the offer to carry on when starting from the original is refused", async () => {
-    openWorksheetScaffoldingMock
-      .mockResolvedValueOnce({
-        allowance: fullAccess,
-        outcome: "resumable",
-        resumable: {
-          adaptationId: "adaptation-9",
-          pendingScaffoldCount: 0,
-          scaffoldCount: 1,
-          updatedAt: "2026-02-03T09:00:00.000Z",
-        },
-      })
-      .mockResolvedValueOnce({
-        allowance: fullAccess,
-        outcome: "usageLimitReached",
-        usageLimit: { kind: "adapted_resources_month", retryAt: anHourFromNow() },
-      });
-    renderDialog();
-
-    await userEvent.click(
-      await screen.findByRole("button", { name: "Start from the original" }),
-    );
-
-    expect(
-      await screen.findByText("You've used this month's adaptations"),
-    ).toBeVisible();
-    expect(
-      screen.getByRole("button", { name: "Start from the original" }),
-    ).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Carry on" })).toBeEnabled();
-    expect(
-      screen.queryByTestId("worksheet-scaffolding-allowance"),
-    ).not.toBeInTheDocument();
   });
 
   it("keeps the current resume choice when an older open response arrives", async () => {
@@ -1125,14 +1002,6 @@ describe("WorksheetScaffoldingWorkflow", () => {
           pendingScaffoldCount: 0,
           updatedAt: "2026-10-01T00:00:00Z",
         },
-      })
-      .mockResolvedValueOnce({
-        allowance: fullAccess,
-        outcome: "usageLimitReached",
-        usageLimit: {
-          kind: "adapted_resources_month",
-          retryAt: anHourFromNow(),
-        },
       });
     const { rerender } = renderDialog();
     await waitFor(() => expect(openWorksheetScaffoldingMock).toHaveBeenCalledOnce());
@@ -1141,134 +1010,156 @@ describe("WorksheetScaffoldingWorkflow", () => {
     await act(async () => {
       oldOpen.resolve(opened(readyState()));
     });
-    await userEvent.click(
-      screen.getByRole("button", { name: "Start from the original" }),
-    );
-    await screen.findByText("You've used this month's adaptations");
-    expect(screen.getByRole("button", { name: "Carry on" })).toBeEnabled();
+
+    expect(screen.getByRole("button", { name: "Carry on" })).toBeVisible();
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
   });
 
-  it("refreshes at the monthly reset and lets a refused teacher retry without spending a use automatically", async () => {
-    const resetsAt = new Date(Date.now() + 1000).toISOString();
-    const refreshedAllowance =
-      deferred<Awaited<ReturnType<typeof getTeacherAllowance>>>();
-    openWorksheetScaffoldingMock.mockResolvedValueOnce({
-      allowance: limitedAllowance(0, resetsAt),
-      outcome: "usageLimitReached",
-      usageLimit: {
-        kind: "adapted_resources_month",
-        retryAt: resetsAt,
-      },
-    });
-    getTeacherAllowanceMock.mockReturnValueOnce(refreshedAllowance.promise);
-    renderDialog();
-    await screen.findByText("You've used this month's adaptations");
-    expect(getTeacherAllowanceMock).not.toHaveBeenCalled();
-    const retry = await screen.findByRole(
-      "button",
-      { name: "Try again" },
-      { timeout: 5000 },
-    );
-    expect(retry).toBeEnabled();
-    await waitFor(() => expect(getTeacherAllowanceMock).toHaveBeenCalledOnce());
-    await act(async () =>
-      refreshedAllowance.resolve({
-        tier: "limited",
-        remaining: 3,
-        limit: 3,
-        resetsAt: anHourFromNow(),
-      }),
-    );
-    expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(1);
-    await userEvent.click(retry);
-    await screen.findByRole("article", { name: "Adding fractions worksheet" });
-  });
-
-  it("restores start-over at the monthly reset and preserves Carry on if that attempt is also refused", async () => {
-    const resetsAt = new Date(Date.now() + 1000).toISOString();
-    openWorksheetScaffoldingMock
-      .mockResolvedValueOnce({
-        allowance: limitedAllowance(0, resetsAt),
-        outcome: "resumable",
-        resumable: {
-          adaptationId: "adaptation-9",
-          scaffoldCount: 1,
-          pendingScaffoldCount: 0,
-          updatedAt: "2026-10-01T00:00:00Z",
-        },
-      })
-      .mockResolvedValueOnce({
-        allowance: limitedAllowance(0, resetsAt),
-        outcome: "usageLimitReached",
-        usageLimit: {
-          kind: "adapted_resources_month",
-          retryAt: resetsAt,
-        },
-      })
-      .mockResolvedValueOnce({
-        allowance: limitedAllowance(0, anHourFromNow()),
-        outcome: "usageLimitReached",
-        usageLimit: {
-          kind: "adapted_resources_month",
-          retryAt: anHourFromNow(),
-        },
-      });
-    getTeacherAllowanceMock.mockResolvedValue(limitedAllowance(3, anHourFromNow()));
-    renderDialog();
-    await userEvent.click(
-      await screen.findByRole("button", { name: "Start from the original" }),
-    );
-    await screen.findByText("You've used this month's adaptations");
-    expect(
-      screen.getByRole("button", { name: "Start from the original" }),
-    ).toBeDisabled();
-    await waitFor(
-      () =>
-        expect(
-          screen.getByRole("button", { name: "Start from the original" }),
-        ).toBeEnabled(),
-      { timeout: 5000 },
-    );
-    expect(getTeacherAllowanceMock).toHaveBeenCalledOnce();
-    await userEvent.click(
-      screen.getByRole("button", { name: "Start from the original" }),
-    );
-    await screen.findByText("You've used this month's adaptations");
-    expect(screen.getByRole("button", { name: "Carry on" })).toBeEnabled();
-  });
-
-  it("expires an old refusal even if the allowance already reports the next month", async () => {
-    openWorksheetScaffoldingMock.mockResolvedValueOnce({
-      allowance: limitedAllowance(3, anHourFromNow()),
-      outcome: "usageLimitReached",
-      usageLimit: {
-        kind: "adapted_resources_month",
-        retryAt: new Date(Date.now() - 1000).toISOString(),
-      },
-    });
-    renderDialog();
-    expect(await screen.findByRole("button", { name: "Try again" })).toBeEnabled();
-    expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(1);
-  });
-
-  it("expires repeated refusals with the same retry time", async () => {
-    const refusal = {
-      allowance: fullAccess,
-      outcome: "usageLimitReached",
-      usageLimit: {
-        kind: "adapted_resources_month",
-        retryAt: new Date(Date.now() - 1000).toISOString(),
+  describe("the monthly allowance notice", () => {
+    const resumable = {
+      allowance: limitedAllowance(2),
+      outcome: "resumable",
+      resumable: {
+        adaptationId: "adaptation-9",
+        pendingScaffoldCount: 0,
+        scaffoldCount: 1,
+        updatedAt: "2026-02-03T09:00:00.000Z",
       },
     } as const;
-    openWorksheetScaffoldingMock
-      .mockResolvedValueOnce(refusal)
-      .mockResolvedValueOnce(refusal);
-    renderDialog();
-    await userEvent.click(await screen.findByRole("button", { name: "Try again" }));
-    await waitFor(() => expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(2));
-    await userEvent.click(await screen.findByRole("button", { name: "Try again" }));
-    await screen.findByRole("article", { name: "Adding fractions worksheet" });
-    expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(3);
+
+    const asking = {
+      allowance: limitedAllowance(2),
+      outcome: "needsSpendConfirmation",
+    } as const;
+
+    function openCalls() {
+      return openWorksheetScaffoldingMock.mock.calls.map(([options]) => options);
+    }
+
+    it("asks before a new adaptation is spent, and spends once the teacher goes on", async () => {
+      openWorksheetScaffoldingMock.mockResolvedValueOnce(asking);
+      renderDialog();
+
+      await waitFor(() =>
+        expect(
+          screen.getByRole("heading", {
+            name: "You can adapt 2 more resources this month",
+          }),
+        ).toHaveFocus(),
+      );
+      expect(screen.queryByRole("article")).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: "Continue adapting" }));
+
+      expect(
+        await screen.findByRole("article", { name: "Adding fractions worksheet" }),
+      ).toBeVisible();
+      expect(openCalls().map(({ spendConfirmed }) => spendConfirmed)).toEqual([
+        false,
+        true,
+      ]);
+    });
+
+    it("closes without spending once the month's adaptations are used", async () => {
+      openWorksheetScaffoldingMock.mockResolvedValueOnce({
+        allowance: limitedAllowance(0),
+        outcome: "usageLimitReached",
+        usageLimit: { kind: "adapted_resources_month", retryAt: anHourFromNow() },
+      });
+      const { props } = renderDialog();
+
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Back to lesson" }),
+      );
+
+      expect(props.onClose).toHaveBeenCalledOnce();
+      expect(openWorksheetScaffoldingMock).toHaveBeenCalledOnce();
+    });
+
+    it("says the adaptations are used when another request took the last one", async () => {
+      openWorksheetScaffoldingMock.mockResolvedValueOnce(asking).mockResolvedValueOnce({
+        allowance: limitedAllowance(0),
+        outcome: "usageLimitReached",
+        usageLimit: { kind: "adapted_resources_month", retryAt: anHourFromNow() },
+      });
+      renderDialog();
+
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Continue adapting" }),
+      );
+
+      expect(
+        await screen.findByRole("heading", {
+          name: "You've adapted 3 resources this month",
+        }),
+      ).toBeVisible();
+    });
+
+    it("keeps a confirmed replacement through a lost response", async () => {
+      openWorksheetScaffoldingMock
+        .mockResolvedValueOnce(resumable)
+        .mockResolvedValueOnce(asking)
+        .mockRejectedValueOnce(new Error("response lost"));
+      renderDialog();
+
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Start from the original" }),
+      );
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Continue adapting" }),
+      );
+      const fallback = await screen.findByTestId(
+        "resource-adapter-worksheet-scaffolding-error",
+      );
+      await userEvent.click(
+        within(fallback).getByRole("button", { name: "Try again" }),
+      );
+
+      await screen.findByRole("article", { name: "Adding fractions worksheet" });
+      const [, asked, confirmed, retried] = openCalls();
+      expect(asked).toMatchObject({ spendConfirmed: false });
+      expect(confirmed).toMatchObject({
+        replacing: asked?.replacing,
+        spendConfirmed: true,
+      });
+      expect(retried).toMatchObject({
+        replacing: asked?.replacing,
+        spendConfirmed: true,
+      });
+    });
+
+    it("does not carry a confirmation over to another lesson", async () => {
+      openWorksheetScaffoldingMock
+        .mockResolvedValueOnce(asking)
+        .mockRejectedValueOnce(new Error("response lost"))
+        .mockResolvedValueOnce(asking);
+      const { rerender } = renderDialog();
+
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Continue adapting" }),
+      );
+      await screen.findByTestId("resource-adapter-worksheet-scaffolding-error");
+      rerender({ lesson: { ...lesson, lessonSlug: "another-lesson" } });
+
+      await waitFor(() =>
+        expect(openWorksheetScaffoldingMock).toHaveBeenCalledTimes(3),
+      );
+      expect(openCalls()[2]).toMatchObject({
+        lesson: { lessonSlug: "another-lesson" },
+        spendConfirmed: false,
+      });
+    });
+
+    it("lets a teacher carry on without asking", async () => {
+      openWorksheetScaffoldingMock.mockResolvedValueOnce(resumable);
+      getWorksheetScaffoldingMock.mockResolvedValueOnce(readyState());
+      renderDialog();
+
+      await userEvent.click(await screen.findByRole("button", { name: "Carry on" }));
+
+      await screen.findByRole("article", { name: "Adding fractions worksheet" });
+      expect(openWorksheetScaffoldingMock).toHaveBeenCalledOnce();
+    });
   });
 
   it("reuses the replacement request after a lost response", async () => {
@@ -2073,13 +1964,21 @@ describe("analytics", () => {
     });
   });
 
-  it("reports a limited teacher's tier and the allowance they were shown once", async () => {
-    openWorksheetScaffoldingMock.mockResolvedValueOnce(
-      opened(readyState({ job: generatingJob }), limitedAllowance(2)),
-    );
+  it("reports the allowance a limited teacher was shown, then their tier", async () => {
+    openWorksheetScaffoldingMock
+      .mockResolvedValueOnce({
+        allowance: limitedAllowance(2),
+        outcome: "needsSpendConfirmation",
+      })
+      .mockResolvedValueOnce(
+        opened(readyState({ job: generatingJob }), limitedAllowance(1)),
+      );
     getWorksheetScaffoldingMock.mockResolvedValue(readyWithGroupedSuggestions);
     const onAnalyticsEvent = renderTracked();
 
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Continue adapting" }),
+    );
     await screen.findByRole("group", { name: "Suggested scaffolds" });
 
     expect(onAnalyticsEvent).toHaveBeenCalledWith(
@@ -2101,7 +2000,7 @@ describe("analytics", () => {
     ]);
   });
 
-  it("reports the monthly limit refusing a new adaptation", async () => {
+  it("reports the monthly limit refusing a new adaptation, and leaving", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce({
       allowance: limitedAllowance(0),
       outcome: "usageLimitReached",
@@ -2109,9 +2008,19 @@ describe("analytics", () => {
     });
     const onAnalyticsEvent = renderTracked();
 
-    await screen.findByText("You've used this month's adaptations");
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Back to lesson" }),
+    );
 
     expect(onAnalyticsEvent.mock.calls.map(([event]) => event)).toEqual([
+      {
+        name: "Monthly Allowance Displayed",
+        componentType: "resource_adapter_dialog",
+        capabilityId: "worksheetScaffolding",
+        packageVersion: expect.any(String),
+        allowanceLimit: 3,
+        allowanceRemaining: 0,
+      },
       {
         name: "Usage Limit Reached",
         componentType: "resource_adapter_dialog",
@@ -2119,6 +2028,12 @@ describe("analytics", () => {
         packageVersion: expect.any(String),
         limitKind: "adapted_resources_month",
         requestAction: "open",
+      },
+      {
+        name: "Resource Adapter Closed",
+        componentType: "resource_adapter_dialog",
+        capabilityId: "worksheetScaffolding",
+        packageVersion: expect.any(String),
       },
     ]);
   });
@@ -2614,7 +2529,9 @@ describe("analytics", () => {
       await userEvent.click(
         await screen.findByRole("button", { name: "Start from the original" }),
       );
-      await screen.findByText("You've used this month's adaptations");
+      await screen.findByRole("heading", {
+        name: "You've adapted 3 resources this month",
+      });
 
       expect(lastEvent(onAnalyticsEvent)).toMatchObject({
         name: "Usage Limit Reached",

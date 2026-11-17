@@ -1,4 +1,5 @@
 import type {
+  LimitedTeacherAllowance,
   WorksheetScaffoldingEntry,
   WorksheetScaffoldingEntryOutcome,
   WorksheetScaffoldingOpenRequest,
@@ -16,6 +17,7 @@ import {
 import type { AdaptationAllowance } from "../usage/adaptation-allowance";
 import {
   adaptationAllowanceFor,
+  allowanceIfSpending,
   getTeacherAllowance,
 } from "../usage/allowance-service";
 import type { AdaptationCreationResult } from "./repository";
@@ -73,7 +75,8 @@ export async function openWorksheetScaffolding(
   if (
     outcome === null ||
     outcome.outcome === "needsSetup" ||
-    outcome.outcome === "needsTerms"
+    outcome.outcome === "needsTerms" ||
+    outcome.outcome === "needsSpendConfirmation"
   ) {
     return outcome;
   }
@@ -88,9 +91,10 @@ async function enter(
   | WorksheetScaffoldingEntryOutcome
   | Readonly<{ outcome: "needsSetup" }>
   | Readonly<{ outcome: "needsTerms" }>
+  | Readonly<{ outcome: "needsSpendConfirmation"; allowance: LimitedTeacherAllowance }>
   | null
 > {
-  const { lesson, replacing } = request;
+  const { lesson, replacing, spendConfirmed } = request;
   const { repository } = dependencies;
 
   const admission = await dependencies.admitToCapability(
@@ -130,6 +134,18 @@ async function enter(
     const reopened = await reopen(recentAdaptationsOfLesson, target, dependencies);
     if (reopened !== null) {
       return { outcome: "reopened", state: reopened };
+    }
+  }
+
+  if (spendConfirmed !== true) {
+    const allowance = await allowanceIfSpending(
+      target,
+      { capabilityId: CAPABILITY.id, lesson },
+      dependencies,
+    );
+    // With none left, the create below refuses and reports the limit.
+    if (allowance !== null && allowance.remaining > 0) {
+      return { outcome: "needsSpendConfirmation", allowance };
     }
   }
 

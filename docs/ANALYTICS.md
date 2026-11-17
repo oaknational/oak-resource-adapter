@@ -21,7 +21,7 @@ themselves, with the control `ResourceAdapterLauncher` passes to
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Resource Adapter Closed          | The teacher dismisses the dialog. Leaving the page does not fire it.                                                                                                   |
 | Adaptation Started               | The API confirms a new, resumed or reopened adaptation (`startMode`), with the teacher's `accessTier`.                                                                 |
-| Monthly Allowance Displayed      | A limited teacher's allowance renders: once per value per dialog visit.                                                                                                |
+| Monthly Allowance Displayed      | The allowance notice shows before an open that would spend, or after the limit refuses one: once per value per dialog visit.                                           |
 | Adaptation Restart Requested     | The teacher asks to replace an adaptation. The ID is the old one; the replacement fires Adaptation Started with the new ID.                                            |
 | New Suggestions Requested        | The teacher asks for regeneration. Automatic generation has no request event.                                                                                          |
 | Suggestions Displayed            | A generation's result renders, including "No scaffolds suggested" as a count of zero: once per generation job per dialog visit, so resuming or reopening counts again. |

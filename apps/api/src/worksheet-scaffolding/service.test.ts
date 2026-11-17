@@ -134,7 +134,7 @@ describe("the monthly allowance when opening worksheet scaffolding", () => {
     const repository = stubRepository();
 
     await openWorksheetScaffolding(
-      { lesson },
+      { lesson, spendConfirmed: true },
       teacher,
       stubDependencies({
         access: accessResolving({
@@ -201,7 +201,7 @@ describe("the monthly allowance when opening worksheet scaffolding", () => {
     });
 
     await expect(
-      openWorksheetScaffolding({ lesson }, teacher, dependencies),
+      openWorksheetScaffolding({ lesson, spendConfirmed: true }, teacher, dependencies),
     ).resolves.toMatchObject({
       allowance: { limit: 3, remaining: 2, tier: "limited" },
       outcome: "opened",
@@ -212,6 +212,115 @@ describe("the monthly allowance when opening worksheet scaffolding", () => {
       vi.mocked(repository.createAdaptationWithSourceDocument).mock
         .invocationCallOrder[0] ?? Infinity,
     );
+  });
+
+  describe("asking before an open spends an adaptation", () => {
+    const limited = accessResolving({
+      onboarded: true,
+      termsAccepted: true,
+      tier: "limited",
+      inCopyrightRegion: true,
+    });
+    const countedThisMonth = vi.fn().mockResolvedValue([
+      {
+        capabilityId: "worksheetScaffolding",
+        lessonSlug: lesson.lessonSlug,
+        programmeSlug: lesson.programmeSlug,
+      },
+    ]);
+    const earlierWork = {
+      id: ADAPTATION_ID,
+      pendingScaffoldCount: 0,
+      scaffoldCount: 1,
+      updatedAt: new Date("2026-09-28T09:00:00.000Z"),
+    };
+    const replacing = { adaptationId: ADAPTATION_ID, requestId: REQUEST_ID };
+
+    it("asks before anything is read or spent", async () => {
+      const repository = stubRepository();
+      const dependencies = stubDependencies({
+        access: limited,
+        adaptedResourcesSince: adaptedResources(1),
+        repository,
+      });
+
+      await expect(
+        openWorksheetScaffolding({ lesson }, teacher, dependencies),
+      ).resolves.toEqual({
+        allowance: {
+          limit: 3,
+          remaining: 2,
+          resetsAt: "2026-11-01T00:00:00.000Z",
+          tier: "limited",
+        },
+        outcome: "needsSpendConfirmation",
+      });
+      expect(dependencies.readSourceDocument).not.toHaveBeenCalled();
+      expect(repository.createAdaptationWithSourceDocument).not.toHaveBeenCalled();
+    });
+
+    it("asks before starting again on work not counted this month", async () => {
+      const repository = stubRepository();
+
+      await expect(
+        openWorksheetScaffolding(
+          { lesson, replacing },
+          teacher,
+          stubDependencies({ access: limited, repository }),
+        ),
+      ).resolves.toMatchObject({ outcome: "needsSpendConfirmation" });
+      expect(repository.replaceAdaptationWithSourceDocument).not.toHaveBeenCalled();
+    });
+
+    it("does not ask when the resource is already counted this month", async () => {
+      const dependencies = stubDependencies({
+        access: limited,
+        adaptedResourcesSince: countedThisMonth,
+      });
+
+      await expect(
+        openWorksheetScaffolding({ lesson }, teacher, dependencies),
+      ).resolves.toMatchObject({ outcome: "opened" });
+      await expect(
+        openWorksheetScaffolding({ lesson, replacing }, teacher, dependencies),
+      ).resolves.toMatchObject({ outcome: "opened" });
+    });
+
+    it("opens a resource counted this month with none left", async () => {
+      const dependencies = stubDependencies({
+        access: limited,
+        adaptedResourcesSince: vi.fn().mockResolvedValue([
+          {
+            capabilityId: "worksheetScaffolding",
+            lessonSlug: lesson.lessonSlug,
+            programmeSlug: lesson.programmeSlug,
+          },
+          { capabilityId: "worksheetScaffolding", lessonSlug: "a", programmeSlug: "p" },
+          { capabilityId: "worksheetScaffolding", lessonSlug: "b", programmeSlug: "p" },
+        ]),
+      });
+
+      await expect(
+        openWorksheetScaffolding({ lesson }, teacher, dependencies),
+      ).resolves.toMatchObject({
+        allowance: { remaining: 0 },
+        outcome: "opened",
+      });
+    });
+
+    it("offers earlier-month work back without asking", async () => {
+      const repository = stubRepository({
+        findResumableAdaptation: vi.fn().mockResolvedValue(earlierWork),
+      });
+
+      await expect(
+        openWorksheetScaffolding(
+          { lesson },
+          teacher,
+          stubDependencies({ access: limited, repository }),
+        ),
+      ).resolves.toMatchObject({ outcome: "resumable" });
+    });
   });
 
   it("admits a teacher granted full access since their cached lookup", async () => {

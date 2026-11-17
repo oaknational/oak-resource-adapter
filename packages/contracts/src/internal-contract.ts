@@ -52,6 +52,8 @@ export const worksheetScaffoldingOpenRequestSchema = z.object({
       requestId: internalIdSchema,
     }),
   ),
+  /** Without this, an open that would spend a limited teacher's adaptation asks first. */
+  spendConfirmed: z.optional(z.literal(true)),
 });
 
 export const worksheetScaffoldingGetRequestSchema = z.object({
@@ -140,11 +142,14 @@ export type WorksheetScaffoldingEntryOutcome =
 /**
  * `needsSetup`: the teacher has not completed OWA onboarding.
  * `needsTerms`: the teacher has not accepted the current version of ORA's terms.
+ * `needsSpendConfirmation`: opening would spend one of a limited teacher's
+ * adaptations and the request did not set `spendConfirmed`. Nothing was spent.
  * `allowance` is read after any use the request spent.
  */
 export type WorksheetScaffoldingEntry =
   | Readonly<{ outcome: "needsSetup" }>
   | Readonly<{ outcome: "needsTerms" }>
+  | Readonly<{ outcome: "needsSpendConfirmation"; allowance: LimitedTeacherAllowance }>
   | (WorksheetScaffoldingEntryOutcome & Readonly<{ allowance: TeacherAllowance }>);
 
 export const transformationInputSchema = z.readonly(
@@ -211,9 +216,14 @@ export const termsAcceptRequestSchema = z.object({
 });
 export type TermsAcceptRequest = z.infer<typeof termsAcceptRequestSchema>;
 
-export type TeacherAllowance =
-  | Readonly<{ tier: "full" }>
-  | Readonly<{ tier: "limited"; limit: number; remaining: number; resetsAt: string }>;
+export type LimitedTeacherAllowance = Readonly<{
+  tier: "limited";
+  limit: number;
+  remaining: number;
+  resetsAt: string;
+}>;
+
+export type TeacherAllowance = Readonly<{ tier: "full" }> | LimitedTeacherAllowance;
 
 export type WorksheetScaffoldingState = Readonly<{
   adaptationId: string;

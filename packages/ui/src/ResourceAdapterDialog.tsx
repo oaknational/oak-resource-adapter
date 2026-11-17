@@ -175,6 +175,7 @@ function ResourceAdapterDialogInner({
                 getToken={getToken}
                 isOpen={isOpen}
                 lesson={lesson}
+                onClose={onClose}
                 {...(onError ? { onError } : {})}
                 onFinishSetup={onFinishSetup}
                 onTermsRequired={terms.require}

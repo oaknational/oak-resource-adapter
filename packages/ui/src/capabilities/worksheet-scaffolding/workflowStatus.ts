@@ -1,5 +1,4 @@
 import type {
-  UsageLimitKind,
   UsageLimitReached,
   WorksheetScaffoldingJobKind,
   WorksheetScaffoldingState,
@@ -27,12 +26,6 @@ export const NEEDS_SETUP_STATUS = {
 export const PREPARING_SCAFFOLDS_STATUS = {
   message: "Preparing your scaffolds…",
   tone: "working",
-} as const satisfies WorkflowStatus;
-
-export const MONTHLY_RESET_STATUS = {
-  message: "You can try starting this adaptation again.",
-  title: "Your monthly allowance has reset",
-  tone: "neutral",
 } as const satisfies WorkflowStatus;
 
 function suggestedSentence(count: number): string {
@@ -85,38 +78,17 @@ const BUSY_STATUSES = {
   },
 } as const satisfies Record<WorksheetScaffoldingJobKind, WorkflowStatus>;
 
-// Allowances refill at midnight UK time, so the UK date is the one to name.
-export const ukDate = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "long",
-  timeZone: "Europe/London",
-});
-
 const localDateTime = new Intl.DateTimeFormat("en-GB", {
   dateStyle: "medium",
   timeStyle: "short",
 });
 
-const LIMIT_STATUSES = {
-  adapted_resources_month: {
-    message: (retryAt: Date) =>
-      `You can start a new adaptation on ${ukDate.format(retryAt)}.`,
-    title: "You've used this month's adaptations",
-  },
-  model_jobs_24h: {
-    message: (retryAt: Date) =>
-      `You can add scaffolds again after ${localDateTime.format(retryAt)}.`,
-    title: "You've reached your fair usage limit",
-  },
-} as const satisfies Record<
-  UsageLimitKind,
-  Readonly<{ message: (retryAt: Date) => string; title: string }>
->;
-
-export function usageLimitStatus({ kind, retryAt }: UsageLimitReached): WorkflowStatus {
+function modelJobLimitStatus({
+  retryAt,
+}: UsageLimitReached<"model_jobs_24h">): WorkflowStatus {
   return {
-    message: LIMIT_STATUSES[kind].message(new Date(retryAt)),
-    title: LIMIT_STATUSES[kind].title,
+    message: `You can add scaffolds again after ${localDateTime.format(new Date(retryAt))}.`,
+    title: "You've reached your fair usage limit",
     tone: "warning",
   };
 }
@@ -166,7 +138,7 @@ export function readyStatus(
     return BUSY_STATUSES[state.job.kind];
   }
   if (state.modelWorkBlocked !== null) {
-    return usageLimitStatus(state.modelWorkBlocked);
+    return modelJobLimitStatus(state.modelWorkBlocked);
   }
   if (state.job?.status === "failed") {
     return null;
