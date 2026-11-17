@@ -46,7 +46,7 @@ export const EXCLUDED_LESSONS_RULE = excludedLessonsRule(
     condition: "The lesson is on our list of excluded lessons",
     description: "Matches the lesson in whichever programme it's opened from.",
   },
-  { lessonSlugs: [] },
+  { lessonSlugs: [], lessonUids: [] },
 );
 
 export const CONTENT_GUIDANCE_RULE = contentGuidanceRule(
@@ -67,6 +67,7 @@ export const COPYRIGHT_RULE = copyrightRule(
   },
   {
     restrictedLevels: ["restricted", "highly-restricted"],
+    restrictedCategories: ["works", "media", "downloadableFiles"],
     conflictFeatureKeys: ["has_copyright_conflict"],
   },
 );

@@ -1,9 +1,16 @@
-import { ruleCatalogueSchema } from "@oaknational/resource-adapter-dev-api-contracts";
+import {
+  ruleCatalogueSchema,
+  teachingMaterialsCatalogueSchema,
+} from "@oaknational/resource-adapter-dev-api-contracts";
 import { describe, expect, it } from "vitest";
 
 import { LESSON_RULES } from "../lesson-rules/rules";
 import { transformationDefinitions } from "../transformations/registry";
-import { getDevRuleCatalogue } from "./dev-service";
+import {
+  TEACHING_MATERIAL_SELECTIONS,
+  TEACHING_MATERIALS_LESSON_RULES,
+} from "../teaching-materials/rules";
+import { getDevRuleCatalogue, getDevTeachingMaterialsCatalogue } from "./dev-service";
 
 describe("getDevRuleCatalogue", () => {
   const catalogue = getDevRuleCatalogue();
@@ -54,5 +61,27 @@ describe("getDevRuleCatalogue", () => {
     expect(transformation("scaffold-add-word-bank")?.inputs).toBe(
       transformationDefinitions["scaffold-add-word-bank"].inputs,
     );
+  });
+});
+
+describe("getDevTeachingMaterialsCatalogue", () => {
+  const catalogue = getDevTeachingMaterialsCatalogue();
+
+  it("serves plain data in the shape the harness reads", () => {
+    expect(JSON.parse(JSON.stringify(catalogue))).toEqual(catalogue);
+    expect(teachingMaterialsCatalogueSchema.parse(catalogue)).toEqual(catalogue);
+  });
+
+  it("shows the rules that refuse a lesson, then the selections in the order they decide", () => {
+    expect(catalogue.lesson.map(({ id }) => id)).toEqual(
+      TEACHING_MATERIALS_LESSON_RULES.map(({ id }) => id),
+    );
+    expect(catalogue.selections.map(({ rule }) => rule.id)).toEqual(
+      TEACHING_MATERIAL_SELECTIONS.map(({ rule }) => rule.id),
+    );
+    expect(catalogue.selections[0]).toMatchObject({
+      rule: { id: "handwriting", config: { categories: ["Handwriting"] } },
+      materials: ["additional-glossary", "additional-starter-quiz"],
+    });
   });
 });

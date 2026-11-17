@@ -127,6 +127,29 @@ export const ruleCatalogueSchema = z
 
 export type RuleCatalogue = z.infer<typeof ruleCatalogueSchema>;
 
+/** Labs' rules for its teaching material links, decided apart from ORA's own rules. */
+export const teachingMaterialsCatalogueSchema = z
+  .object({
+    materials: z
+      .array(z.object({ id: z.string(), label: z.string() }).readonly())
+      .readonly(),
+    /** A lesson any of these refuses gets no materials. */
+    lesson: z.array(ruleSchema).readonly(),
+    /** In order: the first that matches decides. A lesson none matches gets every material. */
+    selections: z
+      .array(
+        z
+          .object({ rule: ruleSchema, materials: z.array(z.string()).readonly() })
+          .readonly(),
+      )
+      .readonly(),
+  })
+  .readonly();
+
+export type TeachingMaterialsCatalogue = z.infer<
+  typeof teachingMaterialsCatalogueSchema
+>;
+
 export const eligibilityEvaluationRequestSchema = z.strictObject({
   lesson: z.strictObject(lessonContextSchema.shape),
   /** Absent to evaluate as a signed-out teacher. */

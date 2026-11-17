@@ -10,10 +10,12 @@ import * as z from "zod/mini";
 import { describe, expect, it } from "vitest";
 
 import {
-  lessonContextSchema,
   resourceAdapterApiContractVersionHeader,
   resourceAdapterApiContractVersionV1,
+  resourceAdapterCapabilitiesRequestSchema,
   resourceAdapterCapabilitiesResponseSchema,
+  resourceAdapterCapabilityAvailabilityRequestSchema,
+  resourceAdapterCapabilityAvailabilityResponseSchema,
 } from "./v1.js";
 
 describe("the v1 wire contract", () => {
@@ -33,8 +35,14 @@ describe("the v1 wire contract", () => {
     const wireContract = {
       version: resourceAdapterApiContractVersionV1,
       versionHeader: resourceAdapterApiContractVersionHeader,
-      request: z.toJSONSchema(lessonContextSchema),
+      request: z.toJSONSchema(resourceAdapterCapabilitiesRequestSchema),
       response: z.toJSONSchema(resourceAdapterCapabilitiesResponseSchema),
+      availabilityRequest: z.toJSONSchema(
+        resourceAdapterCapabilityAvailabilityRequestSchema,
+      ),
+      availabilityResponse: z.toJSONSchema(
+        resourceAdapterCapabilityAvailabilityResponseSchema,
+      ),
     };
 
     await expect(JSON.stringify(wireContract, null, 2)).toMatchFileSnapshot(

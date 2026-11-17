@@ -1,9 +1,11 @@
 import {
   eligibilityEvaluationResponseSchema,
   ruleCatalogueSchema,
+  teachingMaterialsCatalogueSchema,
   type EligibilityEvaluationRequest,
   type EligibilityEvaluationResponse,
   type RuleCatalogue,
+  type TeachingMaterialsCatalogue,
 } from "@oaknational/resource-adapter-dev-api-contracts";
 
 import { adapterProxyPath, readApiResponse } from "../../harness-api";
@@ -14,6 +16,15 @@ export async function fetchRuleCatalogue(signal?: AbortSignal): Promise<RuleCata
     signal === undefined ? {} : { signal },
   );
   return readApiResponse(response, ruleCatalogueSchema, "the rule catalogue");
+}
+
+export async function fetchTeachingMaterialsCatalogue(): Promise<TeachingMaterialsCatalogue> {
+  const response = await fetch(`${adapterProxyPath}/dev/rules/teaching-materials`);
+  return readApiResponse(
+    response,
+    teachingMaterialsCatalogueSchema,
+    "the labs teaching materials rules",
+  );
 }
 
 export async function fetchEligibility(

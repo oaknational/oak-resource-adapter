@@ -6,7 +6,7 @@ import { CapabilitiesView } from "./capabilities";
 import { EdgeCaseView } from "./edge-cases";
 import { ExportsView } from "./exports/ExportsView";
 import { LessonScenarioView } from "./lessons";
-import { RulesView } from "./rules";
+import { LabsRulesView, RulesView } from "./rules";
 import { PrimaryNavigation, SiteHeader } from "./shared";
 import { SmokeTestsView } from "./smoke-tests";
 import { SuggestionsView } from "./suggestions";
@@ -57,6 +57,7 @@ export function HarnessPageClient({
       >
         {view.section === "capabilities" && <CapabilitiesView lessonId={lessonId} />}
         {view.section === "rules" && <RulesView />}
+        {view.section === "labs-rules" && <LabsRulesView />}
         {view.section === "lessons" && (
           <LessonScenarioView
             apiBaseUrl={apiBaseUrl}

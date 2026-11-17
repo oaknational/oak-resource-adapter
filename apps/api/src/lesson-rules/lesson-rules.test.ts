@@ -4,11 +4,12 @@ import {
 } from "@oaknational/resource-adapter-curriculum";
 import { describe, expect, it } from "vitest";
 
+import { lessonFacts } from "../rules/test-facts";
 import { lessonRefusal, type LessonRuleContext } from ".";
 import { applyLessonMaterialsRule, LESSON_MATERIALS_RULE } from "./lesson-materials";
 import { COPYRIGHT_RULE, GEO_RULE, LESSON_STATUS_RULE, SUBJECT_RULE } from "./rules";
 
-const allowed: LessonEligibilityFacts = {
+const allowed = lessonFacts({
   restrictionLevels: {
     works: ["ogl-compatible"],
     media: ["ogl-equivalent"],
@@ -16,10 +17,7 @@ const allowed: LessonEligibilityFacts = {
     featureKeys: [],
   },
   subjectSlugs: ["maths"],
-  subjectCategories: [],
-  legacy: false,
-  contentGuidance: [],
-};
+});
 
 const withFeature = (key: string): LessonEligibilityFacts => ({
   ...allowed,

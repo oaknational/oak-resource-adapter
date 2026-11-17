@@ -69,12 +69,18 @@ export type LessonRestrictionLevels = Readonly<{
 }>;
 
 export type LessonEligibilityFacts = Readonly<{
+  /** Oak's `LESS-…` ID, the same in every programme. */
+  lessonUid: string;
+  /** The programme the lesson was opened in. */
+  programme: Pick<Programme, "subjectSlug" | "keyStageSlug">;
   /** `null` when Oak publishes no restriction levels for the lesson. */
   restrictionLevels: LessonRestrictionLevels | null;
   /** Every subject the lesson is taught in, across all its programmes. */
   subjectSlugs: readonly string[];
   /** Every unit's subject categories, across all its programmes. */
   subjectCategories: readonly string[];
+  /** Whether any programme teaches it as a practical PE lesson. */
+  pePractical: boolean;
   legacy: boolean;
   contentGuidance: readonly string[];
 }>;

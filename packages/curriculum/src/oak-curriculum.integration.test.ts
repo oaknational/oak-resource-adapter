@@ -204,6 +204,22 @@ describeIntegration("Oak curriculum endpoint (development)", () => {
     expect(lesson.subjectSlugs).toEqual(["chemistry", "combined-science"]);
   });
 
+  it("reports a practical PE lesson", async () => {
+    const facts = await readFacts(LESSON_WITHOUT_WORKSHEET);
+
+    expect(facts).toMatchObject({
+      lessonUid: expect.stringMatching(/^LESS-/),
+      programme: { subjectSlug: "physical-education", keyStageSlug: "ks3" },
+      pePractical: true,
+    });
+  });
+
+  it("reports a lesson that isn't practical PE", async () => {
+    const facts = await readFacts(HANDWRITING_LESSON);
+
+    expect(facts?.pePractical).toBe(false);
+  });
+
   it("reports a lesson's subject categories", async () => {
     const facts = await readFacts(HANDWRITING_LESSON);
 

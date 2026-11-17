@@ -141,7 +141,7 @@ describe("a shared kind at the transformation level", () => {
             description: "Test",
             condition: "Test",
           },
-          { lessonSlugs: ["joining-letters"] },
+          { lessonSlugs: ["joining-letters"], lessonUids: [] },
         ),
       ],
     });

@@ -3,6 +3,7 @@ import type {
   EligibilityEvaluationResponse,
   RuleCatalogue,
   RuleDescription,
+  TeachingMaterialsCatalogue,
 } from "@oaknational/resource-adapter-dev-api-contracts";
 
 import { capabilityDefinitions } from "../capabilities/registry";
@@ -10,6 +11,11 @@ import { explainEligibility, readEligibilityContext } from "../capabilities/serv
 import { LESSON_MATERIALS_RULE } from "../lesson-rules/lesson-materials";
 import { LESSON_RULES } from "../lesson-rules/rules";
 import type { Rule } from "../rules/rule";
+import {
+  TEACHING_MATERIAL_SELECTIONS,
+  TEACHING_MATERIALS,
+  TEACHING_MATERIALS_LESSON_RULES,
+} from "../teaching-materials/rules";
 import { transformationRulesFor } from "../transformations/evaluate-transformation";
 import {
   isRegisteredTransformationKind,
@@ -94,6 +100,17 @@ export function getDevRuleCatalogue(): RuleCatalogue {
         status: definition.status,
       }),
     ),
+  };
+}
+
+export function getDevTeachingMaterialsCatalogue(): TeachingMaterialsCatalogue {
+  return {
+    materials: TEACHING_MATERIALS,
+    lesson: TEACHING_MATERIALS_LESSON_RULES.map(describeRule),
+    selections: TEACHING_MATERIAL_SELECTIONS.map(({ materials, rule }) => ({
+      materials,
+      rule: describeRule(rule),
+    })),
   };
 }
 

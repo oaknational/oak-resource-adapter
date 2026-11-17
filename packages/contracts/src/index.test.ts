@@ -107,6 +107,8 @@ describe("Resource Adapter API contracts", () => {
             resourceType: "worksheet",
           },
         ],
+        available: true,
+        teachingMaterials: [],
       }),
     ).toMatchObject({
       capabilities: [{ id: "worksheetScaffolding" }],
@@ -124,6 +126,8 @@ describe("Resource Adapter API contracts", () => {
             resourceType: "worksheet",
           },
         ],
+        available: true,
+        teachingMaterials: [],
       }),
     ).toMatchObject({ capabilities: [{ id: "future-adapter" }] });
   });
@@ -146,8 +150,10 @@ describe("Resource Adapter API contracts", () => {
                 resourceType: "worksheet",
               },
             ],
+            available: true,
+            teachingMaterials: ["additional-glossary"],
           }),
-          hasCapabilities: () => ({ available: true }),
+          hasCapabilities: () => ({ available: true, teachingMaterials: [] }),
         },
       });
 
@@ -171,8 +177,13 @@ describe("Resource Adapter API contracts", () => {
           teacherId: "teacher-456",
         },
         capabilities: {
-          getCapabilities: () => ({ account: readyAccount, capabilities: [] }),
-          hasCapabilities: () => ({ available: false }),
+          getCapabilities: () => ({
+            account: readyAccount,
+            capabilities: [],
+            available: false,
+            teachingMaterials: [],
+          }),
+          hasCapabilities: () => ({ available: false, teachingMaterials: [] }),
         },
       });
 
@@ -193,8 +204,13 @@ describe("Resource Adapter API contracts", () => {
         apiContractVersion: resourceAdapterApiContractVersion,
         authenticatedTeacher: null,
         capabilities: {
-          getCapabilities: () => ({ account: readyAccount, capabilities: [] }),
-          hasCapabilities: () => ({ available: true }),
+          getCapabilities: () => ({
+            account: readyAccount,
+            capabilities: [],
+            available: false,
+            teachingMaterials: [],
+          }),
+          hasCapabilities: () => ({ available: true, teachingMaterials: [] }),
         },
       });
 
@@ -208,7 +224,7 @@ describe("Resource Adapter API contracts", () => {
           availableResources: ["worksheet"],
           supportedCapabilityIds: ["worksheetScaffolding"],
         }),
-      ).resolves.toEqual({ available: true });
+      ).resolves.toEqual({ available: true, teachingMaterials: [] });
     });
 
     it("still version-guards capability availability", async () => {
@@ -216,8 +232,13 @@ describe("Resource Adapter API contracts", () => {
         apiContractVersion: 999,
         authenticatedTeacher: null,
         capabilities: {
-          getCapabilities: () => ({ account: readyAccount, capabilities: [] }),
-          hasCapabilities: () => ({ available: true }),
+          getCapabilities: () => ({
+            account: readyAccount,
+            capabilities: [],
+            available: false,
+            teachingMaterials: [],
+          }),
+          hasCapabilities: () => ({ available: true, teachingMaterials: [] }),
         },
       });
 
@@ -238,8 +259,13 @@ describe("Resource Adapter API contracts", () => {
         apiContractVersion: resourceAdapterApiContractVersion,
         authenticatedTeacher: null,
         capabilities: {
-          getCapabilities: () => ({ account: readyAccount, capabilities: [] }),
-          hasCapabilities: () => ({ available: false }),
+          getCapabilities: () => ({
+            account: readyAccount,
+            capabilities: [],
+            available: false,
+            teachingMaterials: [],
+          }),
+          hasCapabilities: () => ({ available: false, teachingMaterials: [] }),
         },
       });
 

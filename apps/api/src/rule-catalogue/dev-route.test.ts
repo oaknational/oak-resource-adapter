@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { GET as getRules } from "../../app/dev/rules/route";
 import { POST as postEvaluation } from "../../app/dev/rules/eligibility/route";
+import { GET as getTeachingMaterialsRules } from "../../app/dev/rules/teaching-materials/route";
 import { evaluateDevEligibility } from "./dev-service";
 vi.mock("./dev-service", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./dev-service")>()),
@@ -37,10 +38,11 @@ describe("the development rules routes", () => {
     mockedEvaluateDevEligibility.mockReset();
   });
 
-  it("hides both routes when dev routes are disabled", async () => {
+  it("hides every rules route when dev routes are disabled", async () => {
     vi.stubEnv("ENABLE_DEV_ROUTES", "");
 
     expect(getRules(request("GET")).status).toBe(404);
+    expect(getTeachingMaterialsRules(request("GET")).status).toBe(404);
     expect((await postEvaluation(request("POST", { lesson }))).status).toBe(404);
     expect(mockedEvaluateDevEligibility).not.toHaveBeenCalled();
   });
@@ -53,6 +55,16 @@ describe("the development rules routes", () => {
       "http://localhost:3000",
     );
     await expect(response.json()).resolves.toHaveProperty("lesson");
+  });
+
+  it("serves the labs teaching materials rules with CORS headers", async () => {
+    const response = getTeachingMaterialsRules(request("GET"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
+      "http://localhost:3000",
+    );
+    await expect(response.json()).resolves.toHaveProperty("selections");
   });
 
   it("evaluates a lesson as the teacher described", async () => {

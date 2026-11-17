@@ -742,7 +742,10 @@ describe("facts reader", () => {
     expect(request.query).toContain("published_mv_lesson_restriction_levels_2");
     expect(request.query.match(/_state: \{ _eq: "published" \}/g)).toHaveLength(2);
     expect(request.query).toContain('programme_fields(path: "subject_slug")');
+    expect(request.query).toContain('programme_fields(path: "keystage_slug")');
+    expect(request.query).toContain('lesson_data(path: "lesson_uid")');
     expect(request.query).toContain('unit_data(path: "subjectcategories")');
+    expect(request.query).toContain('actions(path: "is_pe_practical")');
     expect(request.query).not.toContain("programme_slug: {");
     expect(request.query).toContain("content_guidance");
     expect(request.query).not.toContain("transcript_sentences");
@@ -766,6 +769,8 @@ describe("facts reader", () => {
     });
 
     await expect(readFacts()).resolves.toEqual({
+      lessonUid: "LESS-ABCDE-F0001",
+      programme: { subjectSlug: "maths", keyStageSlug: "ks2" },
       restrictionLevels: {
         works: ["ogl-compatible"],
         media: ["highly-restricted"],
@@ -774,6 +779,7 @@ describe("facts reader", () => {
       },
       subjectSlugs: ["maths"],
       subjectCategories: [],
+      pePractical: false,
       legacy: false,
       contentGuidance: [],
     });
@@ -876,6 +882,41 @@ describe("facts reader", () => {
     });
   });
 
+  it("reports the subject and key stage of the programme the lesson was opened in", async () => {
+    oakRespondsWithFacts({
+      browseData: [
+        eligibilityBrowseRow({
+          programme_slug: "combined-science-ks4",
+          keystage_slug: "ks4",
+          subject_slug: "combined-science",
+        }),
+        eligibilityBrowseRow({
+          programme_slug: addingFractions.programmeSlug,
+          keystage_slug: "ks3",
+          subject_slug: "chemistry",
+        }),
+      ],
+    });
+
+    await expect(readFacts()).resolves.toMatchObject({
+      programme: { subjectSlug: "chemistry", keyStageSlug: "ks3" },
+    });
+  });
+
+  it("reports a practical PE lesson when any programme marks it as one", async () => {
+    oakRespondsWithFacts({
+      browseData: [
+        eligibilityBrowseRow(),
+        eligibilityBrowseRow({
+          programme_slug: "physical-education-ks2",
+          is_pe_practical: true,
+        }),
+      ],
+    });
+
+    await expect(readFacts()).resolves.toMatchObject({ pePractical: true });
+  });
+
   it("reports no facts for a lesson Oak does not publish in the programme", async () => {
     oakRespondsWithFacts({ browseData: [] });
     await expect(readFacts()).resolves.toBeNull();
@@ -894,6 +935,10 @@ describe("facts reader", () => {
     });
     await expect(readFacts()).rejects.toMatchObject({ code: "malformed-response" });
     oakRespondsWithFacts({ browseData: [eligibilityBrowseRow({ is_legacy: "true" })] });
+    await expect(readFacts()).rejects.toMatchObject({ code: "malformed-response" });
+    oakRespondsWithFacts({
+      browseData: [eligibilityBrowseRow({ is_pe_practical: "true" })],
+    });
     await expect(readFacts()).rejects.toMatchObject({ code: "malformed-response" });
     oakRespondsWithFacts({
       browseData: [eligibilityBrowseRow({ subject_slug: null })],

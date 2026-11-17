@@ -4,6 +4,7 @@ import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-
 import type { LessonEligibilityFacts } from "@oaknational/resource-adapter-curriculum";
 
 import type { EligibilityContextReader } from "./service";
+import { lessonFacts } from "../rules/test-facts";
 import { admitToCapability } from "./admission";
 
 vi.mock("../teacher-access/resolver", () => ({
@@ -47,13 +48,9 @@ const admitted = {
 
 const unavailable = { outcome: "unavailable" };
 
-const unrestricted: LessonEligibilityFacts = {
+const unrestricted = lessonFacts({
   restrictionLevels: { works: [], media: [], downloadableFiles: [], featureKeys: [] },
-  subjectSlugs: ["english"],
-  subjectCategories: [],
-  legacy: false,
-  contentGuidance: [],
-};
+});
 
 const adaptableWith =
   (facts: LessonEligibilityFacts): EligibilityContextReader =>

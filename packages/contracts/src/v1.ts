@@ -64,7 +64,7 @@ export const resourceAdapterCapabilitySchema = z.object({
   resourceType: lessonResourceTypeSchema,
 });
 
-/** `needsSetup`: the teacher has not completed OWA onboarding, so nothing is offered. */
+/** `needsSetup`: the teacher has not completed OWA onboarding, so no ORA capabilities are offered. */
 export const resourceAdapterAccountSchema = z.discriminatedUnion("state", [
   z.object({ state: z.literal("needsSetup") }),
   z.object({
@@ -74,9 +74,18 @@ export const resourceAdapterAccountSchema = z.discriminatedUnion("state", [
   }),
 ]);
 
+/** Labs' names for its teaching materials, which its links take as `docType`. */
+export const teachingMaterialIdSchema = nonEmptyStringSchema;
+
+/** Decided by their own rules: a lesson ORA refuses can still get them. */
+const teachingMaterialsSchema = z.readonly(z.array(teachingMaterialIdSchema));
+
 export const resourceAdapterCapabilitiesResponseSchema = z.object({
   account: resourceAdapterAccountSchema,
   capabilities: z.readonly(z.array(resourceAdapterCapabilitySchema)),
+  /** For `needsSetup`, whether ORA has anything for the lesson once setup is done. */
+  available: z.boolean(),
+  teachingMaterials: teachingMaterialsSchema,
 });
 
 /**
@@ -84,15 +93,16 @@ export const resourceAdapterCapabilitiesResponseSchema = z.object({
  * asks about every capability the service knows, which overstates availability
  * for a host older than the service.
  */
-export const resourceAdapterCapabilityAvailabilityRequestSchema = z.extend(
-  lessonContextSchema,
-  {
-    supportedCapabilityIds: z.optional(z.array(resourceAdapterCapabilityIdSchema)),
-  },
-);
+export const resourceAdapterCapabilitiesRequestSchema = z.extend(lessonContextSchema, {
+  supportedCapabilityIds: z.optional(z.array(resourceAdapterCapabilityIdSchema)),
+});
+
+export const resourceAdapterCapabilityAvailabilityRequestSchema =
+  resourceAdapterCapabilitiesRequestSchema;
 
 export const resourceAdapterCapabilityAvailabilityResponseSchema = z.object({
   available: z.boolean(),
+  teachingMaterials: teachingMaterialsSchema,
 });
 
 export type ResourceAdapterCapabilityId = z.infer<
@@ -106,6 +116,10 @@ export type ResourceAdapterCapabilitiesResponse = z.infer<
 
 export type ResourceAdapterCapabilityAvailabilityResponse = z.infer<
   typeof resourceAdapterCapabilityAvailabilityResponseSchema
+>;
+
+export type ResourceAdapterCapabilitiesRequest = z.infer<
+  typeof resourceAdapterCapabilitiesRequestSchema
 >;
 
 export type ResourceAdapterCapabilityAvailabilityRequest = z.infer<

@@ -39,18 +39,15 @@ import {
   readEligibilityContext,
   type EligibilityContextReader,
 } from "./service";
+import { lessonFacts } from "../rules/test-facts";
 import { resourceInputsRule } from "./resource-inputs";
 import type { CapabilityDefinition } from "./types";
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import type { TeacherAccess } from "../teacher-access/access";
 
-const unrestricted: LessonEligibilityFacts = {
+const unrestricted = lessonFacts({
   restrictionLevels: { works: [], media: [], downloadableFiles: [], featureKeys: [] },
-  subjectSlugs: ["english"],
-  subjectCategories: [],
-  legacy: false,
-  contentGuidance: [],
-};
+});
 
 function withRestrictionLevels(
   levels: Partial<NonNullable<LessonEligibilityFacts["restrictionLevels"]>>,
@@ -157,6 +154,13 @@ describe("getCapabilities", () => {
           resourceType: "worksheet",
         },
       ],
+      available: true,
+      teachingMaterials: [
+        "additional-glossary",
+        "additional-comprehension",
+        "additional-starter-quiz",
+        "additional-exit-quiz",
+      ],
     });
   });
 
@@ -196,12 +200,40 @@ describe("getCapabilities", () => {
     expect(capabilities[0]).not.toHaveProperty("transformations");
   });
 
-  it("reports needsSetup without reading the lesson for a teacher who is not onboarded", async () => {
-    const readContext = vi.fn<EligibilityContextReader>();
+  it.each([
+    ["has something for the lesson", worksheetLesson, ["worksheet"], true],
+    ["has nothing for the lesson", quizOnlyLesson, ["starter-quiz"], false],
+  ])(
+    "tells a teacher who isn't set up whether ORA %s",
+    async (_, lesson, resourceTypes, available) => {
+      await expect(
+        getCapabilities(
+          lesson,
+          teacher,
+          resolverFor(resourceTypes, resourceTypes),
+          accessResolving({
+            onboarded: false,
+            termsAccepted: true,
+            tier: "full",
+            inCopyrightRegion: true,
+          }),
+        ),
+      ).resolves.toMatchObject({
+        account: { state: "needsSetup" },
+        capabilities: [],
+        available,
+        teachingMaterials: expect.arrayContaining(["additional-glossary"]),
+      });
+    },
+  );
+
+  it("counts only capabilities the caller can render, as the availability call does", async () => {
+    const request = { ...worksheetLesson, supportedCapabilityIds: ["somethingElse"] };
+    const readContext = resolverFor(["worksheet"], ["worksheet"]);
 
     await expect(
       getCapabilities(
-        worksheetLesson,
+        request,
         teacher,
         readContext,
         accessResolving({
@@ -211,8 +243,15 @@ describe("getCapabilities", () => {
           inCopyrightRegion: true,
         }),
       ),
-    ).resolves.toEqual({ account: { state: "needsSetup" }, capabilities: [] });
-    expect(readContext).not.toHaveBeenCalled();
+    ).resolves.toMatchObject({ available: false });
+    await expect(getCapabilities(request, teacher, readContext)).resolves.toMatchObject(
+      {
+        available: false,
+      },
+    );
+    await expect(hasCapabilities(request, readContext)).resolves.toMatchObject({
+      available: false,
+    });
   });
 
   it("reports the tier and copyright region of an onboarded teacher", async () => {
@@ -260,7 +299,7 @@ describe("readEligibilityContext", () => {
       await expect(getCapabilities(worksheetLesson, teacher)).resolves.toMatchObject({
         capabilities: [],
       });
-      await expect(hasCapabilities(worksheetLesson)).resolves.toEqual({
+      await expect(hasCapabilities(worksheetLesson)).resolves.toMatchObject({
         available: false,
       });
       expect(readFacts).toHaveBeenCalledTimes(2);
@@ -400,13 +439,21 @@ describe("hasCapabilities", () => {
   it("reports availability without naming the capabilities", async () => {
     await expect(
       hasCapabilities(worksheetLesson, resolverFor(["worksheet"], ["worksheet"])),
-    ).resolves.toEqual({ available: true });
+    ).resolves.toEqual({
+      available: true,
+      teachingMaterials: [
+        "additional-glossary",
+        "additional-comprehension",
+        "additional-starter-quiz",
+        "additional-exit-quiz",
+      ],
+    });
   });
 
   it("reports nothing available when the lesson is not eligible", async () => {
     await expect(
       hasCapabilities(quizOnlyLesson, resolverFor(["starter-quiz"], [])),
-    ).resolves.toEqual({ available: false });
+    ).resolves.toMatchObject({ available: false });
   });
 
   it("counts only capabilities the caller says it can render", async () => {
@@ -415,13 +462,13 @@ describe("hasCapabilities", () => {
         { ...worksheetLesson, supportedCapabilityIds: ["somethingElse"] },
         resolverFor(["worksheet"], ["worksheet"]),
       ),
-    ).resolves.toEqual({ available: false });
+    ).resolves.toMatchObject({ available: false });
   });
 
   it("counts every capability when the caller does not say", async () => {
     await expect(
       hasCapabilities(worksheetLesson, resolverFor(["worksheet"], ["worksheet"])),
-    ).resolves.toEqual({ available: true });
+    ).resolves.toMatchObject({ available: true });
   });
 });
 
@@ -438,7 +485,9 @@ describe("capability lesson rules", () => {
     await expect(
       getCapabilities(worksheetLesson, teacher, adaptable(facts)),
     ).resolves.toMatchObject({ capabilities: [{ id: "worksheetScaffolding" }] });
-    await expect(hasCapabilities(worksheetLesson, adaptable(facts))).resolves.toEqual({
+    await expect(
+      hasCapabilities(worksheetLesson, adaptable(facts)),
+    ).resolves.toMatchObject({
       available: true,
     });
   });
@@ -459,8 +508,28 @@ describe("capability lesson rules", () => {
     await expect(
       getCapabilities(worksheetLesson, teacher, adaptable(facts)),
     ).resolves.toMatchObject({ capabilities: [] });
-    await expect(hasCapabilities(worksheetLesson, adaptable(facts))).resolves.toEqual({
+    await expect(
+      hasCapabilities(worksheetLesson, adaptable(facts)),
+    ).resolves.toMatchObject({
       available: false,
+    });
+  });
+
+  it("gives labs materials to a lesson ORA refuses, signed in or out", async () => {
+    const facts = withRestrictionLevels({ media: ["restricted"] });
+
+    await expect(
+      getCapabilities(worksheetLesson, teacher, adaptable(facts)),
+    ).resolves.toMatchObject({
+      capabilities: [],
+      available: false,
+      teachingMaterials: expect.arrayContaining(["additional-glossary"]),
+    });
+    await expect(
+      hasCapabilities(worksheetLesson, adaptable(facts)),
+    ).resolves.toMatchObject({
+      available: false,
+      teachingMaterials: expect.arrayContaining(["additional-glossary"]),
     });
   });
 
@@ -519,7 +588,9 @@ describe("capability lesson rules", () => {
     });
 
     it("reports availability when signed out", async () => {
-      await expect(hasCapabilities(worksheetLesson, geoRestricted)).resolves.toEqual({
+      await expect(
+        hasCapabilities(worksheetLesson, geoRestricted),
+      ).resolves.toMatchObject({
         available: true,
       });
     });
