@@ -55,9 +55,11 @@ for (const url of [
       await chooseFromAiMenu(page, "Sign in to adapt");
       await expect(page.getByRole("dialog")).toBeVisible();
       await expect(page).not.toHaveURL(/as=signed-out/);
+      const capabilities = waitForCapabilities(page);
       await clerk.signIn({ page, emailAddress: process.env.E2E_CLERK_USER_EMAIL! });
       // The test helper establishes a session without completing the modal UI.
       await page.evaluate(() => window.Clerk.closeSignIn());
+      expect((await capabilities).status()).toBe(200);
       const menu = await openAiMenu(page);
       await expect(
         menu.getByRole("menuitem", { name: "Scaffold practice tasks", exact: true }),
@@ -74,7 +76,9 @@ for (const url of [
     async ({ page }) => {
       await signIn(page);
       await page.goto(url);
+      const capabilities = waitForCapabilities(page);
       await page.getByRole("link", { name: "Signed-in view", exact: true }).click();
+      expect((await capabilities).status()).toBe(200);
       await page.route(
         "**/adapter-proxy/trpc/internal/worksheetScaffolding.open*",
         (route) => route.fulfill({ status: 503, json: { error: "Unavailable" } }),
@@ -82,8 +86,10 @@ for (const url of [
       await chooseFromAiMenu(page, "Scaffold practice tasks");
       await expect(page.getByRole("dialog", { name: "Aila | Oak's AI" })).toBeVisible();
 
+      const availability = waitForCapabilityAvailability(page);
       await page.goBack();
       await expect(page).toHaveURL(/as=signed-out/);
+      expect((await availability).status()).toBe(200);
       await expect(page.getByRole("dialog", { name: "Aila | Oak's AI" })).toHaveCount(
         0,
       );
@@ -92,7 +98,9 @@ for (const url of [
       ).toBeVisible();
       await page.keyboard.press("Escape");
 
+      const capabilitiesAgain = waitForCapabilities(page);
       await page.goForward();
+      expect((await capabilitiesAgain).status()).toBe(200);
       await expect(
         (await openAiMenu(page)).getByRole("menuitem", {
           name: "Scaffold practice tasks",
