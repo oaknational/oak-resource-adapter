@@ -27,6 +27,12 @@ export function PrimaryNavigation({
         ORA rules
       </Link>
       <Link
+        aria-current={section === "labs-rules" ? "page" : undefined}
+        href={hrefFor(`/?view=labs-rules&lesson=${lessonId}`)}
+      >
+        Labs rules
+      </Link>
+      <Link
         aria-current={section === "capabilities" ? "page" : undefined}
         href={hrefFor(`/?view=capabilities&lesson=${lessonId}`)}
       >

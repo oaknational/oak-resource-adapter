@@ -12,6 +12,7 @@ export type HarnessSection =
   | "suggestions"
   | "exports"
   | "rules"
+  | "labs-rules"
   | "transformations";
 
 export type ExtractionDiagnostic = Readonly<{
@@ -115,4 +116,5 @@ export type HarnessView =
     }>
   | Readonly<{ section: "capabilities" }>
   | Readonly<{ section: "rules" }>
+  | Readonly<{ section: "labs-rules" }>
   | Readonly<{ section: "smoke-tests" }>;
