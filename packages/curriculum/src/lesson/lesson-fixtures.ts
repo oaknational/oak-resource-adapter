@@ -131,15 +131,21 @@ export function eligibilityBrowseRow(
   overrides: Partial<{
     is_legacy: unknown;
     programme_slug: string;
+    lesson_uid: unknown;
+    keystage_slug: unknown;
     subject_slug: unknown;
     subject_categories: unknown;
+    is_pe_practical: unknown;
   }> = {},
 ) {
   return {
     is_legacy: false,
     programme_slug: "maths-primary-ks2",
+    lesson_uid: "LESS-ABCDE-F0001",
+    keystage_slug: "ks2",
     subject_slug: "maths",
     subject_categories: null,
+    is_pe_practical: null,
     ...overrides,
   };
 }

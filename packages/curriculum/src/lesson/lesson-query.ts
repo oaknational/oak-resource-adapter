@@ -71,8 +71,11 @@ export const LESSON_ELIGIBILITY_FACTS_QUERY = `
     ) {
       is_legacy
       programme_slug
+      lesson_uid: lesson_data(path: "lesson_uid")
+      keystage_slug: programme_fields(path: "keystage_slug")
       subject_slug: programme_fields(path: "subject_slug")
       subject_categories: unit_data(path: "subjectcategories")
+      is_pe_practical: actions(path: "is_pe_practical")
     }
     restrictionLevels: ${LESSON_VIEWS.restrictionLevels}(
       where: { slug: { _eq: $lessonSlug }, _state: { _eq: "published" } }

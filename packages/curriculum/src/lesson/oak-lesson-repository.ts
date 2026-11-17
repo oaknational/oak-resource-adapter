@@ -158,9 +158,10 @@ export function createOakLessonEligibilityFactsReader(config: OakCurriculumConfi
           variables: { lessonSlug: identity.lessonSlug },
         }),
       );
-      if (
-        !data.browseData.some((row) => row.programme_slug === identity.programmeSlug)
-      ) {
+      const requestedProgrammeRow = data.browseData.find(
+        (row) => row.programme_slug === identity.programmeSlug,
+      );
+      if (requestedProgrammeRow === undefined) {
         return null;
       }
       if (new Set(data.restrictionLevels.map((row) => JSON.stringify(row))).size > 1) {
@@ -170,11 +171,17 @@ export function createOakLessonEligibilityFactsReader(config: OakCurriculumConfi
         );
       }
       return {
+        lessonUid: requestedProgrammeRow.lesson_uid,
+        programme: {
+          subjectSlug: requestedProgrammeRow.subject_slug,
+          keyStageSlug: requestedProgrammeRow.keystage_slug,
+        },
         restrictionLevels: combineRestrictionLevels(data.restrictionLevels),
         subjectSlugs: distinctSorted(data.browseData.map((row) => row.subject_slug)),
         subjectCategories: distinctSorted(
           data.browseData.flatMap((row) => row.subject_categories),
         ),
+        pePractical: data.browseData.some((row) => row.is_pe_practical === true),
         legacy: data.browseData.some((row) => row.is_legacy),
         contentGuidance: distinctSorted(data.content.flat()),
       };

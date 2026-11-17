@@ -1,7 +1,9 @@
 import {
+  actionsSchema,
   contentGuidanceSchema,
   lessonAssetsSchema,
   lessonContentSchema,
+  lessonDataSchema,
   mvLessonRestrictionLevelsSchema,
   programmeFieldsSchema,
   restrictionLevel,
@@ -288,6 +290,9 @@ const subjectCategoriesSchema = z
 export const eligibilityBrowseRowSchema = syntheticUnitvariantLessonsByKsSchema
   .pick({ is_legacy: true, programme_slug: true })
   .extend({
+    lesson_uid: lessonDataSchema.shape.lesson_uid,
+    keystage_slug: programmeFieldsSchema.shape.keystage_slug,
     subject_slug: subjectSlugSchema,
     subject_categories: subjectCategoriesSchema,
+    is_pe_practical: actionsSchema.shape.is_pe_practical.nullable(),
   });

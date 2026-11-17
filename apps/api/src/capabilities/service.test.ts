@@ -39,18 +39,15 @@ import {
   readEligibilityContext,
   type EligibilityContextReader,
 } from "./service";
+import { lessonFacts } from "../rules/test-facts";
 import { resourceInputsRule } from "./resource-inputs";
 import type { CapabilityDefinition } from "./types";
 import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import type { TeacherAccess } from "../teacher-access/access";
 
-const unrestricted: LessonEligibilityFacts = {
+const unrestricted = lessonFacts({
   restrictionLevels: { works: [], media: [], downloadableFiles: [], featureKeys: [] },
-  subjectSlugs: ["english"],
-  subjectCategories: [],
-  legacy: false,
-  contentGuidance: [],
-};
+});
 
 function withRestrictionLevels(
   levels: Partial<NonNullable<LessonEligibilityFacts["restrictionLevels"]>>,

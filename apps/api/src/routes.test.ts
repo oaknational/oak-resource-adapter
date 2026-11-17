@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { afterEach, describe, beforeEach, expect, it, vi } from "vitest";
 import { ModelInvocationError } from "@oaknational/resource-adapter-ai";
-import type { LessonEligibilityFacts } from "@oaknational/resource-adapter-curriculum";
 import {
   resourceAdapterApiContractVersion,
   resourceAdapterApiContractVersionHeader,
@@ -70,18 +69,14 @@ vi.mock("@oaknational/resource-adapter-curriculum", async (importOriginal) => ({
     apiKey: "test",
   }),
   createOakLessonEligibilityFactsReader: () => async () =>
-    ({
+    (await import("./rules/test-facts")).lessonFacts({
       restrictionLevels: {
         works: [],
         media: [],
         downloadableFiles: [],
         featureKeys: [],
       },
-      subjectSlugs: ["english"],
-      subjectCategories: [],
-      legacy: false,
-      contentGuidance: [],
-    }) satisfies LessonEligibilityFacts,
+    }),
 }));
 
 // Must stay a lesson the fixture corpus holds a worksheet extraction for.
