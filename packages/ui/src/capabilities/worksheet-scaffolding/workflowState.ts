@@ -56,7 +56,7 @@ export type WorkflowEvent =
   | Readonly<{ type: "failed" }>
   | Readonly<{
       type: "opened";
-      entry: WorksheetScaffoldingEntry;
+      entry: Exclude<WorksheetScaffoldingEntry, Readonly<{ outcome: "needsTerms" }>>;
       declined?: WorksheetScaffoldingResumable;
     }>
   | Readonly<{ type: "resumed"; value: WorksheetScaffoldingState }>

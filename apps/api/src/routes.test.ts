@@ -47,7 +47,12 @@ vi.mock("./authentication", async (importOriginal) => {
 vi.mock("./teacher-access/resolver", () => ({
   teacherAccessResolver: {
     resolve: () =>
-      Promise.resolve({ onboarded: true, tier: "full", inCopyrightRegion: true }),
+      Promise.resolve({
+        onboarded: true,
+        termsAccepted: true,
+        tier: "full",
+        inCopyrightRegion: true,
+      }),
   },
 }));
 

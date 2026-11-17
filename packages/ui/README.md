@@ -83,6 +83,9 @@ must bring the teacher back to the lesson through OWA onboarding. The launcher
 remembers the trip in `sessionStorage`, so on return it confirms the account is
 ready or says setup isn't finished.
 
+The dialog asks a teacher who hasn't accepted ORA's terms to accept them before it
+shows the capability. Its "Back to lesson" calls `onClose`.
+
 The helper wraps the package's internal typed tRPC client, so hosts never
 depend on `@trpc/client` themselves.
 

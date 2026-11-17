@@ -3,47 +3,46 @@ import type { LessonContext } from "@oaknational/resource-adapter-contracts";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 
 import {
-  resolveEligibility,
-  resolveLessonEligibility,
-  type EligibilityResolver,
-} from "../capabilities/service";
-import { capabilityDefinitions } from "../capabilities/registry";
+  readEligibilityContext,
+  resolveLessonOffer,
+  type EligibilityContextReader,
+} from "./service";
+import { capabilityDefinitions } from "./registry";
 import {
   teacherAccessResolver,
   type TeacherAccessResolver,
 } from "../teacher-access/resolver";
 
-export type SourceDocumentLocation =
+export type CapabilityAdmission =
   | Readonly<{ outcome: "needsSetup" }>
+  | Readonly<{ outcome: "needsTerms" }>
   | Readonly<{ outcome: "unavailable" }>
-  | Readonly<{ outcome: "located"; locator: OriginalResourceDocumentLocator }>;
+  | Readonly<{ outcome: "admitted"; locator: OriginalResourceDocumentLocator }>;
 
-export async function resolveSourceDocumentLocator(
+export async function admitToCapability(
   { capabilityId, lesson }: Readonly<{ capabilityId: string; lesson: LessonContext }>,
   target: ResourceAdapterAuthenticatedTeacher,
-  resolveContext: EligibilityResolver = resolveEligibility,
+  readContext: EligibilityContextReader = readEligibilityContext,
   access: Pick<TeacherAccessResolver, "resolve"> = teacherAccessResolver,
-): Promise<SourceDocumentLocation> {
+): Promise<CapabilityAdmission> {
   if (!Object.hasOwn(capabilityDefinitions, capabilityId)) {
     return { outcome: "unavailable" };
   }
 
-  const eligibility = await resolveLessonEligibility(
-    lesson,
-    target.teacherId,
-    resolveContext,
-    access,
-  );
-  if (eligibility.outcome === "needsSetup") {
-    return eligibility;
+  const offer = await resolveLessonOffer(lesson, target.teacherId, readContext, access);
+  if (offer.outcome === "needsSetup") {
+    return offer;
   }
-  const capability = eligibility.capabilities.find(({ id }) => id === capabilityId);
+  if (!offer.teacher.termsAccepted) {
+    return { outcome: "needsTerms" };
+  }
+  const capability = offer.capabilities.find(({ id }) => id === capabilityId);
   if (capability === undefined) {
     return { outcome: "unavailable" };
   }
 
   return {
-    outcome: "located",
+    outcome: "admitted",
     locator: {
       source: "oak",
       lessonSlug: lesson.lessonSlug,

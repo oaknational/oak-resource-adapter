@@ -11,6 +11,8 @@ export type TeacherAccessResolver = Readonly<{
    * Falls back to the cached access if the lookup fails, so the refusal stands.
    */
   recheck: (teacherId: string) => Promise<TeacherAccess>;
+  /** Drops the cached access, so the next request looks the teacher up. */
+  forget: (teacherId: string) => void;
 }>;
 
 type LookUp = (teacherId: string) => Promise<TeacherAccess>;
@@ -56,16 +58,25 @@ export function createCachedTeacherAccessResolver(
     evictExpired(now());
     const pending = inFlight.get(teacherId);
     if (pending !== undefined) return pending;
-    const access = lookUp(teacherId)
+    const access: Promise<TeacherAccess> = lookUp(teacherId)
       .then((value) => {
+        // A lookup started before `forget` must not refill the cache.
+        if (inFlight.get(teacherId) !== access) {
+          return value;
+        }
         entries.delete(teacherId);
-        // Uncached until onboarded, so the first request after onboarding sees it.
-        if (value.onboarded) {
+        // Uncached until onboarded with the terms accepted, so the first request
+        // after either sees it.
+        if (value.onboarded && value.termsAccepted) {
           entries.set(teacherId, { access: value, expiresAt: now() + ttlMs });
         }
         return value;
       })
-      .finally(() => inFlight.delete(teacherId));
+      .finally(() => {
+        if (inFlight.get(teacherId) === access) {
+          inFlight.delete(teacherId);
+        }
+      });
     inFlight.set(teacherId, access);
     return access;
   }
@@ -88,6 +99,10 @@ export function createCachedTeacherAccessResolver(
         report(error);
         return cached.access;
       }
+    },
+    forget(teacherId) {
+      entries.delete(teacherId);
+      inFlight.delete(teacherId);
     },
   };
 }

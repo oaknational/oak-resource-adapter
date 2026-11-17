@@ -30,7 +30,7 @@ function dependencies(
 describe("a teacher's allowance", () => {
   it("has no monthly count for a teacher with full access", async () => {
     const stubs = dependencies(
-      { onboarded: true, tier: "full", inCopyrightRegion: true },
+      { onboarded: true, termsAccepted: true, tier: "full", inCopyrightRegion: true },
       5,
     );
 
@@ -42,7 +42,12 @@ describe("a teacher's allowance", () => {
 
   it("counts a limited teacher's uses since the start of the UK month", async () => {
     const stubs = dependencies(
-      { onboarded: true, tier: "limited", inCopyrightRegion: true },
+      {
+        onboarded: true,
+        termsAccepted: true,
+        tier: "limited",
+        inCopyrightRegion: true,
+      },
       1,
     );
 
@@ -60,7 +65,12 @@ describe("a teacher's allowance", () => {
 
   it("never reports fewer than no uses remaining", async () => {
     const stubs = dependencies(
-      { onboarded: true, tier: "limited", inCopyrightRegion: true },
+      {
+        onboarded: true,
+        termsAccepted: true,
+        tier: "limited",
+        inCopyrightRegion: true,
+      },
       4,
     );
 
@@ -71,10 +81,16 @@ describe("a teacher's allowance", () => {
 
   it("shows a grant made since the teacher's access was cached", async () => {
     const stubs = dependencies(
-      { onboarded: true, tier: "limited", inCopyrightRegion: true },
+      {
+        onboarded: true,
+        termsAccepted: true,
+        tier: "limited",
+        inCopyrightRegion: true,
+      },
       3,
       {
         onboarded: true,
+        termsAccepted: true,
         tier: "full",
         inCopyrightRegion: true,
       },

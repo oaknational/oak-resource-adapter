@@ -27,7 +27,7 @@ export function modelJobsPer24hLimit(configured: string | undefined): number {
 }
 
 type LimiterDependencies = Readonly<{
-  access: TeacherAccessResolver;
+  access: Pick<TeacherAccessResolver, "recheck" | "resolve">;
   limit: () => number;
   retryAt: typeof modelJobLimitRetryAt;
 }>;

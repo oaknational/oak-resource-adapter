@@ -59,6 +59,8 @@ export type WorksheetScaffoldingWorkflowProps = Readonly<{
   lesson: LessonContext;
   onError?: ResourceAdapterErrorHandler;
   onFinishSetup: () => void;
+  /** Shows ORA's terms in place of the workflow. */
+  onTermsRequired: () => void;
   track: TrackAnalyticsEvent;
 }>;
 

@@ -10,9 +10,21 @@ export const OAK_MODEL_JOBS_PER_24H = 1000;
 
 export const RATE_LIMIT_ME_MODEL_JOBS_PER_24H = 5;
 
+/** Raising it asks every teacher to accept ORA's terms again. */
+export const REQUIRED_ORA_TERMS_VERSION = 1;
+
+/**
+ * The newest version ORA records, so a hand-made request cannot accept terms
+ * that do not exist yet and skip the next change. Raise it with the copy, ahead
+ * of `REQUIRED_ORA_TERMS_VERSION`.
+ */
+export const LATEST_ORA_TERMS_VERSION = 1;
+
 export type TeacherAccess = Readonly<{
   /** `publicMetadata.owa.isOnboarded`. Aila's onboarding does not count. */
   onboarded: boolean;
+  /** `privateMetadata.ora.acceptedTerms` is at `REQUIRED_ORA_TERMS_VERSION` or later. */
+  termsAccepted: boolean;
   tier: "full" | "limited";
   /** Whether geo-restricted lessons are offered. A grant does not change it. */
   inCopyrightRegion: boolean;
@@ -27,6 +39,10 @@ const privateMetadataSchema = z.object({
   ora: z
     .object({
       access: z.literal("full").optional().catch(undefined),
+      acceptedTerms: z
+        .object({ version: z.int().positive() })
+        .optional()
+        .catch(undefined),
       usageLimits: z
         .object({ modelJobsPer24h: z.int().positive().optional().catch(undefined) })
         .optional()
@@ -103,6 +119,7 @@ export function teacherAccessFromClerkUser({
     ora?.usageLimits?.modelJobsPer24h ?? oakModelJobsPer24h(oakAddresses);
   return {
     onboarded: owa?.isOnboarded === true,
+    termsAccepted: (ora?.acceptedTerms?.version ?? 0) >= REQUIRED_ORA_TERMS_VERSION,
     tier:
       !behavesOutsideUk &&
       (granted ||

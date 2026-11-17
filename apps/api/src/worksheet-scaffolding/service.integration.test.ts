@@ -40,7 +40,12 @@ const lessonReference = {
 } as const;
 
 const fullAccess = () =>
-  Promise.resolve({ onboarded: true, tier: "full", inCopyrightRegion: true } as const);
+  Promise.resolve({
+    onboarded: true,
+    termsAccepted: true,
+    tier: "full",
+    inCopyrightRegion: true,
+  } as const);
 const access = { recheck: fullAccess, resolve: fullAccess };
 
 const limitOfOne = createModelJobLimiter({
@@ -168,7 +173,7 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
         })) as typeof enqueueJob,
       getLatestJob: getLatestJobForConcurrencyKey,
       now: () => new Date(),
-      resolveSourceDocumentLocator: () => {
+      admitToCapability: () => {
         throw new Error("These requests do not check lesson eligibility.");
       },
       readSourceDocument: () => {

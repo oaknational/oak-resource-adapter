@@ -71,3 +71,23 @@ export function onboardingOf(user: unknown): {
     region: parsed?.privateMetadata.region ?? null,
   };
 }
+
+const termsSchema = z.object({
+  privateMetadata: z.object({
+    ora: z
+      .object({
+        acceptedTerms: z
+          .object({ version: z.number(), acceptedAt: z.string() })
+          .optional()
+          .catch(undefined),
+      })
+      .optional()
+      .catch(undefined),
+  }),
+});
+
+export type AcceptedTerms = Readonly<{ version: number; acceptedAt: string }>;
+
+export function acceptedTermsOf(user: unknown): AcceptedTerms | null {
+  return termsSchema.safeParse(user).data?.privateMetadata.ora?.acceptedTerms ?? null;
+}

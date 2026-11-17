@@ -14,7 +14,7 @@ import {
 import { adaptedResourcesPerMonthLimit } from "./monthly-allowance";
 
 export type AllowanceDependencies = Readonly<{
-  access: TeacherAccessResolver;
+  access: Pick<TeacherAccessResolver, "recheck" | "resolve">;
   adaptedResourcesPerMonth: () => number;
   now: () => Date;
 }>;

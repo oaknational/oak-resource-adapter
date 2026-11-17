@@ -33,6 +33,10 @@ import type { LessonContext, ResourceAdapterCapability } from "../../publicTypes
 vi.setConfig({ testTimeout: 10_000 });
 
 vi.mock("../../allowance.js", () => ({ getTeacherAllowance: vi.fn() }));
+vi.mock("../../terms.js", () => ({
+  acceptTerms: () => Promise.resolve({ accepted: true }),
+  getTermsState: () => Promise.resolve({ accepted: true }),
+}));
 
 vi.mock("../../worksheetScaffolding.js", () => ({
   prepareWorksheetExport: vi.fn(),
@@ -376,14 +380,21 @@ afterEach(() => {
 
 describe("WorksheetScaffoldingWorkflow", () => {
   it("loads and renders the capability source document", async () => {
+    const open = deferred<WorksheetScaffoldingEntry>();
+    openWorksheetScaffoldingMock.mockReturnValueOnce(open.promise);
     const { props } = renderDialog();
 
-    const announcement = screen.getByRole("status", { name: "Worksheet status" });
+    const announcement = await screen.findByRole("status", {
+      name: "Worksheet status",
+    });
     expect(announcement).toHaveTextContent(
       "Loading worksheet. Getting your worksheet ready.",
     );
     const spinner = screen.getByTestId("worksheet-scaffolding-loading-spinner");
     expect(spinner).toBeVisible();
+    await act(async () => {
+      open.resolve(opened(readyState()));
+    });
     expect(
       await screen.findByRole("article", { name: "Adding fractions worksheet" }),
     ).toBeVisible();
@@ -1073,6 +1084,7 @@ describe("WorksheetScaffoldingWorkflow", () => {
         },
       });
     const { rerender } = renderDialog();
+    await waitFor(() => expect(openWorksheetScaffoldingMock).toHaveBeenCalledOnce());
     rerender({ lesson: { ...lesson, lessonSlug: "another-lesson" } });
     await screen.findByRole("button", { name: "Carry on" });
     await act(async () => {

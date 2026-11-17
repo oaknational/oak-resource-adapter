@@ -1,6 +1,9 @@
 import { clerkSetup } from "@clerk/testing/playwright";
-import { expect, test as setup } from "@playwright/test";
+// Types only: deployment runs install the workspace without building its packages.
+import type { RuleCatalogue } from "@oaknational/resource-adapter-dev-api-contracts";
+import { expect, type APIRequestContext, test as setup } from "@playwright/test";
 
+import { prepareAccount } from "./clerk-accounts.js";
 import { vercelBypassStatePath } from "./vercel-bypass.js";
 
 const REQUIRED_ENV = [
@@ -9,34 +12,17 @@ const REQUIRED_ENV = [
   "E2E_CLERK_USER_EMAIL",
 ];
 
-const clerkApi = "https://api.clerk.com/v1";
-
-// ORA offers nothing until OWA onboarding sets this flag. The harness's stand-in
-// onboarding page can clear it, so every run restores it.
-async function ensureOnboarded(emailAddress: string, secretKey: string) {
-  const headers = {
-    Authorization: `Bearer ${secretKey}`,
-    "Content-Type": "application/json",
-  };
-  const response = await fetch(
-    `${clerkApi}/users?email_address=${encodeURIComponent(emailAddress)}`,
-    { headers },
+async function currentTermsVersion(request: APIRequestContext): Promise<number> {
+  const response = await request.get("/adapter-proxy/dev/rules");
+  expect(response.ok(), "ORA's rules could not be read for the terms version.").toBe(
+    true,
   );
-  expect(response.ok, "The browser-test account could not be looked up.").toBe(true);
-  const [user] = (await response.json()) as {
-    id: string;
-    public_metadata: { owa?: { isOnboarded?: boolean } };
-  }[];
-  expect(user, "The browser-test account does not exist.").toBeDefined();
-  if (user === undefined || user.public_metadata.owa?.isOnboarded === true) {
-    return;
+  const { gates } = (await response.json()) as RuleCatalogue;
+  const version = gates.find(({ id }) => id === "terms")?.config["termsVersion"];
+  if (typeof version !== "number") {
+    throw new TypeError("ORA's rules do not name a terms version.");
   }
-  const update = await fetch(`${clerkApi}/users/${user.id}/metadata`, {
-    method: "PATCH",
-    headers,
-    body: JSON.stringify({ public_metadata: { owa: { isOnboarded: true } } }),
-  });
-  expect(update.ok, "The browser-test account could not be onboarded.").toBe(true);
+  return version;
 }
 
 setup("global setup", async ({ request }) => {
@@ -49,10 +35,6 @@ setup("global setup", async ({ request }) => {
   }
 
   await clerkSetup();
-  await ensureOnboarded(
-    process.env.E2E_CLERK_USER_EMAIL ?? "",
-    process.env.CLERK_SECRET_KEY ?? "",
-  );
 
   const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
   if (bypassSecret) {
@@ -74,4 +56,8 @@ setup("global setup", async ({ request }) => {
     ).toBe(200);
     await request.storageState({ path: vercelBypassStatePath });
   }
+
+  await prepareAccount(process.env.E2E_CLERK_USER_EMAIL ?? "", {
+    termsVersion: await currentTermsVersion(request),
+  });
 });
