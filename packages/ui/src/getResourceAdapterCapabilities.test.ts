@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 describe("getResourceAdapterCapabilities", () => {
-  it("sends lesson context and the host token through tRPC", async () => {
+  it("sends lesson context, the capabilities it can render and the host token through tRPC", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify([
@@ -26,6 +26,8 @@ describe("getResourceAdapterCapabilities", () => {
             result: {
               data: {
                 account,
+                available: false,
+                teachingMaterials: [],
                 capabilities: [
                   {
                     id: "worksheetScaffolding",
@@ -56,7 +58,9 @@ describe("getResourceAdapterCapabilities", () => {
       "https://resource-adapter-api.example/trpc/v1/capabilities.get?batch=1",
     );
     expect(request).toMatchObject({
-      body: JSON.stringify({ "0": lesson }),
+      body: JSON.stringify({
+        "0": { ...lesson, supportedCapabilityIds: ["worksheetScaffolding"] },
+      }),
       headers: {
         Authorization: "Bearer clerk-token",
         "x-resource-adapter-contract-version": "1",
@@ -75,6 +79,8 @@ describe("getResourceAdapterCapabilities", () => {
               result: {
                 data: {
                   account,
+                  available: false,
+                  teachingMaterials: [],
                   capabilities: [
                     {
                       id: "unknownAdapter",
@@ -107,6 +113,8 @@ describe("getResourceAdapterCapabilities", () => {
             result: {
               data: {
                 account,
+                available: false,
+                teachingMaterials: [],
                 capabilities: [],
               },
             },

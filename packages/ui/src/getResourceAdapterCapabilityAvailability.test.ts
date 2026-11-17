@@ -29,7 +29,7 @@ afterEach(() => {
 
 describe("getResourceAdapterCapabilityAvailability", () => {
   it("reports availability without sending a token", async () => {
-    const fetchMock = respondWith({ available: true });
+    const fetchMock = respondWith({ available: true, teachingMaterials: [] });
 
     await expect(
       getResourceAdapterCapabilityAvailability({ apiBaseUrl, lesson }),
@@ -47,7 +47,7 @@ describe("getResourceAdapterCapabilityAvailability", () => {
   });
 
   it("tells the service which capabilities this package can render", async () => {
-    const fetchMock = respondWith({ available: false });
+    const fetchMock = respondWith({ available: false, teachingMaterials: [] });
 
     await expect(
       getResourceAdapterCapabilityAvailability({ apiBaseUrl, lesson }),
@@ -76,7 +76,7 @@ describe("getResourceAdapterCapabilityAvailability", () => {
   });
 
   it("keeps a proxy path when resolving the endpoint", async () => {
-    const fetchMock = respondWith({ available: true });
+    const fetchMock = respondWith({ available: true, teachingMaterials: [] });
 
     await getResourceAdapterCapabilityAvailability({
       apiBaseUrl: "https://resource-adapter-api.example/proxy/resource-adapter/",

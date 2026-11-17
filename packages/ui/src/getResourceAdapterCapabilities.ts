@@ -4,7 +4,7 @@ import type {
   ResourceAdapterCapabilitiesResponse,
   ResourceAdapterHostProps,
 } from "./publicTypes.js";
-import { getSupportedCapabilities } from "./capabilities.js";
+import { getSupportedCapabilities, supportedCapabilityIds } from "./capabilities.js";
 import { callApi, createResourceAdapterClient } from "./client.js";
 import { ResourceAdapterApiError } from "./errors.js";
 
@@ -22,7 +22,10 @@ export async function getResourceAdapterCapabilities({
     const response = await createResourceAdapterClient({
       apiBaseUrl,
       getToken,
-    }).capabilities.get.query(lesson);
+    }).capabilities.get.query({
+      ...lesson,
+      supportedCapabilityIds: [...supportedCapabilityIds],
+    });
     const parsedResponse =
       resourceAdapterCapabilitiesResponseSchema.safeParse(response);
 

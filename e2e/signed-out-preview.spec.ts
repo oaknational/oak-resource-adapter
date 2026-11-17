@@ -168,7 +168,7 @@ for (const signedOut of [false, true]) {
             {
               result: {
                 data: available
-                  ? { available: true }
+                  ? { available: true, teachingMaterials: [] }
                   : {
                       account: {
                         state: "ready",
@@ -182,6 +182,8 @@ for (const signedOut of [false, true]) {
                           resourceType: "worksheet",
                         },
                       ],
+                      available: true,
+                      teachingMaterials: [],
                     },
               },
             },

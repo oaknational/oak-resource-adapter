@@ -1,12 +1,12 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 
 import {
-  lessonContextSchema,
   resourceAdapterApiContractVersionV1,
+  resourceAdapterCapabilitiesRequestSchema,
   resourceAdapterCapabilitiesResponseSchema,
   resourceAdapterCapabilityAvailabilityRequestSchema,
   resourceAdapterCapabilityAvailabilityResponseSchema,
-  type LessonContext,
+  type ResourceAdapterCapabilitiesRequest,
   type ResourceAdapterCapabilitiesResponse,
   type ResourceAdapterCapabilityAvailabilityRequest,
   type ResourceAdapterCapabilityAvailabilityResponse,
@@ -18,7 +18,7 @@ export type { ResourceAdapterAuthenticatedTeacher } from "./authentication.js";
 /** The service boundary required by the capabilities procedure. */
 export type ResourceAdapterCapabilitiesService = Readonly<{
   getCapabilities: (
-    lesson: LessonContext,
+    request: ResourceAdapterCapabilitiesRequest,
     target: ResourceAdapterAuthenticatedTeacher,
   ) =>
     Promise<ResourceAdapterCapabilitiesResponse> | ResourceAdapterCapabilitiesResponse;
@@ -83,7 +83,7 @@ export const authenticatedProcedure = versionedProcedure.use(({ ctx, next }) => 
 export const hostRouter = t_host.router({
   capabilities: t_host.router({
     get: authenticatedProcedure
-      .input(lessonContextSchema)
+      .input(resourceAdapterCapabilitiesRequestSchema)
       .output(resourceAdapterCapabilitiesResponseSchema)
       .query(({ ctx, input }) =>
         ctx.capabilities.getCapabilities(input, ctx.authenticatedTeacher),
