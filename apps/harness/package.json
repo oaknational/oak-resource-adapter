@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.25",
-    "@oaknational/oak-components": "^3.29.2",
+    "@oaknational/oak-components": "^3.30.0",
     "@oaknational/resource-adapter": "workspace:*",
     "@oaknational/resource-adapter-dev-api-contracts": "workspace:*",
     "@oaknational/resource-adapter-logger": "workspace:*",
