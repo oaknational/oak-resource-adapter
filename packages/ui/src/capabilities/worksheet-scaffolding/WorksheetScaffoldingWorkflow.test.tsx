@@ -413,20 +413,6 @@ describe("WorksheetScaffoldingWorkflow", () => {
     ).resolves.toBe("clerk-token");
   });
 
-  it("keeps the workflow at a stable width inside the temporary modal", async () => {
-    renderDialog();
-
-    const worksheet = await screen.findByRole("article", {
-      name: "Adding fractions worksheet",
-    });
-    const workflowContainer = worksheet.parentElement?.parentElement;
-
-    expect(workflowContainer).toHaveStyle({ minWidth: "0", width: "100%" });
-    expect(screen.getByTestId("modal-main-content")).toHaveStyle({
-      scrollbarGutter: "stable",
-    });
-  });
-
   it("shows a suggestion beside its question and applies the chosen level", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
     renderDialog();
@@ -2636,7 +2622,7 @@ describe("analytics payloads", () => {
       await screen.findByRole("button", { name: `${DISPLAY_TEXT} option label` }),
     );
     await userEvent.click(await screen.findByRole("button", { name: "Accept" }));
-    await userEvent.click(screen.getByRole("button", { name: "Close Modal" }));
+    await userEvent.click(screen.getByRole("button", { name: "Close" }));
 
     const events = onAnalyticsEvent.mock.calls.map(([event]) => event);
     expect(events.map(({ name }) => name)).toEqual([

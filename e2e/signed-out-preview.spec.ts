@@ -82,13 +82,13 @@ for (const url of [
         .getByRole("button", { name: "Add extra scaffolding", exact: true })
         .click();
       await expect(
-        page.getByRole("dialog", { name: "Add extra scaffolding" }),
+        page.getByRole("dialog", { name: "Aila | Oak's AI" }),
       ).toBeVisible();
 
       await page.goBack();
       await expect(page).toHaveURL(/as=signed-out/);
       await expect(
-        page.getByRole("dialog", { name: "Add extra scaffolding" }),
+        page.getByRole("dialog", { name: "Aila | Oak's AI" }),
       ).toHaveCount(0);
       await expect(
         page.getByRole("region", { name: "Sign in to create more with Aila" }),
@@ -99,7 +99,7 @@ for (const url of [
         page.getByRole("button", { name: "Add extra scaffolding", exact: true }),
       ).toBeVisible();
       await expect(
-        page.getByRole("dialog", { name: "Add extra scaffolding" }),
+        page.getByRole("dialog", { name: "Aila | Oak's AI" }),
       ).toHaveCount(0);
     },
   );
