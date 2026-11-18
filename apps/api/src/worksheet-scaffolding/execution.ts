@@ -6,6 +6,7 @@ import {
 
 import { createApplicationModelInvoker } from "../ai/application-invoker";
 import { getJob } from "../jobs/job-repository";
+import type { ScaffoldSubject } from "../moderation/deterministic-moderator";
 import { createApplicationModerator } from "../moderation/moderation-configuration";
 import { applySuggestionJob } from "../jobs/suggestions/apply-definition";
 import { generateSuggestionsJob } from "../jobs/suggestions/generate-definition";
@@ -245,6 +246,7 @@ async function moderateAndStore(
     expectedPendingAttemptId?: string;
     outputs: readonly GeneratedOutput[];
     revisedPosition: number;
+    subject: ScaffoldSubject;
   }>,
 ): Promise<void> {
   const revised = input.outputs[input.revisedPosition];
@@ -256,6 +258,7 @@ async function moderateAndStore(
     attemptId: input.attemptId,
     contributionId: input.contributionId,
     document: revised.document,
+    subject: input.subject,
   });
   if (!moderated.shown) {
     await dependencies.repository.completeWithheldAttempt({
@@ -372,6 +375,11 @@ export async function executeApplySuggestion(
     expectedHeadId: sourceDocument.id,
     outputs: run.outputs,
     revisedPosition,
+    subject: {
+      attemptNumber: attempt.attemptNumber,
+      kind: transformation.kind,
+      lessonSlug: adaptation.lessonSlug,
+    },
   });
 }
 
@@ -457,6 +465,11 @@ export async function executeRetryTransformation(
       : { expectedPendingAttemptId: pendingAttemptId }),
     outputs: run.outputs,
     revisedPosition,
+    subject: {
+      attemptNumber: attempt.attemptNumber,
+      kind: transformation.kind,
+      lessonSlug: head.adaptation.lessonSlug,
+    },
   });
 }
 

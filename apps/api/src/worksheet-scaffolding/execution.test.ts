@@ -473,10 +473,18 @@ describe("retrying a withheld or failed scaffold", () => {
   });
 
   it("reruns it from the head it started from, with no review to replace", async () => {
+    const { createModerator, moderate } = moderatorReturning({
+      outcome: "PASSED",
+      scores: {},
+    });
     const repository = stubRepository({
+      createRetryAttempt: vi
+        .fn()
+        .mockResolvedValue(storedAttempt({ attemptNumber: 2 })),
       getAdaptationAttempt: vi.fn().mockResolvedValue(earlier()),
     });
     const dependencies = stubDependencies({
+      createModerator,
       executeTransformation: vi.fn().mockResolvedValue(await appliedRun()),
       readJob: vi.fn().mockResolvedValue(retryJob()),
       repository,
@@ -494,6 +502,15 @@ describe("retrying a withheld or failed scaffold", () => {
     const stored = vi.mocked(repository.storeOutputsAndAdvanceHead).mock.calls[0]?.[0];
     expect(stored).toMatchObject({ expectedHeadId: DOCUMENT_ID });
     expect(stored).not.toHaveProperty("expectedPendingAttemptId");
+    expect(moderate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: {
+          attemptNumber: 2,
+          kind: "scaffold-add-word-bank",
+          lessonSlug: lessonReference.lessonSlug,
+        },
+      }),
+    );
   });
 
   it("refuses once the worksheet has moved on from where the scaffold started", async () => {
@@ -564,6 +581,11 @@ describe("moderating a generated scaffold", () => {
     expect(moderate).toHaveBeenCalledWith({
       content: "Added support",
       context: { sessionId: ADAPTATION_ID, messageId: ATTEMPT_ID },
+      subject: {
+        attemptNumber: 1,
+        kind: "scaffold-add-word-bank",
+        lessonSlug: lessonReference.lessonSlug,
+      },
     });
   });
 

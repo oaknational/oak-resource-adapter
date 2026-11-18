@@ -8,8 +8,11 @@ import {
   scaffoldingLessons,
 } from "./helpers.js";
 
-// Not @deployment-safe: each result comes from the deterministic moderator's
-// triggers in the deterministic model's canned scaffolds (docs/MODERATION.md).
+// Not @deployment-safe: each result comes from the deterministic moderator
+// results that playwright.config.ts gives the API (docs/MODERATION.md).
+
+// The deterministic model's task glossary definition.
+const glossaryDefinition = "Identify what is the same and what is different.";
 
 async function applyScaffold(drawer: Locator, name: string) {
   await drawer.getByRole("button", { name, exact: true }).first().click();
@@ -41,14 +44,13 @@ test("shows a guidance scaffold with the areas to check until it is accepted", a
   );
   await expect(guidance).toBeVisible({ timeout: 30_000 });
   await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(1);
-  await expect(worksheet.getByText("Bunsen burner", { exact: true })).toBeVisible();
 
   await worksheet.getByRole("button", { name: "Accept", exact: true }).click();
   await expect(guidance).toHaveCount(0);
-  await expect(worksheet.getByText("Bunsen burner", { exact: true })).toBeVisible();
+  await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(1);
 });
 
-test("withholds a highly sensitive scaffold from the worksheet and its download", async ({
+test("withholds a highly sensitive scaffold from the worksheet and its download until a retry passes", async ({
   page,
   clearLessonAdaptations,
   trackAdaptation,
@@ -73,7 +75,7 @@ test("withholds a highly sensitive scaffold from the worksheet and its download"
   await expect(notice).toBeVisible({ timeout: 30_000 });
   await expect(notice).toContainText("it covers a highly sensitive topic");
   await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(1);
-  await expect(worksheet.getByText("oak-hs", { exact: false })).toHaveCount(0);
+  await expect(worksheet.getByText(glossaryDefinition)).toHaveCount(0);
   await expect(
     drawer.getByRole("button", { name: "Add a word bank", exact: true }).first(),
   ).toBeEnabled();
@@ -83,17 +85,15 @@ test("withholds a highly sensitive scaffold from the worksheet and its download"
     drawer.getByRole("button", { name: "Download worksheet", exact: true }),
   );
   expect(xml).toContain("What do you remember from the lesson");
-  expect(xml).not.toContain("oak-hs");
+  expect(xml).not.toContain(glossaryDefinition);
 
+  // The retry is the glossary's second attempt, which passes moderation.
   await notice.getByRole("button", { name: "Try again", exact: true }).click();
-  // Only a notice that replaces the retry's progress takes focus, so a Try
-  // again that did nothing leaves focus on the button and fails here.
-  await expect(notice).toBeFocused({ timeout: 30_000 });
-  await expect(notice).toHaveAccessibleDescription(
-    /it covers a highly sensitive topic/,
-  );
-  await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(1);
-  await expect(worksheet.getByText("oak-hs", { exact: false })).toHaveCount(0);
+  await expect(worksheet.getByText(glossaryDefinition)).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(notice).toHaveCount(0);
+  await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(2);
 });
 
 test("withholds a toxic scaffold with its own reason", async ({

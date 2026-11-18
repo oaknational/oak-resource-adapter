@@ -2,11 +2,15 @@ import {
   createModerator,
   MODERATION_ENV_VARS,
   moderationConfigFromEnv,
-  type Moderator,
 } from "@oaknational/resource-adapter-moderation";
 
 import { isProductionDeployment } from "../environment";
-import { deterministicModerator } from "./deterministic-moderator";
+import {
+  createDeterministicModerator,
+  type DeterministicModerationResults,
+  deterministicModerationResultsSchema,
+  type ScaffoldModerator,
+} from "./deterministic-moderator";
 
 export const moderationConfigurationErrors = {
   MISSING_MODERATION_API_URL: `${MODERATION_ENV_VARS.apiUrl} is not configured.`,
@@ -46,8 +50,28 @@ export function resolveModerationTransport(): "service" | "deterministic" {
   return transport;
 }
 
-export function createApplicationModerator(): Moderator {
+function deterministicModerationResults(): DeterministicModerationResults {
+  const raw = process.env.DETERMINISTIC_MODERATION_RESULTS?.trim();
+  if (!raw) {
+    return {};
+  }
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    json = undefined;
+  }
+  const parsed = deterministicModerationResultsSchema.safeParse(json);
+  if (!parsed.success) {
+    throw new Error(
+      "DETERMINISTIC_MODERATION_RESULTS must map lesson slugs to transformation kinds to lists of moderation results.",
+    );
+  }
+  return parsed.data;
+}
+
+export function createApplicationModerator(): ScaffoldModerator {
   return resolveModerationTransport() === "deterministic"
-    ? deterministicModerator
+    ? createDeterministicModerator(deterministicModerationResults())
     : createModerator(moderationConfigFromEnv(process.env));
 }

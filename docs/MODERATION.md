@@ -61,24 +61,27 @@ CI browser tests use both. Production refuses it, and readiness reports
 `DETERMINISTIC_MODERATION_FORBIDDEN`. Unset or `service` calls the service and
 needs `MODERATION_API_URL`.
 
-The fake decides from trigger text that the deterministic model's canned
-scaffolds carry, so each scaffold always reaches the same result:
+The fake passes every scaffold that `DETERMINISTIC_MODERATION_RESULTS` does not
+list. That variable is JSON keyed by lesson slug, then transformation kind,
+giving the result of each attempt in order. The last result repeats, so a list
+can give Try again a different result from the first attempt:
 
-| Scaffold                              | Result                              |
-| ------------------------------------- | ----------------------------------- |
-| Add a word bank, Add recall questions | `safe`                              |
-| Add a word bank with definitions      | `guidance-required` (Bunsen burner) |
-| Add a task glossary                   | `highly-sensitive`                  |
-| Add sentence starters                 | `toxic`                             |
-| Add sentence frames                   | `FAILED`                            |
+```json
+{
+  "what-we-know-about-ancient-greece": {
+    "scaffold-add-task-glossary": ["highly-sensitive", "safe"]
+  }
+}
+```
 
-The triggers live in `apps/api/src/moderation/deterministic-moderator.ts`.
-Because the text never changes, a retry reaches the same result as the first
-attempt; a result that changes between attempts is covered by unit tests.
+A result is `safe`, `guidance-required`, `highly-sensitive`, `toxic` or
+`failed`. `playwright.config.ts` sets the variable for the API it starts, using
+the lessons in `e2e/helpers.ts`. An API that Playwright reuses, such as your own
+`pnpm dev`, passes everything unless you set it there too.
 
-A browser test must not apply Add sentence frames for real. The failed job makes
-the Workflow SDK log a `FatalError`, which fails the CI browser job's log check,
-so the failure test writes the failed state into the API's responses instead.
+A browser test must not use `failed`. The failed job makes the Workflow SDK log
+a `FatalError`, which fails the CI browser job's log check, so the failure test
+writes the failed state into the API's responses instead.
 
 ## Authentication
 

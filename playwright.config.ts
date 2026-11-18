@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
+import { scaffoldingLessons } from "./e2e/helpers.js";
 import { vercelBypassStatePath } from "./e2e/vercel-bypass.js";
 
 /**
@@ -36,13 +37,33 @@ const builtServers =
   );
 const serverScript = builtServers ? "start" : "dev";
 
+/**
+ * The deterministic moderator's result for each moderation test's scaffold, by
+ * lesson and transformation kind; every other scaffold passes. An API that
+ * Playwright reuses rather than starts does not get these (docs/MODERATION.md).
+ */
+const deterministicModerationResults = {
+  [scaffoldingLessons.moderationGuidance]: {
+    "scaffold-add-word-bank": ["guidance-required"],
+  },
+  [scaffoldingLessons.moderationHighlySensitive]: {
+    "scaffold-add-task-glossary": ["highly-sensitive", "safe"],
+  },
+  [scaffoldingLessons.moderationToxic]: {
+    "scaffold-add-sentence-starters": ["toxic"],
+  },
+};
+
 const localWebServers = [
   {
     command: `pnpm --filter @oaknational/resource-adapter-api ${serverScript}`,
     url: "http://localhost:3001/health",
-    // A served build runs with NODE_ENV=production, which selects PostHog for
-    // feature flags and needs a project key the suite has no business holding.
-    ...(builtServers ? { env: { FEATURE_FLAG_TRANSPORT: "in-memory" } } : {}),
+    env: {
+      DETERMINISTIC_MODERATION_RESULTS: JSON.stringify(deterministicModerationResults),
+      // A served build runs with NODE_ENV=production, which selects PostHog for
+      // feature flags and needs a project key the suite has no business holding.
+      ...(builtServers ? { FEATURE_FLAG_TRANSPORT: "in-memory" } : {}),
+    },
     reuseExistingServer: !builtServers,
     stdout: "pipe" as const,
     stderr: "pipe" as const,

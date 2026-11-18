@@ -54,8 +54,8 @@ browser job does not set it, and `VERCEL_ENV=production` rejects it outright.
 They also set `MODERATION_TRANSPORT=deterministic`, so scaffolds are moderated
 without calling the moderation service. Unset or `service` calls it and requires
 `MODERATION_API_URL`. See
-[deterministic moderation](MODERATION.md#deterministic-moderation) for the result
-each scaffold reaches.
+[deterministic moderation](MODERATION.md#deterministic-moderation) for how each
+moderation test gets its result.
 
 Playwright reuses an already-running API server, so restart yours after changing
 the value or it will keep the transport it started with.

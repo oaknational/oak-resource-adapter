@@ -1,7 +1,6 @@
 import {
   isWithheldSafetyResult,
   safetyResultOf,
-  type Moderator,
 } from "@oaknational/resource-adapter-moderation";
 import {
   contributedNodes,
@@ -9,6 +8,10 @@ import {
   type ResourceDocument,
 } from "@oaknational/resource-document";
 
+import type {
+  ScaffoldModerator,
+  ScaffoldSubject,
+} from "../moderation/deterministic-moderator";
 import type { ShownModeration, WithheldModeration } from "./repository";
 
 export type ScaffoldModeration =
@@ -21,12 +24,13 @@ export type ScaffoldModeration =
  * a log or an error message.
  */
 export async function moderateScaffold(
-  moderator: Moderator,
+  moderator: ScaffoldModerator,
   input: Readonly<{
     adaptationId: string;
     attemptId: string;
     contributionId: string;
     document: ResourceDocument;
+    subject: ScaffoldSubject;
   }>,
 ): Promise<ScaffoldModeration> {
   const content = resourceNodesToPlainText(
@@ -40,6 +44,7 @@ export async function moderateScaffold(
   const outcome = await moderator.moderate({
     content,
     context: { sessionId: input.adaptationId, messageId: input.attemptId },
+    subject: input.subject,
   });
   if (outcome.outcome === "FAILED") {
     throw new Error(`Moderating the generated scaffold failed: ${outcome.reason}.`);

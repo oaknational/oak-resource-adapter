@@ -231,8 +231,3 @@ request's schema. Unsupported contracts fail rather than falling back to OpenAI.
 contract adds one entry to that catalogue, with a contract test.** Keep responses
 out of feature code and browser specs, and do not add per-lesson copies.
 See [browser-test configuration](DEVELOPMENT.md#browser-test-model-configuration).
-
-Four canned scaffolds carry the deterministic moderator's trigger text, so a
-browser test reaches each moderation result by choosing a scaffold, apart from a
-failure; see [deterministic moderation](MODERATION.md#deterministic-moderation).
-Keep the triggers when editing those entries.
