@@ -146,7 +146,7 @@ describe("ResourceAdapterDialog", () => {
     expect(screen.getByTestId("resource-adapter-dialog-fallback")).toBeVisible();
     result.rerender(
       <OakThemeProvider theme={oakDefaultTheme}>
-        <ResourceAdapterDialog {...dialogProps()} />
+        <ResourceAdapterDialog {...dialogProps({ capability: { ...capability } })} />
       </OakThemeProvider>,
     );
 
