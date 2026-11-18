@@ -112,6 +112,28 @@ function useFocusAfterLoadingScreen(showing: boolean) {
   return { frame, target };
 }
 
+/** What Try again does after a failed job, or null when nothing can run again. */
+function failedJobRetry(
+  failedJob: Readonly<{ attemptId?: string }> | undefined,
+  {
+    canRetrySuggestions,
+    hasPendingReview,
+  }: Readonly<{ canRetrySuggestions: boolean; hasPendingReview: boolean }>,
+  {
+    retryAttempt,
+    retrySuggestions,
+  }: Pick<
+    ReturnType<typeof useWorksheetScaffolding>,
+    "retryAttempt" | "retrySuggestions"
+  >,
+): (() => void) | null {
+  if (canRetrySuggestions) {
+    return () => retrySuggestions("try_again_button");
+  }
+  const attemptId = hasPendingReview ? undefined : failedJob?.attemptId;
+  return attemptId === undefined ? null : () => retryAttempt(attemptId);
+}
+
 export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflowProps) {
   const workflow = useWorksheetScaffolding(props);
   const { state } = workflow;
@@ -324,18 +346,14 @@ function WorkflowContent({
     failedJob?.kind === "suggestions.generate" &&
     hasScaffoldsInDocument &&
     pendingReview === null;
-  const failedAttemptId =
-    pendingReview === null && failedJob !== undefined && !canRetryFailedSuggestions
-      ? (failedJob.attemptId ?? null)
-      : null;
-  const canTryFailedJobAgain = canRetryFailedSuggestions || failedAttemptId !== null;
-  const tryFailedJobAgain = () => {
-    if (failedAttemptId === null) {
-      retrySuggestions("try_again_button");
-    } else {
-      retryAttempt(failedAttemptId);
-    }
-  };
+  const tryFailedJobAgain = failedJobRetry(
+    failedJob,
+    {
+      canRetrySuggestions: canRetryFailedSuggestions,
+      hasPendingReview: pendingReview !== null,
+    },
+    workflow,
+  );
 
   return (
     <WorkflowFrame frameRef={focusAfter.frame} status={status}>
@@ -396,7 +414,7 @@ function WorkflowContent({
             isOpen
             cta={
               <ActionRow>
-                {canTryFailedJobAgain && (
+                {tryFailedJobAgain !== null && (
                   <OakSecondaryButton
                     disabled={isWorking || modelWorkRefused}
                     onClick={tryFailedJobAgain}
@@ -408,7 +426,7 @@ function WorkflowContent({
               </ActionRow>
             }
             message={failureMessage(failedJob.kind, {
-              canTryAgain: canTryFailedJobAgain,
+              canTryAgain: tryFailedJobAgain !== null,
               hasPendingReview: pendingReview !== null,
             })}
             title={FAILURE_TITLES[failedJob.kind]}
