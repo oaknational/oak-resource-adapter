@@ -25,11 +25,9 @@ Include a word or term only if the pupil needs it in their answer and it is:
 
 If the resource's teacher answers or the lesson's feedback on this task include a model answer, take the words and terms from it. If not, use the words and terms from the explanation and checks for understanding that come before the task in the lesson.
 
-At {{supportLevel}} support: low lists the words alone; mid gives each word a brief description. A description must not give away the answer or lower the difficulty of the task.
+List the words alone, without descriptions.
 
-Where a description is requested, write it in fewer than 100 characters, in words simpler than the word being described, and start it in lower case unless it opens with a proper noun.
-
-Include the number of words the depth and length of the answer needs: fewer for an answer of one short explanatory sentence than for an extended explanation. In a Key Stage 1 resource, give at most three words, and write any description in words a pupil can decode from the phonics they have been taught, avoiding common exception words.
+Include the number of words the depth and length of the answer needs: fewer for an answer of one short explanatory sentence than for an extended explanation. In a Key Stage 1 resource, give at most three words.
 
 For example, for the task "Describe where the North and South Pole are located": Arctic, Antarctic, northernmost, southernmost, axis. The words are the ones a correct answer has to reach for and none of them appear in the question; "describe" and "located" are left out because the task already supplies them.
 

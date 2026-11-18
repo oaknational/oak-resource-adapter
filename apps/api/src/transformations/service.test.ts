@@ -204,19 +204,13 @@ describe("listTransformationsForCapability", () => {
     );
   });
 
-  it("offers an MFL lesson the word bank without definitions, and no task glossary", () => {
+  it("offers an MFL lesson no task glossary", () => {
     const offeredOn = (subjectSlugs: readonly string[]) =>
       listTransformationsForCapability({
         ...contextFor(),
         facts: lessonFacts({ subjectSlugs }),
       });
-    const supportLevels = (subjectSlugs: readonly string[]) =>
-      offeredOn(subjectSlugs)
-        .find(({ kind }) => kind === "scaffold-add-word-bank")
-        ?.inputs?.[0]?.options.map(({ value }) => value);
 
-    expect(supportLevels(["english", "french"])).toEqual(["low"]);
-    expect(supportLevels(["english"])).toEqual(["low", "mid"]);
     expect(offeredOn(["spanish"]).map(({ kind }) => kind)).not.toContain(
       "scaffold-add-task-glossary",
     );

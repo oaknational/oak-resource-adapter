@@ -1286,28 +1286,6 @@ describe("accepting a suggestion", () => {
     expect(second).toBe(first);
   });
 
-  it("keys a different level apart, so it is not refused as the same request", async () => {
-    const dependencies = stubDependencies();
-
-    for (const supportLevel of ["low", "mid"]) {
-      await enqueueSuggestionApplication(
-        {
-          adaptationId: ADAPTATION_ID,
-          params: { supportLevel },
-          suggestionId: SUGGESTION_ID,
-        },
-        teacher,
-        dependencies,
-      );
-    }
-
-    const [first, second] = vi
-      .mocked(dependencies.enqueue)
-      .mock.calls.map(([request]) => request);
-    expect(second?.idempotencyKey).not.toBe(first?.idempotencyKey);
-    expect(second?.concurrencyKey).toBe(first?.concurrencyKey);
-  });
-
   it("does not ask for suggestions while an application is being queued", async () => {
     const dependencies = stubDependencies();
 
@@ -1318,26 +1296,6 @@ describe("accepting a suggestion", () => {
     );
 
     expect(dependencies.enqueue).toHaveBeenCalledTimes(1);
-  });
-
-  it("enqueues the validated parameters rather than the raw request", async () => {
-    const dependencies = stubDependencies();
-
-    await enqueueSuggestionApplication(
-      {
-        adaptationId: ADAPTATION_ID,
-        params: { supportLevel: "mid" },
-        suggestionId: SUGGESTION_ID,
-      },
-      teacher,
-      dependencies,
-    );
-
-    expect(dependencies.enqueue).toHaveBeenCalledWith(
-      expect.objectContaining({
-        input: expect.objectContaining({ params: { supportLevel: "mid" } }),
-      }),
-    );
   });
 
   it("uses the suggested parameters when no override is sent", async () => {

@@ -416,49 +416,32 @@ describe("deterministic suggestion catalogue", () => {
 });
 
 describe("deterministic transformation contributions", () => {
-  it.each(["low", "mid"] as const)(
-    "applies the real %s word-bank contract",
-    async (supportLevel) => {
-      const document = documentFor();
-      const before = structuredClone(document);
-      const [question] = getResourceNodesByType(document, "question");
-      if (!question) throw new Error("The fixture needs a question");
-      const config = setup();
-      const kind = "scaffold-add-word-bank";
-      const contributionId = `word-bank-${supportLevel}`;
-      const run = await executeTransformation(
-        transformationDefinitions[kind],
-        {
-          document,
-          contributionId,
-          targetBlockId: question.id,
-          params: { supportLevel },
-        },
-        config,
-      );
-      const revised = contributedDocument(run, contributionId, kind);
-      const bank = getResourceNodesByType(revised, "definitionList").find(
-        ({ id }) => id === `${contributionId}-vocabulary`,
-      );
-      expect(bank?.entries).toEqual([
-        {
-          term: [{ type: "text", text: "compare" }],
-          ...(supportLevel === "low"
-            ? {}
-            : {
-                definition: [
-                  {
-                    type: "text",
-                    text: "Identify what is the same and what is different.",
-                  },
-                ],
-              }),
-        },
-      ]);
-      expectValidRecording(config.recorder, `word_bank_${supportLevel}`);
-      expect(document).toEqual(before);
-    },
-  );
+  it("applies the real word-bank contract", async () => {
+    const document = documentFor();
+    const before = structuredClone(document);
+    const [question] = getResourceNodesByType(document, "question");
+    if (!question) throw new Error("The fixture needs a question");
+    const config = setup();
+    const kind = "scaffold-add-word-bank";
+    const contributionId = "word-bank";
+    const run = await executeTransformation(
+      transformationDefinitions[kind],
+      {
+        document,
+        contributionId,
+        targetBlockId: question.id,
+        params: { supportLevel: "low" },
+      },
+      config,
+    );
+    const revised = contributedDocument(run, contributionId, kind);
+    const bank = getResourceNodesByType(revised, "definitionList").find(
+      ({ id }) => id === `${contributionId}-vocabulary`,
+    );
+    expect(bank?.entries).toEqual([{ term: [{ type: "text", text: "compare" }] }]);
+    expectValidRecording(config.recorder, "word_bank_low");
+    expect(document).toEqual(before);
+  });
 
   it("applies the real task glossary contract", async () => {
     const document = documentFor();

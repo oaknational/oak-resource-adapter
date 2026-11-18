@@ -10,15 +10,17 @@ export const addPromptQuestionsTransformation = defineTransformation({
   status: "active",
   suggestion: {
     description:
-      "Adds questions at the start of a task that prompt pupils to recall the lesson knowledge it needs.",
+      "Adds questions at the start of a task that prompt pupils to recall the knowledge it needs.",
     offer: "always",
     reason: "Prompt pupils to recall what they need before they start this task.",
   },
   barriers: ["working-memory", "gaps-in-knowledge"],
   target: { scope: "node", nodeTypes: ["task"] },
   materialRequirements: [
-    { key: "lesson.keyLearningPoints", required: true },
     { key: "lesson.slides", required: false },
+    { key: "lesson.keywords", required: false },
+    { key: "lesson.keyLearningPoints", required: true },
+    { key: "lesson.misconceptions", required: false },
     { key: "lesson.transcriptSummary", required: false },
   ],
   outputs: ["revised-resource"],

@@ -68,6 +68,7 @@ beforeEach(() => {
   model.createInvoker.mockReset();
   model.invokeStructured.mockReset();
   model.createInvoker.mockReturnValue({
+    binding: () => ({ model: "gpt-6-luna", transport: "openai" }),
     invokeStructured: model.invokeStructured,
   });
 });
@@ -112,7 +113,7 @@ describe("previewDevTransformation", () => {
       command({ kind: "scaffold-add-sentence-starters", params: {} }),
     );
 
-    expect(model.createInvoker).not.toHaveBeenCalled();
+    expect(model.invokeStructured).not.toHaveBeenCalled();
     expect(preview.prompt?.text).toContain("whose eyes we see through");
   });
 
