@@ -225,7 +225,6 @@ export type LimitedTeacherAllowance = Readonly<{
 
 export type TeacherAllowance = Readonly<{ tier: "full" }> | LimitedTeacherAllowance;
 
-/** A moderation category code with a plain-language name for it. */
 export type ContentGuidance = Readonly<{ category: string; label: string }>;
 
 export const withheldSafetyResults = ["highly-sensitive", "toxic"] as const;

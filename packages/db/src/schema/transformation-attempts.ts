@@ -49,7 +49,6 @@ export const transformationAttempts = resourceAdapterSchema.table(
     jobId: uuid("job_id").notNull().unique(),
     /** The category codes the moderation service flagged, empty when it flagged none. */
     moderationCategories: text("moderation_categories").array(),
-    /** Null when the attempt produced nothing to moderate. */
     moderationResult: moderationResultEnum("moderation_result"),
     transformationId: uuid("transformation_id").notNull(),
     updatedAt: timestamp("updated_at", { precision: 3, withTimezone: true })
