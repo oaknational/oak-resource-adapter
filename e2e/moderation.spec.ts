@@ -37,7 +37,7 @@ test("shows a guidance scaffold with the areas to check until it is accepted", a
   );
   await expectSuggestionsReady(drawer);
 
-  await applyScaffold(drawer, "Add a word bank with definitions");
+  await applyScaffold(drawer, "Add a word bank");
 
   const guidance = worksheet.getByText(
     "Content guidance: Practical equipment and activities",
