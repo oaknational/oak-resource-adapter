@@ -51,7 +51,9 @@ for (const url of [
     },
     async ({ page }) => {
       await setupClerkTestingToken({ page });
+      const availability = waitForCapabilityAvailability(page);
       await page.goto(url);
+      expect((await availability).status()).toBe(200);
       await chooseFromAiMenu(page, "Sign in to adapt");
       await expect(page.getByRole("dialog")).toBeVisible();
       await expect(page).not.toHaveURL(/as=signed-out/);

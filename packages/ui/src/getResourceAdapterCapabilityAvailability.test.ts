@@ -24,6 +24,7 @@ function respondWith(body: unknown) {
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -44,6 +45,40 @@ describe("getResourceAdapterCapabilityAvailability", () => {
       method: "POST",
     });
     expect(request).not.toHaveProperty("headers.Authorization");
+  });
+
+  it("abandons a stalled request and asks again", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(
+        (_url: unknown, init: RequestInit) =>
+          new Promise((_, reject) => {
+            init.signal?.addEventListener("abort", () =>
+              reject(new DOMException("Aborted", "AbortError")),
+            );
+          }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            { result: { data: { available: true, teachingMaterials: [] } } },
+          ]),
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const availability = getResourceAdapterCapabilityAvailability({
+      apiBaseUrl,
+      lesson,
+    });
+    await vi.runAllTimersAsync();
+
+    await expect(availability).resolves.toEqual({
+      available: true,
+      teachingMaterials: [],
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("tells the service which capabilities this package can render", async () => {

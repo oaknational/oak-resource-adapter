@@ -5,7 +5,7 @@ import type {
   ResourceAdapterHostProps,
 } from "./publicTypes.js";
 import { getSupportedCapabilities, supportedCapabilityIds } from "./capabilities.js";
-import { callApi, createResourceAdapterClient } from "./client.js";
+import { callApi, createResourceAdapterClient, readWithRetry } from "./client.js";
 import { ResourceAdapterApiError } from "./errors.js";
 
 /**
@@ -19,13 +19,13 @@ export async function getResourceAdapterCapabilities({
   lesson,
 }: ResourceAdapterHostProps): Promise<ResourceAdapterCapabilitiesResponse> {
   return callApi("Resource Adapter could not load capabilities.", async () => {
-    const response = await createResourceAdapterClient({
-      apiBaseUrl,
-      getToken,
-    }).capabilities.get.query({
-      ...lesson,
-      supportedCapabilityIds: [...supportedCapabilityIds],
-    });
+    const client = createResourceAdapterClient({ apiBaseUrl, getToken });
+    const response = await readWithRetry((signal) =>
+      client.capabilities.get.query(
+        { ...lesson, supportedCapabilityIds: [...supportedCapabilityIds] },
+        { signal },
+      ),
+    );
     const parsedResponse =
       resourceAdapterCapabilitiesResponseSchema.safeParse(response);
 
