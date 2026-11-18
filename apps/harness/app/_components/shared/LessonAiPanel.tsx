@@ -5,9 +5,13 @@ import {
   type ResourceAdapterCapabilityOption,
   type ResourceAdapterLauncherProps,
 } from "@oaknational/resource-adapter";
-import { OakSecondaryButton } from "@oaknational/oak-components";
+import {
+  OakFlex,
+  OakHeading,
+  OakP,
+  OakSecondaryButton,
+} from "@oaknational/oak-components";
 
-import styles from "./LessonAiPanel.module.css";
 import type { UseCapabilitiesResult } from "../../_hooks/useCapabilities";
 
 export function LessonAiPanel<TCapability extends ResourceAdapterCapabilityOption>({
@@ -20,14 +24,25 @@ export function LessonAiPanel<TCapability extends ResourceAdapterCapabilityOptio
   Readonly<{ onRetry: () => void }>) {
   if (state === "error") {
     return (
-      <section
+      <OakFlex
+        $alignItems="flex-start"
+        $flexDirection="column"
+        $gap="spacing-8"
         aria-labelledby="resource-adapter-unavailable-heading"
-        className={styles.panel}
+        as="section"
       >
-        <h2 id="resource-adapter-unavailable-heading">Adapt with AI is unavailable</h2>
-        <p>The harness could not load Resource Adapter capabilities.</p>
+        <OakHeading
+          $font="heading-6"
+          id="resource-adapter-unavailable-heading"
+          tag="h2"
+        >
+          Adapt with AI is unavailable
+        </OakHeading>
+        <OakP $mb="spacing-8">
+          The harness could not load Resource Adapter capabilities.
+        </OakP>
         <OakSecondaryButton onClick={onRetry}>Try again</OakSecondaryButton>
-      </section>
+      </OakFlex>
     );
   }
 

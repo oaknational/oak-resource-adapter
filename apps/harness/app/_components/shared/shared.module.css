@@ -286,15 +286,15 @@
   white-space: pre-wrap;
 }
 
-.lesson h2 {
+/*
+ * oak-components always render with a class, so these skip them. `:where` keeps
+ * them at `.lesson a` specificity, below the view switch's current-page rule.
+ */
+.lesson h2:where(:not([class])) {
   margin-top: 2.5rem;
 }
 
-/*
- * oak-components marks its button-styled links `internal-button`. `:where` keeps
- * this at `.lesson a` specificity, below the view switch's current-page rule.
- */
-.lesson a:where(:not(:global(.internal-button))) {
+.lesson a:where(:not([class])) {
   color: #0d24c4;
   font-weight: 600;
 }
