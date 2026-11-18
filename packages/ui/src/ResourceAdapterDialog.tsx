@@ -127,7 +127,7 @@ function ResourceAdapterDialogInner({
       headerSlot={
         <OakFlex $alignItems="center" $gap="spacing-8">
           <OakIcon $colorFilter="icon-inverted" iconName="ai" />
-          <OakHeading $font="heading-6" id={titleId} tag="h2">
+          <OakHeading $font="heading-light-7" id={titleId} tag="h2">
             Aila | Oak&apos;s AI
           </OakHeading>
         </OakFlex>
