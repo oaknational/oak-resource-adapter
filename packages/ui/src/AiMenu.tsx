@@ -70,7 +70,6 @@ export function AiMenuLink({
     <OakLeftAlignedButton
       element="a"
       href={href}
-      iconAriaHidden
       iconName="external"
       isTrailingIcon
       onClick={() => {

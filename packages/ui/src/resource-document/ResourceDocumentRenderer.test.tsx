@@ -188,6 +188,39 @@ describe("ResourceDocumentRenderer", () => {
     );
   });
 
+  it("starts a question's opening paragraph with its number", () => {
+    renderDocument(document);
+
+    expect(screen.getByText("1.").closest("p")).toHaveTextContent(/^1\.Calculate/);
+  });
+
+  it("wraps a framed node together with the slot placed inside it", () => {
+    render(
+      <OakThemeProvider theme={oakDefaultTheme}>
+        <ResourceDocumentRenderer
+          decorations={{
+            renderAfterNode: (node) =>
+              node.id === "question" ? <div>Suggested question controls</div> : null,
+            frameNode: (node) =>
+              node.id === "question"
+                ? (children) => <div data-testid="question-frame">{children}</div>
+                : undefined,
+          }}
+          document={document}
+        />
+      </OakThemeProvider>,
+    );
+
+    const frame = screen.getByTestId("question-frame");
+
+    expect(screen.getAllByTestId("question-frame")).toHaveLength(1);
+    expect(
+      within(frame).getByRole("heading", { name: "Question 1 (2 marks)" }),
+    ).toBeVisible();
+    expect(within(frame).getByText("Suggested question controls")).toBeVisible();
+    expect(within(frame).queryByText("Show your working.")).not.toBeInTheDocument();
+  });
+
   it("renders worksheet tasks as independently collapsible heading regions", async () => {
     const taskDocument: ResourceDocument = {
       ...document,

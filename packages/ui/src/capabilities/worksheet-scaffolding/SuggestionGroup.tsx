@@ -1,50 +1,34 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
-import { OakP, OakSecondaryButton, parseColor } from "@oaknational/oak-components";
+import { useCallback, type ReactNode } from "react";
+import {
+  OakFlex,
+  OakLI,
+  OakLink,
+  OakP,
+  OakSmallSecondaryButton,
+  OakUL,
+} from "@oaknational/oak-components";
 import type { WorksheetScaffoldingState } from "@oaknational/resource-adapter-contracts/internal";
-import { styled } from "styled-components";
 
 import { VisibleLoadingSpinner } from "../../VisibleLoadingSpinner.js";
 
 type ScaffoldSuggestion = WorksheetScaffoldingState["suggestions"][number];
 
-const GroupPanel = styled.div`
-  background: ${parseColor("bg-neutral")};
-  border: 1px solid ${parseColor("border-neutral-lighter")};
-  border-radius: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin: 0.5rem 0 1rem;
-  padding: 0.75rem;
-
-  /* Keeps a focused button clear of the sticky failure banner above it. */
-  button {
-    scroll-margin-top: 7rem;
-  }
-`;
-
-const SuggestionList = styled.ul`
-  align-items: flex-start;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-
-  button {
-    min-height: 3.5rem;
-  }
-`;
-
-const LocalWorking = styled.div`
-  align-items: center;
-  display: flex;
-  gap: 0.75rem;
-  min-height: 3rem;
-`;
+export function QuestionCard({ children }: Readonly<{ children: ReactNode }>) {
+  return (
+    <OakFlex
+      $background="bg-primary"
+      $ba="border-solid-s"
+      $borderColor="border-neutral-lighter"
+      $borderRadius="border-radius-m2"
+      $flexDirection="column"
+      $pa="spacing-20"
+    >
+      {children}
+    </OakFlex>
+  );
+}
 
 export function groupSuggestionsByTarget(
   suggestions: WorksheetScaffoldingState["suggestions"],
@@ -94,19 +78,24 @@ function scaffoldOptionsFor(suggestion: ScaffoldSuggestion): ScaffoldOption[] {
 
 // Applying removes the chosen button, so focus moves to the progress marker.
 function LocalProgress() {
-  const ref = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    ref.current?.focus();
+  const focusOnMount = useCallback((node: HTMLDivElement | null) => {
+    node?.focus();
   }, []);
 
   return (
-    <LocalWorking aria-live="polite" ref={ref} tabIndex={-1}>
+    <OakFlex
+      $alignItems="center"
+      $gap="spacing-8"
+      aria-live="polite"
+      ref={focusOnMount}
+      tabIndex={-1}
+    >
       <VisibleLoadingSpinner
         aria-hidden="true"
         data-testid="worksheet-scaffolding-local-spinner"
       />
-      <OakP $font="body-2">Working on it&hellip;</OakP>
-    </LocalWorking>
+      <OakP $font="body-3">Working on it&hellip;</OakP>
+    </OakFlex>
   );
 }
 
@@ -125,35 +114,54 @@ export function SuggestionGroup({
   onDismiss: () => void;
   suggestions: readonly ScaffoldSuggestion[];
 }>) {
-  const headingId = useId();
   const isApplyingHere = suggestions.some(({ id }) => id === applyingSuggestionId);
   const options = suggestions
     .filter(({ id }) => id !== applyingSuggestionId)
     .flatMap(scaffoldOptionsFor);
 
   return (
-    <GroupPanel aria-labelledby={headingId} role="group">
-      <OakP $font="heading-7" id={headingId}>
-        Suggested scaffolds
-      </OakP>
+    <OakFlex
+      $flexDirection="column"
+      $gap="spacing-12"
+      aria-label="Suggested scaffolds"
+      role="group"
+    >
       {isApplyingHere && <LocalProgress />}
-      <SuggestionList>
+      <OakUL
+        $alignItems="center"
+        $display="flex"
+        $flexWrap="wrap"
+        $gap="spacing-12"
+        $reset
+      >
         {options.map((option) => (
-          <li key={option.key}>
-            <OakSecondaryButton
+          <OakLI key={option.key}>
+            <OakSmallSecondaryButton
               disabled={disabled || applyDisabled}
+              iconName="ai"
               onClick={() => onApply(option.suggestionId, option.params)}
             >
               {option.label}
-            </OakSecondaryButton>
-          </li>
+            </OakSmallSecondaryButton>
+          </OakLI>
         ))}
-        <li>
-          <OakSecondaryButton disabled={disabled} iconName="cross" onClick={onDismiss}>
-            No scaffold required
-          </OakSecondaryButton>
-        </li>
-      </SuggestionList>
-    </GroupPanel>
+        {!isApplyingHere && (
+          <OakLI>
+            <OakLink
+              $font="body-3"
+              color="text-subdued"
+              disabled={disabled}
+              element="button"
+              iconName="cross"
+              onClick={onDismiss}
+              type="button"
+              variant="secondary"
+            >
+              No scaffold required
+            </OakLink>
+          </OakLI>
+        )}
+      </OakUL>
+    </OakFlex>
   );
 }

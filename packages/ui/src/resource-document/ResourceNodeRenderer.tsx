@@ -8,17 +8,19 @@ import {
   type TableCell,
   type UnsupportedNode,
 } from "@oaknational/resource-document";
-import { parseColor } from "@oaknational/oak-components";
+import {
+  OakBox,
+  OakFlex,
+  OakHeading,
+  OakP,
+  OakScreenReader,
+  OakSpan,
+  parseColor,
+} from "@oaknational/oak-components";
 import { styled } from "styled-components";
 
 import { InlineContentRenderer } from "./InlineContentRenderer.js";
 import { TaskAccordion } from "./TaskAccordion.js";
-
-const ContentSection = styled.section`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
 
 const AppliedTransformation = styled.div`
   background: ${parseColor("bg-primary")};
@@ -47,30 +49,34 @@ const AppliedTransformationLabel = styled.span`
   transform: translateY(-50%);
 `;
 
-const Paragraph = styled.p`
-  line-height: 1.6;
-  margin: 0;
-  white-space: pre-wrap;
-`;
+function Paragraph({ children }: Readonly<{ children: ReactNode }>) {
+  return <OakP $whiteSpace="pre-wrap">{children}</OakP>;
+}
 
-const Callout = styled.aside`
-  background: ${parseColor("bg-neutral")};
-  border-left: 0.375rem solid ${parseColor("border-primary")};
-  border-radius: 0.25rem;
-  padding: 1rem;
-`;
+function ContentSection({ children }: Readonly<{ children: ReactNode }>) {
+  return (
+    <OakFlex $flexDirection="column" $gap="spacing-16" as="section">
+      {children}
+    </OakFlex>
+  );
+}
 
-const Question = styled.div`
-  border-top: 1px solid ${parseColor("border-neutral-lighter")};
-  padding-top: 1rem;
-`;
-
-const QuestionContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
-`;
+function Notice({ children }: Readonly<{ children: ReactNode }>) {
+  return (
+    <OakBox
+      $ba="border-solid-m"
+      $background="bg-decorative5-very-subdued"
+      $borderColor="border-neutral-stronger"
+      $borderRadius="border-radius-m2"
+      $color="text-primary"
+      $pa="spacing-16"
+      as="aside"
+      role="note"
+    >
+      {children}
+    </OakBox>
+  );
+}
 
 const ResponseSpace = styled.div<{ $kind: "box" | "grid" | "lines"; $lines: number }>`
   background-image: ${({ $kind, theme }) => {
@@ -105,18 +111,6 @@ const DefinitionList = styled.dl`
   dd {
     margin: 0.25rem 0 0;
   }
-`;
-
-const Unsupported = styled.aside`
-  background: ${parseColor("lemon30")};
-  border: 2px solid ${parseColor("border-neutral-stronger")};
-  border-radius: 0.5rem;
-  color: ${parseColor("text-primary")};
-  padding: 1rem;
-`;
-
-const MissingFigure = styled(Unsupported)`
-  margin: 0;
 `;
 
 const Figure = styled.figure`
@@ -166,19 +160,6 @@ const ScrollableRegion = styled.div`
 
 const CodeBlock = styled(ScrollableRegion).attrs({ as: "pre" })`
   margin: 0;
-`;
-
-const HiddenLabel = styled.span`
-  block-size: 1px;
-  clip-path: inset(50%);
-  inline-size: 1px;
-  overflow: hidden;
-  position: absolute;
-  white-space: nowrap;
-`;
-
-const AnswerCell = styled.div`
-  min-height: 1.5rem;
 `;
 
 const CalloutLabels = {
@@ -233,20 +214,22 @@ function nestedHeadingLevel(level: ParentHeadingLevel): ContentHeadingLevel {
   return Math.min(level + 1, 6) as ContentHeadingLevel;
 }
 
+const headingFonts = {
+  3: "heading-4",
+  4: "heading-5",
+  5: "heading-6",
+  6: "heading-7",
+} as const;
+
 function Heading({
   children,
   level,
 }: Readonly<{ children: ReactNode; level: ContentHeadingLevel }>) {
-  switch (level) {
-    case 3:
-      return <h3>{children}</h3>;
-    case 4:
-      return <h4>{children}</h4>;
-    case 5:
-      return <h5>{children}</h5>;
-    default:
-      return <h6>{children}</h6>;
-  }
+  return (
+    <OakHeading $font={headingFonts[level]} $ma="spacing-0" tag={`h${level}`}>
+      {children}
+    </OakHeading>
+  );
 }
 
 /** Slots a capability fills in while the teacher works on the document. */
@@ -258,6 +241,13 @@ export type ResourceDocumentDecorations = Readonly<{
   renderAfterNode?: ((node: ResourceNode) => ReactNode) | undefined;
   /** Placed inside the frame marking content one contribution added. */
   renderContributionControls?: ((contributionId: string) => ReactNode) | undefined;
+  /**
+   * Returns a frame to wrap a node in, including the slots placed inside it.
+   * A framed question drops its own top rule.
+   */
+  frameNode?:
+    | ((node: ResourceNode) => ((children: ReactNode) => ReactNode) | undefined)
+    | undefined;
 }>;
 
 /**
@@ -273,11 +263,14 @@ export function ResourceNodeListRenderer({
   decorations,
   nodes,
   parentContributionId,
+  leadingContent,
   parentHeadingLevel,
   renderBeforeNode,
 }: Readonly<{
   assets: readonly Asset[];
   decorations?: ResourceDocumentDecorations | undefined;
+  /** Placed at the start of the first node when that node is a paragraph. */
+  leadingContent?: ReactNode;
   nodes: readonly ResourceNode[];
   parentContributionId?: string | undefined;
   parentHeadingLevel: ParentHeadingLevel;
@@ -285,7 +278,7 @@ export function ResourceNodeListRenderer({
 }>) {
   let currentHeadingLevel = parentHeadingLevel;
 
-  return nodes.map((node) => {
+  return nodes.map((node, index) => {
     const nodeParentHeadingLevel = currentHeadingLevel;
     const nodeContributionId = contributionIdOf(node.extensions);
 
@@ -293,14 +286,18 @@ export function ResourceNodeListRenderer({
       currentHeadingLevel = headingLevel(node.level);
     }
 
-    const renderedNode = (
+    const frame = decorations?.frameNode?.(node);
+    const nodeContent = (
       <ResourceNodeRenderer
         assets={assets}
         decorations={decorations}
+        framed={frame !== undefined}
+        leadingContent={index === 0 ? leadingContent : undefined}
         node={node}
         parentHeadingLevel={nodeParentHeadingLevel}
       />
     );
+    const renderedNode = frame ? frame(nodeContent) : nodeContent;
     const startsContribution =
       nodeContributionId !== undefined && nodeContributionId !== parentContributionId;
 
@@ -333,7 +330,7 @@ function FigureNode({
 
   if (!asset || asset.alternative.kind === "missing") {
     return (
-      <MissingFigure role="note">
+      <Notice>
         Figure unavailable in this preview.
         {node.caption && (
           <>
@@ -341,7 +338,7 @@ function FigureNode({
             Caption: <InlineContentRenderer content={node.caption} />
           </>
         )}
-      </MissingFigure>
+      </Notice>
     );
   }
 
@@ -362,11 +359,15 @@ function FigureNode({
 export function ResourceNodeRenderer({
   assets,
   decorations,
+  framed = false,
+  leadingContent,
   node,
   parentHeadingLevel,
 }: Readonly<{
   assets: readonly Asset[];
   decorations?: ResourceDocumentDecorations | undefined;
+  framed?: boolean;
+  leadingContent?: ReactNode;
   node: ResourceNode;
   parentHeadingLevel: ParentHeadingLevel;
 }>) {
@@ -421,15 +422,23 @@ export function ResourceNodeRenderer({
     case resourceVocabulary.nodes.paragraph.nodeType:
       return (
         <Paragraph>
+          {leadingContent}
           <InlineContentRenderer content={node.content} />
         </Paragraph>
       );
     case resourceVocabulary.nodes.callout.nodeType:
       return (
-        <Callout>
+        <OakBox
+          $background="bg-neutral"
+          $bl="border-solid-xl"
+          $borderColor="border-primary"
+          $borderRadius="border-radius-s"
+          $pa="spacing-16"
+          as="aside"
+        >
           <strong>{CalloutLabels[node.role]}: </strong>
           <InlineContentRenderer content={node.content} />
-        </Callout>
+        </OakBox>
       );
     case resourceVocabulary.nodes.question.nodeType: {
       const label = node.label ? `Question ${node.label}` : "Question";
@@ -439,23 +448,54 @@ export function ResourceNodeRenderer({
         (child) => child.type === "responseSpace",
       );
       const trailingSlot = decorations?.renderAfterNode?.(node);
+      const number = node.label ? (
+        <OakSpan $mr="spacing-12" aria-hidden="true">{`${node.label}.`}</OakSpan>
+      ) : null;
+      const opensWithParagraph = node.children[0]?.type === "paragraph";
       return (
-        <Question>
-          <Heading level={questionHeadingLevel}>{`${label}${marks}`}</Heading>
-          <QuestionContent>
-            <ResourceNodeListRenderer
-              assets={assets}
-              decorations={decorations}
-              nodes={node.children}
-              parentContributionId={contributionIdOf(node.extensions)}
-              parentHeadingLevel={questionHeadingLevel}
-              renderBeforeNode={(child) =>
-                child.id === responseSpace?.id ? trailingSlot : null
-              }
-            />
-            {responseSpace === undefined ? trailingSlot : null}
-          </QuestionContent>
-        </Question>
+        <OakBox
+          $borderColor="border-neutral-lighter"
+          $bt={framed ? "border-solid-none" : "border-solid-s"}
+          $pt={framed ? "spacing-0" : "spacing-16"}
+        >
+          <OakScreenReader
+            as={`h${questionHeadingLevel}` as const}
+          >{`${label}${marks}`}</OakScreenReader>
+          <OakFlex $gap="spacing-12">
+            <OakFlex
+              $flexDirection="column"
+              $flexGrow={1}
+              $gap="spacing-24"
+              $minWidth="spacing-0"
+            >
+              {number !== null && !opensWithParagraph && (
+                <Paragraph>{number}</Paragraph>
+              )}
+              <ResourceNodeListRenderer
+                assets={assets}
+                decorations={decorations}
+                leadingContent={opensWithParagraph ? number : null}
+                nodes={node.children}
+                parentContributionId={contributionIdOf(node.extensions)}
+                parentHeadingLevel={questionHeadingLevel}
+                renderBeforeNode={(child) =>
+                  child.id === responseSpace?.id ? trailingSlot : null
+                }
+              />
+              {responseSpace === undefined ? trailingSlot : null}
+            </OakFlex>
+            {node.marks !== undefined && (
+              <OakP
+                $color="text-subdued"
+                $font="body-3"
+                aria-hidden="true"
+                $whiteSpace="nowrap"
+              >
+                {`(${pluralisedMarks(node.marks)})`}
+              </OakP>
+            )}
+          </OakFlex>
+        </OakBox>
       );
     }
     case resourceVocabulary.nodes.definitionList.nodeType:
@@ -509,10 +549,10 @@ export function ResourceNodeRenderer({
       return <FigureNode assets={assets} node={node} />;
     case resourceVocabulary.nodes.unsupported.nodeType:
       return (
-        <Unsupported role="note">
+        <Notice>
           <strong>Some worksheet content cannot be previewed yet.</strong>{" "}
           {contentText(node)}
-        </Unsupported>
+        </Notice>
       );
     default:
       return assertNever(node);
@@ -528,9 +568,9 @@ function TableCellContent({
       return <InlineContentRenderer content={cell.content} />;
     case "answer":
       return (
-        <AnswerCell>
-          <HiddenLabel>Answer space, {position}</HiddenLabel>
-        </AnswerCell>
+        <OakBox $minHeight="spacing-24">
+          <OakScreenReader>Answer space, {position}</OakScreenReader>
+        </OakBox>
       );
     case "empty":
       return null;

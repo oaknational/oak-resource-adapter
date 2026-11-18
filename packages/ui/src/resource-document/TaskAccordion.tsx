@@ -2,36 +2,30 @@
 
 import { useId, useState, type ReactNode } from "react";
 import type { InlineContent } from "@oaknational/resource-document";
-import { OakIcon, parseColor, parseDropShadow } from "@oaknational/oak-components";
+import {
+  OakBox,
+  OakFlex,
+  OakHeading,
+  OakIcon,
+  parseColor,
+  parseDropShadow,
+} from "@oaknational/oak-components";
 import { styled } from "styled-components";
 
 import { InlineContentRenderer } from "./InlineContentRenderer.js";
 
-const TaskGroup = styled.section`
-  border: 1px solid ${parseColor("border-neutral-lighter")};
-  border-radius: 0.5rem;
-  overflow: hidden;
-`;
-
-const TaskHeading = styled.h4`
-  && {
-    margin: 0;
-  }
-`;
-
 const TaskToggle = styled.button`
   align-items: center;
-  background: ${parseColor("bg-neutral")};
+  background: none;
   border: 0;
+  border-radius: 0.25rem;
   color: ${parseColor("text-primary")};
   cursor: pointer;
   display: flex;
   font: inherit;
-  font-weight: 700;
   gap: 1rem;
   justify-content: space-between;
-  min-height: 3rem;
-  padding: 1rem;
+  padding: 0;
   scroll-margin-top: 7rem;
   text-align: left;
   width: 100%;
@@ -54,18 +48,6 @@ const TaskChevron = styled(OakIcon)<{ $isOpen: boolean }>`
   }
 `;
 
-const TaskContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-
-  /* Out-specifies the UA sheet, which this display declaration would beat. */
-  &[hidden] {
-    display: none;
-  }
-`;
-
 /** Content inside renders beneath a level 4 heading. */
 export function TaskAccordion({
   children,
@@ -77,8 +59,8 @@ export function TaskAccordion({
   const panelId = `${id}-task-panel`;
 
   return (
-    <TaskGroup>
-      <TaskHeading>
+    <OakBox $pt="spacing-24" as="section">
+      <OakHeading $font="heading-5" $ma="spacing-0" tag="h4">
         <TaskToggle
           aria-controls={panelId}
           aria-expanded={isOpen}
@@ -96,15 +78,18 @@ export function TaskAccordion({
             iconName="chevron-down"
           />
         </TaskToggle>
-      </TaskHeading>
-      <TaskContent
+      </OakHeading>
+      <OakFlex
+        $display={isOpen ? "flex" : "none"}
+        $flexDirection="column"
+        $gap="spacing-32"
+        $pt="spacing-32"
         aria-labelledby={toggleId}
-        hidden={!isOpen}
         id={panelId}
         role="region"
       >
         {children}
-      </TaskContent>
-    </TaskGroup>
+      </OakFlex>
+    </OakBox>
   );
 }

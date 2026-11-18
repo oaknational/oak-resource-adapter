@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import { OakIcon, OakP, OakPrimaryButton } from "@oaknational/oak-components";
+import { OakFlex, OakIcon, OakP, OakPrimaryButton } from "@oaknational/oak-components";
 import { keyframes, styled } from "styled-components";
 import type { WorksheetDownloadAvailability } from "@oaknational/resource-adapter-contracts/internal";
 
@@ -21,13 +21,6 @@ const explanations: Record<WorksheetDownloadAvailability, string> = {
   busy: "Wait for the worksheet to finish updating before downloading.",
   unavailable: "This worksheet is not available to download.",
 };
-
-const DownloadRow = styled.div`
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem 1rem;
-`;
 
 const DownloadButton = styled(OakPrimaryButton)`
   min-inline-size: min(15rem, 100%);
@@ -177,7 +170,12 @@ export function WorksheetDownload({
   const failed = phase === "error" || phase === "tooLarge";
   const feedback = message || idleMessage(availability, worksheetWasRefreshed);
   return (
-    <DownloadRow>
+    <OakFlex
+      $alignItems="center"
+      $columnGap="spacing-16"
+      $flexWrap="wrap"
+      $rowGap="spacing-12"
+    >
       <DownloadButton
         aria-describedby={descriptionId}
         aria-busy={active}
@@ -216,6 +214,6 @@ export function WorksheetDownload({
           )}
         </div>
       </DownloadFeedback>
-    </DownloadRow>
+    </OakFlex>
   );
 }

@@ -464,6 +464,49 @@ describe("WorksheetScaffoldingWorkflow", () => {
     expect(link).toHaveAttribute("target", "_blank");
   });
 
+  it("heads the summary panel with the capability and holds the download in it", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    renderDialog();
+
+    await screen.findByRole("article", { name: "Adding fractions worksheet" });
+    const panel = screen.getByTestId("worksheet-scaffolding-summary");
+
+    expect(
+      within(panel).getByRole("heading", { level: 3, name: "Scaffold practice tasks" }),
+    ).toBeVisible();
+    expect(
+      await within(panel).findByRole("button", { name: "Download worksheet" }),
+    ).toBeVisible();
+  });
+
+  it("goes back to the lesson through the dialog's close path", async () => {
+    const onAnalyticsEvent = vi.fn();
+    const { props } = renderDialog({ onAnalyticsEvent });
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Back to lesson" }),
+    );
+
+    expect(props.onClose).toHaveBeenCalledOnce();
+    expect(onAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "Resource Adapter Closed",
+        componentType: "resource_adapter_dialog",
+      }),
+    );
+  });
+
+  it("opens the feedback form in a new tab and says so", async () => {
+    renderDialog();
+
+    const link = await screen.findByRole("link", {
+      name: "your feedback (opens in a new tab)",
+    });
+
+    expect(link).toHaveAttribute("href", FEEDBACK_FORM_URL);
+    expect(link).toHaveAttribute("target", "_blank");
+  });
+
   it("shows a suggestion beside its question and applies the chosen level", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
     renderDialog();
@@ -485,6 +528,9 @@ describe("WorksheetScaffoldingWorkflow", () => {
       screen.queryByRole("button", { name: "Start again" }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "New suggestions" })).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "No scaffold required" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Applying scaffold")).not.toBeInTheDocument();
     expect(screen.getByRole("status", { name: "Worksheet status" })).toHaveTextContent(
       "There is one suggested scaffold. Review and accept to add it to a practice task.",
