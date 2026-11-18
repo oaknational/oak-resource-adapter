@@ -30,7 +30,7 @@ test("asks a new teacher to accept ORA's terms, then shows their allowance, befo
   await page
     .getByRole("button", { name: "Add extra scaffolding", exact: true })
     .click();
-  const dialog = page.getByRole("dialog", { name: "Add extra scaffolding" });
+  const dialog = page.getByRole("dialog", { name: "Aila | Oak's AI" });
   const terms = dialog.getByRole("heading", {
     level: 3,
     name: "Before you adapt with AI",
