@@ -144,6 +144,9 @@ describe("ResourceAdapterDialog", () => {
     const result = renderDialog();
 
     expect(screen.getByTestId("resource-adapter-dialog-fallback")).toBeVisible();
+    // A reset would now render the modal, so the fallback only survives if the
+    // rebuilt prop is not treated as a reset key.
+    shell.crash = false;
     result.rerender(
       <OakThemeProvider theme={oakDefaultTheme}>
         <ResourceAdapterDialog {...dialogProps({ capability: { ...capability } })} />
