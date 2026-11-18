@@ -166,15 +166,6 @@ function WorkflowContent({
     undoReview,
   } = workflow;
   const focusAfter = useFocusAfterLoadingScreen(showsLoadingScreen);
-  const isWorking =
-    state.status === "ready" &&
-    (state.applyingSuggestion !== null ||
-      state.actionIsPending ||
-      jobIsBusy(state.value));
-  const wasWorking = useRef(false);
-  useEffect(() => {
-    wasWorking.current = isWorking;
-  });
 
   if (state.status === "idle") {
     return null;
@@ -245,6 +236,8 @@ function WorkflowContent({
   }
 
   const { applyingSuggestion } = state;
+  const isWorking =
+    applyingSuggestion !== null || state.actionIsPending || jobIsBusy(state.value);
   const failedJob = state.value.job?.status === "failed" ? state.value.job : undefined;
   const listedSuggestions =
     applyingSuggestion?.listedSuggestions ?? state.value.suggestions;
@@ -283,7 +276,6 @@ function WorkflowContent({
         key={withheld.attemptId}
         onTryAgain={() => retryAttempt(withheld.attemptId)}
         safetyResult={withheld.safetyResult}
-        wasWorking={wasWorking}
       />
     );
 

@@ -1935,9 +1935,12 @@ describe("moderation results", () => {
     withheld,
   });
 
-  const withheldNoticeName = "Sorry, we couldn't show that scaffold";
-  const findWithheldNotice = () =>
-    screen.findByRole("group", { name: withheldNoticeName });
+  const withheldNoticeTitle = "Sorry, we couldn't show that scaffold";
+  async function findWithheldNotice() {
+    const notice = await screen.findByRole("alert");
+    expect(notice).toHaveTextContent(withheldNoticeTitle);
+    return notice;
+  }
 
   it("names the areas to check in text on a pending scaffold, until it is accepted", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce(
@@ -1994,9 +1997,9 @@ describe("moderation results", () => {
 
       const notice = await findWithheldNotice();
       expect(notice).toBeVisible();
-      expect(notice).toHaveAccessibleDescription(expect.stringContaining(reason));
+      expect(notice).toHaveTextContent(reason);
       expect(
-        screen.queryByRole("heading", { name: withheldNoticeName }),
+        screen.queryByRole("heading", { name: withheldNoticeTitle }),
       ).not.toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: "Add recall questions" }),
@@ -2031,9 +2034,7 @@ describe("moderation results", () => {
     renderDialog();
 
     const notice = await findWithheldNotice();
-    expect(notice).toHaveAccessibleDescription(
-      expect.stringContaining("Your earlier version is still here"),
-    );
+    expect(notice).toHaveTextContent("Your earlier version is still here");
     expect(
       within(notice).queryByRole("button", { name: "Try again" }),
     ).not.toBeInTheDocument();
@@ -2042,7 +2043,7 @@ describe("moderation results", () => {
     expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled();
   });
 
-  it("takes focus when it replaces the teacher's own application", async () => {
+  it("announces the apology when it replaces the teacher's own application", async () => {
     openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
     applySuggestionMock.mockResolvedValueOnce(
       readyState({
@@ -2062,17 +2063,7 @@ describe("moderation results", () => {
       await screen.findByRole("button", { name: "Add a word bank" }),
     );
 
-    await waitFor(() =>
-      expect(screen.getByRole("group", { name: withheldNoticeName })).toHaveFocus(),
-    );
-  });
-
-  it("leaves focus alone when the worksheet opens with a withheld scaffold", async () => {
-    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithWithheld));
-    renderDialog();
-
-    const notice = await findWithheldNotice();
-    expect(notice).not.toHaveFocus();
+    await findWithheldNotice();
   });
 
   it("offers to try a failed application again", async () => {

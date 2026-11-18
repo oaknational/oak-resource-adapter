@@ -16,7 +16,9 @@ async function applyScaffold(drawer: Locator, name: string) {
 }
 
 function withheldNotice(drawer: Locator) {
-  return drawer.getByRole("group", { name: "Sorry, we couldn't show that scaffold" });
+  return drawer
+    .getByRole("alert")
+    .filter({ hasText: "Sorry, we couldn't show that scaffold" });
 }
 
 test("shows a guidance scaffold with the areas to check until it is accepted", async ({
@@ -69,10 +71,7 @@ test("withholds a highly sensitive scaffold from the worksheet and its download"
 
   const notice = withheldNotice(drawer);
   await expect(notice).toBeVisible({ timeout: 30_000 });
-  await expect(notice).toHaveAccessibleDescription(
-    /it covers a highly sensitive topic/,
-  );
-  await expect(notice).toBeFocused();
+  await expect(notice).toContainText("it covers a highly sensitive topic");
   await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(1);
   await expect(worksheet.getByText("oak-hs", { exact: false })).toHaveCount(0);
   await expect(
@@ -114,9 +113,7 @@ test("withholds a toxic scaffold with its own reason", async ({
 
   const notice = withheldNotice(drawer);
   await expect(notice).toBeVisible({ timeout: 30_000 });
-  await expect(notice).toHaveAccessibleDescription(
-    /it doesn't meet Oak's community standards/,
-  );
+  await expect(notice).toContainText("it doesn't meet Oak's community standards");
   await expect(worksheet.getByText("Added support", { exact: true })).toHaveCount(0);
 });
 
