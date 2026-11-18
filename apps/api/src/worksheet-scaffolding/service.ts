@@ -52,6 +52,7 @@ import {
   type WorksheetScaffoldingDependencies,
   type WorksheetScaffoldingServiceRepository,
 } from "./dependencies";
+import { retryTarget } from "./retry-target";
 import { asParams, storedInputs, storedSupportLevel } from "./stored-params";
 
 /** The job input is stored as JSON, so validated params are narrowed to it. */
@@ -105,13 +106,6 @@ function scaffoldJobAttempt(
     : repository.getAdaptationAttempt(adaptationId, { jobId: job.id });
 }
 
-function isWithheld(attempt: { moderationResult: string | null }): boolean {
-  return (
-    attempt.moderationResult === "highly-sensitive" ||
-    attempt.moderationResult === "toxic"
-  );
-}
-
 function withheldScaffold(found: FoundAttempt): WithheldScaffold | null {
   if (found === null) {
     return null;
@@ -139,24 +133,7 @@ function contentGuidance(attempt: {
     : [];
 }
 
-/** Execution retries a transformation only from the head it started from. */
-async function startsFromHead(
-  repository: Pick<
-    WorksheetScaffoldingServiceRepository,
-    "getPrimaryTransformationInput"
-  >,
-  transformationId: string,
-  headId: string,
-): Promise<boolean> {
-  const input = await repository.getPrimaryTransformationInput(transformationId);
-  return input?.id === headId;
-}
-
-/**
- * A failed retry stays visible while Try again could still run it. Without a
- * pending review that is not proof of acceptance: a withheld or failed
- * scaffold never had one, so the check is whether it still starts from the head.
- */
+/** A failed retry stays visible while Try again could still run it. */
 async function isSupersededRetryFailure(
   job: { input: unknown; kind: string; status: string },
   pending: Awaited<
@@ -175,16 +152,13 @@ async function isSupersededRetryFailure(
   if (!retry.success) {
     return false;
   }
-  if (pending !== null) {
-    return pending.attempt.id !== retry.data.attemptId;
-  }
-  const retried = await repository.getAdaptationAttempt(adaptationId, {
+  const target = await retryTarget(repository, {
+    adaptationId,
     attemptId: retry.data.attemptId,
+    headId,
+    pending,
   });
-  return (
-    retried === null ||
-    !(await startsFromHead(repository, retried.transformation.id, headId))
-  );
+  return target === null;
 }
 
 /**
@@ -381,9 +355,9 @@ async function headUnderReview(
 }
 
 /**
- * The head a retry of this attempt may run against: the scaffold awaiting
- * review, or, with none pending, the head's latest scaffold when moderation
- * withheld it or its job failed and it still starts from that head.
+ * The head a retry of this attempt may run against. With no scaffold awaiting
+ * review, only the head's latest scaffold job qualifies, and only when it
+ * failed or moderation withheld its scaffold.
  */
 async function headForRetry(
   input: Readonly<{ adaptationId: string; attemptId: string }>,
@@ -395,29 +369,27 @@ async function headForRetry(
   if (head === null) {
     return null;
   }
-  const pending = await repository.getPendingReview(head.storedDocument.id);
-  if (pending !== null) {
-    return pending.attempt.id === input.attemptId ? head : null;
+  const headId = head.storedDocument.id;
+  const pending = await repository.getPendingReview(headId);
+  if (pending === null) {
+    const latestJob = await dependencies.getLatestJob(
+      adaptationHeadConcurrencyKey(input.adaptationId, headId),
+      worksheetScaffoldingJobKinds,
+    );
+    const latest = await scaffoldJobAttempt(
+      input.adaptationId,
+      latestJob,
+      dependencies,
+    );
+    if (
+      latest?.attempt.id !== input.attemptId ||
+      (latestJob?.status !== "failed" && withheldScaffold(latest) === null)
+    ) {
+      return null;
+    }
   }
-
-  const latestJob = await dependencies.getLatestJob(
-    adaptationHeadConcurrencyKey(input.adaptationId, head.storedDocument.id),
-    worksheetScaffoldingJobKinds,
-  );
-  const latest = await scaffoldJobAttempt(input.adaptationId, latestJob, dependencies);
-  if (
-    latest?.attempt.id !== input.attemptId ||
-    (latestJob?.status !== "failed" && !isWithheld(latest.attempt))
-  ) {
-    return null;
-  }
-  return (await startsFromHead(
-    repository,
-    latest.transformation.id,
-    head.storedDocument.id,
-  ))
-    ? head
-    : null;
+  const retry = await retryTarget(repository, { ...input, headId, pending });
+  return retry === null ? null : head;
 }
 
 async function enqueueOnHead(

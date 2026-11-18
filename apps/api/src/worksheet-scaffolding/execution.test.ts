@@ -456,7 +456,7 @@ describe("retrying an applied scaffold", () => {
     });
 
     await expect(executeRetryTransformation(JOB_ID, dependencies)).rejects.toThrow(
-      "no longer targets a pending transformation",
+      "no longer targets a transformation it can rerun",
     );
     expect(dependencies.executeTransformation).not.toHaveBeenCalled();
   });
@@ -508,7 +508,7 @@ describe("retrying a withheld or failed scaffold", () => {
     });
 
     await expect(executeRetryTransformation(JOB_ID, dependencies)).rejects.toThrow(
-      "no longer starts from the head",
+      "no longer targets a transformation it can rerun",
     );
     expect(dependencies.executeTransformation).not.toHaveBeenCalled();
   });
@@ -531,7 +531,7 @@ describe("retrying a withheld or failed scaffold", () => {
     });
 
     await expect(executeRetryTransformation(JOB_ID, dependencies)).rejects.toThrow(
-      "no longer targets a transformation of this adaptation",
+      "no longer targets a transformation it can rerun",
     );
   });
 });

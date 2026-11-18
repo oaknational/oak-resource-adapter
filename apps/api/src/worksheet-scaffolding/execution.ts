@@ -41,6 +41,7 @@ import {
 import { moderateScaffold } from "./moderate-scaffold";
 import * as scaffoldingRepository from "./repository";
 import type { GeneratedOutput } from "./repository";
+import { retryTarget } from "./retry-target";
 import { asParams } from "./stored-params";
 
 const REVISED_RESOURCE = "revised-resource";
@@ -374,48 +375,6 @@ export async function executeApplySuggestion(
   });
 }
 
-type RetryTarget = Readonly<{
-  /** Set when the retry replaces a scaffold still awaiting review. */
-  pendingAttemptId?: string;
-  transformation: scaffoldingRepository.StoredTransformation;
-}>;
-
-/**
- * A retry replaces the scaffold awaiting review or, with none pending, reruns a
- * scaffold that was withheld or failed. The rerun must start from the current
- * head, or its result would drop whatever reached the worksheet since.
- */
-async function resolveRetryTarget(
-  repository: WorksheetScaffoldingJobDependencies["repository"],
-  input: Readonly<{ adaptationId: string; attemptId: string }>,
-  headId: string,
-): Promise<RetryTarget> {
-  const pending = await repository.getPendingReview(headId);
-  if (pending !== null) {
-    if (pending.attempt.id !== input.attemptId) {
-      throw new Error("The retry no longer targets a pending transformation.");
-    }
-    return {
-      pendingAttemptId: pending.attempt.id,
-      transformation: pending.transformation,
-    };
-  }
-
-  const earlier = await repository.getAdaptationAttempt(input.adaptationId, {
-    attemptId: input.attemptId,
-  });
-  if (earlier?.attempt.acceptedAt !== null) {
-    throw new Error("The retry no longer targets a transformation of this adaptation.");
-  }
-  const source = await repository.getPrimaryTransformationInput(
-    earlier.transformation.id,
-  );
-  if (source?.id !== headId) {
-    throw new Error("The retried transformation no longer starts from the head.");
-  }
-  return { transformation: earlier.transformation };
-}
-
 export async function executeRetryTransformation(
   jobId: string,
   dependencies: WorksheetScaffoldingJobDependencies = defaultDependencies,
@@ -438,11 +397,16 @@ export async function executeRetryTransformation(
   if (head?.storedDocument.id !== input.resourceDocumentId) {
     throw new Error("The retry no longer targets the adaptation head.");
   }
-  const { pendingAttemptId, transformation } = await resolveRetryTarget(
-    repository,
-    input,
-    head.storedDocument.id,
-  );
+  const target = await retryTarget(repository, {
+    adaptationId: input.adaptationId,
+    attemptId: input.attemptId,
+    headId: head.storedDocument.id,
+    pending: await repository.getPendingReview(head.storedDocument.id),
+  });
+  if (target === null) {
+    throw new Error("The retry no longer targets a transformation it can rerun.");
+  }
+  const { pendingAttemptId, transformation } = target;
   if (!isRegisteredTransformationKind(transformation.kind)) {
     throw new Error("The retry targets an unknown transformation.");
   }
