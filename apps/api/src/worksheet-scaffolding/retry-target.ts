@@ -1,10 +1,9 @@
 import type * as scaffoldingRepository from "./repository";
-import type { PendingReview, StoredTransformation } from "./repository";
 
 export type RetryTarget = Readonly<{
   /** Set when the retry replaces a scaffold still awaiting review. */
   pendingAttemptId?: string;
-  transformation: StoredTransformation;
+  transformation: scaffoldingRepository.StoredTransformation;
 }>;
 
 /**
@@ -21,7 +20,7 @@ export async function retryTarget(
     adaptationId: string;
     attemptId: string;
     headId: string;
-    pending: PendingReview | null;
+    pending: scaffoldingRepository.PendingReview | null;
   }>,
 ): Promise<RetryTarget | null> {
   if (input.pending !== null) {
