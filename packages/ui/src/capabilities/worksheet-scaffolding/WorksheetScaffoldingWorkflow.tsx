@@ -126,7 +126,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
   // The header toggles inside one wrapper: remounting WorkflowContent when
   // loading ends would lose the focus that useFocusAfterLoadingScreen restores.
   return (
-    <OakFlex $flexDirection="column" $gap="spacing-32">
+    <OakFlex $flexDirection="column" $gap="spacing-32" $flexGrow={1}>
       {!showsLoadingScreen && state.status !== "allowanceNotice" && (
         <ViewHeader onBackToLesson={props.onClose} />
       )}
