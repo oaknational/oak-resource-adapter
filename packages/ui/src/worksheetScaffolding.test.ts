@@ -86,6 +86,7 @@ const state: WorksheetScaffoldingState = {
   job: null,
   pendingReview: null,
   suggestions: [],
+  withheld: null,
 };
 
 const options = {

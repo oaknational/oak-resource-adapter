@@ -166,6 +166,7 @@ function readyState(
     job: null,
     pendingReview: null,
     suggestions: [],
+    withheld: null,
     ...overrides,
   };
 }
@@ -282,6 +283,7 @@ const readyWithPendingReview = readyState({
   document: documentWithPendingScaffold,
   pendingReview: {
     attemptId: "attempt-1",
+    contentGuidance: [],
     contributionId: "contribution-1",
     kind: "scaffold-add-word-bank",
     label: "Add a word bank",
@@ -1914,9 +1916,6 @@ it("tells the teacher when refreshing a changed worksheet fails", async () => {
 describe("moderation results", () => {
   const withheld = {
     attemptId: "attempt-withheld",
-    categories: ["t/encourages-harmful-behaviour"],
-    kind: "scaffold-add-word-bank",
-    label: "Add a word bank",
     safetyResult: "toxic",
     targetBlockId: "question-1",
   } as const;
@@ -1975,15 +1974,7 @@ describe("moderation results", () => {
   });
 
   it("shows no guidance for a scaffold that needs none", async () => {
-    openWorksheetScaffoldingMock.mockResolvedValueOnce(
-      opened({
-        ...readyWithPendingReview,
-        pendingReview: {
-          ...readyWithPendingReview.pendingReview!,
-          contentGuidance: [],
-        },
-      }),
-    );
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithPendingReview));
     renderDialog();
 
     await screen.findByRole("button", { name: "Accept" });
@@ -2848,6 +2839,7 @@ describe("analytics payloads", () => {
         document: privateDocument,
         pendingReview: {
           attemptId: "attempt-1",
+          contentGuidance: [],
           contributionId: "contribution-1",
           kind: "scaffold-add-word-bank",
           label: `${DISPLAY_TEXT} review label`,

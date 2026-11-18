@@ -129,7 +129,7 @@ export function foundNoScaffolds(
 ): boolean {
   return (
     suggestedCount === 0 &&
-    (state.withheld ?? null) === null &&
+    state.withheld === null &&
     state.job?.kind === "suggestions.generate" &&
     state.job.status === "succeeded"
   );

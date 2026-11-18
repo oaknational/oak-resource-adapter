@@ -234,9 +234,6 @@ export type WithheldSafetyResult = (typeof withheldSafetyResults)[number];
 /** A generated scaffold that moderation kept off the worksheet. */
 export type WithheldScaffold = Readonly<{
   attemptId: string;
-  categories: readonly string[];
-  kind: string;
-  label: string;
   safetyResult: WithheldSafetyResult;
   targetBlockId: string | null;
 }>;
@@ -260,7 +257,7 @@ export type WorksheetScaffoldingState = Readonly<{
   pendingReview: null | Readonly<{
     attemptId: string;
     /** Areas moderation asked the teacher to check before using the scaffold. */
-    contentGuidance?: readonly ContentGuidance[];
+    contentGuidance: readonly ContentGuidance[];
     contributionId: string;
     kind: string;
     label: string;
@@ -269,7 +266,7 @@ export type WorksheetScaffoldingState = Readonly<{
     targetBlockId: string | null;
   }>;
   /** The latest scaffold moderation withheld, until other work happens on this worksheet. */
-  withheld?: WithheldScaffold | null;
+  withheld: WithheldScaffold | null;
   suggestions: readonly Readonly<{
     id: string;
     inputs?: readonly TransformationInput[];

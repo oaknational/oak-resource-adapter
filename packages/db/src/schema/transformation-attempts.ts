@@ -20,16 +20,6 @@ export const moderationResultEnum = resourceAdapterSchema.enum("moderation_resul
   "toxic",
 ]);
 
-export const ModerationResult = {
-  GUIDANCE_REQUIRED: "guidance-required",
-  HIGHLY_SENSITIVE: "highly-sensitive",
-  SAFE: "safe",
-  TOXIC: "toxic",
-} as const;
-
-export type ModerationResultValue =
-  (typeof ModerationResult)[keyof typeof ModerationResult];
-
 /** One execution of a transformation: its initial run or a retry. */
 export const transformationAttempts = resourceAdapterSchema.table(
   "transformation_attempts",

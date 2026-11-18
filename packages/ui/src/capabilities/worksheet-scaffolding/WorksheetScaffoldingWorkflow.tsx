@@ -273,8 +273,7 @@ function WorkflowContent({
     );
   };
 
-  const { pendingReview } = state.value;
-  const withheld = state.value.withheld ?? null;
+  const { pendingReview, withheld } = state.value;
 
   const renderWithheldNotice = (targetBlockId: string | null) =>
     withheld?.targetBlockId !== targetBlockId ? null : (
@@ -298,7 +297,7 @@ function WorkflowContent({
     renderContributionControls: (contributionId: string) =>
       pendingReview?.contributionId === contributionId ? (
         <PendingReviewControls
-          contentGuidance={pendingReview.contentGuidance ?? []}
+          contentGuidance={pendingReview.contentGuidance}
           disabled={isWorking}
           onAccept={acceptReview}
           onRetry={retryTransformationReview}

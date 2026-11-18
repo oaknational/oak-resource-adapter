@@ -1,11 +1,14 @@
 import {
   getDatabaseClient,
-  type ModerationResultValue,
   resourceDocuments,
   suggestedTransformations,
   transformationAttempts,
   transformations,
 } from "@oaknational/resource-adapter-db";
+import type {
+  SafetyResult,
+  WithheldSafetyResult,
+} from "@oaknational/resource-adapter-moderation";
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import type { ResourceDocument } from "@oaknational/resource-document";
 import { parseResourceDocument } from "@oaknational/resource-document/parse";
@@ -17,14 +20,17 @@ export type Transaction = Parameters<
 >[0];
 
 /** What moderation decided about an attempt's generated content. */
-export type AttemptModeration<
-  Result extends ModerationResultValue = ModerationResultValue,
-> = Readonly<{ result: Result; categories: readonly string[] }>;
+export type AttemptModeration<Result extends SafetyResult = SafetyResult> = Readonly<{
+  result: Result;
+  categories: readonly string[];
+}>;
 
 /** A result that lets the generated content reach the head. */
-export type ShownModeration = AttemptModeration<"safe" | "guidance-required">;
+export type ShownModeration = AttemptModeration<
+  Exclude<SafetyResult, WithheldSafetyResult>
+>;
 
-export type WithheldModeration = AttemptModeration<"highly-sensitive" | "toxic">;
+export type WithheldModeration = AttemptModeration<WithheldSafetyResult>;
 
 export function moderationColumns(moderation: AttemptModeration | undefined) {
   return moderation === undefined

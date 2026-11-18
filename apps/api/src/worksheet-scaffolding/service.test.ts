@@ -1007,9 +1007,6 @@ describe("reading moderation results", () => {
     expect(getAdaptationAttempt).toHaveBeenCalledWith(ADAPTATION_ID, { jobId: JOB_ID });
     expect(state?.withheld).toEqual({
       attemptId: ATTEMPT_ID,
-      categories: ["n/self-harm-suicide"],
-      kind: "scaffold-add-word-bank",
-      label: "Add a word bank",
       safetyResult: "highly-sensitive",
       targetBlockId: pendingReview().transformation.targetBlockId,
     });

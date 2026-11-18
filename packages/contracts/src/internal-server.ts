@@ -147,8 +147,8 @@ const worksheetScaffoldingStateSchema = z.object({
   pendingReview: z.nullable(
     z.object({
       attemptId: z.string(),
-      contentGuidance: z.exactOptional(
-        z.readonly(z.array(z.object({ category: z.string(), label: z.string() }))),
+      contentGuidance: z.readonly(
+        z.array(z.object({ category: z.string(), label: z.string() })),
       ),
       contributionId: z.string(),
       kind: z.string(),
@@ -158,17 +158,12 @@ const worksheetScaffoldingStateSchema = z.object({
       targetBlockId: z.nullable(z.string()),
     }),
   ),
-  withheld: z.exactOptional(
-    z.nullable(
-      z.object({
-        attemptId: z.string(),
-        categories: z.readonly(z.array(z.string())),
-        kind: z.string(),
-        label: z.string(),
-        safetyResult: z.enum(withheldSafetyResults),
-        targetBlockId: z.nullable(z.string()),
-      }),
-    ),
+  withheld: z.nullable(
+    z.object({
+      attemptId: z.string(),
+      safetyResult: z.enum(withheldSafetyResults),
+      targetBlockId: z.nullable(z.string()),
+    }),
   ),
   suggestions: z.readonly(
     z.array(

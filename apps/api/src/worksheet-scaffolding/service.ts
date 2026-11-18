@@ -13,7 +13,10 @@ import {
   type ContentGuidance,
   type WithheldScaffold,
 } from "@oaknational/resource-adapter-contracts/internal";
-import { moderationCategoryLabel } from "@oaknational/resource-adapter-moderation";
+import {
+  isWithheldSafetyResult,
+  moderationCategoryLabel,
+} from "@oaknational/resource-adapter-moderation";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 import {
   contributionIdsInDocument,
@@ -113,22 +116,14 @@ function withheldScaffold(found: FoundAttempt): WithheldScaffold | null {
   if (found === null) {
     return null;
   }
-  const { attempt, transformation } = found;
-  const { kind } = transformation;
-  if (
-    !isRegisteredTransformationKind(kind) ||
-    (attempt.moderationResult !== "highly-sensitive" &&
-      attempt.moderationResult !== "toxic")
-  ) {
+  const { moderationResult } = found.attempt;
+  if (moderationResult === null || !isWithheldSafetyResult(moderationResult)) {
     return null;
   }
   return {
-    attemptId: attempt.id,
-    categories: attempt.moderationCategories ?? [],
-    kind,
-    label: transformationDefinitions[kind].label,
-    safetyResult: attempt.moderationResult,
-    targetBlockId: transformation.targetBlockId,
+    attemptId: found.attempt.id,
+    safetyResult: moderationResult,
+    targetBlockId: found.transformation.targetBlockId,
   };
 }
 
