@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import {
   OakFlex,
   OakInlineBanner,
@@ -8,6 +8,7 @@ import {
   OakSecondaryButton,
 } from "@oaknational/oak-components";
 import {
+  contributionIdOf,
   contributionIdsInDocument,
   type ResourceNode,
 } from "@oaknational/resource-document";
@@ -25,7 +26,11 @@ import type {
 import { LoadingScreen } from "./LoadingScreen.js";
 import { PendingReviewControls } from "./PendingReviewControls.js";
 import { ResumeChoice } from "./ResumeChoice.js";
-import { SuggestionGroup, groupSuggestionsByTarget } from "./SuggestionGroup.js";
+import {
+  QuestionCard,
+  SuggestionGroup,
+  groupSuggestionsByTarget,
+} from "./SuggestionGroup.js";
 import { ActionRow } from "./styles.js";
 import { SummaryAction, SummaryPanel } from "./SummaryPanel.js";
 import { useWorksheetScaffolding } from "./useWorksheetScaffolding.js";
@@ -261,6 +266,7 @@ function WorkflowContent({
   const isWorking =
     applyingSuggestion !== null || state.actionIsPending || jobIsBusy(state.value);
   const failedJob = state.value.job?.status === "failed" ? state.value.job : undefined;
+
   const listedSuggestions =
     applyingSuggestion?.listedSuggestions ?? state.value.suggestions;
   const addedCount = contributionIdsInDocument(state.value.document).length;
@@ -329,6 +335,10 @@ function WorkflowContent({
           Remove
         </OakSecondaryButton>
       ),
+    frameNode: (node: ResourceNode) =>
+      node.type === "question" && contributionIdOf(node.extensions) === undefined
+        ? (children: ReactNode) => <QuestionCard>{children}</QuestionCard>
+        : undefined,
   };
 
   const hasScaffoldsInDocument = addedCount > 0;

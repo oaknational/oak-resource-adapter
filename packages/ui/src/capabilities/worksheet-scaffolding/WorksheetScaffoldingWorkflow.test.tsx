@@ -485,6 +485,9 @@ describe("WorksheetScaffoldingWorkflow", () => {
       screen.queryByRole("button", { name: "Start again" }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "New suggestions" })).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "No scaffold required" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Applying scaffold")).not.toBeInTheDocument();
     expect(screen.getByRole("status", { name: "Worksheet status" })).toHaveTextContent(
       "There is one suggested scaffold. Review and accept to add it to a practice task.",

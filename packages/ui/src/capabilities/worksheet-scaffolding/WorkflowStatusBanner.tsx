@@ -6,6 +6,7 @@ import {
   OakHeading,
   OakInlineBanner,
   OakP,
+  OakScreenReader,
 } from "@oaknational/oak-components";
 import { styled } from "styled-components";
 
@@ -22,18 +23,9 @@ export const StickyWorkflowStatus = styled.div`
   }
 `;
 
-const StatusAnnouncement = styled.span`
-  block-size: 1px;
-  clip-path: inset(50%);
-  inline-size: 1px;
-  overflow: hidden;
-  position: absolute;
-  white-space: nowrap;
-`;
-
 function WorkflowAnnouncement({ status }: Readonly<{ status: WorkflowStatus | null }>) {
   return (
-    <StatusAnnouncement
+    <OakScreenReader
       aria-label="Worksheet status"
       aria-atomic="true"
       aria-live="polite"
@@ -44,7 +36,7 @@ function WorkflowAnnouncement({ status }: Readonly<{ status: WorkflowStatus | nu
         : [status.title, status.message]
             .filter((part) => part !== undefined)
             .join(". ")}
-    </StatusAnnouncement>
+    </OakScreenReader>
   );
 }
 
@@ -66,7 +58,7 @@ export function WorkflowFrame({
   return (
     <OakFlex
       $flexDirection="column"
-      $gap="spacing-16"
+      $gap="spacing-32"
       data-testid="worksheet-scaffolding-workflow"
       // oak-components types its ref against React 18, which rejects a React 19 ref object.
       ref={(node: HTMLDivElement | null) => {
