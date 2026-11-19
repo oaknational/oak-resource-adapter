@@ -65,10 +65,10 @@ test("shows the API state, a capability-based trigger, and the adapter sidebar",
   await createMoreButton.click();
 
   const sidebar = page.getByRole("dialog", {
-    name: "Add extra scaffolding",
+    name: "Aila | Oak's AI",
   });
   await expect(sidebar).toBeVisible();
-  const closeIcon = sidebar.getByRole("button", { name: "Close Modal" }).locator("img");
+  const closeIcon = sidebar.getByRole("button", { name: "Close" }).locator("img");
   await expect
     .poll(async () =>
       closeIcon.evaluate((image) =>
@@ -260,7 +260,7 @@ test("shows the future multi-capability launcher shape", async ({ page }) => {
   await expect(menu.getByRole("menuitem")).toHaveCount(2);
   await menu.getByRole("menuitem", { name: "Add extra scaffolding" }).click();
 
-  const drawer = page.getByRole("dialog", { name: "Add extra scaffolding" });
+  const drawer = page.getByRole("dialog", { name: "Aila | Oak's AI" });
   await expect(drawer).toBeVisible();
   await expectRenderedWorksheet(drawer, "Adopting different perspectives");
 });

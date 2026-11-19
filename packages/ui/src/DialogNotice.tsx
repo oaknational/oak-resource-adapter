@@ -39,12 +39,19 @@ export function DialogNotice({
   }, []);
 
   return (
-    <OakFlex $justifyContent="center" $pv="spacing-56" $width="100%">
+    <OakFlex
+      $alignItems="center"
+      $flexGrow={1}
+      $justifyContent="center"
+      $pv="spacing-56"
+      $width="100%"
+    >
       <OakFlex
         $alignItems="flex-start"
         $flexDirection="column"
         $gap="spacing-32"
-        $width={["100%", "50%"]}
+        $maxWidth="spacing-640"
+        $width="100%"
       >
         <OakBox
           as="h3"

@@ -24,6 +24,19 @@ vi.mock("./worksheetScaffolding.js", () => ({
   undoWorksheetScaffoldingReview: vi.fn(),
 }));
 
+const shell = vi.hoisted(() => ({ crash: false }));
+
+vi.mock("@oaknational/oak-components", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@oaknational/oak-components")>();
+  return {
+    ...actual,
+    OakModal: (props: Parameters<typeof actual.OakModal>[0]) => {
+      if (shell.crash) throw new Error("dialog shell crash");
+      return <actual.OakModal {...props} />;
+    },
+  };
+});
+
 const capability: ResourceAdapterCapability = {
   id: "worksheetScaffolding",
   label: "Add extra scaffolding",
@@ -38,15 +51,6 @@ const lesson: LessonContext = {
   subjectSlug: "maths",
   title: "Adding fractions",
 };
-
-function crashingCapability(): ResourceAdapterCapability {
-  return {
-    ...capability,
-    get label(): string {
-      throw new Error("dialog shell crash");
-    },
-  };
-}
 
 function dialogProps(
   overrides: Partial<ResourceAdapterDialogProps> = {},
@@ -79,18 +83,17 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  shell.crash = false;
   vi.restoreAllMocks();
 });
 
 describe("ResourceAdapterDialog", () => {
-  it("labels the dialog with the selected capability", () => {
+  it("labels the dialog with Aila's name", () => {
     renderDialog();
 
+    expect(screen.getByRole("dialog", { name: "Aila | Oak's AI" })).toBeInTheDocument();
     expect(
-      screen.getByRole("dialog", { name: "Add extra scaffolding" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { level: 2, name: "Add extra scaffolding" }),
+      screen.getByRole("heading", { level: 2, name: "Aila | Oak's AI" }),
     ).toBeInTheDocument();
   });
 
@@ -98,7 +101,7 @@ describe("ResourceAdapterDialog", () => {
     const onClose = vi.fn();
     renderDialog({ onClose });
 
-    await userEvent.click(screen.getByRole("button", { name: "Close Modal" }));
+    await userEvent.click(screen.getByRole("button", { name: "Close" }));
 
     expect(onClose).toHaveBeenCalledOnce();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -108,7 +111,7 @@ describe("ResourceAdapterDialog", () => {
     const onAnalyticsEvent = vi.fn();
     renderDialog({ onAnalyticsEvent });
 
-    await userEvent.click(screen.getByRole("button", { name: "Close Modal" }));
+    await userEvent.click(screen.getByRole("button", { name: "Close" }));
 
     expect(onAnalyticsEvent).toHaveBeenCalledWith({
       capabilityId: "worksheetScaffolding",
@@ -120,10 +123,11 @@ describe("ResourceAdapterDialog", () => {
 
   it("contains a shell crash without removing host content", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
+    shell.crash = true;
     renderWithTheme(
       <>
         <p>Host page content</p>
-        <ResourceAdapterDialog {...dialogProps({ capability: crashingCapability() })} />
+        <ResourceAdapterDialog {...dialogProps()} />
       </>,
     );
 
@@ -136,12 +140,16 @@ describe("ResourceAdapterDialog", () => {
 
   it("keeps the shell fallback when the host rebuilds the capability prop", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    const result = renderDialog({ capability: crashingCapability() });
+    shell.crash = true;
+    const result = renderDialog();
 
     expect(screen.getByTestId("resource-adapter-dialog-fallback")).toBeVisible();
+    // A reset would now render the modal, so the fallback only survives if the
+    // rebuilt prop is not treated as a reset key.
+    shell.crash = false;
     result.rerender(
       <OakThemeProvider theme={oakDefaultTheme}>
-        <ResourceAdapterDialog {...dialogProps({ capability: crashingCapability() })} />
+        <ResourceAdapterDialog {...dialogProps({ capability: { ...capability } })} />
       </OakThemeProvider>,
     );
 
@@ -150,8 +158,9 @@ describe("ResourceAdapterDialog", () => {
 
   it("dismisses the shell fallback through the host callback", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
+    shell.crash = true;
     const onClose = vi.fn();
-    renderDialog({ capability: crashingCapability(), onClose });
+    renderDialog({ onClose });
 
     fireEvent.click(
       within(screen.getByTestId("resource-adapter-dialog-fallback")).getByRole(

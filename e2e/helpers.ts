@@ -162,7 +162,7 @@ export async function openFreshScaffolding(
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
   );
   trackAdaptation(adaptationId);
-  const drawer = page.getByRole("dialog", { name: "Add extra scaffolding" });
+  const drawer = page.getByRole("dialog", { name: "Aila | Oak's AI" });
   await expectRenderedWorksheet(drawer, title);
   return {
     adaptationId,

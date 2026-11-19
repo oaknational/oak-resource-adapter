@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { OakModalCenter, OakModalCenterBody } from "@oaknational/oak-components";
+import { OakFlex, OakHeading, OakIcon, OakModal } from "@oaknational/oak-components";
 
 import {
   createAnalyticsTracker,
@@ -96,8 +96,14 @@ export function ResourceAdapterDialog(props: ResourceAdapterDialogProps) {
 type ResourceAdapterDialogInnerProps = ResourceAdapterDialogProps &
   Readonly<{ resetKeys: readonly unknown[]; track: TrackAnalyticsEvent }>;
 
-/** `min-width: 0` lets wide worksheet content shrink inside the modal's flex row. */
-const workflowContainerStyle = { minWidth: 0, width: "100%" } as const;
+// No Oak tokens for these. OakModal's content box only grows to fit its children,
+// so the min-height fills the rest of the screen for a DialogNotice to centre in:
+// 4rem header, 1px border and 3.5rem padding above and below. Remove the
+// min-height with ADAPT-231.
+const workflowContainerStyle = {
+  maxWidth: "96rem",
+  minHeight: "calc(100dvh - 11rem - 1px)",
+} as const;
 
 function ResourceAdapterDialogInner({
   apiBaseUrl,
@@ -116,75 +122,69 @@ function ResourceAdapterDialogInner({
   const terms = useTermsGate({ apiBaseUrl, getToken, isOpen, onError });
 
   return (
-    <OakModalCenter
+    <OakModal
+      aria-labelledby={titleId}
+      headerSlot={
+        <OakFlex $alignItems="center" $gap="spacing-8">
+          <OakIcon $colorFilter="icon-inverted" iconName="ai" />
+          <OakHeading $font="heading-light-7" id={titleId} tag="h2">
+            Aila | Oak&apos;s AI
+          </OakHeading>
+        </OakFlex>
+      }
+      headerVariant="inverted"
       isOpen={isOpen}
-      modalOuterFlexProps={{
-        $pa: "spacing-12",
-        style: { maxWidth: "min(97vw, 96rem)" },
-      }}
-      // The centred modal names nothing and calls itself an alert, neither of
-      // which suits a worksheet a teacher reads. Both are overridable, and the
-      // supplied style replaces the height cap it would otherwise set.
-      modalFlexProps={{
-        "aria-labelledby": titleId,
-        role: "dialog",
-        style: { maxHeight: "calc(100vh - 1.5rem)" },
-      }}
-      // Reserved gutter: a scrollbar appearing mid-workflow would reflow the
-      // worksheet under the pointer.
-      modalInnerFlexProps={{ style: { scrollbarGutter: "stable" } }}
       onClose={onClose}
+      position="fullscreen"
     >
-      <OakModalCenterBody
-        // The body titles itself h1, which would be a second h1 on the host page.
-        headingOverride={{ id: titleId, tag: "h2" }}
-        iconName="ai"
-        title={capability.label}
+      <OakFlex
+        $flexDirection="column"
+        $mh="auto"
+        $width="100%"
+        style={workflowContainerStyle}
       >
-        <div style={workflowContainerStyle}>
-          <ResourceAdapterErrorBoundary
-            {...(onError ? { onError } : {})}
-            resetKeys={resetKeys}
-          >
-            {terms.status === "checking" && <DialogLoading heading="Loading…" />}
-            {terms.status === "checkFailed" && (
-              <ResourceAdapterUnavailableMessage
-                message="We couldn't check your account. The rest of the page still works."
-                onTryAgain={terms.retry}
-                testId="resource-adapter-terms-error"
-              />
-            )}
-            {(terms.status === "required" ||
-              terms.status === "accepting" ||
-              terms.status === "acceptFailed" ||
-              terms.status === "outdated") && (
-              <TermsView
-                isAccepting={terms.status === "accepting"}
-                onAccept={terms.accept}
-                onBack={onClose}
-                problem={
-                  terms.status === "acceptFailed" || terms.status === "outdated"
-                    ? terms.status
-                    : null
-                }
-              />
-            )}
-            {terms.status === "accepted" && (
-              <Workflow
-                apiBaseUrl={apiBaseUrl}
-                getToken={getToken}
-                isOpen={isOpen}
-                lesson={lesson}
-                onClose={onClose}
-                {...(onError ? { onError } : {})}
-                onFinishSetup={onFinishSetup}
-                onTermsRequired={terms.require}
-                track={track}
-              />
-            )}
-          </ResourceAdapterErrorBoundary>
-        </div>
-      </OakModalCenterBody>
-    </OakModalCenter>
+        <ResourceAdapterErrorBoundary
+          {...(onError ? { onError } : {})}
+          resetKeys={resetKeys}
+        >
+          {terms.status === "checking" && <DialogLoading heading="Loading…" />}
+          {terms.status === "checkFailed" && (
+            <ResourceAdapterUnavailableMessage
+              message="We couldn't check your account. The rest of the page still works."
+              onTryAgain={terms.retry}
+              testId="resource-adapter-terms-error"
+            />
+          )}
+          {(terms.status === "required" ||
+            terms.status === "accepting" ||
+            terms.status === "acceptFailed" ||
+            terms.status === "outdated") && (
+            <TermsView
+              isAccepting={terms.status === "accepting"}
+              onAccept={terms.accept}
+              onBack={onClose}
+              problem={
+                terms.status === "acceptFailed" || terms.status === "outdated"
+                  ? terms.status
+                  : null
+              }
+            />
+          )}
+          {terms.status === "accepted" && (
+            <Workflow
+              apiBaseUrl={apiBaseUrl}
+              getToken={getToken}
+              isOpen={isOpen}
+              lesson={lesson}
+              onClose={onClose}
+              {...(onError ? { onError } : {})}
+              onFinishSetup={onFinishSetup}
+              onTermsRequired={terms.require}
+              track={track}
+            />
+          )}
+        </ResourceAdapterErrorBoundary>
+      </OakFlex>
+    </OakModal>
   );
 }
