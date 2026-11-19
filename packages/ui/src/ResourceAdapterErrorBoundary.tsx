@@ -188,7 +188,7 @@ export function ResourceAdapterUnavailableMessage({
       style={containerStyle}
       tabIndex={-1}
     >
-      <p style={titleStyle}>Create more with Aila is unavailable</p>
+      <p style={titleStyle}>Adapt with AI is unavailable</p>
       <p style={messageStyle}>{message}</p>
       <div style={actionsStyle}>
         {/* An explicit type, so recovering inside a host form cannot submit it. */}

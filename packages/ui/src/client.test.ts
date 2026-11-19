@@ -3,6 +3,7 @@ import {
   fetchResourceArtifact,
   createResourceAdapterClient,
   createResourceAdapterInternalClient,
+  readWithRetry,
 } from "./client.js";
 
 afterEach(() => {
@@ -221,5 +222,51 @@ describe("fetchResourceArtifact", () => {
     token.resolve("token");
     await expect(pending).rejects.toMatchObject({ name: "AbortError" });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("readWithRetry", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function stalled(signal: AbortSignal): Promise<never> {
+    return new Promise((_, reject) => {
+      signal.addEventListener("abort", () => reject(new Error("aborted")));
+    });
+  }
+
+  it("sends a stalled read once more and returns its answer", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const read = vi
+      .fn<(signal: AbortSignal) => Promise<string>>()
+      .mockImplementationOnce(stalled)
+      .mockResolvedValueOnce("answer");
+
+    const result = readWithRetry(read, 1000);
+    await vi.advanceTimersByTimeAsync(1000);
+
+    await expect(result).resolves.toBe("answer");
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(read.mock.calls[0]?.[0].aborted).toBe(true);
+  });
+
+  it("gives up when the second read stalls too", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const read = vi.fn(stalled);
+
+    const result = readWithRetry(read, 1000);
+    const settled = expect(result).rejects.toThrow("The request timed out.");
+    await vi.advanceTimersByTimeAsync(2000);
+
+    await settled;
+    expect(read).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry a read that fails for another reason", async () => {
+    const read = vi.fn().mockRejectedValue(new Error("Unauthorised"));
+
+    await expect(readWithRetry(read, 1000)).rejects.toThrow("Unauthorised");
+    expect(read).toHaveBeenCalledTimes(1);
   });
 });

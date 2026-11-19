@@ -26,8 +26,5 @@ export function useHarnessAnalyticsIdentity() {
 }
 
 export function useHarnessAnalytics() {
-  return {
-    trackAnalyticsEvent: analytics.capture,
-    trackAdapterOpened: analytics.captureOpened,
-  };
+  return { trackAnalyticsEvent: analytics.capture };
 }

@@ -137,9 +137,9 @@ const edgeCaseDefinitions = [
     id: "worksheet-without-extraction",
     title: "Oak has a worksheet, we have no data for it",
     summary: "Oak offers a worksheet, but we have not extracted its contents.",
-    expectation: "Expected: nothing appears",
+    expectation: "Expected: the menu without Adapt with AI",
     reason:
-      "Aila needs two things to adapt a worksheet: the original file from Oak, and our own extracted copy of what is inside it. Here only the Oak file exists, so teachers should see no Create more button.",
+      "Aila needs two things to adapt a worksheet: the original file from Oak, and our own extracted copy of what is inside it. Here only the Oak file exists, so the menu leaves out Adapt with AI and shows the lesson's labs materials.",
     lesson: {
       lessonSlug: "add-fractions-with-the-same-denominator",
       programmeSlug: "maths-primary-ks2",
@@ -155,9 +155,9 @@ const edgeCaseDefinitions = [
     id: "extraction-without-worksheet",
     title: "We have worksheet data, Oak has no worksheet",
     summary: "We hold extracted worksheet data for a lesson that offers no worksheet.",
-    expectation: "Expected: nothing appears",
+    expectation: "Expected: the menu without Adapt with AI",
     reason:
-      "The other way round: we hold the extracted data, but this lesson only offers a starter quiz. There is no worksheet for Aila to adapt, so teachers should see no Create more button.",
+      "The other way round: we hold the extracted data, but this lesson only offers a starter quiz. There is no worksheet for Aila to adapt, so the menu leaves out Adapt with AI and shows the lesson's labs materials.",
     lesson: {
       lessonSlug: "using-trace-tables",
       programmeSlug: "computing-secondary-ks4-gcse-aqa",
@@ -174,7 +174,7 @@ const edgeCaseDefinitions = [
     title: "Worksheet data uses a feature we do not recognise",
     summary:
       "The worksheet data contains something this version was not built to read.",
-    expectation: "Expected: Create more still appears",
+    expectation: "Expected: Adapt with AI still appears",
     reason:
       "Worksheet data may contain features added after this release. We keep those parts and show a warning rather than dropping them or failing, and the worksheet can still be adapted.",
     lesson: {
@@ -192,9 +192,9 @@ const edgeCaseDefinitions = [
     id: "malformed-extraction",
     title: "Worksheet data we cannot read at all",
     summary: "The worksheet data is unreadable.",
-    expectation: "Expected: Create more still appears, which is worth questioning",
+    expectation: "Expected: Adapt with AI still appears, which is worth questioning",
     reason:
-      "The worksheet data is damaged. We report a clear error instead of crashing. Create more still appears, because we do not open the worksheet data before offering the button, so a teacher would only hit the problem afterwards.",
+      "The worksheet data is damaged. We report a clear error instead of crashing. Adapt with AI still appears, because we do not open the worksheet data before offering it, so a teacher would only hit the problem afterwards.",
     lesson: {
       lessonSlug: "adopting-different-perspectives",
       programmeSlug: "english-primary-ks2",
@@ -211,7 +211,7 @@ const edgeCaseDefinitions = [
     title: "The lesson is in a subject we leave out",
     summary: "Oak teaches the lesson in a subject ORA is not offered on yet.",
     expectation: "Expected: nothing appears",
-    reason: "Some subjects are not cleared for ORA yet.",
+    reason: "Some subjects are not cleared for ORA yet. Labs leaves this one out too.",
     lesson: {
       lessonSlug: "latitude-and-longitude",
       programmeSlug: "geography-secondary-ks3",
@@ -228,7 +228,8 @@ const edgeCaseDefinitions = [
     title: "Oak flags a copyright conflict in the lesson",
     summary: "Oak records a copyright conflict somewhere in the lesson.",
     expectation: "Expected: nothing appears",
-    reason: "Oak flags some lessons as having a copyright conflict.",
+    reason:
+      "Oak flags some lessons as having a copyright conflict. Neither ORA nor labs offers them.",
     lesson: {
       lessonSlug: "recognise-and-understand-the-value-of-different-coins",
       programmeSlug: "maths-primary-ks1",
@@ -241,35 +242,10 @@ const edgeCaseDefinitions = [
     facts: extractionFacts,
   },
   {
-    id: "one-capability-ui",
-    title: "One capability is enabled",
-    summary: "The launcher has one available teacher action.",
-    expectation: "Expected: a direct capability button",
-    reason:
-      "With only one action available, an extra menu adds no value. Selecting the button opens that capability immediately.",
-    lesson: {
-      lessonSlug: "adopting-different-perspectives",
-      programmeSlug: "english-primary-ks2",
-      title: "Adopting different perspectives",
-      subjectSlug: "english",
-      keyStageSlug: "ks2",
-      availableResources: ["worksheet"],
-    },
-    brokenApiPath: false,
-    uiCapabilities: [{ id: "worksheetScaffolding", label: "Add extra scaffolding" }],
-    facts: () =>
-      Promise.resolve(
-        factsOnly([
-          { term: "Fixture type", value: "Teacher-facing launcher state" },
-          { term: "Capability choices", value: "1" },
-        ]),
-      ),
-  },
-  {
-    id: "multiple-capabilities-ui",
-    title: "Multiple capabilities are enabled",
-    summary: "The launcher offers a menu of teacher actions.",
-    expectation: "Expected: an Adapt with AI capability menu",
+    id: "capabilities-ui",
+    title: "More than one capability is enabled",
+    summary: "The menu lists each capability under Adapt with AI.",
+    expectation: "Expected: one Adapt with AI item per capability",
     reason:
       "This deterministic UI fixture shows the future multi-capability shape without adding a fictional capability to the live service registry.",
     lesson: {
@@ -282,9 +258,8 @@ const edgeCaseDefinitions = [
     },
     brokenApiPath: false,
     uiCapabilities: [
-      { id: "worksheetScaffolding", label: "Add extra scaffolding" },
-      // The launcher needs a second choice to render a menu, and the service
-      // has no second capability to offer.
+      { id: "worksheetScaffolding", label: "Scaffold practice tasks" },
+      // The service has no second capability to offer.
       {
         id: "futureFixture",
         label: "Another capability (UI fixture)",

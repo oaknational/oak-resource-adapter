@@ -2,8 +2,17 @@ import { resourceAdapterCapabilityAvailabilityResponseSchema } from "@oaknationa
 
 import type { LessonContext } from "./publicTypes.js";
 import { supportedCapabilityIds } from "./capabilities.js";
-import { callApi, createResourceAdapterClient } from "./client.js";
+import { callApi, createResourceAdapterClient, readWithRetry } from "./client.js";
 import { ResourceAdapterApiError } from "./errors.js";
+import {
+  getSupportedTeachingMaterialIds,
+  type ResourceAdapterTeachingMaterialId,
+} from "./teachingMaterials.js";
+
+export type ResourceAdapterCapabilityAvailability = Readonly<{
+  available: boolean;
+  teachingMaterials: readonly ResourceAdapterTeachingMaterialId[];
+}>;
 
 export type ResourceAdapterCapabilityAvailabilityProps = Readonly<{
   apiBaseUrl: string;
@@ -18,17 +27,20 @@ export type ResourceAdapterCapabilityAvailabilityProps = Readonly<{
 export async function getResourceAdapterCapabilityAvailability({
   apiBaseUrl,
   lesson,
-}: ResourceAdapterCapabilityAvailabilityProps): Promise<boolean> {
+}: ResourceAdapterCapabilityAvailabilityProps): Promise<ResourceAdapterCapabilityAvailability> {
   return callApi(
     "Resource Adapter could not load capability availability.",
     async () => {
-      const response = await createResourceAdapterClient({
+      const client = createResourceAdapterClient({
         apiBaseUrl,
         getToken: () => Promise.resolve(null),
-      }).capabilities.available.query({
-        ...lesson,
-        supportedCapabilityIds: [...supportedCapabilityIds],
       });
+      const response = await readWithRetry((signal) =>
+        client.capabilities.available.query(
+          { ...lesson, supportedCapabilityIds: [...supportedCapabilityIds] },
+          { signal },
+        ),
+      );
       const parsedResponse =
         resourceAdapterCapabilityAvailabilityResponseSchema.safeParse(response);
 
@@ -38,7 +50,12 @@ export async function getResourceAdapterCapabilityAvailability({
         );
       }
 
-      return parsedResponse.data.available;
+      return {
+        available: parsedResponse.data.available,
+        teachingMaterials: getSupportedTeachingMaterialIds(
+          parsedResponse.data.teachingMaterials,
+        ),
+      };
     },
   );
 }

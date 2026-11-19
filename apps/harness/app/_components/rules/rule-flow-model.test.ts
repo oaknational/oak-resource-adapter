@@ -61,7 +61,7 @@ describe("buildRuleFlow", () => {
     capabilities: [
       {
         id: "worksheetScaffolding",
-        label: "Add extra scaffolding",
+        label: "Scaffold practice tasks",
         rules: [rule({ id: "inputs" })],
       },
     ],

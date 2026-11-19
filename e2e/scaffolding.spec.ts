@@ -3,6 +3,7 @@ import { expect } from "@playwright/test";
 import { test } from "./fixtures.js";
 
 import {
+  chooseFromAiMenu,
   downloadWorksheetXml,
   expectRenderedWorksheet,
   expectSuggestionsReady,
@@ -20,7 +21,7 @@ import {
 
 // Not @deployment-safe: opening the drawer creates an adaptation and queues a
 // suggestions job, which this test never cleans up.
-test("shows the API state, a capability-based trigger, and the adapter sidebar", async ({
+test("shows the API state, a capability-based trigger, and the adapter sidebar, returning focus to the trigger", async ({
   page,
 }) => {
   await signIn(page);
@@ -32,19 +33,23 @@ test("shows the API state, a capability-based trigger, and the adapter sidebar",
   const title = await lessonHeading(page).innerText();
 
   await expect(page.getByRole("banner").getByRole("status")).toHaveText("API: Ready");
-  const createMoreButton = page.getByRole("button", {
-    name: "Add extra scaffolding",
-  });
-  await expect(createMoreButton).toBeVisible();
-  const createMoreButtonBox = await createMoreButton.boundingBox();
+  const menuButton = page.getByRole("button", { name: "Adapt with AI", exact: true });
+  await expect(menuButton).toBeVisible();
+  const menuButtonBox = await menuButton.boundingBox();
   const metadataHeadingBox = await page
     .getByRole("heading", { name: "Lesson metadata" })
     .boundingBox();
-  expect(createMoreButtonBox).not.toBeNull();
+  expect(menuButtonBox).not.toBeNull();
   expect(metadataHeadingBox).not.toBeNull();
-  expect(createMoreButtonBox!.y).toBeLessThan(metadataHeadingBox!.y);
+  expect(menuButtonBox!.y).toBeLessThan(metadataHeadingBox!.y);
 
-  await createMoreButton.click();
+  await menuButton.focus();
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("ArrowDown");
+  await expect(
+    page.getByRole("menuitem", { name: "Scaffold practice tasks", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
 
   const sidebar = page.getByRole("dialog", {
     name: "Aila | Oak's AI",
@@ -62,6 +67,10 @@ test("shows the API state, a capability-based trigger, and the adapter sidebar",
   await expect(
     sidebar.getByRole("heading", { level: 5, name: "Question 1" }),
   ).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(sidebar).toBeHidden();
+  await expect(menuButton).toBeFocused();
 });
 
 // Not @deployment-safe: local adaptation fixtures and deterministic model output.
@@ -193,9 +202,7 @@ test("adapts, accepts, downloads, resumes and removes a scaffold without losing 
   expect(preparations).toBe(1);
 
   await page.reload();
-  await page
-    .getByRole("button", { name: "Add extra scaffolding", exact: true })
-    .click();
+  await chooseFromAiMenu(page, "Scaffold practice tasks");
   await drawer.getByRole("button", { name: "Carry on", exact: true }).click();
   await expect(applied).toHaveCount(1);
   await expect(
@@ -230,17 +237,19 @@ test("adapts, accepts, downloads, resumes and removes a scaffold without losing 
 
 // Not @deployment-safe: opening the drawer creates an adaptation and queues a
 // suggestions job, which this test never cleans up.
-test("shows the future multi-capability launcher shape", async ({ page }) => {
+test("lists every capability under Adapt with AI", async ({ page }) => {
   await signIn(page);
-  await page.goto("/?view=edge-cases&case=multiple-capabilities-ui");
+  await page.goto("/?view=edge-cases&case=capabilities-ui");
 
-  const trigger = page.getByRole("button", { name: "Adapt with AI" });
+  const trigger = page.getByRole("button", { name: "Adapt with AI", exact: true });
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
   await trigger.click();
 
-  const menu = page.getByRole("menu");
-  await expect(menu.getByRole("menuitem")).toHaveCount(2);
-  await menu.getByRole("menuitem", { name: "Add extra scaffolding" }).click();
+  const adaptSection = page
+    .getByRole("menu")
+    .getByRole("group", { name: "Adapt with AI" });
+  await expect(adaptSection.getByRole("menuitem")).toHaveCount(2);
+  await adaptSection.getByRole("menuitem", { name: "Scaffold practice tasks" }).click();
 
   const drawer = page.getByRole("dialog", { name: "Aila | Oak's AI" });
   await expect(drawer).toBeVisible();

@@ -27,7 +27,7 @@ describe("getResourceAdapterCapabilities", () => {
               data: {
                 account,
                 available: false,
-                teachingMaterials: [],
+                teachingMaterials: ["additional-glossary"],
                 capabilities: [
                   {
                     id: "worksheetScaffolding",
@@ -51,6 +51,7 @@ describe("getResourceAdapterCapabilities", () => {
       }),
     ).resolves.toMatchObject({
       capabilities: [{ id: "worksheetScaffolding" }],
+      teachingMaterials: ["additional-glossary"],
     });
 
     const [url, request] = fetchMock.mock.calls[0] ?? [];
@@ -102,7 +103,12 @@ describe("getResourceAdapterCapabilities", () => {
         getToken: async () => null,
         lesson,
       }),
-    ).resolves.toEqual({ account, capabilities: [] });
+    ).resolves.toEqual({
+      account,
+      available: false,
+      capabilities: [],
+      teachingMaterials: [],
+    });
   });
 
   it("resolves the public endpoint from apiBaseUrl", async () => {

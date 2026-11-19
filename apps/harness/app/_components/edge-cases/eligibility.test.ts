@@ -23,7 +23,7 @@ describe("describeEligibility", () => {
     capabilities: [
       {
         id: "worksheetScaffolding",
-        label: "Add extra scaffolding",
+        label: "Scaffold practice tasks",
         rules: [
           rule({
             id: "resource-inputs",
@@ -93,7 +93,7 @@ describe("describeEligibility", () => {
           condition:
             "We don't have the lesson's worksheet, or haven't extracted it yet",
         },
-        subject: "Add extra scaffolding",
+        subject: "Scaffold practice tasks",
       },
     ]);
   });

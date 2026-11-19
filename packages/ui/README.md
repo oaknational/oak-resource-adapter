@@ -44,7 +44,8 @@ import {
 } from "@oaknational/resource-adapter";
 import { useState } from "react";
 
-const { account, capabilities } = await getResourceAdapterCapabilities({
+const { account, available, capabilities, teachingMaterials } =
+  await getResourceAdapterCapabilities({
   apiBaseUrl: "https://resource-adapter.example",
   getToken,
   lesson,
@@ -57,11 +58,14 @@ const finishSetup = () =>
 
 <ResourceAdapterLauncher
   account={account.state}
+  available={available}
   capabilities={capabilities}
   lesson={lesson}
+  onAnalyticsEvent={trackLessonAiMenuEvent}
   onFinishSetup={finishSetup}
   onSelectCapability={setSelectedCapability}
   onSignIn={signInThroughOnboarding}
+  teachingMaterials={teachingMaterials}
 />;
 
 {selectedCapability && (
@@ -77,11 +81,14 @@ const finishSetup = () =>
 )}
 ```
 
-The launcher shows a prompt to sign in or to finish setting up the account, or
-the capability button once the teacher is ready. `onSignIn` and `onFinishSetup`
-must bring the teacher back to the lesson through OWA onboarding. The launcher
-remembers the trip in `sessionStorage`, so on return it confirms the account is
-ready or says setup isn't finished.
+The launcher is the lesson page's "Adapt with AI" menu. Its Adapt with AI
+section lists the capabilities for a ready teacher, or offers to sign in or
+finish setup while `available` is true. Create with AI links to the labs
+`teachingMaterials`, and Learn more links to Oak's AI page. With neither
+capabilities nor teaching materials it renders nothing. `onSignIn` and
+`onFinishSetup` must bring the teacher back to the lesson through OWA
+onboarding. The launcher remembers the trip in `sessionStorage`, so on return
+it confirms the account is ready.
 
 The dialog asks a teacher who hasn't accepted ORA's terms to accept them before it
 shows the capability. Its "Back to lesson" calls `onClose`.
@@ -95,25 +102,26 @@ depend on `@trpc/client` themselves.
 `getResourceAdapterCapabilityAvailability` instead, which needs none:
 
 ```ts
-const canOfferAdaptation = await getResourceAdapterCapabilityAvailability({
-  apiBaseUrl: "https://resource-adapter.example",
-  lesson,
-});
+const { available, teachingMaterials } = await getResourceAdapterCapabilityAvailability(
+  {
+    apiBaseUrl: "https://resource-adapter.example",
+    lesson,
+  },
+);
 ```
 
-It answers whether _this package version_ could render anything for the lesson.
-Render the launcher with `account="signedOut"` only when it is true, so signing
-in never leads a teacher to an empty dialog.
+`available` answers whether _this package version_ could render anything for
+the lesson. Pass both to the launcher with `account="signedOut"`: it offers
+sign-in only when `available` is true, so signing in never leads a teacher to
+an empty dialog.
 
 ### Analytics
 
 Pass `onAnalyticsEvent` to `ResourceAdapterDialog` to receive a
-`ResourceAdapterAnalyticsEvent` for each teacher action and observed outcome.
-Payloads hold identifiers, enums and counts only. A handler that throws or
-rejects is reported through `onError` and never blocks the workflow.
-
-Opening the dialog is the host's event to fire: `onSelectCapability` receives
-the control the teacher used as its second argument. See
+`ResourceAdapterAnalyticsEvent` for each teacher action and observed outcome,
+and to `ResourceAdapterLauncher` for a `LessonAiMenuAnalyticsEvent` from the
+menu. Payloads hold identifiers, enums and counts only. A handler that throws
+or rejects is reported through `onError` and never blocks the workflow. See
 [Analytics](../../docs/ANALYTICS.md) for when each event fires.
 
 ## Testing local changes inside a host app like OWA

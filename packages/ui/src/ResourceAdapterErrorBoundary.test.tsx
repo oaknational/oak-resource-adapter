@@ -80,7 +80,7 @@ describe("ResourceAdapterErrorBoundary", () => {
     const fallback = screen.getByTestId("resource-adapter-error-fallback");
     expect(fallback).toHaveAttribute("role", "alert");
     expect(fallback).toHaveAttribute("aria-atomic", "true");
-    expect(screen.getByText("Create more with Aila is unavailable")).toBeVisible();
+    expect(screen.getByText("Adapt with AI is unavailable")).toBeVisible();
   });
 
   it("invokes the host onError once with the error and component stack", () => {

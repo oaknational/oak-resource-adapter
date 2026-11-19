@@ -4,7 +4,7 @@ import type { CapabilityDefinition } from "../types";
 
 export const worksheetScaffoldingCapability = {
   id: "worksheetScaffolding",
-  label: "Add extra scaffolding",
+  label: "Scaffold practice tasks",
   resourceType: "worksheet",
   rules: [
     resourceInputsRule(

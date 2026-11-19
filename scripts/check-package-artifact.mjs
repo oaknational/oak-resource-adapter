@@ -447,7 +447,6 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
   const rootDeclaration = readPackedFile(uiTarball, "package/dist/index.d.ts");
   for (const exportName of [
     "getResourceAdapterCapabilities",
-    "ResourceAdapterButton",
     "ResourceAdapterDialog",
     "ResourceAdapterErrorBoundary",
     "ResourceAdapterLauncher",
@@ -468,7 +467,8 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "DialogLoading.js",
     "DialogNotice.js",
     "FeatureFlag.js",
-    "ResourceAdapterButton.js",
+    "AiMenu.js",
+    "LessonAiMenu.js",
     "ResourceAdapterDialog.js",
     "ResourceAdapterErrorBoundary.js",
     "ResourceAdapterLauncher.js",
@@ -514,6 +514,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "onboardingTrip.js",
     "terms.js",
     "termsCopy.js",
+    "teachingMaterials.js",
     "resource-document/InlineContentRenderer.js",
     "resource-document/ResourceNodeRenderer.js",
     "capabilities/worksheet-scaffolding/workflowState.js",

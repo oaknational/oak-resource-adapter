@@ -1,7 +1,7 @@
 # Analytics
 
 The UI reports teacher activity through the `onAnalyticsEvent` prop on
-`ResourceAdapterDialog`. Hosts own delivery, identity, consent and deployment
+`ResourceAdapterLauncher` and `ResourceAdapterDialog`. Hosts own delivery, identity, consent and deployment
 metadata; the event plan itself is Oak's Avo tracking plan.
 
 | Host                               | Sender                        | PostHog project                |
@@ -10,15 +10,18 @@ metadata; the event plan itself is Oak's Avo tracking plan.
 | OWA production                     | OWA's generated Avo functions | `Production`                   |
 | OWA local and Preview              | OWA's generated Avo functions | `Development`                  |
 
-OWA maps the event union to its Avo functions with an exhaustive switch and
-sends through its own PostHog instance and consent flow. Hosts fire "Resource Adapter Opened"
-themselves, with the control `ResourceAdapterLauncher` passes to
-`onSelectCapability` as its `Component Type`.
+OWA maps the event unions to its Avo functions with an exhaustive switch and
+sends through its own PostHog instance and consent flow.
 
 ## Events
 
 | Event                            | Fires when                                                                                                                                                             |
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lesson AI Menu Opened            | The teacher opens the "Adapt with AI" menu. Closing it fires nothing.                                                                                                  |
+| Resource Adapter Opened          | The teacher chooses a capability from the menu.                                                                                                                        |
+| Teaching Materials Selected      | The teacher chooses a labs teaching material (`teachingMaterialType`). It opens in a new tab, so it does not prove labs loaded.                                        |
+| About Oak AI Selected            | The teacher chooses "About Oak's AI".                                                                                                                                  |
+| Adapt Onboarding Selected        | A teacher who is signed out or needs setup (`accountState`) chooses the menu's sign-in or finish-setup item.                                                           |
 | Resource Adapter Closed          | The teacher dismisses the dialog. Leaving the page does not fire it.                                                                                                   |
 | Adaptation Started               | The API confirms a new, resumed or reopened adaptation (`startMode`), with the teacher's `accessTier`.                                                                 |
 | Monthly Allowance Displayed      | The allowance notice shows before an open that would spend, or after the limit refuses one: once per value per dialog visit.                                           |

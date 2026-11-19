@@ -1,7 +1,8 @@
 import { setupClerkTestingToken } from "@clerk/testing/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import {
+  openAiMenu,
   signIn,
   waitForCapabilities,
   waitForCapabilityAvailability,
@@ -9,42 +10,56 @@ import {
 
 // @deployment-safe criteria: docs/DEVELOPMENT.md, "Testing a deployed candidate".
 
+async function expectMenuSections(page: Page, sections: readonly string[]) {
+  if (sections.length === 0) {
+    await expect(
+      page.getByRole("button", { name: "Adapt with AI", exact: true }),
+    ).toHaveCount(0);
+    return;
+  }
+  const menu = await openAiMenu(page);
+  await expect(menu.getByRole("group")).toHaveCount(sections.length);
+  for (const section of sections) {
+    await expect(menu.getByRole("group", { name: section, exact: true })).toBeVisible();
+  }
+}
+
 const edgeCases = [
   {
     id: "worksheet-without-extraction",
     heading: "Oak has a worksheet, we have no data for it",
     outcome: "The capabilities endpoint returned 0 capabilities.",
-    offersCreateMore: false,
+    sections: ["Create with AI", "Learn more"],
     decision:
-      "Add extra scaffolding isn't offered: We don't have the lesson's worksheet, or haven't extracted it yet (Not extracted)",
+      "Scaffold practice tasks isn't offered: We don't have the lesson's worksheet, or haven't extracted it yet (Not extracted)",
   },
   {
     id: "extraction-without-worksheet",
     heading: "We have worksheet data, Oak has no worksheet",
     outcome: "The capabilities endpoint returned 0 capabilities.",
-    offersCreateMore: false,
+    sections: ["Create with AI", "Learn more"],
     decision:
-      "Add extra scaffolding isn't offered: We don't have the lesson's worksheet, or haven't extracted it yet (No original file)",
+      "Scaffold practice tasks isn't offered: We don't have the lesson's worksheet, or haven't extracted it yet (No original file)",
   },
   {
     id: "unsupported-markup",
     heading: "Worksheet data uses a feature we do not recognise",
     outcome: "The capabilities endpoint returned 1 capabilities.",
-    offersCreateMore: true,
-    decision: "Add extra scaffolding is offered",
+    sections: ["Adapt with AI", "Create with AI", "Learn more"],
+    decision: "Scaffold practice tasks is offered",
   },
   {
     id: "malformed-extraction",
     heading: "Worksheet data we cannot read at all",
     outcome: "The capabilities endpoint returned 1 capabilities.",
-    offersCreateMore: true,
-    decision: "Add extra scaffolding is offered",
+    sections: ["Adapt with AI", "Create with AI", "Learn more"],
+    decision: "Scaffold practice tasks is offered",
   },
   {
     id: "excluded-subject-lesson",
     heading: "The lesson is in a subject we leave out",
     outcome: "The capabilities endpoint returned 0 capabilities.",
-    offersCreateMore: false,
+    sections: [],
     decision:
       "ORA isn't offered: The lesson is in one of these subjects (Excluded subject)",
   },
@@ -52,13 +67,13 @@ const edgeCases = [
     id: "copyright-conflict-lesson",
     heading: "Oak flags a copyright conflict in the lesson",
     outcome: "The capabilities endpoint returned 0 capabilities.",
-    offersCreateMore: false,
+    sections: [],
     decision:
       "ORA isn't offered: The lesson has restricted copyright material, a copyright conflict, or no clearance information (Copyright conflict)",
   },
 ] as const;
 
-for (const { decision, heading, id, offersCreateMore, outcome } of edgeCases) {
+for (const { decision, heading, id, outcome, sections } of edgeCases) {
   test(
     `reports what OWA sees for: ${heading.toLowerCase()}`,
     {
@@ -68,7 +83,7 @@ for (const { decision, heading, id, offersCreateMore, outcome } of edgeCases) {
       await signIn(page);
 
       // The same endpoint the eligible lessons use has to be consulted, so an
-      // absent button proves an empty response rather than a skipped request.
+      // absent menu proves an empty response rather than a skipped request.
       const capabilitiesResponse = waitForCapabilities(page);
       await page.goto(`/?view=edge-cases&case=${id}`);
       expect((await capabilitiesResponse).status()).toBe(200);
@@ -78,12 +93,7 @@ for (const { decision, heading, id, offersCreateMore, outcome } of edgeCases) {
       ).toBeVisible();
       await expect(page.getByTestId("capability-outcome")).toHaveText(outcome);
       await expect(page.getByTestId("eligibility-decision")).toHaveText(decision);
-      await expect(
-        page.getByRole("button", { name: "Add extra scaffolding" }),
-      ).toHaveCount(offersCreateMore ? 1 : 0);
-      await expect(
-        page.getByRole("region", { name: "Sign in to create more with Aila" }),
-      ).toHaveCount(0);
+      await expectMenuSections(page, sections);
     },
   );
 }
@@ -98,13 +108,13 @@ test(
     await page.goto("/?view=edge-cases&case=capabilities-unavailable");
 
     const fallback = page.getByRole("region", {
-      name: "Create more with Aila is unavailable",
+      name: "Adapt with AI is unavailable",
     });
 
     await expect(fallback).toBeVisible();
     await expect(fallback.getByRole("button", { name: "Try again" })).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Add extra scaffolding" }),
+      page.getByRole("button", { name: "Adapt with AI", exact: true }),
     ).toHaveCount(0);
   },
 );
@@ -150,7 +160,7 @@ test(
     // The fallback replaces the crashed content...
     const fallback = section.getByTestId("resource-adapter-error-fallback");
     await expect(fallback).toBeVisible();
-    await expect(fallback).toContainText("Create more with Aila is unavailable");
+    await expect(fallback).toContainText("Adapt with AI is unavailable");
     // ...and the page around it is untouched.
     await expect(
       page.getByRole("heading", { level: 1, name: "Smoke tests" }),
@@ -167,7 +177,7 @@ test(
 );
 
 test(
-  "offers signed-out visitors sign-in instead of the capability launcher",
+  "offers signed-out visitors sign-in instead of the capabilities",
   {
     tag: "@deployment-safe",
   },
@@ -179,51 +189,41 @@ test(
     await page.goto("/");
     expect((await availability).status()).toBe(200);
 
-    const signInPrompt = page.getByRole("region", {
-      name: "Sign in to create more with Aila",
-    });
-
-    await expect(signInPrompt).toBeVisible();
-    await expect(signInPrompt.getByRole("button", { name: "Sign in" })).toBeVisible();
     await expect(
       page.getByRole("banner").getByRole("button", { name: "Sign in" }),
     ).toBeVisible();
-
+    const menu = await openAiMenu(page);
     await expect(
-      page.getByRole("heading", { exact: true, name: "Create more with Aila" }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole("button", { name: "Add extra scaffolding" }),
-    ).toHaveCount(0);
-  },
-);
-
-test(
-  "leaves signed-out visitors alone when a lesson has nothing behind it",
-  {
-    tag: "@deployment-safe",
-  },
-  async ({ page }) => {
-    await setupClerkTestingToken({ page });
-    await page.goto("/?view=edge-cases&case=worksheet-without-extraction");
-
-    // Settles only once the unauthenticated availability call has answered, so
-    // the absences below are meaningful rather than merely early.
-    await expect(page.getByTestId("capability-outcome")).toHaveText(
-      "Capabilities state: signedOut.",
-    );
-
-    await expect(
-      page.getByRole("heading", { name: "What teachers see in OWA", exact: true }),
+      menu.getByRole("menuitem", { name: "Sign in to adapt", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("region", { name: "Sign in to create more with Aila" }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole("button", { name: "Add extra scaffolding" }),
+      menu.getByRole("menuitem", { name: "Scaffold practice tasks" }),
     ).toHaveCount(0);
   },
 );
+
+for (const { id, sections } of [
+  { id: "worksheet-without-extraction", sections: ["Create with AI", "Learn more"] },
+  { id: "excluded-subject-lesson", sections: [] },
+] as const) {
+  test(
+    `offers signed-out visitors no sign-in when ORA has nothing for the lesson: ${id}`,
+    {
+      tag: "@deployment-safe",
+    },
+    async ({ page }) => {
+      await setupClerkTestingToken({ page });
+      await page.goto(`/?view=edge-cases&case=${id}`);
+
+      // Settles only once the unauthenticated availability call has answered, so
+      // the absences below are meaningful rather than merely early.
+      await expect(page.getByTestId("capability-outcome")).toHaveText(
+        "Capabilities state: signedOut.",
+      );
+      await expectMenuSections(page, sections);
+    },
+  );
+}
 
 test(
   "shows every lesson rule the API runs, and links an edge case's decision to its rule",

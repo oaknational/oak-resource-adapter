@@ -2,6 +2,8 @@ import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
 import { expect, test } from "@playwright/test";
 
 import {
+  chooseFromAiMenu,
+  openAiMenu,
   signIn,
   waitForCapabilities,
   waitForCapabilityAvailability,
@@ -10,7 +12,7 @@ import {
 // @deployment-safe criteria: docs/DEVELOPMENT.md, "Testing a deployed candidate".
 
 test(
-  "previews the signed-out prompt for a signed-in tester",
+  "previews the signed-out menu for a signed-in tester",
   {
     tag: "@deployment-safe",
   },
@@ -20,19 +22,20 @@ test(
     await page.goto("/?lesson=adopting-different-perspectives&as=signed-out");
     expect((await availability).status()).toBe(200);
 
-    const signInPrompt = page.getByRole("region", {
-      name: "Sign in to create more with Aila",
-    });
-    await expect(signInPrompt).toBeVisible();
+    const menu = await openAiMenu(page);
+    const signInItem = menu.getByRole("menuitem", { name: "Sign in to adapt" });
+    await expect(signInItem).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Add extra scaffolding" }),
+      menu.getByRole("menuitem", { name: "Scaffold practice tasks" }),
     ).toHaveCount(0);
 
     const capabilities = waitForCapabilities(page);
-    await signInPrompt.getByRole("button", { name: "Sign in" }).click();
+    await signInItem.click();
     expect((await capabilities).status()).toBe(200);
     await expect(
-      page.getByRole("button", { name: "Add extra scaffolding" }),
+      (await openAiMenu(page)).getByRole("menuitem", {
+        name: "Scaffold practice tasks",
+      }),
     ).toBeVisible();
   },
 );
@@ -48,21 +51,23 @@ for (const url of [
     },
     async ({ page }) => {
       await setupClerkTestingToken({ page });
+      const availability = waitForCapabilityAvailability(page);
       await page.goto(url);
-      await page
-        .getByRole("region", { name: "Sign in to create more with Aila" })
-        .getByRole("button", { name: "Sign in", exact: true })
-        .click();
+      expect((await availability).status()).toBe(200);
+      await chooseFromAiMenu(page, "Sign in to adapt");
       await expect(page.getByRole("dialog")).toBeVisible();
       await expect(page).not.toHaveURL(/as=signed-out/);
+      const capabilities = waitForCapabilities(page);
       await clerk.signIn({ page, emailAddress: process.env.E2E_CLERK_USER_EMAIL! });
       // The test helper establishes a session without completing the modal UI.
       await page.evaluate(() => window.Clerk.closeSignIn());
+      expect((await capabilities).status()).toBe(200);
+      const menu = await openAiMenu(page);
       await expect(
-        page.getByRole("button", { name: "Add extra scaffolding", exact: true }),
+        menu.getByRole("menuitem", { name: "Scaffold practice tasks", exact: true }),
       ).toBeVisible();
       await expect(
-        page.getByRole("region", { name: "Sign in to create more with Aila" }),
+        menu.getByRole("menuitem", { name: "Sign in to adapt" }),
       ).toHaveCount(0);
     },
   );
@@ -73,28 +78,36 @@ for (const url of [
     async ({ page }) => {
       await signIn(page);
       await page.goto(url);
+      const capabilities = waitForCapabilities(page);
       await page.getByRole("link", { name: "Signed-in view", exact: true }).click();
+      expect((await capabilities).status()).toBe(200);
       await page.route(
         "**/adapter-proxy/trpc/internal/worksheetScaffolding.open*",
         (route) => route.fulfill({ status: 503, json: { error: "Unavailable" } }),
       );
-      await page
-        .getByRole("button", { name: "Add extra scaffolding", exact: true })
-        .click();
+      await chooseFromAiMenu(page, "Scaffold practice tasks");
       await expect(page.getByRole("dialog", { name: "Aila | Oak's AI" })).toBeVisible();
 
+      const availability = waitForCapabilityAvailability(page);
       await page.goBack();
       await expect(page).toHaveURL(/as=signed-out/);
+      expect((await availability).status()).toBe(200);
       await expect(page.getByRole("dialog", { name: "Aila | Oak's AI" })).toHaveCount(
         0,
       );
       await expect(
-        page.getByRole("region", { name: "Sign in to create more with Aila" }),
+        (await openAiMenu(page)).getByRole("menuitem", { name: "Sign in to adapt" }),
       ).toBeVisible();
+      await page.keyboard.press("Escape");
 
+      const capabilitiesAgain = waitForCapabilities(page);
       await page.goForward();
+      expect((await capabilitiesAgain).status()).toBe(200);
       await expect(
-        page.getByRole("button", { name: "Add extra scaffolding", exact: true }),
+        (await openAiMenu(page)).getByRole("menuitem", {
+          name: "Scaffold practice tasks",
+          exact: true,
+        }),
       ).toBeVisible();
       await expect(page.getByRole("dialog", { name: "Aila | Oak's AI" })).toHaveCount(
         0,
@@ -131,7 +144,7 @@ test(
     await expect(page).toHaveURL(/as=signed-out/);
     await sections.getByRole("link", { name: "Try ORA", exact: true }).click();
     await expect(
-      page.getByRole("region", { name: "Sign in to create more with Aila" }),
+      (await openAiMenu(page)).getByRole("menuitem", { name: "Sign in to adapt" }),
     ).toBeVisible();
   },
 );
@@ -145,7 +158,7 @@ for (const signedOut of [false, true]) {
     async ({ page }) => {
       await signIn(page);
       await expect(
-        page.getByRole("button", { name: "Add extra scaffolding" }),
+        page.getByRole("button", { name: "Adapt with AI", exact: true }),
       ).toBeVisible();
       const pending = Promise.withResolvers<void>();
       const started = Promise.withResolvers<void>();
@@ -176,7 +189,7 @@ for (const signedOut of [false, true]) {
                       capabilities: [
                         {
                           id: "worksheetScaffolding",
-                          label: "Add extra scaffolding",
+                          label: "Scaffold practice tasks",
                           resourceType: "worksheet",
                         },
                       ],
@@ -220,9 +233,13 @@ for (const signedOut of [false, true]) {
             ),
         );
         await expect(outcome).toHaveText(expected);
+        const menu = await openAiMenu(page);
         await expect(
-          page.getByRole("button", { name: "Add extra scaffolding" }),
+          menu.getByRole("menuitem", { name: "Scaffold practice tasks" }),
         ).toHaveCount(signedOut ? 1 : 0);
+        await expect(
+          menu.getByRole("menuitem", { name: "Sign in to adapt" }),
+        ).toHaveCount(signedOut ? 0 : 1);
       } finally {
         pending.resolve();
         await page.unrouteAll({ behavior: "wait" });

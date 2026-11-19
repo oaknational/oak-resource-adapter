@@ -8,6 +8,7 @@ import type {
 import type { ResourceAdapterCapabilityId } from "./capabilities.js";
 import { reportToHost } from "./errors.js";
 import type { ResourceAdapterErrorHandler } from "./publicTypes.js";
+import type { TeachingMaterial } from "./teachingMaterials.js";
 
 /** Replaced at build and test time by the `define` in tsup and Vitest config. */
 declare const __RESOURCE_ADAPTER_VERSION__: string;
@@ -152,24 +153,71 @@ export type ResourceAdapterAnalyticsHandler = (
 
 export type TrackAnalyticsEvent = (event: CapabilityAnalyticsEvent) => void;
 
+/** The lesson page's "Adapt with AI" menu, before any dialog opens. */
+type LessonAiMenuEvent =
+  | Readonly<{ name: "Lesson AI Menu Opened"; componentType: "adapt_with_ai_button" }>
+  | Readonly<{
+      name: "Resource Adapter Opened";
+      componentType: "lesson_ai_menu_item";
+      capabilityId: ResourceAdapterCapabilityId;
+    }>
+  | Readonly<{
+      name: "Teaching Materials Selected";
+      teachingMaterialType: TeachingMaterial["analyticsType"];
+    }>
+  | Readonly<{ name: "About Oak AI Selected"; componentType: "lesson_ai_menu_item" }>
+  | Readonly<{
+      name: "Adapt Onboarding Selected";
+      componentType: "lesson_ai_menu_item";
+      accountState: "needsSetup" | "signedOut";
+    }>;
+
+export type LessonAiMenuAnalyticsEvent = LessonAiMenuEvent &
+  Readonly<{ packageVersion: string }>;
+
+export type LessonAiMenuAnalyticsHandler = (
+  event: LessonAiMenuAnalyticsEvent,
+) => void | Promise<void>;
+
 /** Host failures, including rejected promises, must not interrupt the teacher. */
+export function sendToHost<TEvent>(
+  onAnalyticsEvent: ((event: TEvent) => void | Promise<void>) | undefined,
+  event: TEvent,
+  onError: ResourceAdapterErrorHandler | undefined,
+): void {
+  if (onAnalyticsEvent === undefined) return;
+  try {
+    void Promise.resolve(onAnalyticsEvent(event)).catch((error: unknown) =>
+      reportToHost(onError, error),
+    );
+  } catch (error) {
+    reportToHost(onError, error);
+  }
+}
+
 export function createAnalyticsTracker(
   capabilityId: ResourceAdapterCapabilityId,
   onAnalyticsEvent: ResourceAdapterAnalyticsHandler | undefined,
   onError: ResourceAdapterErrorHandler | undefined,
 ): TrackAnalyticsEvent {
-  return (event) => {
-    if (onAnalyticsEvent === undefined) return;
-    try {
-      void Promise.resolve(
-        onAnalyticsEvent({
-          ...event,
-          capabilityId,
-          packageVersion: __RESOURCE_ADAPTER_VERSION__,
-        }),
-      ).catch((error: unknown) => reportToHost(onError, error));
-    } catch (error) {
-      reportToHost(onError, error);
-    }
-  };
+  return (event) =>
+    sendToHost(
+      onAnalyticsEvent,
+      { ...event, capabilityId, packageVersion: __RESOURCE_ADAPTER_VERSION__ },
+      onError,
+    );
+}
+
+export type TrackLessonAiMenuEvent = (event: LessonAiMenuEvent) => void;
+
+export function createLessonAiMenuTracker(
+  onAnalyticsEvent: LessonAiMenuAnalyticsHandler | undefined,
+  onError: ResourceAdapterErrorHandler | undefined,
+): TrackLessonAiMenuEvent {
+  return (event) =>
+    sendToHost(
+      onAnalyticsEvent,
+      { ...event, packageVersion: __RESOURCE_ADAPTER_VERSION__ },
+      onError,
+    );
 }

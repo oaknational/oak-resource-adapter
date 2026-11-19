@@ -24,6 +24,7 @@ function respondWith(body: unknown) {
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -33,7 +34,7 @@ describe("getResourceAdapterCapabilityAvailability", () => {
 
     await expect(
       getResourceAdapterCapabilityAvailability({ apiBaseUrl, lesson }),
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ available: true, teachingMaterials: [] });
 
     const [url, request] = fetchMock.mock.calls[0] ?? [];
     expect(String(url)).toContain(
@@ -46,16 +47,68 @@ describe("getResourceAdapterCapabilityAvailability", () => {
     expect(request).not.toHaveProperty("headers.Authorization");
   });
 
+  it("abandons a stalled request and asks again", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(
+        (_url: unknown, init: RequestInit) =>
+          new Promise((_, reject) => {
+            init.signal?.addEventListener("abort", () =>
+              reject(new DOMException("Aborted", "AbortError")),
+            );
+          }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            { result: { data: { available: true, teachingMaterials: [] } } },
+          ]),
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const availability = getResourceAdapterCapabilityAvailability({
+      apiBaseUrl,
+      lesson,
+    });
+    await vi.runAllTimersAsync();
+
+    await expect(availability).resolves.toEqual({
+      available: true,
+      teachingMaterials: [],
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("tells the service which capabilities this package can render", async () => {
     const fetchMock = respondWith({ available: false, teachingMaterials: [] });
 
     await expect(
       getResourceAdapterCapabilityAvailability({ apiBaseUrl, lesson }),
-    ).resolves.toBe(false);
+    ).resolves.toEqual({ available: false, teachingMaterials: [] });
 
     const [, request] = fetchMock.mock.calls[0] ?? [];
     expect(JSON.parse(String((request as RequestInit).body))).toEqual({
       "0": { ...lesson, supportedCapabilityIds: ["worksheetScaffolding"] },
+    });
+  });
+
+  it("returns the teaching materials this package can link to, in menu order", async () => {
+    respondWith({
+      available: false,
+      teachingMaterials: [
+        "additional-exit-quiz",
+        "unknown-material",
+        "additional-glossary",
+      ],
+    });
+
+    await expect(
+      getResourceAdapterCapabilityAvailability({ apiBaseUrl, lesson }),
+    ).resolves.toEqual({
+      available: false,
+      teachingMaterials: ["additional-glossary", "additional-exit-quiz"],
     });
   });
 

@@ -1,12 +1,9 @@
 "use client";
 
-import type {
-  ResourceAdapterCapabilityOption,
-  ResourceAdapterOpeningControl,
-} from "@oaknational/resource-adapter";
+import type { ResourceAdapterCapabilityOption } from "@oaknational/resource-adapter";
 
 import { EligibilityPanel } from "./EligibilityPanel";
-import { CreateMorePanel } from "../shared/CreateMorePanel";
+import { LessonAiPanel } from "../shared/LessonAiPanel";
 import { ExtractionNotes } from "../shared/ExtractionNotes";
 import { ScenarioLayout } from "../shared/ScenarioLayout";
 import { OwaSlot, owaSlotBadge } from "./OwaSlot";
@@ -26,15 +23,18 @@ export function EdgeCaseView({
   const lesson = edgeCase.lesson;
   const {
     account,
+    available,
     capabilities,
     dialog,
     finishSetup,
-    hasAvailableCapabilities,
     inCopyrightRegion,
     reload,
+    reportError,
     selectCapability,
     signIn,
     state,
+    teachingMaterials,
+    trackAnalyticsEvent,
   } = useAdapterLauncher({
     apiBaseUrl: edgeCase.brokenApiPath ? `${apiBaseUrl}-unreachable` : apiBaseUrl,
     lesson,
@@ -43,14 +43,12 @@ export function EdgeCaseView({
 
   // The fixture offers a choice the service does not implement, so whichever
   // one is picked opens the worksheet workflow.
-  function selectFixtureCapability(
-    option: ResourceAdapterCapabilityOption,
-    control: ResourceAdapterOpeningControl,
-  ) {
-    selectCapability(
-      { id: "worksheetScaffolding", label: option.label, resourceType: "worksheet" },
-      control,
-    );
+  function selectFixtureCapability(option: ResourceAdapterCapabilityOption) {
+    selectCapability({
+      id: "worksheetScaffolding",
+      label: option.label,
+      resourceType: "worksheet",
+    });
   }
 
   const fixtureCapabilities = edgeCase.uiCapabilities;
@@ -69,6 +67,18 @@ export function EdgeCaseView({
   }
 
   const capabilityOutcome = describeCapabilityOutcome();
+  const panel = {
+    account,
+    available,
+    lesson,
+    onAnalyticsEvent: trackAnalyticsEvent,
+    onError: reportError,
+    onFinishSetup: finishSetup,
+    onRetry: reload,
+    onSignIn: signIn,
+    state,
+    teachingMaterials,
+  };
 
   return (
     <>
@@ -93,35 +103,24 @@ export function EdgeCaseView({
                 ? "Fixture"
                 : owaSlotBadge({
                     account,
+                    available,
                     capabilities,
-                    hasAvailableCapabilities,
                     state,
+                    teachingMaterials,
                   })
             }
           >
             {showCapabilityFixture ? (
-              <CreateMorePanel
-                account={account}
+              <LessonAiPanel
+                {...panel}
                 capabilities={fixtureCapabilities}
-                hasAvailableCapabilities={hasAvailableCapabilities}
-                lesson={lesson}
-                onFinishSetup={finishSetup}
-                onRetry={reload}
                 onSelectCapability={selectFixtureCapability}
-                onSignIn={signIn}
-                state={state}
               />
             ) : (
-              <CreateMorePanel
-                account={account}
+              <LessonAiPanel
+                {...panel}
                 capabilities={capabilities}
-                hasAvailableCapabilities={hasAvailableCapabilities}
-                lesson={lesson}
-                onFinishSetup={finishSetup}
-                onRetry={reload}
                 onSelectCapability={selectCapability}
-                onSignIn={signIn}
-                state={state}
               />
             )}
           </OwaSlot>

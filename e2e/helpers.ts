@@ -11,7 +11,7 @@ const emailAddress = process.env.E2E_CLERK_USER_EMAIL as string;
  * A teacher is offered resumable work per lesson and capability, so two tests
  * that scaffold the same lesson see each other's adaptations whatever order they
  * run in. One lesson each, and the edge-case views claim their own:
- * `multiple-capabilities-ui` renders adopting-different-perspectives.
+ * `capabilities-ui` renders adopting-different-perspectives.
  */
 export const scaffoldingLessons = {
   applyingASuggestion:
@@ -151,15 +151,24 @@ export async function scaffoldingEntryIn(
   return entry;
 }
 
+/** Opens the lesson page's "Adapt with AI" menu, which must be closed. */
+export async function openAiMenu(page: Page): Promise<Locator> {
+  await page.getByRole("button", { name: "Adapt with AI", exact: true }).click();
+  return page.getByRole("menu", { name: "Adapt with AI" });
+}
+
+export async function chooseFromAiMenu(page: Page, item: string) {
+  const menu = await openAiMenu(page);
+  await menu.getByRole("menuitem", { name: item, exact: true }).click();
+}
+
 export async function openScaffolding(page: Page): Promise<ScaffoldingEntry> {
   const opening = page.waitForResponse(
     (response) =>
       response.url().includes("worksheetScaffolding.open") &&
       response.request().method() === "POST",
   );
-  await page
-    .getByRole("button", { name: "Add extra scaffolding", exact: true })
-    .click();
+  await chooseFromAiMenu(page, "Scaffold practice tasks");
   return scaffoldingEntryIn(await opening);
 }
 
@@ -200,7 +209,7 @@ export function lessonHeading(page: Page): Locator {
   return page.getByRole("heading", { level: 2 }).first();
 }
 
-// Signed out, the sign-in prompt appears only once availability comes back true.
+// Signed out, the menu's sign-in item appears only once availability comes back true.
 export function waitForCapabilityAvailability(page: Page) {
   return page.waitForResponse(
     (response) =>

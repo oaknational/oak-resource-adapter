@@ -7,36 +7,47 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   ResourceAdapterLauncher,
-  type ResourceAdapterLauncherAccount,
+  type ResourceAdapterLauncherProps,
 } from "./ResourceAdapterLauncher.js";
 import { rememberOnboardingTrip } from "./onboardingTrip.js";
 import type { ResourceAdapterCapability } from "./publicTypes.js";
 
 const worksheet: ResourceAdapterCapability = {
   id: "worksheetScaffolding",
-  label: "Add extra scaffolding",
+  label: "Scaffold practice tasks",
   resourceType: "worksheet",
 };
 
 const lesson = { lessonSlug: "adding-fractions", programmeSlug: "maths-primary-ks2" };
 
 const callbacks = {
+  onAnalyticsEvent: vi.fn(),
   onFinishSetup: vi.fn(),
   onSelectCapability: vi.fn(),
   onSignIn: vi.fn(),
 };
 
+type Overrides = Partial<
+  Pick<
+    ResourceAdapterLauncherProps<ResourceAdapterCapability>,
+    "available" | "capabilities" | "teachingMaterials"
+  >
+>;
+
 function launcher(
-  account: ResourceAdapterLauncherAccount,
-  capabilities: readonly ResourceAdapterCapability[] = [worksheet],
+  account: ResourceAdapterLauncherProps["account"],
+  overrides: Overrides = {},
 ) {
   return (
     <OakThemeProvider theme={oakDefaultTheme}>
       <ResourceAdapterLauncher
         account={account}
-        capabilities={capabilities}
+        available={true}
+        capabilities={[worksheet]}
         lesson={lesson}
+        teachingMaterials={[]}
         {...callbacks}
+        {...overrides}
       />
     </OakThemeProvider>
   );
@@ -46,6 +57,11 @@ function renderLauncher(...args: Parameters<typeof launcher>) {
   return { ...callbacks, ...render(launcher(...args)) };
 }
 
+async function choose(name: string) {
+  await userEvent.click(screen.getByRole("button", { name: "Adapt with AI" }));
+  await userEvent.click(screen.getByRole("menuitem", { name }));
+}
+
 afterEach(() => {
   sessionStorage.clear();
   vi.restoreAllMocks();
@@ -53,43 +69,75 @@ afterEach(() => {
 });
 
 describe("ResourceAdapterLauncher", () => {
-  it("asks a signed-out teacher to sign in, remembering the lesson", async () => {
-    const { onFinishSetup, onSignIn } = renderLauncher("signedOut");
+  it("opens a capability for a ready teacher", async () => {
+    const { onAnalyticsEvent, onSelectCapability } = renderLauncher("ready");
+    await choose(worksheet.label);
 
-    expect(
-      screen.getByRole("region", { name: "Sign in to create more with Aila" }),
-    ).toBeVisible();
-    await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(onSelectCapability).toHaveBeenCalledWith(worksheet);
+    expect(onAnalyticsEvent).toHaveBeenLastCalledWith({
+      name: "Resource Adapter Opened",
+      componentType: "lesson_ai_menu_item",
+      capabilityId: "worksheetScaffolding",
+      packageVersion: expect.any(String),
+    });
+  });
+
+  it("asks a signed-out teacher to sign in, remembering the lesson", async () => {
+    const { onAnalyticsEvent, onFinishSetup, onSignIn } = renderLauncher("signedOut");
+    await choose("Sign in to adapt");
 
     expect(onSignIn).toHaveBeenCalledOnce();
     expect(onFinishSetup).not.toHaveBeenCalled();
     expect(sessionStorage).toHaveLength(1);
+    expect(onAnalyticsEvent).toHaveBeenLastCalledWith({
+      name: "Adapt Onboarding Selected",
+      componentType: "lesson_ai_menu_item",
+      accountState: "signedOut",
+      packageVersion: expect.any(String),
+    });
   });
 
   it("asks a teacher who needs setup to finish it, remembering the lesson", async () => {
-    const { onFinishSetup } = renderLauncher("needsSetup");
-
-    expect(
-      screen.getByRole("region", { name: "Finish setting up your account" }),
-    ).toBeVisible();
-    await userEvent.click(screen.getByRole("button", { name: "Finish setup" }));
+    const { onFinishSetup } = renderLauncher("needsSetup", { capabilities: [] });
+    await choose("Finish setup to adapt");
 
     expect(onFinishSetup).toHaveBeenCalledOnce();
     expect(sessionStorage).toHaveLength(1);
   });
 
-  it("shows only the capability button to a ready teacher", () => {
+  it.each(["signedOut", "needsSetup"] as const)(
+    "offers %s teachers only Create with AI when ORA has nothing for the lesson",
+    async (account) => {
+      renderLauncher(account, {
+        available: false,
+        capabilities: [],
+        teachingMaterials: ["additional-glossary"],
+      });
+      await userEvent.click(screen.getByRole("button", { name: "Adapt with AI" }));
+
+      expect(
+        screen.queryByRole("group", { name: "Adapt with AI" }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole("group", { name: "Create with AI" })).toBeVisible();
+    },
+  );
+
+  it.each(["signedOut", "needsSetup", "ready"] as const)(
+    "renders nothing for %s teachers when neither ORA nor labs has anything",
+    (account) => {
+      const { container } = renderLauncher(account, {
+        available: false,
+        capabilities: [],
+      });
+
+      expect(container).toBeEmptyDOMElement();
+    },
+  );
+
+  it("shows no status to a ready teacher who didn't come from onboarding", () => {
     renderLauncher("ready");
 
-    expect(screen.getByRole("button", { name: worksheet.label })).toBeVisible();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    expect(screen.queryByRole("region")).not.toBeInTheDocument();
-  });
-
-  it("renders nothing for a ready teacher with no capabilities", () => {
-    const { container } = renderLauncher("ready", []);
-
-    expect(container).toBeEmptyDOMElement();
   });
 
   it("tells a teacher back from onboarding that their account is ready", () => {
@@ -97,20 +145,16 @@ describe("ResourceAdapterLauncher", () => {
     renderLauncher("ready");
 
     expect(screen.getByRole("status")).toHaveTextContent("Your account is ready.");
-    expect(screen.getByRole("button", { name: worksheet.label })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Adapt with AI" })).toBeVisible();
     expect(sessionStorage).toHaveLength(0);
   });
 
-  it("says when a teacher comes back from onboarding still needing setup", async () => {
+  it("forgets the trip when a teacher comes back still needing setup", () => {
     rememberOnboardingTrip(lesson);
-    const { onFinishSetup } = renderLauncher("needsSetup");
+    renderLauncher("needsSetup");
 
-    expect(
-      screen.getByRole("region", { name: "Your account setup isn't finished" }),
-    ).toBeVisible();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(sessionStorage).toHaveLength(0);
-    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(onFinishSetup).toHaveBeenCalledOnce();
   });
 
   it("keeps the trip while the teacher is still signed out", () => {
@@ -118,16 +162,6 @@ describe("ResourceAdapterLauncher", () => {
     renderLauncher("signedOut");
 
     expect(sessionStorage).toHaveLength(1);
-  });
-
-  it("says setup isn't finished when a signed-out teacher signs in without remounting", () => {
-    rememberOnboardingTrip(lesson);
-    const { rerender } = renderLauncher("signedOut");
-    rerender(launcher("needsSetup"));
-
-    expect(
-      screen.getByRole("region", { name: "Your account setup isn't finished" }),
-    ).toBeVisible();
   });
 
   it("renders the same markup on the server whether or not a trip was recorded", () => {
@@ -139,14 +173,12 @@ describe("ResourceAdapterLauncher", () => {
 
   it("ignores a trip that started from another lesson", () => {
     rememberOnboardingTrip({ ...lesson, lessonSlug: "subtracting-fractions" });
-    renderLauncher("needsSetup");
+    renderLauncher("ready");
 
-    expect(
-      screen.getByRole("region", { name: "Finish setting up your account" }),
-    ).toBeVisible();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
-  it("shows the usual prompt when storage is unavailable", async () => {
+  it("still sends the teacher to setup when storage is unavailable", async () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("blocked");
     });
@@ -154,11 +186,8 @@ describe("ResourceAdapterLauncher", () => {
       throw new Error("blocked");
     });
     const { onFinishSetup } = renderLauncher("needsSetup");
+    await choose("Finish setup to adapt");
 
-    expect(
-      screen.getByRole("region", { name: "Finish setting up your account" }),
-    ).toBeVisible();
-    await userEvent.click(screen.getByRole("button", { name: "Finish setup" }));
     expect(onFinishSetup).toHaveBeenCalledOnce();
   });
 });

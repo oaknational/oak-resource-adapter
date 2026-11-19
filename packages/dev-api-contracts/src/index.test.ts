@@ -125,7 +125,7 @@ const availableTransformation = {
 const suggestionFlow = {
   capabilityId: "worksheetScaffolding",
   id: "worksheet-scaffolding",
-  label: "Add extra scaffolding",
+  label: "Scaffold practice tasks",
   maxSuggestions: 3,
   role: "suggestion",
   transformationKinds: ["scaffold-add-word-bank"],
@@ -162,7 +162,7 @@ const responses: ReadonlyArray<readonly [string, z.ZodType, unknown]> = [
         },
       ],
       capabilities: [
-        { id: "worksheetScaffolding", label: "Add extra scaffolding", rules: [rule] },
+        { id: "worksheetScaffolding", label: "Scaffold practice tasks", rules: [rule] },
       ],
       gates: [
         {
@@ -209,7 +209,7 @@ const responses: ReadonlyArray<readonly [string, z.ZodType, unknown]> = [
       capabilities: [
         {
           id: "worksheetScaffolding",
-          label: "Add extra scaffolding",
+          label: "Scaffold practice tasks",
           resourceType: "worksheet",
           suggestionFlowId: "worksheet-scaffolding",
           transformationKinds: ["scaffold-add-word-bank"],

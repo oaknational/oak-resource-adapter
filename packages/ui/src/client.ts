@@ -119,6 +119,47 @@ export function createResourceAdapterInternalClient({
   });
 }
 
+const READ_TIMEOUT_MS = 10_000;
+
+class ReadTimeoutError extends Error {}
+
+async function readWithin<T>(
+  read: (signal: AbortSignal) => Promise<T>,
+  timeoutMs: number,
+): Promise<T> {
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  try {
+    return await read(controller.signal);
+  } catch (error) {
+    throw timedOut ? new ReadTimeoutError("The request timed out.") : error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Abandons a read that has not answered in time and sends it once more, so one
+ * stalled request cannot leave the launcher loading indefinitely.
+ */
+export async function readWithRetry<T>(
+  read: (signal: AbortSignal) => Promise<T>,
+  timeoutMs = READ_TIMEOUT_MS,
+): Promise<T> {
+  try {
+    return await readWithin(read, timeoutMs);
+  } catch (error) {
+    if (!(error instanceof ReadTimeoutError)) {
+      throw error;
+    }
+    return readWithin(read, timeoutMs);
+  }
+}
+
 export async function callApi<T>(
   message: string,
   request: () => Promise<T>,

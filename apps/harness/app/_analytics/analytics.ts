@@ -1,17 +1,10 @@
 import type {
+  LessonAiMenuAnalyticsEvent,
   ResourceAdapterAnalyticsEvent,
-  ResourceAdapterOpeningControl,
 } from "@oaknational/resource-adapter";
-import { raLogger } from "@oaknational/resource-adapter-logger";
 import type { PostHog } from "posthog-js";
 
-type HarnessAnalyticsEvent =
-  | ResourceAdapterAnalyticsEvent
-  | Readonly<{
-      name: "Resource Adapter Opened";
-      capabilityId: ResourceAdapterAnalyticsEvent["capabilityId"];
-      componentType: ResourceAdapterOpeningControl;
-    }>;
+type HarnessAnalyticsEvent = LessonAiMenuAnalyticsEvent | ResourceAdapterAnalyticsEvent;
 
 type EventProperty<Event> = Event extends unknown
   ? Exclude<keyof Event, "name">
@@ -19,6 +12,7 @@ type EventProperty<Event> = Event extends unknown
 
 const propertyNames = {
   accessTier: "Access Tier",
+  accountState: "Account State",
   adaptationId: "Adaptation Id",
   allowanceLimit: "Allowance Limit",
   allowanceRemaining: "Allowance Remaining",
@@ -36,11 +30,16 @@ const propertyNames = {
   startMode: "Start Mode",
   suggestionCount: "Suggestion Count",
   supportLevel: "Support Level",
+  teachingMaterialType: "Teaching Material Type",
   transformationKind: "Transformation Kind",
   transformationKinds: "Transformation Kinds",
 } satisfies Record<EventProperty<HarnessAnalyticsEvent>, string>;
 
 const engagementIntent = {
+  "Lesson AI Menu Opened": "explore",
+  "Teaching Materials Selected": "explore",
+  "About Oak AI Selected": "explore",
+  "Adapt Onboarding Selected": "explore",
   "Resource Adapter Opened": "explore",
   "Resource Adapter Closed": "explore",
   "Adaptation Started": "use",
@@ -139,16 +138,5 @@ export function createHarnessAnalytics(
     getPostHogClient()?.capture(event.name, toPostHogProperties(event));
   }
 
-  function captureOpened(
-    capabilityId: ResourceAdapterAnalyticsEvent["capabilityId"],
-    componentType: ResourceAdapterOpeningControl,
-  ) {
-    try {
-      capture({ name: "Resource Adapter Opened", capabilityId, componentType });
-    } catch (error) {
-      raLogger("harness").error(error);
-    }
-  }
-
-  return { identify, capture, captureOpened };
+  return { identify, capture };
 }
