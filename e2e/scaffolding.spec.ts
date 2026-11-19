@@ -1,11 +1,9 @@
-import { readFile } from "node:fs/promises";
-import { strFromU8, unzipSync } from "fflate";
-import type { Locator, Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 
 import { test } from "./fixtures.js";
 
 import {
+  downloadWorksheetXml,
   expectRenderedWorksheet,
   expectSuggestionsReady,
   lessonHeading,
@@ -19,22 +17,6 @@ import {
 } from "./helpers.js";
 
 // @deployment-safe criteria: docs/DEVELOPMENT.md, "Testing a deployed candidate".
-
-async function downloadWorksheetXml(page: Page, button: Locator) {
-  await expect(button).toBeEnabled();
-  await button.focus();
-  const [download] = await Promise.all([
-    page.waitForEvent("download"),
-    button.press("Enter"),
-  ]);
-  expect(await download.failure()).toBeNull();
-  expect(download.suggestedFilename()).toMatch(/\.docx$/);
-  const file = await download.path();
-  if (file === null) throw new Error("The DOCX download has no local file.");
-  const xml = unzipSync(await readFile(file))["word/document.xml"];
-  if (xml === undefined) throw new Error("The DOCX has no document XML.");
-  return strFromU8(xml);
-}
 
 // Not @deployment-safe: opening the drawer creates an adaptation and queues a
 // suggestions job, which this test never cleans up.

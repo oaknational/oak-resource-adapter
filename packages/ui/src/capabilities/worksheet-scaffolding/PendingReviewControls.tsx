@@ -11,6 +11,8 @@ import {
 } from "@oaknational/oak-components";
 import { styled } from "styled-components";
 
+import type { ContentGuidance } from "@oaknational/resource-adapter-contracts/internal";
+
 import { ActionRow } from "./styles.js";
 
 const ReviewDisclosure = styled.button`
@@ -44,7 +46,19 @@ const ReviewChevron = styled(OakIcon)<{ $isOpen: boolean }>`
   }
 `;
 
+const ContentGuidanceBadge = styled.p`
+  align-self: flex-start;
+  background: ${parseColor("bg-decorative5-very-subdued")};
+  border: 1px solid ${parseColor("border-decorative5-stronger")};
+  border-radius: 0.5rem;
+  color: ${parseColor("text-primary")};
+  line-height: 1.4;
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+`;
+
 export function PendingReviewControls({
+  contentGuidance,
   disabled,
   onAccept,
   onRetry,
@@ -52,6 +66,7 @@ export function PendingReviewControls({
   reason,
   retryDisabled,
 }: Readonly<{
+  contentGuidance: readonly ContentGuidance[];
   disabled: boolean;
   onAccept: () => void;
   onRetry: () => void;
@@ -64,6 +79,12 @@ export function PendingReviewControls({
 
   return (
     <OakFlex $flexDirection="column" $gap="spacing-12">
+      {contentGuidance.length > 0 && (
+        <ContentGuidanceBadge>
+          <strong>Content guidance:</strong>{" "}
+          {contentGuidance.map(({ label }) => label).join(", ")}
+        </ContentGuidanceBadge>
+      )}
       <div>
         <ReviewDisclosure
           aria-controls={panelId}

@@ -198,6 +198,32 @@ describe("moderate outcomes", () => {
     expect(outcome).toMatchObject({ outcome: "PASSED", scores });
     expect(outcome).not.toHaveProperty(["scores", "x/new-category"]);
   });
+
+  it("drops scores that are missing or outside 1 to 5 instead of failing", async () => {
+    respondWith(
+      serviceBody({
+        scores: { ...scores, "l/offensive-language": 6, "e/rshe-content": undefined },
+      }),
+    );
+
+    const outcome = await moderate();
+
+    expect(outcome).toMatchObject({ outcome: "PASSED" });
+    expect(outcome).not.toHaveProperty(["scores", "l/offensive-language"]);
+    expect(outcome).not.toHaveProperty(["scores", "e/rshe-content"]);
+    expect(outcome).toHaveProperty(["scores", "p/practical-activities"], 5);
+  });
+
+  it("decides from flagged categories alone when every other field is missing or wrong", async () => {
+    respondWith({ flagged_categories: ["p/practical-activities"], prompt_version: 3 });
+
+    await expect(moderate()).resolves.toEqual({
+      outcome: "FLAGGED",
+      flaggedCategories: ["p/practical-activities"],
+      unrecognisedCategories: [],
+      scores: {},
+    });
+  });
 });
 
 describe("moderate failures", () => {
@@ -240,14 +266,17 @@ describe("moderate failures", () => {
 
   it.each([
     ["a body that is not JSON", "<html>oops</html>"],
-    ["a body missing fields", { flagged_categories: [] }],
     [
-      "a score outside 1 to 5",
-      serviceBody({ scores: { ...scores, "l/offensive-language": 6 } }),
+      "a body without flagged categories",
+      serviceBody({ flagged_categories: undefined }),
     ],
     [
-      "a score missing for a known category",
-      serviceBody({ scores: { ...scores, "e/rshe-content": undefined } }),
+      "flagged categories that are not a list",
+      serviceBody({ flagged_categories: "t/x" }),
+    ],
+    [
+      "a flagged category that is not a string",
+      serviceBody({ flagged_categories: [1] }),
     ],
   ])("reports a malformed response for %s", async (_name, body) => {
     respondWith(body);

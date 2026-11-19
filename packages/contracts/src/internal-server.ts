@@ -35,6 +35,7 @@ import {
   termsAcceptRequestSchema,
   type WorksheetScaffoldingRetrySuggestionsRequest,
   worksheetScaffoldingRetrySuggestionsRequestSchema,
+  withheldSafetyResults,
 } from "./internal-contract.js";
 
 /** The service boundary required by the feature flags procedure. */
@@ -136,6 +137,7 @@ const worksheetScaffoldingStateSchema = z.object({
   document: resourceDocumentSchema,
   job: z.nullable(
     z.object({
+      attemptId: z.exactOptional(z.string()),
       failureMessage: z.nullable(z.string()),
       id: z.string(),
       kind: z.enum(worksheetScaffoldingJobKinds),
@@ -145,11 +147,21 @@ const worksheetScaffoldingStateSchema = z.object({
   pendingReview: z.nullable(
     z.object({
       attemptId: z.string(),
+      contentGuidance: z.readonly(
+        z.array(z.object({ category: z.string(), label: z.string() })),
+      ),
       contributionId: z.string(),
       kind: z.string(),
       label: z.string(),
       reason: z.string(),
       supportLevel: z.nullable(z.enum(supportLevels)),
+      targetBlockId: z.nullable(z.string()),
+    }),
+  ),
+  withheld: z.nullable(
+    z.object({
+      attemptId: z.string(),
+      safetyResult: z.enum(withheldSafetyResults),
       targetBlockId: z.nullable(z.string()),
     }),
   ),

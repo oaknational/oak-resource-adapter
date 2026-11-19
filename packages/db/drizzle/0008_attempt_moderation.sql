@@ -1,0 +1,4 @@
+CREATE TYPE "resource_adapter"."moderation_result" AS ENUM('safe', 'guidance-required', 'highly-sensitive', 'toxic');--> statement-breakpoint
+ALTER TABLE "resource_adapter"."transformation_attempts" ADD COLUMN "moderation_categories" text[];--> statement-breakpoint
+ALTER TABLE "resource_adapter"."transformation_attempts" ADD COLUMN "moderation_result" "resource_adapter"."moderation_result";--> statement-breakpoint
+ALTER TABLE "resource_adapter"."transformation_attempts" ADD CONSTRAINT "transformation_attempts_moderation_check" CHECK (("resource_adapter"."transformation_attempts"."moderation_result" IS NULL) = ("resource_adapter"."transformation_attempts"."moderation_categories" IS NULL));

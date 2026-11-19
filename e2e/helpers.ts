@@ -1,5 +1,8 @@
+import { readFile } from "node:fs/promises";
+
 import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
 import { expect, type Locator, type Page, type Response } from "@playwright/test";
+import { strFromU8, unzipSync } from "fflate";
 
 // Presence is verified by the setup project, which the test projects depend on.
 const emailAddress = process.env.E2E_CLERK_USER_EMAIL as string;
@@ -14,8 +17,28 @@ export const scaffoldingLessons = {
   applyingASuggestion:
     "explain-how-the-quotient-is-affected-when-the-divisor-is-equal-to-the-dividend",
   generatingSuggestions: "the-river-nile",
+  moderationFailing: "what-greek-myths-can-tell-us-about-ancient-greece",
+  moderationGuidance: "using-trace-tables",
+  moderationHighlySensitive: "what-we-know-about-ancient-greece",
+  moderationToxic: "air-resistance-do-and-review",
   openingTheDrawer: "forming-ions-for-ionic-bonding",
 } as const;
+
+export async function downloadWorksheetXml(page: Page, button: Locator) {
+  await expect(button).toBeEnabled();
+  await button.focus();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    button.press("Enter"),
+  ]);
+  expect(await download.failure()).toBeNull();
+  expect(download.suggestedFilename()).toMatch(/\.docx$/);
+  const file = await download.path();
+  if (file === null) throw new Error("The DOCX download has no local file.");
+  const xml = unzipSync(await readFile(file))["word/document.xml"];
+  if (xml === undefined) throw new Error("The DOCX has no document XML.");
+  return strFromU8(xml);
+}
 
 /**
  * The drawer fetches its document on open, so waiting for the worksheet alone

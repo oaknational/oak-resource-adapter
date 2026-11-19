@@ -65,6 +65,7 @@ const worksheetState = {
   job: null,
   pendingReview: null,
   suggestions: [],
+  withheld: null,
 } as const;
 type InternalCaller = ReturnType<typeof internalRouter.createCaller>;
 

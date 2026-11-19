@@ -10,7 +10,13 @@ import {
   type WorksheetScaffoldingDismissRequest,
   type WorksheetScaffoldingRetrySuggestionsRequest,
   type UsageLimitReached,
+  type ContentGuidance,
+  type WithheldScaffold,
 } from "@oaknational/resource-adapter-contracts/internal";
+import {
+  isWithheldSafetyResult,
+  moderationCategoryLabel,
+} from "@oaknational/resource-adapter-moderation";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 import {
   contributionIdsInDocument,
@@ -46,6 +52,7 @@ import {
   type WorksheetScaffoldingDependencies,
   type WorksheetScaffoldingServiceRepository,
 } from "./dependencies";
+import { retryTarget } from "./retry-target";
 import { asParams, storedInputs, storedSupportLevel } from "./stored-params";
 
 /** The job input is stored as JSON, so validated params are narrowed to it. */
@@ -79,17 +86,79 @@ function isSettledOperation(job: { kind: string; status: string }): boolean {
   return job.kind !== generateSuggestionsJob.kind && job.status === "succeeded";
 }
 
-function isSupersededRetryFailure(
+const scaffoldJobKinds: ReadonlySet<string> = new Set([
+  applySuggestionJob.kind,
+  retryTransformationJob.kind,
+]);
+
+type FoundAttempt = Awaited<
+  ReturnType<WorksheetScaffoldingServiceRepository["getAdaptationAttempt"]>
+>;
+
+/** The attempt a scaffold job ran, or null for any other job. */
+function scaffoldJobAttempt(
+  adaptationId: string,
+  job: { id: string; kind: string } | null,
+  { repository }: Pick<WorksheetScaffoldingDependencies, "repository">,
+): Promise<FoundAttempt> {
+  return job === null || !scaffoldJobKinds.has(job.kind)
+    ? Promise.resolve(null)
+    : repository.getAdaptationAttempt(adaptationId, { jobId: job.id });
+}
+
+function withheldScaffold(found: FoundAttempt): WithheldScaffold | null {
+  if (found === null) {
+    return null;
+  }
+  const { moderationResult } = found.attempt;
+  if (moderationResult === null || !isWithheldSafetyResult(moderationResult)) {
+    return null;
+  }
+  return {
+    attemptId: found.attempt.id,
+    safetyResult: moderationResult,
+    targetBlockId: found.transformation.targetBlockId,
+  };
+}
+
+function contentGuidance(attempt: {
+  moderationCategories: readonly string[] | null;
+  moderationResult: string | null;
+}): readonly ContentGuidance[] {
+  return attempt.moderationResult === "guidance-required"
+    ? (attempt.moderationCategories ?? []).map((category) => ({
+        category,
+        label: moderationCategoryLabel(category),
+      }))
+    : [];
+}
+
+/** A failed retry stays visible while Try again could still run it. */
+async function isSupersededRetryFailure(
   job: { input: unknown; kind: string; status: string },
   pending: Awaited<
     ReturnType<WorksheetScaffoldingServiceRepository["getPendingReview"]>
   >,
-): boolean {
+  { adaptationId, headId }: Readonly<{ adaptationId: string; headId: string }>,
+  repository: Pick<
+    WorksheetScaffoldingServiceRepository,
+    "getAdaptationAttempt" | "getPrimaryTransformationInput"
+  >,
+): Promise<boolean> {
   if (job.kind !== retryTransformationJob.kind || job.status !== "failed") {
     return false;
   }
   const retry = retryTransformationJob.input.safeParse(job.input);
-  return retry.success && pending?.attempt.id !== retry.data.attemptId;
+  if (!retry.success) {
+    return false;
+  }
+  const target = await retryTarget(repository, {
+    adaptationId,
+    attemptId: retry.data.attemptId,
+    headId,
+    pending,
+  });
+  return target === null;
 }
 
 /**
@@ -140,11 +209,25 @@ async function readAdaptation(
     getLatestJob(concurrencyKey, [generateSuggestionsJob.kind]),
     repository.getPendingReview(head.storedDocument.id),
   ]);
-  const job =
+  const hidesLatestJob =
     latestJob !== null &&
-    (isSettledOperation(latestJob) || isSupersededRetryFailure(latestJob, pending))
-      ? latestGeneration
-      : latestJob;
+    (isSettledOperation(latestJob) ||
+      (await isSupersededRetryFailure(
+        latestJob,
+        pending,
+        { adaptationId, headId: head.storedDocument.id },
+        repository,
+      )));
+  const job = hidesLatestJob ? latestGeneration : latestJob;
+  // A withheld scaffold's job succeeded, which hides it from `job`, so the
+  // attempt is read from the latest job itself.
+  const latestAttempt = await scaffoldJobAttempt(adaptationId, latestJob, {
+    repository,
+  });
+  const retryableAttemptId =
+    job !== null && job === latestJob && job.status === "failed"
+      ? latestAttempt?.attempt.id
+      : undefined;
 
   return {
     headResourceDocumentId: head.storedDocument.id,
@@ -158,6 +241,9 @@ async function readAdaptation(
         job === null || !isSuggestionJobKind(job.kind)
           ? null
           : {
+              ...(retryableAttemptId === undefined
+                ? {}
+                : { attemptId: retryableAttemptId }),
               failureMessage: job.failureMessage,
               id: job.id,
               kind: job.kind,
@@ -168,6 +254,7 @@ async function readAdaptation(
           ? null
           : {
               attemptId: pending.attempt.id,
+              contentGuidance: contentGuidance(pending.attempt),
               contributionId: pending.transformation.id,
               kind: pending.transformation.kind,
               label: transformationDefinitions[pending.transformation.kind].label,
@@ -190,6 +277,7 @@ async function readAdaptation(
           targetBlockId: row.targetBlockId,
         };
       }),
+      withheld: withheldScaffold(latestAttempt),
     },
   };
 }
@@ -264,6 +352,44 @@ async function headUnderReview(
   }
   const pending = await repository.getPendingReview(head.storedDocument.id);
   return pending?.attempt.id === attemptId ? { head, pending } : null;
+}
+
+/**
+ * The head a retry of this attempt may run against. With no scaffold awaiting
+ * review, only the head's latest scaffold job qualifies, and only when it
+ * failed or moderation withheld its scaffold.
+ */
+async function headForRetry(
+  input: Readonly<{ adaptationId: string; attemptId: string }>,
+  target: ResourceAdapterAuthenticatedTeacher,
+  dependencies: Pick<WorksheetScaffoldingDependencies, "getLatestJob" | "repository">,
+): Promise<AdaptationHead | null> {
+  const { repository } = dependencies;
+  const head = await repository.getAdaptationHead(input.adaptationId, target.teacherId);
+  if (head === null) {
+    return null;
+  }
+  const headId = head.storedDocument.id;
+  const pending = await repository.getPendingReview(headId);
+  if (pending === null) {
+    const latestJob = await dependencies.getLatestJob(
+      adaptationHeadConcurrencyKey(input.adaptationId, headId),
+      worksheetScaffoldingJobKinds,
+    );
+    const latest = await scaffoldJobAttempt(
+      input.adaptationId,
+      latestJob,
+      dependencies,
+    );
+    if (
+      latest?.attempt.id !== input.attemptId ||
+      (latestJob?.status !== "failed" && withheldScaffold(latest) === null)
+    ) {
+      return null;
+    }
+  }
+  const retry = await retryTarget(repository, { ...input, headId, pending });
+  return retry === null ? null : head;
 }
 
 async function enqueueOnHead(
@@ -381,11 +507,10 @@ export async function enqueueWorksheetScaffoldingRetryTransformation(
   target: ResourceAdapterAuthenticatedTeacher,
   dependencies: WorksheetScaffoldingDependencies = defaultDependencies,
 ): Promise<WorksheetScaffoldingState | null> {
-  const review = await headUnderReview(input, target, dependencies);
-  if (review === null) {
+  const head = await headForRetry(input, target, dependencies);
+  if (head === null) {
     return null;
   }
-  const { head } = review;
   return enqueueOnHead(head, input, target, dependencies, {
     idempotencyKey: transformationRetryJobKey(input.attemptId, input.requestId),
     input: {

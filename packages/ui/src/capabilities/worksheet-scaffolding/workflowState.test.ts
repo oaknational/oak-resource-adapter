@@ -34,6 +34,7 @@ function value(overrides: Partial<WorksheetScaffoldingState> = {}) {
     job: null,
     pendingReview: null,
     suggestions: [suggestion],
+    withheld: null,
     ...overrides,
   } satisfies WorksheetScaffoldingState;
 }

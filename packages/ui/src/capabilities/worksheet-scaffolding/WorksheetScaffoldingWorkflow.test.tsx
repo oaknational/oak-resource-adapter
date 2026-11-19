@@ -166,6 +166,7 @@ function readyState(
     job: null,
     pendingReview: null,
     suggestions: [],
+    withheld: null,
     ...overrides,
   };
 }
@@ -282,6 +283,7 @@ const readyWithPendingReview = readyState({
   document: documentWithPendingScaffold,
   pendingReview: {
     attemptId: "attempt-1",
+    contentGuidance: [],
     contributionId: "contribution-1",
     kind: "scaffold-add-word-bank",
     label: "Add a word bank",
@@ -1911,6 +1913,186 @@ it("tells the teacher when refreshing a changed worksheet fails", async () => {
   );
 });
 
+describe("moderation results", () => {
+  const withheld = {
+    attemptId: "attempt-withheld",
+    safetyResult: "toxic",
+    targetBlockId: "question-1",
+  } as const;
+
+  const readyWithWithheld = readyState({
+    job: generatedJob,
+    suggestions: [
+      {
+        id: "suggestion-2",
+        kind: "scaffold-add-recall-questions",
+        label: "Add recall questions",
+        params: {},
+        reason: "A short recall prompt would help pupils retrieve prior knowledge.",
+        targetBlockId: "question-1",
+      },
+    ],
+    withheld,
+  });
+
+  const withheldNoticeTitle = "Sorry, we couldn't show that scaffold";
+  async function findWithheldNotice() {
+    const notice = await screen.findByRole("alert");
+    expect(notice).toHaveTextContent(withheldNoticeTitle);
+    return notice;
+  }
+
+  it("names the areas to check in text on a pending scaffold, until it is accepted", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened({
+        ...readyWithPendingReview,
+        pendingReview: {
+          ...readyWithPendingReview.pendingReview!,
+          contentGuidance: [
+            {
+              category: "p/practical-activities",
+              label: "Practical equipment and activities",
+            },
+            { category: "p/outdoor-learning", label: "Outdoor learning" },
+          ],
+        },
+      }),
+    );
+    renderDialog();
+
+    expect(
+      await screen.findByText(
+        (_, element) =>
+          element?.tagName === "P" &&
+          element.textContent ===
+            "Content guidance: Practical equipment and activities, Outdoor learning",
+      ),
+    ).toBeVisible();
+
+    await userEvent.click(screen.getByRole("button", { name: "Accept" }));
+
+    await waitFor(() =>
+      expect(screen.queryByText("Content guidance:")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("shows no guidance for a scaffold that needs none", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithPendingReview));
+    renderDialog();
+
+    await screen.findByRole("button", { name: "Accept" });
+    expect(screen.queryByText("Content guidance:")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["toxic", "it doesn't meet Oak's community standards"],
+    ["highly-sensitive", "it covers a highly sensitive topic"],
+  ] as const)(
+    "apologises for a %s scaffold at its question, beside the other suggestions",
+    async (safetyResult, reason) => {
+      openWorksheetScaffoldingMock.mockResolvedValueOnce(
+        opened({ ...readyWithWithheld, withheld: { ...withheld, safetyResult } }),
+      );
+      renderDialog();
+
+      const notice = await findWithheldNotice();
+      expect(notice).toBeVisible();
+      expect(notice).toHaveTextContent(reason);
+      expect(
+        screen.queryByRole("heading", { name: withheldNoticeTitle }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Add recall questions" }),
+      ).toBeVisible();
+      expect(
+        screen.queryByText("No scaffolds suggested", { exact: false }),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText("Added support")).not.toBeInTheDocument();
+    },
+  );
+
+  it("tries a withheld scaffold again", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithWithheld));
+    renderDialog();
+
+    const notice = await findWithheldNotice();
+    await userEvent.click(within(notice).getByRole("button", { name: "Try again" }));
+
+    expect(retryTransformationMock).toHaveBeenCalledWith({
+      adaptationId: "adaptation-1",
+      apiBaseUrl,
+      attemptId: "attempt-withheld",
+      getToken: expect.any(Function),
+      requestId: expect.any(String),
+    });
+  });
+
+  it("keeps the earlier version under review when its retry is withheld", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened({ ...readyWithPendingReview, withheld }),
+    );
+    renderDialog();
+
+    const notice = await findWithheldNotice();
+    expect(notice).toHaveTextContent("Your earlier version is still here");
+    expect(
+      within(notice).queryByRole("button", { name: "Try again" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Accept" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled();
+  });
+
+  it("announces the apology when it replaces the teacher's own application", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithSuggestion));
+    applySuggestionMock.mockResolvedValueOnce(
+      readyState({
+        ...readyWithSuggestion,
+        job: {
+          failureMessage: null,
+          id: "job-2",
+          kind: "suggestions.apply",
+          status: "running",
+        },
+      }),
+    );
+    getWorksheetScaffoldingMock.mockResolvedValueOnce(readyWithWithheld);
+    renderDialog();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Add a word bank" }),
+    );
+
+    await findWithheldNotice();
+  });
+
+  it("offers to try a failed application again", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(
+      opened(
+        readyState({
+          job: {
+            attemptId: "attempt-failed",
+            failureMessage: "The background job failed while executing.",
+            id: "job-1",
+            kind: "suggestions.apply",
+            status: "failed",
+          },
+        }),
+      ),
+    );
+    renderDialog();
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("We couldn't apply that scaffold");
+    expect(alert).toHaveTextContent("Try again for a new version of that scaffold");
+    await userEvent.click(within(alert).getByRole("button", { name: "Try again" }));
+
+    expect(retryTransformationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ attemptId: "attempt-failed" }),
+    );
+  });
+});
+
 describe("analytics", () => {
   const generatingJob = {
     failureMessage: null,
@@ -2648,6 +2830,7 @@ describe("analytics payloads", () => {
         document: privateDocument,
         pendingReview: {
           attemptId: "attempt-1",
+          contentGuidance: [],
           contributionId: "contribution-1",
           kind: "scaffold-add-word-bank",
           label: `${DISPLAY_TEXT} review label`,

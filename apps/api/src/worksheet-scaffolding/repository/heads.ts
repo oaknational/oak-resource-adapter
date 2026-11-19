@@ -23,6 +23,7 @@ import {
   type ParsedStoredDocument,
   parseStoredDocumentRow,
   pendingAttemptOwnsHead,
+  type ShownModeration,
   type Transaction,
 } from "./shared";
 
@@ -274,6 +275,8 @@ export async function storeOutputsAndAdvanceHead(input: {
   expectedHeadId: string;
   /** Retry additionally requires this attempt to remain pending on the expected head. */
   expectedPendingAttemptId?: string;
+  /** Absent only for operations whose output nobody generated. */
+  moderation?: ShownModeration;
   outputs: readonly GeneratedOutput[];
   /** An operation the teacher already asked for needs no separate approval. */
   review?: "accepted" | "pending";
@@ -328,7 +331,12 @@ export async function storeOutputsAndAdvanceHead(input: {
     if (advanced === undefined) {
       throw new Error("The adaptation head changed before the scaffold was applied.");
     }
-    await markAttemptComplete(transaction, input.attemptId, input.review);
+    await markAttemptComplete(
+      transaction,
+      input.attemptId,
+      input.review,
+      input.moderation,
+    );
     return nextHead.id;
   });
 }

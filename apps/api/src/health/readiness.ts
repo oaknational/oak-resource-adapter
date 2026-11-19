@@ -13,12 +13,20 @@ import {
   resolveModelTransport,
 } from "../ai/model-configuration";
 import { isDeployment } from "../environment";
+import {
+  ModerationConfigurationError,
+  moderationConfigurationErrors,
+  resolveModerationTransport,
+} from "../moderation/moderation-configuration";
 
 /** Public responses must use fixed messages, never upstream errors or env values. */
 const readinessMessages = {
   ...modelConfigurationErrors,
+  ...moderationConfigurationErrors,
   OPENAI_TRANSPORT_CONFIGURED: "OpenAI transport configured.",
   DETERMINISTIC_TRANSPORT_CONFIGURED: "Deterministic transport configured.",
+  MODERATION_SERVICE_CONFIGURED: "Moderation service configured.",
+  DETERMINISTIC_MODERATION_CONFIGURED: "Deterministic moderation configured.",
   DATABASE_CONNECTED: "Database connected.",
   DATABASE_NOT_CONFIGURED: "The database connection is not configured.",
   DATABASE_CERTIFICATE_REJECTED: "The database's certificate was not trusted.",
@@ -40,6 +48,7 @@ type ReadinessCode = keyof typeof readinessMessages;
  */
 const terminalCodes: ReadonlySet<string> = new Set([
   ...Object.keys(modelConfigurationErrors),
+  ...Object.keys(moderationConfigurationErrors),
   "DATABASE_NOT_CONFIGURED",
   "DATABASE_CERTIFICATE_REJECTED",
   "DATABASE_REFUSED_CONNECTION",
@@ -75,6 +84,25 @@ function modelConfiguration(): CheckOutcome {
     };
   } catch (error) {
     if (!(error instanceof ModelConfigurationError)) {
+      throw error;
+    }
+    return { label, status: "not-ready", code: error.configurationCode };
+  }
+}
+
+function moderationConfiguration(): CheckOutcome {
+  const label = "Moderation configuration";
+  try {
+    return {
+      label,
+      status: "ready",
+      code:
+        resolveModerationTransport() === "service"
+          ? "MODERATION_SERVICE_CONFIGURED"
+          : "DETERMINISTIC_MODERATION_CONFIGURED",
+    };
+  } catch (error) {
+    if (!(error instanceof ModerationConfigurationError)) {
       throw error;
     }
     return { label, status: "not-ready", code: error.configurationCode };
@@ -132,6 +160,7 @@ export async function checkReadiness() {
   const checks = {
     database: describeCheck(await database()),
     modelConfiguration: describeCheck(modelConfiguration()),
+    moderationConfiguration: describeCheck(moderationConfiguration()),
     artifactStorage: describeCheck(artifactStorage()),
   };
   const status = Object.values(checks).every((check) => check.status === "ready")

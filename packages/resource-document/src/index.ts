@@ -13,8 +13,9 @@ export {
   type ResourceDocumentTraversalOptions,
   type ResourceNodeOfType,
 } from "./traversal.js";
-export { resourceDocumentToPlainText } from "./plain-text.js";
+export { resourceDocumentToPlainText, resourceNodesToPlainText } from "./plain-text.js";
 export {
+  contributedNodes,
   contributionIdOf,
   contributionIdsInDocument,
   CONTRIBUTION_EXTENSION_KEY,

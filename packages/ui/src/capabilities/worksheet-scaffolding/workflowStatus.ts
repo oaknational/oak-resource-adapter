@@ -103,12 +103,21 @@ export const FAILURE_TITLES = {
 
 export function failureMessage(
   kind: WorksheetScaffoldingJobKind,
-  canKeepScaffolds: boolean,
+  {
+    canTryAgain,
+    hasPendingReview,
+  }: Readonly<{ canTryAgain: boolean; hasPendingReview: boolean }>,
 ): string {
-  if (kind === "transformations.retry") {
+  if (kind === "transformations.retry" && hasPendingReview) {
     return "You can retry again, accept this version, undo it, or start again.";
   }
-  if (canKeepScaffolds) {
+  if (
+    canTryAgain &&
+    (kind === "suggestions.apply" || kind === "transformations.retry")
+  ) {
+    return "Try again for a new version of that scaffold, or start again to reopen the original worksheet.";
+  }
+  if (canTryAgain) {
     return "Try again to keep the scaffolds you have added, or start again to reopen the original worksheet.";
   }
   return "Start again to reopen the original worksheet.";
@@ -120,6 +129,7 @@ export function foundNoScaffolds(
 ): boolean {
   return (
     suggestedCount === 0 &&
+    state.withheld === null &&
     state.job?.kind === "suggestions.generate" &&
     state.job.status === "succeeded"
   );

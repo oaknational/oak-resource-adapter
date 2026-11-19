@@ -23,11 +23,13 @@ import { transformationDefinitions } from "../transformations/registry";
 import {
   acceptSuggestion,
   acceptPendingReview,
+  completeWithheldAttempt,
   createAdaptationWithSourceDocument,
   createRetryAttempt,
   isAttemptComplete,
   findReopenableAdaptation,
   findResumableAdaptation,
+  getAdaptationAttempt,
   getAdaptationHead,
   getOpenSuggestion,
   getPendingReview,
@@ -130,6 +132,19 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
 
   /** An adaptation whose head is a generated revision awaiting the teacher's decision. */
   async function newPendingReview() {
+    const fixture = await newAcceptedSuggestion();
+    const pendingHeadId = await storeOutputsAndAdvanceHead({
+      adaptationId: fixture.adaptationId,
+      attemptId: fixture.accepted.attempt.id,
+      expectedHeadId: fixture.resourceDocumentId,
+      outputs: [{ document: worksheet, purpose: "revised-resource" }],
+      revisedPosition: 0,
+    });
+    return { ...fixture, pendingHeadId };
+  }
+
+  /** A suggestion the teacher applied, before its job has stored anything. */
+  async function newAcceptedSuggestion() {
     const { adaptationId, resourceDocumentId } = await newAdaptation();
     const { attempt: suggestionAttempt } = await newAttempt(
       adaptationId,
@@ -171,14 +186,13 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
       params: { supportLevel: "low" },
       suggestion,
     });
-    const pendingHeadId = await storeOutputsAndAdvanceHead({
+    return {
+      accepted,
       adaptationId,
-      attemptId: accepted.attempt.id,
-      expectedHeadId: resourceDocumentId,
-      outputs: [{ document: worksheet, purpose: "revised-resource" }],
-      revisedPosition: 0,
-    });
-    return { accepted, adaptationId, pendingHeadId, resourceDocumentId, suggestion };
+      applicationJobId: applicationJob.job.id,
+      resourceDocumentId,
+      suggestion,
+    };
   }
 
   async function settleJobs(adaptationId: string) {
@@ -639,6 +653,93 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
     await expect(
       getPrimaryTransformationInput(accepted.transformation.id),
     ).resolves.toMatchObject({ id: resourceDocumentId });
+  });
+
+  it("records moderation on the attempt in the transaction that moves the head", async () => {
+    const { accepted, adaptationId, resourceDocumentId } =
+      await newAcceptedSuggestion();
+
+    const headId = await storeOutputsAndAdvanceHead({
+      adaptationId,
+      attemptId: accepted.attempt.id,
+      expectedHeadId: resourceDocumentId,
+      moderation: {
+        result: "guidance-required",
+        categories: ["p/practical-activities"],
+      },
+      outputs: [{ document: worksheet, purpose: "revised-resource" }],
+      revisedPosition: 0,
+    });
+
+    const pending = await getPendingReview(headId);
+    expect(pending?.attempt).toMatchObject({
+      moderationCategories: ["p/practical-activities"],
+      moderationResult: "guidance-required",
+    });
+  });
+
+  it("completes a withheld attempt without moving the head", async () => {
+    const { accepted, adaptationId, applicationJobId, resourceDocumentId } =
+      await newAcceptedSuggestion();
+
+    await completeWithheldAttempt({
+      attemptId: accepted.attempt.id,
+      moderation: { result: "toxic", categories: ["t/encourages-harmful-behaviour"] },
+    });
+
+    expect((await getAdaptationHead(adaptationId))?.storedDocument.id).toBe(
+      resourceDocumentId,
+    );
+    expect(await getPendingReview(resourceDocumentId)).toBeNull();
+    expect(await isAttemptComplete(accepted.attempt.id)).toBe(true);
+    const byJob = await getAdaptationAttempt(adaptationId, { jobId: applicationJobId });
+    expect(byJob?.attempt).toMatchObject({
+      acceptedAt: null,
+      id: accepted.attempt.id,
+      moderationCategories: ["t/encourages-harmful-behaviour"],
+      moderationResult: "toxic",
+    });
+    expect(byJob?.transformation.id).toBe(accepted.transformation.id);
+  });
+
+  it("leaves an already completed attempt's moderation alone", async () => {
+    const { accepted } = await newAcceptedSuggestion();
+    await completeWithheldAttempt({
+      attemptId: accepted.attempt.id,
+      moderation: { result: "toxic", categories: ["t/encourages-harmful-behaviour"] },
+    });
+
+    await completeWithheldAttempt({
+      attemptId: accepted.attempt.id,
+      moderation: { result: "highly-sensitive", categories: ["n/self-harm-suicide"] },
+    });
+
+    const found = await getAdaptationAttempt(accepted.adaptation.id, {
+      attemptId: accepted.attempt.id,
+    });
+    expect(found?.attempt.moderationResult).toBe("toxic");
+  });
+
+  it("finds an attempt only within its own adaptation", async () => {
+    const { accepted } = await newAcceptedSuggestion();
+    const other = await newAdaptation();
+
+    expect(
+      await getAdaptationAttempt(other.adaptationId, {
+        attemptId: accepted.attempt.id,
+      }),
+    ).toBeNull();
+  });
+
+  it("refuses a moderation result without its categories", async () => {
+    const { accepted } = await newAcceptedSuggestion();
+
+    await expect(
+      getDatabaseClient()
+        .update(transformationAttempts)
+        .set({ moderationResult: "safe" })
+        .where(eq(transformationAttempts.id, accepted.attempt.id)),
+    ).rejects.toThrow();
   });
 
   it("numbers a retry after the attempt it follows", async () => {

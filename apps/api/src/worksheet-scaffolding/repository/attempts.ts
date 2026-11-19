@@ -11,12 +11,14 @@ import { and, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 
 import type { StoredAdaptationHead } from "./heads";
 import {
+  moderationColumns,
   parseStoredDocumentRow,
   PRIMARY_SOURCE,
   type ParsedStoredDocument,
   type StoredAttempt,
   type StoredSuggestion,
   type StoredTransformation,
+  type WithheldModeration,
 } from "./shared";
 
 export type AcceptedSuggestion = Readonly<{
@@ -144,6 +146,54 @@ export async function getAttemptForJob(jobId: string): Promise<StoredAttempt | n
     .where(eq(transformationAttempts.jobId, jobId))
     .limit(1);
   return row ?? null;
+}
+
+export type AttemptWithTransformation = Readonly<{
+  attempt: StoredAttempt;
+  transformation: StoredTransformation;
+}>;
+
+/** An attempt of this adaptation, found by its own ID or by the job that ran it. */
+export async function getAdaptationAttempt(
+  adaptationId: string,
+  key: Readonly<{ attemptId: string } | { jobId: string }>,
+): Promise<AttemptWithTransformation | null> {
+  const [row] = await getDatabaseClient()
+    .select({ attempt: transformationAttempts, transformation: transformations })
+    .from(transformationAttempts)
+    .innerJoin(
+      transformations,
+      eq(transformations.id, transformationAttempts.transformationId),
+    )
+    .where(
+      and(
+        eq(transformations.adaptationId, adaptationId),
+        "attemptId" in key
+          ? eq(transformationAttempts.id, key.attemptId)
+          : eq(transformationAttempts.jobId, key.jobId),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+/**
+ * Finishes an attempt whose content moderation withheld. The head is left
+ * where it was, so the content never reaches the worksheet or an export.
+ */
+export async function completeWithheldAttempt(input: {
+  attemptId: string;
+  moderation: WithheldModeration;
+}): Promise<void> {
+  await getDatabaseClient()
+    .update(transformationAttempts)
+    .set({ completedAt: new Date(), ...moderationColumns(input.moderation) })
+    .where(
+      and(
+        eq(transformationAttempts.id, input.attemptId),
+        isNull(transformationAttempts.completedAt),
+      ),
+    );
 }
 
 /** Records one internal operation and its single attempt against a document. */

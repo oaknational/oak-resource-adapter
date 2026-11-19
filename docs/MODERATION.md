@@ -2,7 +2,8 @@
 
 `@oaknational/resource-adapter-moderation` calls the
 [Oak AI Moderation Service](https://github.com/oaknational/oak-ai-moderation-service)
-(`POST /v1/moderate`). Nothing in the transformation pipeline calls it yet.
+(`POST /v1/moderate`). Every scaffold a model generates is moderated before the
+teacher sees it ([scaffold moderation](#scaffold-moderation)).
 
 ## Outcomes
 
@@ -14,20 +15,73 @@ what that means for safety.
   thresholds; ORA does not re-derive them from the scores.
 - A category code ORA does not know goes in `unrecognisedCategories` and still
   counts as flagged.
-- Scores run from 5 (not involved) down to 1 (heavily involved). Low is bad.
+- Scores run from 5 (not involved) down to 1 (heavily involved). Low is bad. A
+  score that is missing, out of range or for an unknown category is left out
+  rather than failing the response, as are a missing `prompt_version` and
+  `moderation_id`.
 
-| Upstream                                  | Reason                 |
-| ----------------------------------------- | ---------------------- |
-| 400                                       | `INVALID_REQUEST`      |
-| 401                                       | `NOT_AUTHENTICATED`    |
-| 403                                       | `NOT_AUTHORISED`       |
-| 504, or no answer within 35s              | `TIMED_OUT`            |
-| Any other non-2xx, or a network failure   | `UPSTREAM_UNAVAILABLE` |
-| A 2xx body that does not match the schema | `MALFORMED_RESPONSE`   |
-| The caller's `AbortSignal` fired          | `ABORTED`              |
+| Upstream                                                   | Reason                 |
+| ---------------------------------------------------------- | ---------------------- |
+| 400                                                        | `INVALID_REQUEST`      |
+| 401                                                        | `NOT_AUTHENTICATED`    |
+| 403                                                        | `NOT_AUTHORISED`       |
+| 504, or no answer within 35s                               | `TIMED_OUT`            |
+| Any other non-2xx, or a network failure                    | `UPSTREAM_UNAVAILABLE` |
+| A 2xx body that is not JSON or has no `flagged_categories` | `MALFORMED_RESPONSE`   |
+| The caller's `AbortSignal` fired                           | `ABORTED`              |
 
 HTTP failures keep their status code in `cause` as a `ModerationHttpError`. There
 is no automatic retry; the caller decides.
+
+## Scaffold moderation
+
+The apply and retry jobs moderate a scaffold after the model's output is applied
+and before anything is stored. Only the nodes the scaffold added are sent, as
+plain text without the worksheet title. `safetyResultOf` classifies the flagged
+codes by prefix, as Aila does, so a code ORA does not know yet still counts by
+its group:
+
+| Result              | Codes               | What happens                                                                |
+| ------------------- | ------------------- | --------------------------------------------------------------------------- |
+| `toxic`             | any `t/`            | Withheld: the attempt completes, the head stays put, the teacher can retry  |
+| `highly-sensitive`  | otherwise, any `n/` | Withheld, as above                                                          |
+| `guidance-required` | otherwise, any code | Shown, with the flagged areas named until the teacher accepts it            |
+| `safe`              | none                | Shown                                                                       |
+| `FAILED` outcome    | n/a                 | The job step throws, Workflow retries it, then the job fails with Try again |
+
+The result and the codes are stored on `transformation_attempts`. A scaffold
+with no text throws rather than passing. Neither the text nor the service's
+reply is logged or put in an error message.
+
+### Deterministic moderation
+
+`MODERATION_TRANSPORT=deterministic` replaces the service with a fake that never
+makes a network call, the way `MODEL_TRANSPORT=deterministic` replaces the model.
+CI browser tests use both. Production refuses it, and readiness reports
+`DETERMINISTIC_MODERATION_FORBIDDEN`. Unset or `service` calls the service and
+needs `MODERATION_API_URL`.
+
+The fake passes every scaffold that `DETERMINISTIC_MODERATION_RESULTS` does not
+list. That variable is JSON keyed by lesson slug, then transformation kind,
+giving the result of each attempt in order. The last result repeats, so a list
+can give Try again a different result from the first attempt:
+
+```json
+{
+  "what-we-know-about-ancient-greece": {
+    "scaffold-add-task-glossary": ["highly-sensitive", "safe"]
+  }
+}
+```
+
+A result is `safe`, `guidance-required`, `highly-sensitive`, `toxic` or
+`failed`. `playwright.config.ts` sets the variable for the API it starts, using
+the lessons in `e2e/helpers.ts`. An API that Playwright reuses, such as your own
+`pnpm dev`, passes everything unless you set it there too.
+
+A browser test must not use `failed`. The failed job makes the Workflow SDK log
+a `FatalError`, which fails the CI browser job's log check, so the failure test
+writes the failed state into the API's responses instead.
 
 ## Authentication
 

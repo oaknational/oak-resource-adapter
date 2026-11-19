@@ -35,7 +35,7 @@ function toSmokeResult(outcome: ModerationOutcome): ModerationSmokeResponse {
         outcome: outcome.outcome,
         flaggedCategories: [],
         unrecognisedCategories: [],
-        promptVersion: outcome.promptVersion,
+        promptVersion: outcome.promptVersion ?? null,
         reason: null,
       };
     case "FLAGGED":
@@ -43,7 +43,7 @@ function toSmokeResult(outcome: ModerationOutcome): ModerationSmokeResponse {
         outcome: outcome.outcome,
         flaggedCategories: outcome.flaggedCategories,
         unrecognisedCategories: outcome.unrecognisedCategories,
-        promptVersion: outcome.promptVersion,
+        promptVersion: outcome.promptVersion ?? null,
         reason: null,
       };
     case "FAILED":

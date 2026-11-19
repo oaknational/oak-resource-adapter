@@ -87,6 +87,7 @@ describe("worksheet analytics observation", () => {
       suggestions: [],
       pendingReview: {
         attemptId: "attempt-1",
+        contentGuidance: [],
         contributionId: "contribution-1",
         kind: "scaffold-add-word-bank",
         label: "Shown label",

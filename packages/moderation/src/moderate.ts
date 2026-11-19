@@ -116,7 +116,7 @@ function outcomeFromBody(body: string): ModerationOutcome {
   } = parsed.data;
   const result = {
     scores,
-    promptVersion,
+    ...(promptVersion === undefined ? {} : { promptVersion }),
     ...(moderationId === undefined ? {} : { moderationId }),
   };
   const flaggedCategories = flagged.filter(isModerationCategory);

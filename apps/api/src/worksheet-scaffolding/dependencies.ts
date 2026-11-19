@@ -25,6 +25,7 @@ export type WorksheetScaffoldingServiceRepository = Pick<
   | "acceptPendingReview"
   | "findReopenableAdaptation"
   | "findResumableAdaptation"
+  | "getAdaptationAttempt"
   | "getAdaptationHead"
   | "getOpenSuggestion"
   | "getPendingReview"
