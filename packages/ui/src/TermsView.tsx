@@ -1,6 +1,6 @@
 "use client";
 
-import { OakLink, OakP, OakScreenReader } from "@oaknational/oak-components";
+import { OakLink, OakP } from "@oaknational/oak-components";
 
 import { DialogNotice } from "./DialogNotice.js";
 import { termsCopy } from "./termsCopy.js";
@@ -39,7 +39,6 @@ export function TermsView({
             ) : (
               <OakLink href={part.href} key={part.href} rel="noopener" target="_blank">
                 {part.label}
-                <OakScreenReader>{" (opens in a new tab)"}</OakScreenReader>
               </OakLink>
             ),
           )}

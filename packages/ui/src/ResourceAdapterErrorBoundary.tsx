@@ -181,6 +181,7 @@ export function ResourceAdapterUnavailableMessage({
   return (
     <div
       aria-atomic="true"
+      data-autofocus={focusOnMount || undefined}
       data-testid={testId}
       ref={containerRef}
       role="alert"

@@ -30,12 +30,12 @@ export const PREPARING_SCAFFOLDS_STATUS = {
 
 function suggestedSentence(count: number): string {
   if (count === 0) {
-    return "There are no suggested scaffolds for this worksheet.";
+    return "There are no suggested scaffolds.";
   }
   if (count === 1) {
-    return "There is one suggested scaffold for this worksheet.";
+    return "There is one suggested scaffold. Review and accept to add it to a practice task.";
   }
-  return `There are ${count} suggested scaffolds for this worksheet.`;
+  return `There are ${count} suggested scaffolds. Review and accept to add scaffolds to practice tasks.`;
 }
 
 function addedSentence(count: number): string {

@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, type RefObject } from "react";
 import {
+  OakFlex,
   OakInlineBanner,
   OakPrimaryButton,
   OakSecondaryButton,
-  OakTertiaryButton,
 } from "@oaknational/oak-components";
 import {
   contributionIdsInDocument,
@@ -27,7 +27,9 @@ import { PendingReviewControls } from "./PendingReviewControls.js";
 import { ResumeChoice } from "./ResumeChoice.js";
 import { SuggestionGroup, groupSuggestionsByTarget } from "./SuggestionGroup.js";
 import { ActionRow } from "./styles.js";
+import { SummaryAction, SummaryPanel } from "./SummaryPanel.js";
 import { useWorksheetScaffolding } from "./useWorksheetScaffolding.js";
+import { ViewHeader } from "./ViewHeader.js";
 import { WorksheetDownload } from "./WorksheetDownload.js";
 import {
   StickyWorkflowStatus,
@@ -53,6 +55,7 @@ import {
 
 export type WorksheetScaffoldingWorkflowProps = Readonly<{
   apiBaseUrl: string;
+  capabilityLabel: string;
   getToken: GetToken;
   isOpen: boolean;
   lesson: LessonContext;
@@ -109,6 +112,42 @@ function useFocusAfterLoadingScreen(showing: boolean) {
 }
 
 export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflowProps) {
+  const workflow = useWorksheetScaffolding(props);
+  const { state } = workflow;
+
+  if (state.status === "idle") {
+    return null;
+  }
+
+  const showsLoadingScreen =
+    state.status === "loading" ||
+    (state.status === "ready" && suggestionGenerationIsBusy(state.value));
+
+  // The header toggles inside one wrapper: remounting WorkflowContent when
+  // loading ends would lose the focus that useFocusAfterLoadingScreen restores.
+  return (
+    <OakFlex $flexDirection="column" $gap="spacing-32" $flexGrow={1}>
+      {!showsLoadingScreen && state.status !== "allowanceNotice" && (
+        <ViewHeader onBackToLesson={props.onClose} />
+      )}
+      <WorkflowContent
+        showsLoadingScreen={showsLoadingScreen}
+        workflowProps={props}
+        workflow={workflow}
+      />
+    </OakFlex>
+  );
+}
+
+function WorkflowContent({
+  showsLoadingScreen,
+  workflowProps,
+  workflow,
+}: Readonly<{
+  showsLoadingScreen: boolean;
+  workflowProps: WorksheetScaffoldingWorkflowProps;
+  workflow: ReturnType<typeof useWorksheetScaffolding>;
+}>) {
   const {
     acceptReview,
     applySuggestion,
@@ -123,10 +162,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     dismissTarget,
     tryAgain,
     undoReview,
-  } = useWorksheetScaffolding(props);
-  const showsLoadingScreen =
-    state.status === "loading" ||
-    (state.status === "ready" && suggestionGenerationIsBusy(state.value));
+  } = workflow;
   const focusAfter = useFocusAfterLoadingScreen(showsLoadingScreen);
 
   if (state.status === "idle") {
@@ -135,7 +171,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
 
   // Loading and preparing share one mounted screen, so its tip and focus carry
   // over when loading leads straight into preparing.
-  if (showsLoadingScreen) {
+  if (showsLoadingScreen || state.status === "loading") {
     const status =
       state.status === "loading" ? LOADING_STATUS : PREPARING_SCAFFOLDS_STATUS;
     return (
@@ -160,7 +196,7 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     return (
       <AllowanceNotice
         allowance={state.allowance}
-        onBack={props.onClose}
+        onBack={workflowProps.onClose}
         onContinue={confirmSpend}
       />
     );
@@ -172,8 +208,8 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           cta={
             <OakPrimaryButton
               onClick={() => {
-                rememberOnboardingTrip(props.lesson);
-                props.onFinishSetup();
+                rememberOnboardingTrip(workflowProps.lesson);
+                workflowProps.onFinishSetup();
               }}
             >
               Finish setup
@@ -261,7 +297,8 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
     pendingReview === null &&
     !modelWorkRefused &&
     (hasScaffoldsInDocument || hasSuggestedScaffolds || noScaffoldsFound);
-  const showWorkflowCta = canAskForNewSuggestions || hasScaffoldsInDocument;
+  const showActions =
+    (canAskForNewSuggestions || hasScaffoldsInDocument) && failedJob === undefined;
 
   const canRetryFailedSuggestions =
     failedJob?.kind === "suggestions.generate" &&
@@ -270,48 +307,52 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
 
   return (
     <WorkflowFrame frameRef={focusAfter.frame} status={status}>
-      {status !== null && (
-        <StickyWorkflowStatus
-          data-testid="worksheet-scaffolding-status"
-          ref={failedJob === undefined ? focusAfter.target : undefined}
-          tabIndex={-1}
-        >
-          <WorkflowStatusBanner
-            cta={
-              showWorkflowCta ? (
-                <ActionRow>
-                  {canAskForNewSuggestions && (
-                    <OakTertiaryButton
-                      disabled={isWorking}
-                      iconName="ai"
-                      onClick={() =>
-                        retrySuggestions("generate_new_suggestions_button")
-                      }
-                    >
-                      Generate new suggestions
-                    </OakTertiaryButton>
-                  )}
-                  {hasScaffoldsInDocument && (
-                    <OakTertiaryButton
-                      disabled={isWorking}
-                      iconName="trash"
-                      onClick={() =>
-                        startFresh(
-                          state.value.adaptationId,
-                          "remove_all_scaffolds_button",
-                        )
-                      }
-                    >
-                      Remove all scaffolds
-                    </OakTertiaryButton>
-                  )}
-                </ActionRow>
-              ) : null
-            }
-            status={status}
+      <SummaryPanel
+        actions={
+          showActions ? (
+            <>
+              {hasScaffoldsInDocument && (
+                <SummaryAction
+                  disabled={isWorking}
+                  iconName="retake"
+                  onClick={() =>
+                    startFresh(state.value.adaptationId, "remove_all_scaffolds_button")
+                  }
+                >
+                  Start again
+                </SummaryAction>
+              )}
+              {canAskForNewSuggestions && (
+                <SummaryAction
+                  disabled={isWorking}
+                  iconName="ai"
+                  onClick={() => retrySuggestions("generate_new_suggestions_button")}
+                >
+                  New suggestions
+                </SummaryAction>
+              )}
+            </>
+          ) : null
+        }
+        download={
+          <WorksheetDownload
+            apiBaseUrl={workflowProps.apiBaseUrl}
+            getToken={workflowProps.getToken}
+            adaptationId={state.value.adaptationId}
+            resourceDocumentId={state.value.resourceDocumentId}
+            availability={downloadAvailability(state)}
+            onRefresh={refresh}
+            worksheetWasRefreshed={worksheetWasRefreshed(state)}
+            onError={workflowProps.onError}
+            track={workflowProps.track}
           />
-        </StickyWorkflowStatus>
-      )}
+        }
+        focusRef={
+          status !== null && failedJob === undefined ? focusAfter.target : undefined
+        }
+        heading={workflowProps.capabilityLabel}
+        status={status}
+      />
       {failedJob !== undefined && (
         <StickyWorkflowStatus
           aria-atomic="true"
@@ -342,17 +383,6 @@ export function WorksheetScaffoldingWorkflow(props: WorksheetScaffoldingWorkflow
           />
         </StickyWorkflowStatus>
       )}
-      <WorksheetDownload
-        apiBaseUrl={props.apiBaseUrl}
-        getToken={props.getToken}
-        adaptationId={state.value.adaptationId}
-        resourceDocumentId={state.value.resourceDocumentId}
-        availability={downloadAvailability(state)}
-        onRefresh={refresh}
-        worksheetWasRefreshed={worksheetWasRefreshed(state)}
-        onError={props.onError}
-        track={props.track}
-      />
       {renderSuggestionGroup(null)}
       <ResourceDocumentRenderer
         decorations={decorations}

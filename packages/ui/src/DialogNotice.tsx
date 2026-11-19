@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 import {
   OakBox,
   OakFlex,
@@ -34,7 +34,7 @@ export function DialogNotice({
 }: DialogNoticeProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     headingRef.current?.focus();
   }, []);
 
@@ -57,6 +57,7 @@ export function DialogNotice({
           as="h3"
           $font="heading-5"
           $ma="spacing-0"
+          data-autofocus
           ref={headingRef}
           tabIndex={-1}
         >

@@ -185,21 +185,28 @@ describe("ORA's terms in the dialog", () => {
     expect(openWorksheetScaffolding).not.toHaveBeenCalled();
   });
 
-  // OakModalCenter's focus lock sometimes moves focus to its close button after
-  // the heading takes it. Re-enable with ADAPT-113, which replaces the modal.
-  it.skip("shows the terms before the capability, with focus on their heading", async () => {
+  it("shows the terms before the capability, with focus on their heading", async () => {
+    const focused: Element[] = [];
+    const recordFocus = (event: FocusEvent) => {
+      if (event.target instanceof Element) focused.push(event.target);
+    };
+    document.addEventListener("focusin", recordFocus);
     renderDialog();
 
     const heading = await screen.findByRole("heading", {
       level: 3,
       name: "Before you adapt with AI",
     });
+    const link = screen.getByRole("link", {
+      name: /^terms and conditions ?\(opens in a new tab\)$/,
+    });
+    // Let the modal's focus lock run its deferred check.
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    document.removeEventListener("focusin", recordFocus);
+
     expect(heading).toHaveFocus();
-    expect(
-      screen.getByRole("link", {
-        name: /^terms and conditions ?\(opens in a new tab\)$/,
-      }),
-    ).toHaveAttribute("target", "_blank");
+    expect(focused).not.toContain(link);
+    expect(link).toHaveAttribute("target", "_blank");
     expect(openWorksheetScaffolding).not.toHaveBeenCalled();
   });
 

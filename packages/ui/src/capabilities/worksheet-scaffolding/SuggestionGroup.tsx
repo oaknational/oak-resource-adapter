@@ -19,7 +19,7 @@ const GroupPanel = styled.div`
   margin: 0.5rem 0 1rem;
   padding: 0.75rem;
 
-  /* Keeps a focused button clear of the sticky status banner above it. */
+  /* Keeps a focused button clear of the sticky failure banner above it. */
   button {
     scroll-margin-top: 7rem;
   }
