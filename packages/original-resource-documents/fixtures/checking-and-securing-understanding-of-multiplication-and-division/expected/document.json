@@ -1,0 +1,1154 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:checking-and-securing-understanding-of-multiplication-and-division:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Checking and securing understanding of multiplication and division"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task A: Securing understanding of multiplication"
+            }
+          ]
+        },
+        {
+          "id": "task-a-instruction",
+          "layout": {
+            "keepWithNext": true
+          },
+          "type": "callout",
+          "role": "instruction",
+          "content": [
+            {
+              "type": "text",
+              "text": "Use the area model to answer the following. Find the answer in the grid and then rearrange the letters to reveal a word."
+            }
+          ]
+        },
+        {
+          "id": "letter-grid",
+          "type": "table",
+          "role": "answer-code",
+          "rows": [
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "A"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "B"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "C"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "D"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "E"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "F"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "G"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "H"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "I"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "J"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "K"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "L"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "M"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "4922"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "5487"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "3286"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "2968"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "8750"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "4899"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "3762"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "7593"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "1508"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "1265"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "3890"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "2206"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "6891"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "N"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "O"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "P"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Q"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "R"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "S"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "T"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "U"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "V"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "W"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "X"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Y"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Z"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "4482"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "8975"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "1312"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "1102"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "9310"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "4628"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "2146"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "1006"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "5465"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "6870"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "7736"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "2547"
+                  }
+                ]
+              },
+              {
+                "kind": "content",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "5007"
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        {
+          "id": "question-1",
+          "type": "question",
+          "children": [
+            {
+              "id": "unstable:paragraph-work-out-each-product-then-find-its-letter-in-the-grid",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Work out each product, then find its letter in the grid."
+                }
+              ]
+            },
+            {
+              "id": "multiplication-answers",
+              "type": "table",
+              "role": "table",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Calculation"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Answer"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Letter"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "1) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "29 \\times 52",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "2) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "37 \\times 58",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "3) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "82 \\times 16",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "4) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "214 \\times 23",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "5) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "116 \\times 13",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "6) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "245 \\times 38",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "7) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "74 \\times 29",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "8) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "83 \\times 54",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "9) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "359 \\times 25",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
+            },
+            {
+              "id": "unstable:paragraph-rearrange-the-letters-to-reveal-a-word",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Rearrange the letters to reveal a word."
+                }
+              ]
+            },
+            {
+              "id": "question-1-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task B: Securing understanding of division"
+            }
+          ]
+        },
+        {
+          "id": "question-2",
+          "type": "question",
+          "label": "1",
+          "children": [
+            {
+              "id": "unstable:paragraph-partition-52-to-answer-the-following",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Partition 52 to answer the following:"
+                }
+              ]
+            },
+            {
+              "id": "partition-52",
+              "type": "table",
+              "role": "table",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Calculation"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Answer"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "a) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "52 \\div 4",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "b) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "52 \\div 2",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "c) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "52 \\div 5",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "question-3",
+          "type": "question",
+          "label": "2",
+          "children": [
+            {
+              "id": "unstable:paragraph-use-the-area-model-to-complete-the-following",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Use the area model to complete the following:"
+                }
+              ]
+            },
+            {
+              "id": "area-model-division",
+              "type": "table",
+              "role": "table",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Calculation"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Answer"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "a) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "138 \\div 3",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "b) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "441 \\div 7",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "c) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "456 \\div 6",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "d) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "949 \\div 13",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "e) "
+                      },
+                      {
+                        "type": "math",
+                        "value": "5552 \\div 16",
+                        "display": false
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
+            },
+            {
+              "id": "question-3-response",
+              "type": "responseSpace",
+              "kind": "box"
+            }
+          ]
+        },
+        {
+          "id": "question-4",
+          "type": "question",
+          "label": "3",
+          "children": [
+            {
+              "id": "unstable:paragraph-sam-is-doing-a-calculation-involving-division-and-has-",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Sam is doing a calculation involving division and has chosen to partition their dividend into "
+                },
+                {
+                  "type": "math",
+                  "value": "40 + 16",
+                  "display": false
+                },
+                {
+                  "type": "text",
+                  "text": ". What might their divisor be?"
+                }
+              ]
+            },
+            {
+              "id": "question-4-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 3
+            }
+          ]
+        },
+        {
+          "id": "question-5",
+          "type": "question",
+          "label": "4",
+          "children": [
+            {
+              "id": "unstable:paragraph-sofia-is-doing-a-calculation-involving-division-and-ha",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Sofia is doing a calculation involving division and has chosen to partition her dividend into "
+                },
+                {
+                  "type": "math",
+                  "value": "50 + 6",
+                  "display": false
+                },
+                {
+                  "type": "text",
+                  "text": ". What might her divisor be?"
+                }
+              ]
+            },
+            {
+              "id": "question-5-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "checking-and-securing-understanding-of-multiplication-and-division:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/checking-and-securing-understanding-of-multiplication-and-division"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Checking and securing understanding of multiplication and division",
+    "subject": {
+      "id": "maths",
+      "label": "Maths"
+    },
+    "keyStage": {
+      "id": "ks3",
+      "label": "Key stage 3"
+    },
+    "yearGroup": {
+      "id": "year-7",
+      "label": "Year 7"
+    }
+  }
+}

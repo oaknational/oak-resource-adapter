@@ -9,7 +9,7 @@ import { lessonHeading } from "./helpers.js";
  * that stops rendering cannot quietly shrink the sweep below; a new fixture is
  * expected to update it.
  */
-const oakLessonFixtureCount = 8;
+const oakLessonFixtureCount = 15;
 
 test(
   "collapses scenario navigation in small windows and restores the desktop sidebar",
