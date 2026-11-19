@@ -356,6 +356,74 @@ function FigureNode({
   );
 }
 
+function QuestionNode({
+  assets,
+  decorations,
+  framed,
+  node,
+  parentHeadingLevel,
+}: Readonly<{
+  assets: readonly Asset[];
+  decorations?: ResourceDocumentDecorations | undefined;
+  framed: boolean;
+  node: Extract<ResourceNode, { type: "question" }>;
+  parentHeadingLevel: ParentHeadingLevel;
+}>) {
+  const label = node.label ? `Question ${node.label}` : "Question";
+  const questionHeadingLevel = nestedHeadingLevel(parentHeadingLevel);
+  const marks = node.marks === undefined ? "" : ` (${pluralisedMarks(node.marks)})`;
+  const responseSpace = node.children.find((child) => child.type === "responseSpace");
+  const trailingSlot = decorations?.renderAfterNode?.(node);
+  const number = node.label ? (
+    <OakSpan $mr="spacing-12" aria-hidden="true">{`${node.label}.`}</OakSpan>
+  ) : null;
+  const opensWithParagraph = node.children[0]?.type === "paragraph";
+
+  return (
+    <OakBox
+      $borderColor="border-neutral-lighter"
+      $bt={framed ? "border-solid-none" : "border-solid-s"}
+      $pt={framed ? "spacing-0" : "spacing-16"}
+    >
+      <OakScreenReader
+        as={`h${questionHeadingLevel}` as const}
+      >{`${label}${marks}`}</OakScreenReader>
+      <OakFlex $gap="spacing-12">
+        <OakFlex
+          $flexDirection="column"
+          $flexGrow={1}
+          $gap="spacing-24"
+          $minWidth="spacing-0"
+        >
+          {number !== null && !opensWithParagraph && <Paragraph>{number}</Paragraph>}
+          <ResourceNodeListRenderer
+            assets={assets}
+            decorations={decorations}
+            leadingContent={opensWithParagraph ? number : null}
+            nodes={node.children}
+            parentContributionId={contributionIdOf(node.extensions)}
+            parentHeadingLevel={questionHeadingLevel}
+            renderBeforeNode={(child) =>
+              child.id === responseSpace?.id ? trailingSlot : null
+            }
+          />
+          {responseSpace === undefined ? trailingSlot : null}
+        </OakFlex>
+        {node.marks !== undefined && (
+          <OakP
+            $color="text-subdued"
+            $font="body-3"
+            aria-hidden="true"
+            $whiteSpace="nowrap"
+          >
+            {`(${pluralisedMarks(node.marks)})`}
+          </OakP>
+        )}
+      </OakFlex>
+    </OakBox>
+  );
+}
+
 export function ResourceNodeRenderer({
   assets,
   decorations,
@@ -440,64 +508,16 @@ export function ResourceNodeRenderer({
           <InlineContentRenderer content={node.content} />
         </OakBox>
       );
-    case resourceVocabulary.nodes.question.nodeType: {
-      const label = node.label ? `Question ${node.label}` : "Question";
-      const questionHeadingLevel = nestedHeadingLevel(parentHeadingLevel);
-      const marks = node.marks === undefined ? "" : ` (${pluralisedMarks(node.marks)})`;
-      const responseSpace = node.children.find(
-        (child) => child.type === "responseSpace",
-      );
-      const trailingSlot = decorations?.renderAfterNode?.(node);
-      const number = node.label ? (
-        <OakSpan $mr="spacing-12" aria-hidden="true">{`${node.label}.`}</OakSpan>
-      ) : null;
-      const opensWithParagraph = node.children[0]?.type === "paragraph";
+    case resourceVocabulary.nodes.question.nodeType:
       return (
-        <OakBox
-          $borderColor="border-neutral-lighter"
-          $bt={framed ? "border-solid-none" : "border-solid-s"}
-          $pt={framed ? "spacing-0" : "spacing-16"}
-        >
-          <OakScreenReader
-            as={`h${questionHeadingLevel}` as const}
-          >{`${label}${marks}`}</OakScreenReader>
-          <OakFlex $gap="spacing-12">
-            <OakFlex
-              $flexDirection="column"
-              $flexGrow={1}
-              $gap="spacing-24"
-              $minWidth="spacing-0"
-            >
-              {number !== null && !opensWithParagraph && (
-                <Paragraph>{number}</Paragraph>
-              )}
-              <ResourceNodeListRenderer
-                assets={assets}
-                decorations={decorations}
-                leadingContent={opensWithParagraph ? number : null}
-                nodes={node.children}
-                parentContributionId={contributionIdOf(node.extensions)}
-                parentHeadingLevel={questionHeadingLevel}
-                renderBeforeNode={(child) =>
-                  child.id === responseSpace?.id ? trailingSlot : null
-                }
-              />
-              {responseSpace === undefined ? trailingSlot : null}
-            </OakFlex>
-            {node.marks !== undefined && (
-              <OakP
-                $color="text-subdued"
-                $font="body-3"
-                aria-hidden="true"
-                $whiteSpace="nowrap"
-              >
-                {`(${pluralisedMarks(node.marks)})`}
-              </OakP>
-            )}
-          </OakFlex>
-        </OakBox>
+        <QuestionNode
+          assets={assets}
+          decorations={decorations}
+          framed={framed}
+          node={node}
+          parentHeadingLevel={parentHeadingLevel}
+        />
       );
-    }
     case resourceVocabulary.nodes.definitionList.nodeType:
       return (
         <div>
