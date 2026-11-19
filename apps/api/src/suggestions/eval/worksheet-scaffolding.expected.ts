@@ -16,16 +16,15 @@ export type WorksheetExpectation = Readonly<{
 }>;
 
 /**
- * The human decisions from the suggestion-agent review sheet. Verbal prompts are
- * left out because ORA has no such scaffold. A task with no question node in the
- * fixture (air resistance task A) cannot be targeted.
+ * The human decisions from the suggestion-agent review sheet. A task with no
+ * question node in the fixture (air resistance task A) cannot be targeted.
  */
 export const worksheetScaffoldingExpectations: readonly WorksheetExpectation[] = [
   {
     lessonSlug: "adopting-different-perspectives",
     questions: {
-      "question-1": ["taskGlossary", "frames"],
-      "question-2": ["taskGlossary", "frames"],
+      "question-1": ["taskGlossary", "starters"],
+      "question-2": ["taskGlossary", "starters"],
     },
   },
   {
@@ -43,9 +42,9 @@ export const worksheetScaffoldingExpectations: readonly WorksheetExpectation[] =
   {
     lessonSlug: "forming-ions-for-ionic-bonding",
     questions: {
-      "question-1": [],
-      "question-2": ["wordBank", "starters"],
-      "question-3": [],
+      "question-1": ["taskGlossary"],
+      "question-2": ["starters"],
+      "question-3": ["wordBank", "taskGlossary"],
     },
   },
   {
@@ -58,15 +57,29 @@ export const worksheetScaffoldingExpectations: readonly WorksheetExpectation[] =
   {
     lessonSlug: "air-resistance-do-and-review",
     questions: {
-      "question-1": ["taskGlossary", "wordBank", "frames"],
+      "question-1": ["taskGlossary", "frames"],
     },
   },
   {
     lessonSlug: "the-river-nile",
     questions: {
       "question-1": [],
-      "question-2": ["starters"],
-      "question-3": ["taskGlossary", "frames"],
+      "question-2": ["wordBank", "taskGlossary", "starters"],
+      "question-3": ["wordBank", "taskGlossary", "starters"],
+    },
+  },
+  {
+    lessonSlug: "what-greek-myths-can-tell-us-about-ancient-greece",
+    questions: {
+      "question-1": ["wordBank", "taskGlossary"],
+      "question-2": ["wordBank", "taskGlossary", "starters"],
+    },
+  },
+  {
+    lessonSlug: "what-we-know-about-ancient-greece",
+    questions: {
+      "question-1": ["wordBank", "taskGlossary"],
+      "question-2": ["wordBank", "taskGlossary", "frames"],
     },
   },
 ];

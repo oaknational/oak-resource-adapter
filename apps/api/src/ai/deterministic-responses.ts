@@ -41,9 +41,6 @@ const steps = [
 
 const scaffoldResponses: Readonly<Record<string, JsonValue>> = {
   word_bank_low: { entries: [{ term: vocabulary.term }] },
-  word_bank_mid: {
-    entries: [{ term: vocabulary.term, definition: vocabulary.definition }],
-  },
   task_glossary: {
     entries: [{ term: vocabulary.term, definition: vocabulary.definition }],
   },

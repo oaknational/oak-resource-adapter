@@ -18,7 +18,6 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { AdaptationAllowance } from "../usage/adaptation-allowance";
 
 import { createOrGetJob } from "../jobs/job-repository";
-import { withoutSupportLevels } from "../transformations/narrowing";
 import { transformationDefinitions } from "../transformations/registry";
 import {
   acceptSuggestion,
@@ -378,10 +377,7 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
   it("reads back the choices an offer was made with", async () => {
     const { adaptationId, resourceDocumentId } = await newAdaptation();
     const { attempt } = await newAttempt(adaptationId, resourceDocumentId);
-    const offered = withoutSupportLevels(
-      transformationDefinitions["scaffold-add-word-bank"],
-      ["mid"],
-    )?.inputs;
+    const offered = transformationDefinitions["scaffold-add-word-bank"].inputs;
     expect(offered?.[0]?.options.map(({ value }) => value)).toEqual(["low"]);
 
     await completeSuggestionAttempt({

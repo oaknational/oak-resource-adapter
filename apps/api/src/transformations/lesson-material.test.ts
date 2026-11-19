@@ -22,7 +22,7 @@ import {
   prepareTransformation,
   type PreparePrompt,
 } from "./execute";
-import { addWordBankTransformation } from "./definitions/scaffold-add-word-bank";
+import { addTaskGlossaryTransformation } from "./definitions/scaffold-add-task-glossary";
 
 const identity = {
   lessonSlug: "adopting-different-perspectives",
@@ -192,19 +192,19 @@ describe("a lesson's keywords reaching a transformation", () => {
     const { material } = await resolveLessonMaterial(
       identity,
       lessons,
-      addWordBankTransformation.materialRequirements ?? [],
+      addTaskGlossaryTransformation.materialRequirements ?? [],
     );
     const invoker = invokerReturning({
       entries: [{ definition: "the model's own attempt", term: "perspective" }],
     });
 
     const run = await executeTransformation(
-      addWordBankTransformation,
+      addTaskGlossaryTransformation,
       {
         contributionId: "contribution-1",
         document: worksheet,
         material,
-        params: { supportLevel: "mid" },
+        params: {},
         targetBlockId: firstQuestion.id,
       },
       { createInvoker: () => invoker, prepare },

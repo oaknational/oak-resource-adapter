@@ -14,7 +14,7 @@ Define words and terms from the task instruction or question, so the pupil can u
 
 Choosing words and terms:
 
-Only define words or terms that appear in the task instruction or question, including any sub-questions or instructions the pupil will need to understand. Define one only if it is:
+Only define words or terms that appear in the task instruction or question, including any sub-questions, instructions or table headings the pupil will need to understand. Define one only if it is:
 
 - a keyword from this lesson or a previous lesson;
 - a subject-specific word or term, or an everyday word with a particular meaning in this subject;

@@ -13,9 +13,9 @@ export const addTaskGlossaryTransformation = defineTransformation({
     description:
       "Defines the words in one task's wording that a pupil must understand before they can start.",
     useWhen:
-      "The task instruction or question contains vocabulary a pupil must understand before they can attempt the task, and that meaning is not the thing the task is assessing. This can be offered alongside scaffolds that support producing the response.",
+      "Offer this for most tasks. The task instruction or question contains vocabulary a pupil needs to understand so that they can attempt the task, including vocabulary in the headings of a table the pupil fills in. That can be a lesson keyword, a subject-specific term, an instruction word with a subject meaning (such as hypothesis, annotate or source), or a word naming what the pupil works with or produces (such as a timeline, a bar chart or a sonnet). Judge this against the age of the pupils: younger pupils need more of a task's words explained. Offer this alongside any scaffold that supports writing the response.",
     avoidWhen:
-      "The instruction contains no lesson keywords, subject-specific terms, instruction words with a subject meaning or other words a pupil must understand to start; knowing the meaning of the word is what the task assesses; or defining the word would give away the answer.",
+      "The instruction or question contains no lesson keywords, subject-specific terms, instruction words with a subject meaning or other words a pupil needs to understand to start (a short everyday instruction such as complete, fill in or calculate does not count on its own); knowing the meaning of the word is what the task assesses; or defining the word would give away the answer.",
   },
   barriers: ["gaps-in-knowledge", "working-memory"],
   target: { scope: "node", nodeTypes: ["question"] },

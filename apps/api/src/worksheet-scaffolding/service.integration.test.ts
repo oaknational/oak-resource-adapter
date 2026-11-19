@@ -7,7 +7,7 @@ import {
   jobs,
 } from "@oaknational/resource-adapter-db";
 import { originalResourceDocuments } from "@oaknational/resource-adapter-original-resource-documents";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { enqueueJob } from "../jobs/enqueue-job";
@@ -18,7 +18,6 @@ import {
   getLatestJobForConcurrencyKey,
   recordWorkflowRun,
 } from "../jobs/job-repository";
-import { applySuggestionJob } from "../jobs/suggestions/apply-definition";
 import {
   createModelJobLimiter,
   modelJobsPer24hLimit,
@@ -185,77 +184,6 @@ describeWithDatabase("worksheet scaffolding service integration", () => {
   }
 
   const dispatches = async () => ({ runId: `run-${randomUUID()}` });
-
-  function applicationJobs(adaptationId: string, resourceDocumentId: string) {
-    return getDatabaseClient()
-      .select()
-      .from(jobs)
-      .where(
-        and(
-          eq(jobs.kind, applySuggestionJob.kind),
-          eq(
-            jobs.concurrencyKey,
-            adaptationHeadConcurrencyKey(adaptationId, resourceDocumentId),
-          ),
-        ),
-      )
-      .orderBy(asc(jobs.createdAt));
-  }
-
-  it("keeps the first level when a second tab applies another before the job runs", async () => {
-    const { adaptationId, resourceDocumentId, suggestionId, teacher } =
-      await newOpenSuggestion();
-
-    for (const supportLevel of ["mid", "low"]) {
-      await expect(
-        enqueueSuggestionApplication(
-          { adaptationId, params: { supportLevel }, suggestionId },
-          teacher,
-          dependencies(dispatches),
-        ),
-      ).resolves.not.toBeNull();
-    }
-
-    const queued = await applicationJobs(adaptationId, resourceDocumentId);
-    expect(queued.map(({ input }) => input)).toEqual([
-      expect.objectContaining({ params: { supportLevel: "mid" } }),
-    ]);
-  });
-
-  it("applies at a new level after the first dispatch failed", async () => {
-    const { adaptationId, resourceDocumentId, suggestionId, teacher } =
-      await newOpenSuggestion();
-
-    await expect(
-      enqueueSuggestionApplication(
-        { adaptationId, params: { supportLevel: "mid" }, suggestionId },
-        teacher,
-        dependencies(async () => {
-          throw new Error("The workflow runtime is unavailable.");
-        }),
-      ),
-    ).rejects.toThrow("The workflow runtime is unavailable.");
-
-    await expect(
-      enqueueSuggestionApplication(
-        { adaptationId, params: { supportLevel: "low" }, suggestionId },
-        teacher,
-        dependencies(dispatches),
-      ),
-    ).resolves.not.toBeNull();
-
-    const queued = await applicationJobs(adaptationId, resourceDocumentId);
-    expect(queued.map(({ input, status }) => ({ input, status }))).toEqual([
-      {
-        input: expect.objectContaining({ params: { supportLevel: "mid" } }),
-        status: JobStatus.FAILED,
-      },
-      {
-        input: expect.objectContaining({ params: { supportLevel: "low" } }),
-        status: JobStatus.QUEUED,
-      },
-    ]);
-  });
 
   it("returns a replayed application at the limit rather than refusing or counting it", async () => {
     const { adaptationId, suggestionId, teacher } = await newOpenSuggestion();

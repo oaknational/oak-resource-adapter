@@ -33,21 +33,8 @@ describe("getDevRuleCatalogue", () => {
 
   it("lists each transformation's common rules before its own", () => {
     expect(transformation("scaffold-add-word-bank")?.rules.map(({ id }) => id)).toEqual(
-      [
-        "status",
-        "material-source",
-        "target",
-        "excludes",
-        "applied-once-per-target",
-        "mfl",
-      ],
+      ["status", "material-source", "target", "excludes", "applied-once-per-target"],
     );
-  });
-
-  it("shows a rule that narrows rather than refuses", () => {
-    expect(
-      transformation("scaffold-add-word-bank")?.rules.find(({ id }) => id === "mfl"),
-    ).toMatchObject({ removesSupportLevels: ["mid"], reads: ["lesson"] });
   });
 
   it("names the capabilities that offer each transformation", () => {
