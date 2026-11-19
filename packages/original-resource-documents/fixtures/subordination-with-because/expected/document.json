@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:subordination-with-because:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Subordination with ‘because’"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task A: Understanding dependency"
+            }
+          ]
+        },
+        {
+          "id": "task-a-instruction",
+          "layout": {
+            "keepWithNext": true
+          },
+          "type": "callout",
+          "role": "instruction",
+          "content": [
+            {
+              "type": "text",
+              "text": "Circle the stretched second idea that is dependent on the first idea in each sentence. Remember that it will begin with ‘because’."
+            }
+          ]
+        },
+        {
+          "id": "question-1",
+          "type": "question",
+          "children": [
+            {
+              "id": "sentence-1",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The gong on the clock sounded because it was midnight."
+                }
+              ]
+            },
+            {
+              "id": "sentence-2",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "We can’t go outside because you haven’t got your shoes on."
+                }
+              ]
+            },
+            {
+              "id": "sentence-3",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "I enjoy going to school because we learn interesting things."
+                }
+              ]
+            },
+            {
+              "id": "sentence-4",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Aisha put her hand up because she knew the answer."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task B: Stretching with ‘because’"
+            }
+          ]
+        },
+        {
+          "id": "task-b-instruction",
+          "layout": {
+            "keepWithNext": true
+          },
+          "type": "callout",
+          "role": "instruction",
+          "content": [
+            {
+              "type": "text",
+              "text": "Read these first ideas. Pick one and use ‘because’ to stretch the first idea with a reason."
+            }
+          ]
+        },
+        {
+          "id": "question-2",
+          "type": "question",
+          "children": [
+            {
+              "id": "first-idea-1",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The little girl cried"
+                }
+              ]
+            },
+            {
+              "id": "first-idea-2",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Sam felt exhausted"
+                }
+              ]
+            },
+            {
+              "id": "first-idea-3",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The dog barked loudly"
+                }
+              ]
+            },
+            {
+              "id": "question-2-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "subordination-with-because:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/subordination-with-because"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Subordination with ‘because’",
+    "subject": {
+      "id": "english",
+      "label": "English"
+    },
+    "keyStage": {
+      "id": "ks1",
+      "label": "Key stage 1"
+    },
+    "yearGroup": {
+      "id": "year-2",
+      "label": "Year 2"
+    }
+  }
+}
