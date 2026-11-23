@@ -26,13 +26,13 @@
   },
   "dependencies": {
     "@oaknational/resource-adapter-logger": "workspace:*",
-    "@vercel/oidc": "^4.0.7",
+    "@vercel/oidc": "^4.0.9",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/node": "^24.19.0",
     "@vitest/coverage-v8": "^5.1.0",
-    "vite": "^8.3.6",
+    "vite": "^8.3.8",
     "vitest": "^5.1.0"
   }
 }
