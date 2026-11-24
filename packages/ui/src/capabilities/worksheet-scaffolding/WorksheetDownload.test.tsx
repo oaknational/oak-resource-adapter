@@ -9,7 +9,6 @@ import {
 } from "@oaknational/resource-adapter-contracts/internal";
 
 import { WorksheetDownload } from "./WorksheetDownload.js";
-import { chooseFromDownloadMenu } from "./WorksheetDownload.test.helpers.js";
 import { prepareWorksheetExport } from "../../worksheetScaffolding.js";
 import { fetchResourceArtifact } from "../../client.js";
 import { downloadBlob } from "../../downloads.js";
@@ -50,6 +49,14 @@ function component(options = props()) {
 }
 const scaffoldedDocx = "Scaffolded_worksheet.docx";
 const originalDocx = "Original_worksheet.docx";
+
+async function chooseFromDownloadMenu(name: string) {
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Download worksheet" }),
+  );
+  await userEvent.click(await screen.findByRole("menuitem", { name }));
+}
+
 function response() {
   return {
     blob: new Blob(["DOCX"]),

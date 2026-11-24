@@ -29,7 +29,6 @@ import type {
 import type { LessonContext, ResourceAdapterCapability } from "../../publicTypes.js";
 import { SCAFFOLD_TIPS } from "./scaffoldTips.js";
 import { FEEDBACK_FORM_URL } from "./ViewHeader.js";
-import { chooseFromDownloadMenu } from "./WorksheetDownload.test.helpers.js";
 
 // Full-dialog renders share CPU with the package's other jsdom workers.
 vi.setConfig({ testTimeout: 10_000 });
@@ -1799,6 +1798,15 @@ describe("WorksheetScaffoldingWorkflow", () => {
   });
 });
 
+async function downloadScaffoldedWorksheet() {
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Download worksheet" }),
+  );
+  await userEvent.click(
+    await screen.findByRole("menuitem", { name: "Scaffolded_worksheet.docx" }),
+  );
+}
+
 async function scaffoldedDownloadOffered() {
   await userEvent.click(screen.getByRole("button", { name: "Download worksheet" }));
   const offered =
@@ -1824,7 +1832,7 @@ it.each(["available", "review", "busy"] as const)(
     );
     const onError = vi.fn();
     renderDialog({ onError });
-    await chooseFromDownloadMenu("Scaffolded_worksheet.docx");
+    await downloadScaffoldedWorksheet();
     await waitFor(() =>
       expect(screen.getByRole("status", { name: "Download status" })).toHaveTextContent(
         "Worksheet refreshed.",
@@ -1862,7 +1870,7 @@ it("downloads the accepted worksheet once its new suggestions are ready", async 
       screen.queryByRole("heading", { name: "Preparing your scaffolds…" }),
     ).toBeNull(),
   );
-  await chooseFromDownloadMenu("Scaffolded_worksheet.docx");
+  await downloadScaffoldedWorksheet();
   expect(prepareWorksheetExport).toHaveBeenCalledWith(
     expect.objectContaining({ resourceDocumentId: accepted.resourceDocumentId }),
   );
@@ -1887,7 +1895,7 @@ it.each(["resolve", "reject"] as const)(
     );
     const onError = vi.fn();
     renderDialog({ onError });
-    await chooseFromDownloadMenu("Scaffolded_worksheet.docx");
+    await downloadScaffoldedWorksheet();
     await waitFor(() => expect(getWorksheetScaffoldingMock).toHaveBeenCalled());
     await userEvent.click(screen.getByRole("button", { name: "Remove" }));
     await waitFor(() =>
@@ -1913,7 +1921,7 @@ it("tells the teacher when refreshing a changed worksheet fails", async () => {
   );
   renderDialog();
 
-  await chooseFromDownloadMenu("Scaffolded_worksheet.docx");
+  await downloadScaffoldedWorksheet();
 
   await waitFor(() =>
     expect(screen.getByRole("status", { name: "Download status" })).toHaveTextContent(
