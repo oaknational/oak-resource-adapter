@@ -9,6 +9,7 @@ import {
 } from "@oaknational/resource-document";
 
 import type { ResourceAdapterModelInvoker } from "../ai/model-roles";
+import { promptQuestionsContribution } from "../transformations/definitions/scaffold-add-prompt-questions/contribution";
 import { dismissTransformationsAt } from "../transformations/dismissal";
 import { worksheetScaffoldingSuggestionFlow } from "./definitions/worksheet-scaffolding";
 import {
@@ -170,6 +171,56 @@ describe("worksheet scaffolding suggestions", () => {
     ).resolves.toEqual(recallOffers(remaining));
     expect(remaining.length).toBeGreaterThan(0);
     expect(createInvoker).not.toHaveBeenCalled();
+  });
+
+  it("offers suggestions on original questions after adding prompt questions", async () => {
+    const [task] = getResourceNodesByType(worksheet, "task");
+    if (task === undefined) {
+      throw new Error("The fixture needs a task.");
+    }
+
+    const contributionId = "recall-questions";
+    const promptQuestionId = `${contributionId}-prompt-question-1`;
+    const [revisedWorksheet] = promptQuestionsContribution
+      .prepare({
+        contributionId,
+        document: worksheet,
+        material: {},
+        params: {},
+        targetNode: task,
+        transformationKind: RECALL,
+      })
+      .apply({ questions: ["What is perspective?"] });
+    expect(
+      getResourceNodesByType(revisedWorksheet, "question").map(({ id }) => id),
+    ).toContain(promptQuestionId);
+
+    const wordBank = {
+      kind: "scaffold-add-word-bank",
+      params: { supportLevel: "low" },
+      reason: "Add vocabulary support.",
+    };
+    const result = await generateSuggestions(
+      worksheetScaffoldingSuggestionFlow,
+      revisedWorksheet,
+      [{ kind: RECALL, params: {}, targetBlockId: task.id }],
+      {
+        createInvoker: () =>
+          invokerWith({
+            suggestions: [
+              { ...wordBank, targetBlockId: promptQuestionId },
+              { ...wordBank, targetBlockId: questionId },
+            ],
+          }),
+        lesson,
+        prepare,
+      },
+    );
+
+    expect(result).toMatchObject([
+      ...recallOffers(taskIds.filter((id) => id !== task.id)),
+      { ...wordBank, targetBlockId: questionId },
+    ]);
   });
 
   it("offers each node transformation only for targets where it remains valid", async () => {
