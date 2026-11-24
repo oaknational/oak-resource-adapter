@@ -8,6 +8,7 @@ import {
   OakScreenReader,
   OakSpan,
   useDropdownContext,
+  type OakIconName,
 } from "@oaknational/oak-components";
 
 /** A placeholder until the real page exists. */
@@ -28,7 +29,7 @@ export function AiMenuSection({
       <OakSpan
         aria-hidden="true"
         $color="text-subdued"
-        $font="body-2"
+        $font="body-3"
         $ph="spacing-8"
         $pv="spacing-8"
         id={headingId}
@@ -42,12 +43,21 @@ export function AiMenuSection({
 
 export function AiMenuButton({
   children,
+  disabled,
+  iconName,
   onSelect,
-}: Readonly<{ children: ReactNode; onSelect: () => void }>) {
+}: Readonly<{
+  children: ReactNode;
+  disabled?: boolean;
+  iconName?: OakIconName;
+  onSelect: () => void;
+}>) {
   const { onClose } = useDropdownContext();
   return (
     <OakLeftAlignedButton
+      disabled={disabled ?? false}
       element="button"
+      {...(iconName === undefined ? {} : { iconName })}
       onClick={() => {
         onSelect();
         onClose();
@@ -64,7 +74,11 @@ export function AiMenuLink({
   children,
   href,
   onSelect,
-}: Readonly<{ children: ReactNode; href: string; onSelect: () => void }>) {
+}: Readonly<{
+  children: ReactNode;
+  href: string;
+  onSelect: () => void;
+}>) {
   const { onClose } = useDropdownContext();
   return (
     <OakLeftAlignedButton

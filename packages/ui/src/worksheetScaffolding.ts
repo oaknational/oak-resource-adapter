@@ -144,6 +144,7 @@ export function prepareWorksheetExport(
         adaptationId: options.adaptationId,
         resourceDocumentId: options.resourceDocumentId,
         format: options.format,
+        variant: options.variant,
       },
       { signal: options.signal },
     ),

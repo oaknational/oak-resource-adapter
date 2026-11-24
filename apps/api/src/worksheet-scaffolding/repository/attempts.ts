@@ -13,6 +13,7 @@ import type { StoredAdaptationHead } from "./heads";
 import {
   moderationColumns,
   parseStoredDocumentRow,
+  isPrimarySourceOf,
   PRIMARY_SOURCE,
   type ParsedStoredDocument,
   type StoredAttempt,
@@ -40,13 +41,7 @@ export async function getPrimaryTransformationInput(
       resourceDocuments,
       eq(resourceDocuments.id, transformationInputs.resourceDocumentId),
     )
-    .where(
-      and(
-        eq(transformationInputs.transformationId, transformationId),
-        eq(transformationInputs.inputRole, PRIMARY_SOURCE),
-        eq(transformationInputs.position, 0),
-      ),
-    )
+    .where(isPrimarySourceOf(transformationId))
     .limit(1);
 
   return row === undefined ? null : parseStoredDocumentRow(row.storedDocument);
@@ -272,14 +267,7 @@ export async function getAcceptedSuggestion(
       eq(transformations.id, transformationAttempts.transformationId),
     )
     .innerJoin(adaptations, eq(adaptations.id, transformations.adaptationId))
-    .innerJoin(
-      transformationInputs,
-      and(
-        eq(transformationInputs.transformationId, transformations.id),
-        eq(transformationInputs.inputRole, PRIMARY_SOURCE),
-        eq(transformationInputs.position, 0),
-      ),
-    )
+    .innerJoin(transformationInputs, isPrimarySourceOf(transformations.id))
     .innerJoin(
       resourceDocuments,
       eq(resourceDocuments.id, transformationInputs.resourceDocumentId),

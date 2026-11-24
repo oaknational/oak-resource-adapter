@@ -37,6 +37,7 @@ sends through its own PostHog instance and consent flow.
 | Adaptation Request Failed        | A request fails; `requestAction` names it, `retryTarget` says what a retry was for, and no error text is sent.                                                         |
 | Adaptation Step Failed           | A failed background job is observed, with its ID and kind but never its failure text.                                                                                  |
 | Usage Limit Reached              | A response refuses a request (`limitKind`, `requestAction`). Refreshing a refused worksheet asks again, so count teachers rather than events.                          |
+| Original Resource Downloaded     | The original worksheet is handed to the browser for download.                                                                                                          |
 | Adapted Resource Downloaded      | The file is handed to the browser's download mechanism, which does not prove it was saved.                                                                             |
 
 Request events measure intent: removal and dismissal claim no outcome when

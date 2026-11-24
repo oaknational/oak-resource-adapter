@@ -80,10 +80,7 @@ test("withholds a highly sensitive scaffold from the worksheet and its download 
     drawer.getByRole("button", { name: "Add a word bank", exact: true }).first(),
   ).toBeEnabled();
 
-  const xml = await downloadWorksheetXml(
-    page,
-    drawer.getByRole("button", { name: "Download worksheet", exact: true }),
-  );
+  const xml = await downloadWorksheetXml(page, drawer);
   expect(xml).toContain("What do you remember from the lesson");
   expect(xml).not.toContain(glossaryDefinition);
 

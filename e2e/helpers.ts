@@ -24,15 +24,31 @@ export const scaffoldingLessons = {
   openingTheDrawer: "forming-ions-for-ionic-bonding",
 } as const;
 
-export async function downloadWorksheetXml(page: Page, button: Locator) {
-  await expect(button).toBeEnabled();
-  await button.focus();
+const worksheetMenuItems = {
+  scaffolded: "Scaffolded_worksheet.docx",
+  original: "Original_worksheet.docx",
+} as const;
+
+export async function downloadWorksheetXml(
+  page: Page,
+  drawer: Locator,
+  variant: keyof typeof worksheetMenuItems = "scaffolded",
+) {
+  await drawer.getByRole("button", { name: "Download worksheet", exact: true }).click();
+  const menuItem = drawer.getByRole("menuitem", {
+    name: worksheetMenuItems[variant],
+    exact: true,
+  });
+  await expect(menuItem).toBeEnabled();
+  await menuItem.focus();
   const [download] = await Promise.all([
     page.waitForEvent("download"),
-    button.press("Enter"),
+    menuItem.press("Enter"),
   ]);
   expect(await download.failure()).toBeNull();
-  expect(download.suggestedFilename()).toMatch(/\.docx$/);
+  expect(download.suggestedFilename()).toMatch(
+    variant === "original" ? /-original\.docx$/ : /\.docx$/,
+  );
   const file = await download.path();
   if (file === null) throw new Error("The DOCX download has no local file.");
   const xml = unzipSync(await readFile(file))["word/document.xml"];

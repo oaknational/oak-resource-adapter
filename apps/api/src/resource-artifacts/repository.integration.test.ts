@@ -6,6 +6,7 @@ import {
   resourceArtifacts,
   resourceDocuments,
   transformationAttempts,
+  transformationInputs,
   transformations,
 } from "@oaknational/resource-adapter-db";
 import { eq, inArray } from "drizzle-orm";
@@ -85,7 +86,13 @@ withDatabase("artifact ownership", () => {
         byteSize: 123,
       })
       .returning();
-    return { teacherId, adaptation: adaptation!, artifact: artifact! };
+    return {
+      teacherId,
+      adaptation: adaptation!,
+      artifact: artifact!,
+      document: document!,
+      transformation: transformation!,
+    };
   }
   it("finds only the owner's generated artifact, independent of head/review state", async () => {
     const { teacherId, adaptation, artifact } = await fixture();
@@ -110,8 +117,34 @@ withDatabase("artifact ownership", () => {
     expect((await findOwnedArtifact(artifact.id, teacherId))?.title).toBe(expected);
   });
 
-  it("does not serve original Oak documents", async () => {
+  it("does not serve original Oak documents that no adaptation of the teacher's transformed", async () => {
     const { teacherId, artifact } = await fixture("oak_resource");
+    expect(await findOwnedArtifact(artifact.id, teacherId)).toBeNull();
+  });
+  it("serves an adaptation's original only to that adaptation's teacher", async () => {
+    const { teacherId, artifact, document, transformation } =
+      await fixture("oak_resource");
+    await db().insert(transformationInputs).values({
+      inputRole: "primary_source",
+      position: 0,
+      resourceDocumentId: document.id,
+      transformationId: transformation.id,
+    });
+    expect(await findOwnedArtifact(artifact.id, teacherId)).toMatchObject({
+      artifact: { id: artifact.id },
+      origin: "oak_resource",
+    });
+    expect(await findOwnedArtifact(artifact.id, `other-${teacherId}`)).toBeNull();
+  });
+  it("does not serve originals read only as context", async () => {
+    const { teacherId, artifact, document, transformation } =
+      await fixture("oak_resource");
+    await db().insert(transformationInputs).values({
+      inputRole: "context",
+      position: 1,
+      resourceDocumentId: document.id,
+      transformationId: transformation.id,
+    });
     expect(await findOwnedArtifact(artifact.id, teacherId)).toBeNull();
   });
   it("does not reveal missing IDs", async () => {

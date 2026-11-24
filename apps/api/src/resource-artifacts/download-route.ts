@@ -42,8 +42,11 @@ export async function downloadArtifact(
       ? await findOwnedArtifact(id, teacher.teacherId)
       : null;
     if (!owned) return Response.json({ error: "Not found" }, { status: 404, headers });
-    const { artifact, title } = owned;
-    const disposition = attachmentDisposition(title, artifact.format);
+    const { artifact, origin, title } = owned;
+    const disposition = attachmentDisposition(
+      origin === "oak_resource" ? `${title ?? "resource"} (original)` : title,
+      artifact.format,
+    );
     const opened = await readArtifact(artifact.storageKey);
     stream = opened.stream;
     const source = stream;

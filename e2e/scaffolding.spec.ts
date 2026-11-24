@@ -186,20 +186,31 @@ test("adapts, accepts, downloads, resumes and removes a scaffold without losing 
   page.on("request", (request) => {
     if (request.url().includes("worksheetScaffolding.prepareExport")) preparations += 1;
   });
-  await expect(downloadButton).toBeEnabled({ timeout: 30_000 });
+  await downloadButton.click({ timeout: 30_000 });
+  const scaffoldedDocx = drawer.getByRole("menuitem", {
+    name: "Scaffolded_worksheet.docx",
+    exact: true,
+  });
+  await expect(scaffoldedDocx).toBeEnabled({ timeout: 30_000 });
   await page.route(
     "**/adapter-proxy/resource-artifacts/*",
     (route) => route.fulfill({ status: 503 }),
     { times: 1 },
   );
-  await downloadButton.click();
-  const retryDownload = drawer.getByRole("button", { name: "Retry download" });
-  await expect(retryDownload).toBeEnabled({ timeout: 30_000 });
+  await scaffoldedDocx.click();
+  await expect(drawer.getByRole("status", { name: "Download status" })).toContainText(
+    "Try again",
+    { timeout: 30_000 },
+  );
   await expect(worksheet.getByText("compare", { exact: true })).toBeVisible();
-  const firstXml = await downloadWorksheetXml(page, retryDownload);
+  const firstXml = await downloadWorksheetXml(page, drawer);
   expect(firstXml).toContain("Vocabulary you could include:");
   expect(firstXml).toContain("compare");
   expect(preparations).toBe(1);
+
+  const originalXml = await downloadWorksheetXml(page, drawer, "original");
+  expect(originalXml).not.toContain("Vocabulary you could include:");
+  expect(preparations).toBe(2);
 
   await page.reload();
   await chooseFromAiMenu(page, "Scaffold practice tasks");
@@ -217,7 +228,7 @@ test("adapts, accepts, downloads, resumes and removes a scaffold without losing 
   ).toBeEnabled();
   await expectSuggestionsReady(drawer);
 
-  const resumedXml = await downloadWorksheetXml(page, downloadButton);
+  const resumedXml = await downloadWorksheetXml(page, drawer);
   expect(resumedXml).toContain("Vocabulary you could include:");
   expect(resumedXml).toContain("compare");
 
@@ -231,7 +242,7 @@ test("adapts, accepts, downloads, resumes and removes a scaffold without losing 
   await expect(
     worksheet.getByText("Vocabulary you could include:", { exact: true }),
   ).toHaveCount(0);
-  const removedXml = await downloadWorksheetXml(page, downloadButton);
+  const removedXml = await downloadWorksheetXml(page, drawer);
   expect(removedXml).not.toContain("Vocabulary you could include:");
 });
 

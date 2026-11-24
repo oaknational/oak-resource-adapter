@@ -107,9 +107,9 @@ export type CapabilityAnalyticsEvent =
       jobKind: WorksheetScaffoldingJobKind;
     }>
   | Readonly<{
-      name: "Adapted Resource Downloaded";
+      name: "Adapted Resource Downloaded" | "Original Resource Downloaded";
       adaptationId: string;
-      componentType: "download_button";
+      componentType: "download_button" | "download_menu_item";
       format: "docx";
     }>
   | Readonly<{

@@ -5,6 +5,7 @@ import {
   resourceDocuments,
   ResourceDocumentOrigin,
   transformationAttempts,
+  transformationInputs,
   transformations,
   type DatabaseClient,
 } from "@oaknational/resource-adapter-db";
@@ -23,6 +24,7 @@ import {
   type ParsedStoredDocument,
   parseStoredDocumentRow,
   pendingAttemptOwnsHead,
+  isPrimarySourceOf,
   type ShownModeration,
   type Transaction,
 } from "./shared";
@@ -112,6 +114,29 @@ export async function getAdaptationHead(
     : { ...row, storedDocument: parseStoredDocumentRow(row.storedDocument) };
 }
 
+/**
+ * Null until the adaptation has a transformation. Correct only while each
+ * adaptation has its own `oak_resource` row: never dedupe them across adaptations.
+ */
+export async function getAdaptationOriginal(
+  adaptationId: string,
+): Promise<ParsedStoredDocument | null> {
+  const [row] = await getDatabaseClient()
+    .select({ storedDocument: resourceDocuments })
+    .from(transformations)
+    .innerJoin(transformationInputs, isPrimarySourceOf(transformations.id))
+    .innerJoin(
+      resourceDocuments,
+      and(
+        eq(resourceDocuments.id, transformationInputs.resourceDocumentId),
+        eq(resourceDocuments.origin, ResourceDocumentOrigin.OAK_RESOURCE),
+      ),
+    )
+    .where(eq(transformations.adaptationId, adaptationId))
+    .limit(1);
+  return row === undefined ? null : parseStoredDocumentRow(row.storedDocument);
+}
+
 export type AdaptationCreationResult =
   | Readonly<{ outcome: "created"; adaptationId: string; resourceDocumentId: string }>
   | Readonly<{ outcome: "usageLimitReached" }>;
@@ -160,6 +185,8 @@ async function insertAdaptationWithSourceDocument(
     throw new Error("The worksheet scaffolding adaptation was not created.");
   }
 
+  // Never share or dedupe this row across adaptations: getAdaptationOriginal and
+  // artifact ownership both trace it back to exactly one adaptation.
   const [storedDocument] = await database
     .insert(resourceDocuments)
     .values({
