@@ -23,10 +23,11 @@ const defaults = {
 };
 
 function exporterFor(format: WorksheetExportFormat, dependencies: typeof defaults) {
-  switch (format) {
-    case "docx":
-      return { render: dependencies.generateDocx, ...docxArtifactFormat };
+  if (format === "docx") {
+    return { render: dependencies.generateDocx, ...docxArtifactFormat };
   }
+  const unsupportedFormat: never = format;
+  throw new Error(`Unsupported worksheet export format: ${unsupportedFormat}`);
 }
 
 export async function prepareWorksheetExport(
