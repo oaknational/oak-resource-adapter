@@ -1,4 +1,5 @@
 import {
+  contributionIdOf,
   getResourceNodeById,
   getResourceNodesByType,
 } from "@oaknational/resource-document";
@@ -18,10 +19,16 @@ function hasEligibleTarget(
   }
   if (targetBlockId !== undefined) {
     const node = getResourceNodeById(document, targetBlockId);
-    return node !== undefined && target.nodeTypes.includes(node.type);
+    return (
+      node !== undefined &&
+      target.nodeTypes.includes(node.type) &&
+      contributionIdOf(node.extensions) === undefined
+    );
   }
-  return target.nodeTypes.some(
-    (type) => getResourceNodesByType(document, type).length > 0,
+  return target.nodeTypes.some((type) =>
+    getResourceNodesByType(document, type).some(
+      (node) => contributionIdOf(node.extensions) === undefined,
+    ),
   );
 }
 
