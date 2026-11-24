@@ -1,0 +1,356 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:formation-of-fossil-fuels:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Formation of fossil fuels"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task A: Coal"
+            }
+          ]
+        },
+        {
+          "id": "question-1",
+          "type": "question",
+          "children": [
+            {
+              "id": "unstable:paragraph-arrange-the-following-statements-into-the-correct-orde",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Arrange the following statements into the correct order to describe how coal is formed:"
+                }
+              ]
+            },
+            {
+              "id": "coal-formation-order",
+              "type": "table",
+              "role": "table",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Statement"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Order"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Further high temperatures and pressure turn the peat into carbon-rich coal."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "The plants are covered in layers of mud and additional dead plants."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Plants living in swampy forests die."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Anaerobic conditions along with high temperatures and pressure turn the dead plants into peat."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task B: Crude oil and natural gas"
+            }
+          ]
+        },
+        {
+          "id": "task-b-instruction",
+          "layout": {
+            "keepWithNext": true
+          },
+          "type": "callout",
+          "role": "instruction",
+          "content": [
+            {
+              "type": "text",
+              "text": "Decide if the following statements are true or false. Make changes to improve any incorrect statements."
+            }
+          ]
+        },
+        {
+          "id": "question-2",
+          "type": "question",
+          "children": [
+            {
+              "id": "fossil-fuel-statements",
+              "type": "table",
+              "role": "table",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Statement"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "True or false"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Improved statement"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "a) Coal is made from plankton and mainly contains carbon."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "b) Coal is a combustible, sedimentary rock."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "c) Coal may contain impurities such as sulfur."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "d) Natural gas and crude oil are made from plankton."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "e) Natural gas and crude oil do not contain hydrocarbons."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "f) Natural gas is formed from phytoplankton and crude oil is formed from zooplankton."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "g) Coal, crude oil and natural gas are renewable resources."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "formation-of-fossil-fuels:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/formation-of-fossil-fuels"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Formation of fossil fuels",
+    "subject": {
+      "id": "science",
+      "label": "Science"
+    },
+    "keyStage": {
+      "id": "ks3",
+      "label": "Key stage 3"
+    },
+    "yearGroup": {
+      "id": "year-9",
+      "label": "Year 9"
+    }
+  }
+}

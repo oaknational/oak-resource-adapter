@@ -1,0 +1,314 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:analysing-in-flanders-fields:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Analysing John McCrae’s call to arms in ‘In Flanders Fields’"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task A: Analysing natural imagery in ‘In Flanders Fields’"
+            }
+          ]
+        },
+        {
+          "id": "question-1",
+          "type": "question",
+          "children": [
+            {
+              "id": "unstable:paragraph-consider-why-do-you-think-mccrae-chose-to-include-natu",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Consider: Why do you think McCrae chose to include natural imagery in the poem?"
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-consider-the-following-questions-and-then-write-your-r",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Consider the following questions and then write your response:"
+                }
+              ]
+            },
+            {
+              "id": "natural-imagery-prompts",
+              "type": "table",
+              "role": "prompts",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Questions to consider"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "What idea/concept do you think McCrae might be saying is natural?"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Why include so many natural images associated with hope?"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            },
+            {
+              "id": "question-1-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task B: Analysing the euphony in ‘In Flanders Fields’"
+            }
+          ]
+        },
+        {
+          "id": "question-2",
+          "type": "question",
+          "children": [
+            {
+              "id": "unstable:paragraph-discuss-why-do-you-think-mccrae-chose-to-use-euphony-i",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Discuss: Why do you think McCrae chose to use euphony in ‘In Flanders Fields’?"
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-consider-the-following-in-your-response",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Consider the following in your response:"
+                }
+              ]
+            },
+            {
+              "id": "euphony-prompts",
+              "type": "table",
+              "role": "prompts",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Points to consider"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "What mood does it give the poem if the sounds are pleasing and soothing?"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Think about McCrae’s message to the reader - why might he want the poem to sound pleasing and soothing?"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            },
+            {
+              "id": "question-2-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-c",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-c-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task C: Analysing the structure of ‘In Flanders Fields’"
+            }
+          ]
+        },
+        {
+          "id": "question-3",
+          "type": "question",
+          "children": [
+            {
+              "id": "unstable:paragraph-complete-the-following-table-to-summarise-the-effect-o",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Complete the following table to summarise the effect of the structural technique."
+                }
+              ]
+            },
+            {
+              "id": "structural-techniques",
+              "type": "table",
+              "role": "table",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Structural technique"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Effect"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Caesura"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Refrain"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "analysing-in-flanders-fields:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/analysing-in-flanders-fields"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Analysing John McCrae’s call to arms in ‘In Flanders Fields’",
+    "subject": {
+      "id": "english",
+      "label": "English"
+    },
+    "keyStage": {
+      "id": "ks3",
+      "label": "Key stage 3"
+    },
+    "yearGroup": {
+      "id": "year-9",
+      "label": "Year 9"
+    }
+  }
+}

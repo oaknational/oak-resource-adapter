@@ -1,0 +1,695 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:calculating-specific-heat-capacity-e-equals-m-c:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Calculating specific heat capacity (ΔE = m c Δθ)"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task A: Defining specific heat capacity"
+            }
+          ]
+        },
+        {
+          "id": "question-1",
+          "type": "question",
+          "label": "1",
+          "children": [
+            {
+              "id": "unstable:paragraph-a-pupil-warms-0-2-kg-of-a-liquid-for-5-minutes-with-a-",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "A pupil warms 0.2 kg of a liquid for 5 minutes with a heater and its temperature rises by 30ºC. They then use the same heater to heat a 0.6 kg sample of the liquid for 30 minutes."
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-a-state-the-expected-temperature-rise-and-explain-your",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "a) State the expected temperature rise and explain your answer."
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-b-suggest-why-the-measured-temperature-rise-may-not-ma",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "b) Suggest why the measured temperature rise may not match your answer to part a."
+                }
+              ]
+            },
+            {
+              "id": "question-1-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 8
+            }
+          ]
+        },
+        {
+          "id": "question-2",
+          "type": "question",
+          "label": "2",
+          "children": [
+            {
+              "id": "unstable:paragraph-complete-the-table-by-calculating-the-energy-required-",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Complete the table by calculating the energy required to heat the materials."
+                }
+              ]
+            },
+            {
+              "id": "energy-to-heat-materials",
+              "type": "table",
+              "role": "table",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "material"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "mass (kg)"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "start temp (ºC)"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "end temp (ºC)"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "SHC (J/kg ºC)"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "energy (kJ)"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "water"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "1.5"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "20"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "90"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "4200"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "lead"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "1.4"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "25"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "200"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "126"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "brass"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "0.60"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "–10"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "50"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "380"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task B: Specific heat capacity calculations"
+            }
+          ]
+        },
+        {
+          "id": "question-3",
+          "type": "question",
+          "label": "1",
+          "children": [
+            {
+              "id": "unstable:paragraph-a-kettle-provides-8-000-j-of-energy-per-second-to-1-5-",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "A kettle provides 8 000 J of energy per second to 1.5 kg of water for one minute. The water starts at a temperature of 20ºC."
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-specific-heat-capacity-for-water-4200-j-kg-c",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Specific heat capacity for water = 4200 J/kg ºC."
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-a-calculate-the-energy-provided-to-the-water",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "a) Calculate the energy provided to the water."
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-b-calculate-the-final-temperature-of-the-water",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "b) Calculate the final temperature of the water."
+                }
+              ]
+            },
+            {
+              "id": "question-3-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 8
+            }
+          ]
+        },
+        {
+          "id": "question-4",
+          "type": "question",
+          "label": "2",
+          "children": [
+            {
+              "id": "unstable:paragraph-a-physicist-tests-sample-blocks-of-metal-by-providing-",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "A physicist tests sample blocks of metal by providing them all with 8000 J of energy with a heater. Use the data in the table to calculate the specific heat capacity for each metal."
+                }
+              ]
+            },
+            {
+              "id": "metal-specific-heat-capacities",
+              "type": "table",
+              "role": "table",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "metal"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "mass (kg)"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "start temp (ºC)"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "end temp (ºC)"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "SHC (J/kg ºC)"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "titanium"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "0.50"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "20"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "50"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "silver"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "1.40"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "22"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "47"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "gold"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "0.20"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "25"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "326"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-c",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-c-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task C: Solving SHC problems"
+            }
+          ]
+        },
+        {
+          "id": "question-5",
+          "type": "question",
+          "label": "1",
+          "children": [
+            {
+              "id": "unstable:paragraph-an-electric-heater-increases-the-temperature-of-a-0-50",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "An electric heater increases the temperature of a 0.50 kg sample of oil by 40ºC in five minutes. The oil has a specific heat capacity of 2800 J/kg ºC."
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-calculate-the-energy-provided-by-the-heater-per-second",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Calculate the energy provided by the heater per second."
+                }
+              ]
+            },
+            {
+              "id": "question-5-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 6
+            }
+          ]
+        },
+        {
+          "id": "question-6",
+          "type": "question",
+          "label": "2",
+          "children": [
+            {
+              "id": "unstable:paragraph-a-glass-contains-0-10-kg-of-water-a-chilled-stone-cube",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "A glass contains 0.10 kg of water. A chilled stone cube of mass 50 g is placed in it and the temperature of the water decreases by 2.0ºC while the stone’s temperature increases by 10ºC. The specific heat capacity of water is 4200 J/kg ºC."
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-a-calculate-the-internal-energy-change-for-the-water",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "a) Calculate the internal energy change for the water."
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-b-calculate-the-specific-heat-capacity-for-the-stone",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "b) Calculate the specific heat capacity for the stone."
+                }
+              ]
+            },
+            {
+              "id": "question-6-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 8
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "calculating-specific-heat-capacity-e-equals-m-c:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/calculating-specific-heat-capacity-e-equals-m-c"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Calculating specific heat capacity (ΔE = m c Δθ)",
+    "subject": {
+      "id": "physics",
+      "label": "Physics"
+    },
+    "keyStage": {
+      "id": "ks4",
+      "label": "Key stage 4"
+    },
+    "yearGroup": {
+      "id": "year-10",
+      "label": "Year 10"
+    }
+  }
+}
