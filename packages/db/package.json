@@ -31,18 +31,18 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@google-cloud/cloud-sql-connector": "^1.12.1",
-    "@vercel/oidc": "^4.0.7",
+    "@google-cloud/cloud-sql-connector": "^1.13.0",
+    "@vercel/oidc": "^4.0.9",
     "dotenv": "^18.0.10",
     "drizzle-orm": "^0.45.4",
-    "google-auth-library": "^11.3.3",
+    "google-auth-library": "^11.3.4",
     "pg": "^8.23.1"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
     "@vitest/coverage-v8": "^5.1.0",
     "drizzle-kit": "^0.31.11",
-    "vite": "^8.3.6",
+    "vite": "^8.3.8",
     "vitest": "^5.1.0"
   }
 }
