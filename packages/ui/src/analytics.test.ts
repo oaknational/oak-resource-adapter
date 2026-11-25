@@ -27,11 +27,14 @@ type ReviewedProperty =
   | "format"
   | "jobKind"
   | "limitKind"
+  | "moderationCategories"
   | "name"
   | "reviewAction"
+  | "safetyResult"
   | "startMode"
   | "suggestionCount"
   | "supportLevel"
+  | "termsVersion"
   | "transformationKind"
   | "transformationKinds";
 
