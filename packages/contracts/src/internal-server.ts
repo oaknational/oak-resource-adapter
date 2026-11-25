@@ -161,6 +161,8 @@ const worksheetScaffoldingStateSchema = z.object({
   withheld: z.nullable(
     z.object({
       attemptId: z.string(),
+      kind: z.string(),
+      moderationCategories: z.readonly(z.array(z.string())),
       safetyResult: z.enum(withheldSafetyResults),
       targetBlockId: z.nullable(z.string()),
     }),

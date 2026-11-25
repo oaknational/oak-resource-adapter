@@ -125,7 +125,7 @@ function ResourceAdapterDialogInner({
 }: ResourceAdapterDialogInnerProps) {
   const Workflow = capabilityWorkflows[capability.id];
   const titleId = `resource-adapter-${capability.id}-title`;
-  const terms = useTermsGate({ apiBaseUrl, getToken, isOpen, onError });
+  const terms = useTermsGate({ apiBaseUrl, getToken, isOpen, onError, track });
 
   return (
     <OakModal

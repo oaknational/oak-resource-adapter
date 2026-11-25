@@ -116,6 +116,8 @@ function withheldScaffold(found: FoundAttempt): WithheldScaffold | null {
   }
   return {
     attemptId: found.attempt.id,
+    kind: found.transformation.kind,
+    moderationCategories: found.attempt.moderationCategories ?? [],
     safetyResult: moderationResult,
     targetBlockId: found.transformation.targetBlockId,
   };

@@ -6,18 +6,21 @@ import type {
 
 import type { AdaptationRequest, TrackAnalyticsEvent } from "../../analytics.js";
 
+function sortedUnique(values: readonly string[]): string[] {
+  return [...new Set(values)].sort((a, b) => a.localeCompare(b));
+}
+
 export function transformationKinds(
   suggestions: WorksheetScaffoldingState["suggestions"],
 ): string[] {
-  return [...new Set(suggestions.map((suggestion) => suggestion.kind))].sort((a, b) =>
-    a.localeCompare(b),
-  );
+  return sortedUnique(suggestions.map((suggestion) => suggestion.kind));
 }
 
 export function createWorksheetAnalyticsTracker(track: TrackAnalyticsEvent) {
   const reportedFailures = new Set<string>();
   const displayedSuggestions = new Set<string>();
   const displayedPreviews = new Set<string>();
+  const displayedWithheld = new Set<string>();
   const displayedAllowances = new Set<string>();
 
   function ignoreHistoricalJob({ job }: Pick<WorksheetScaffoldingState, "job">) {
@@ -44,9 +47,10 @@ export function createWorksheetAnalyticsTracker(track: TrackAnalyticsEvent) {
     job,
     suggestions,
     pendingReview,
+    withheld,
   }: Pick<
     WorksheetScaffoldingState,
-    "adaptationId" | "job" | "suggestions" | "pendingReview"
+    "adaptationId" | "job" | "suggestions" | "pendingReview" | "withheld"
   >) {
     if (
       job?.kind === "suggestions.generate" &&
@@ -74,6 +78,30 @@ export function createWorksheetAnalyticsTracker(track: TrackAnalyticsEvent) {
         ...(pendingReview.supportLevel === null
           ? {}
           : { supportLevel: pendingReview.supportLevel }),
+      });
+      if (pendingReview.contentGuidance.length > 0) {
+        track({
+          name: "Content Guidance Displayed",
+          componentType: "resource_adapter_dialog",
+          adaptationId,
+          attemptId: pendingReview.attemptId,
+          transformationKind: pendingReview.kind,
+          moderationCategories: sortedUnique(
+            pendingReview.contentGuidance.map(({ category }) => category),
+          ),
+        });
+      }
+    }
+    if (withheld !== null && !displayedWithheld.has(withheld.attemptId)) {
+      displayedWithheld.add(withheld.attemptId);
+      track({
+        name: "Scaffold Withheld",
+        componentType: "resource_adapter_dialog",
+        adaptationId,
+        attemptId: withheld.attemptId,
+        transformationKind: withheld.kind,
+        safetyResult: withheld.safetyResult,
+        moderationCategories: sortedUnique(withheld.moderationCategories),
       });
     }
   }
@@ -107,6 +135,7 @@ export function createWorksheetAnalyticsTracker(track: TrackAnalyticsEvent) {
   function resetDisplays() {
     displayedSuggestions.clear();
     displayedPreviews.clear();
+    displayedWithheld.clear();
     displayedAllowances.clear();
   }
 

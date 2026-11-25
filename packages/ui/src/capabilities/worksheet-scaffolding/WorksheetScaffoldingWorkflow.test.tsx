@@ -1919,6 +1919,8 @@ it("tells the teacher when refreshing a changed worksheet fails", async () => {
 describe("moderation results", () => {
   const withheld = {
     attemptId: "attempt-withheld",
+    kind: "scaffold-add-sentence-starters",
+    moderationCategories: ["t/encourages-violence-harm-others"],
     safetyResult: "toxic",
     targetBlockId: "question-1",
   } as const;
@@ -2028,6 +2030,32 @@ describe("moderation results", () => {
       getToken: expect.any(Function),
       requestId: expect.any(String),
     });
+  });
+
+  it("reports the withheld scaffold once", async () => {
+    openWorksheetScaffoldingMock.mockResolvedValueOnce(opened(readyWithWithheld));
+    const onAnalyticsEvent = vi.fn();
+    renderDialog({ onAnalyticsEvent });
+
+    await findWithheldNotice();
+
+    expect(
+      onAnalyticsEvent.mock.calls
+        .map(([event]) => event)
+        .filter(({ name }) => name === "Scaffold Withheld"),
+    ).toEqual([
+      {
+        name: "Scaffold Withheld",
+        capabilityId: "worksheetScaffolding",
+        packageVersion: expect.any(String),
+        componentType: "resource_adapter_dialog",
+        adaptationId: "adaptation-1",
+        attemptId: "attempt-withheld",
+        transformationKind: "scaffold-add-sentence-starters",
+        safetyResult: "toxic",
+        moderationCategories: ["t/encourages-violence-harm-others"],
+      },
+    ]);
   });
 
   it("keeps the earlier version under review when its retry is withheld", async () => {
@@ -2833,7 +2861,12 @@ describe("analytics payloads", () => {
         document: privateDocument,
         pendingReview: {
           attemptId: "attempt-1",
-          contentGuidance: [],
+          contentGuidance: [
+            {
+              category: "p/practical-activities",
+              label: `${DISPLAY_TEXT} guidance label`,
+            },
+          ],
           contributionId: "contribution-1",
           kind: "scaffold-add-word-bank",
           label: `${DISPLAY_TEXT} review label`,
@@ -2861,6 +2894,7 @@ describe("analytics payloads", () => {
       "Suggestions Displayed",
       "Transformation Requested",
       "Transformation Preview Displayed",
+      "Content Guidance Displayed",
       "Transformation Review Requested",
       "Transformation Reviewed",
       "Resource Adapter Closed",

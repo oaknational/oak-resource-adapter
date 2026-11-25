@@ -211,7 +211,8 @@ describe("ORA's terms in the dialog", () => {
   });
 
   it("records acceptance and continues to the capability", async () => {
-    renderDialog();
+    const onAnalyticsEvent = vi.fn();
+    renderDialog({ onAnalyticsEvent });
 
     await userEvent.click(
       await screen.findByRole("button", { name: "Accept and continue" }),
@@ -220,13 +221,29 @@ describe("ORA's terms in the dialog", () => {
     await waitFor(() => expect(openWorksheetScaffolding).toHaveBeenCalledOnce());
     expect(acceptTerms).toHaveBeenCalledWith(expect.objectContaining({ version: 1 }));
     expect(
+      onAnalyticsEvent.mock.calls.filter(
+        ([event]) => event.name === "Resource Adapter Terms Accepted",
+      ),
+    ).toEqual([
+      [
+        {
+          name: "Resource Adapter Terms Accepted",
+          capabilityId: "worksheetScaffolding",
+          packageVersion: expect.any(String),
+          componentType: "accept_terms_button",
+          termsVersion: 1,
+        },
+      ],
+    ]);
+    expect(
       screen.queryByRole("heading", { name: "Before you adapt with AI" }),
     ).toBeNull();
   });
 
   it("keeps the terms and says so when acceptance is not recorded", async () => {
     vi.mocked(acceptTerms).mockRejectedValue(new Error("network"));
-    renderDialog();
+    const onAnalyticsEvent = vi.fn();
+    renderDialog({ onAnalyticsEvent });
 
     await userEvent.click(
       await screen.findByRole("button", { name: "Accept and continue" }),
@@ -236,11 +253,15 @@ describe("ORA's terms in the dialog", () => {
       "We couldn't save that. Try again.",
     );
     expect(openWorksheetScaffolding).not.toHaveBeenCalled();
+    expect(onAnalyticsEvent).not.toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Resource Adapter Terms Accepted" }),
+    );
   });
 
   it("asks the teacher to reload when the terms they saw are out of date", async () => {
     vi.mocked(acceptTerms).mockResolvedValue({ accepted: false });
-    renderDialog();
+    const onAnalyticsEvent = vi.fn();
+    renderDialog({ onAnalyticsEvent });
 
     await userEvent.click(
       await screen.findByRole("button", { name: "Accept and continue" }),
@@ -250,6 +271,9 @@ describe("ORA's terms in the dialog", () => {
       "These terms have changed. Reload the page to see the latest version.",
     );
     expect(openWorksheetScaffolding).not.toHaveBeenCalled();
+    expect(onAnalyticsEvent).not.toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Resource Adapter Terms Accepted" }),
+    );
   });
 
   it("goes back to the lesson without accepting", async () => {

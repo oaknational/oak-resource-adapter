@@ -234,6 +234,8 @@ export type WithheldSafetyResult = (typeof withheldSafetyResults)[number];
 /** A generated scaffold that moderation kept off the worksheet. */
 export type WithheldScaffold = Readonly<{
   attemptId: string;
+  kind: string;
+  moderationCategories: readonly string[];
   safetyResult: WithheldSafetyResult;
   targetBlockId: string | null;
 }>;

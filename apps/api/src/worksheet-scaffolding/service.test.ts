@@ -1007,6 +1007,8 @@ describe("reading moderation results", () => {
     expect(getAdaptationAttempt).toHaveBeenCalledWith(ADAPTATION_ID, { jobId: JOB_ID });
     expect(state?.withheld).toEqual({
       attemptId: ATTEMPT_ID,
+      kind: pendingReview().transformation.kind,
+      moderationCategories: ["n/self-harm-suicide"],
       safetyResult: "highly-sensitive",
       targetBlockId: pendingReview().transformation.targetBlockId,
     });

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { TrackAnalyticsEvent } from "./analytics.js";
 import { reportToHost } from "./errors.js";
 import type { GetToken, ResourceAdapterErrorHandler } from "./publicTypes.js";
 import { acceptTerms, getTermsState } from "./terms.js";
@@ -24,11 +25,13 @@ export function useTermsGate({
   getToken,
   isOpen,
   onError,
+  track,
 }: Readonly<{
   apiBaseUrl: string;
   getToken: GetToken;
   isOpen: boolean;
   onError?: ResourceAdapterErrorHandler | undefined;
+  track: TrackAnalyticsEvent;
 }>) {
   const [status, setStatus] = useState<TermsGateStatus>("checking");
   const [attempt, setAttempt] = useState(0);
@@ -64,16 +67,28 @@ export function useTermsGate({
     };
   }, [attempt, isOpen]);
 
-  const accept = useCallback((version: number) => {
-    setStatus("accepting");
-    acceptTerms({ ...latest.current, version }).then(
-      ({ accepted }) => setStatus(accepted ? "accepted" : "outdated"),
-      (error: unknown) => {
-        reportToHost(latest.current.onError, error);
-        setStatus("acceptFailed");
-      },
-    );
-  }, []);
+  const accept = useCallback(
+    (version: number) => {
+      setStatus("accepting");
+      acceptTerms({ ...latest.current, version }).then(
+        ({ accepted }) => {
+          if (accepted) {
+            track({
+              name: "Resource Adapter Terms Accepted",
+              componentType: "accept_terms_button",
+              termsVersion: version,
+            });
+          }
+          setStatus(accepted ? "accepted" : "outdated");
+        },
+        (error: unknown) => {
+          reportToHost(latest.current.onError, error);
+          setStatus("acceptFailed");
+        },
+      );
+    },
+    [track],
+  );
 
   const require = useCallback(() => setStatus("required"), []);
   const retry = useCallback(() => setAttempt((previous) => previous + 1), []);

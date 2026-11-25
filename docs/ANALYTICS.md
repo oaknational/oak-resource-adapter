@@ -23,6 +23,7 @@ sends through its own PostHog instance and consent flow.
 | About Oak AI Selected            | The teacher chooses "About Oak's AI".                                                                                                                                  |
 | Adapt Onboarding Selected        | A teacher who is signed out or needs setup (`accountState`) chooses the menu's sign-in or finish-setup item.                                                           |
 | Resource Adapter Closed          | The teacher dismisses the dialog. Leaving the page does not fire it.                                                                                                   |
+| Resource Adapter Terms Accepted  | ORA records the teacher's acceptance of the terms version they were shown (`termsVersion`).                                                                            |
 | Adaptation Started               | The API confirms a new, resumed or reopened adaptation (`startMode`), with the teacher's `accessTier`.                                                                 |
 | Monthly Allowance Displayed      | The allowance notice shows before an open that would spend, or after the limit refuses one: once per value per dialog visit.                                           |
 | Adaptation Restart Requested     | The teacher asks to replace an adaptation. The ID is the old one; the replacement fires Adaptation Started with the new ID.                                            |
@@ -30,6 +31,8 @@ sends through its own PostHog instance and consent flow.
 | Suggestions Displayed            | A generation's result renders, including "No scaffolds suggested" as a count of zero: once per generation job per dialog visit, so resuming or reopening counts again. |
 | Transformation Requested         | The teacher chooses a suggestion.                                                                                                                                      |
 | Transformation Preview Displayed | A generated transformation renders for review: once per attempt per visit. A retry is a new attempt.                                                                   |
+| Content Guidance Displayed       | A preview renders with moderation's guidance (`moderationCategories`): once per attempt per visit, alongside Transformation Preview Displayed.                         |
+| Scaffold Withheld                | Moderation's apology renders in place of a scaffold (`safetyResult`, `moderationCategories`): once per attempt per visit, so count by attempt ID.                      |
 | Transformation Review Requested  | The teacher chooses accept, undo or retry (`reviewAction`).                                                                                                            |
 | Transformation Reviewed          | The API confirms accept or undo. A successful retry shows as its new preview.                                                                                          |
 | Suggestion Dismissal Requested   | The teacher dismisses the suggestions for a target.                                                                                                                    |

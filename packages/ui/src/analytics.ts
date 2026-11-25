@@ -2,6 +2,7 @@ import type {
   SupportLevel,
   TeacherAllowance,
   UsageLimitKind,
+  WithheldSafetyResult,
   WorksheetScaffoldingJobKind,
 } from "@oaknational/resource-adapter-contracts/internal";
 
@@ -120,6 +121,23 @@ export type CapabilityAnalyticsEvent =
       transformationKind: string;
       supportLevel?: SupportLevel;
     }>
+  | Readonly<{
+      name: "Content Guidance Displayed";
+      componentType: "resource_adapter_dialog";
+      adaptationId: string;
+      attemptId: string;
+      transformationKind: string;
+      moderationCategories: readonly string[];
+    }>
+  | Readonly<{
+      name: "Scaffold Withheld";
+      componentType: "resource_adapter_dialog";
+      adaptationId: string;
+      attemptId: string;
+      transformationKind: string;
+      safetyResult: WithheldSafetyResult;
+      moderationCategories: readonly string[];
+    }>
   | (Readonly<{
       name: "Adaptation Request Failed";
       componentType: "resource_adapter_dialog";
@@ -138,6 +156,11 @@ export type CapabilityAnalyticsEvent =
       componentType: "resource_adapter_dialog";
       allowanceLimit: number;
       allowanceRemaining: number;
+    }>
+  | Readonly<{
+      name: "Resource Adapter Terms Accepted";
+      componentType: "accept_terms_button";
+      termsVersion: number;
     }>
   | Readonly<{
       name: "Resource Adapter Closed";
