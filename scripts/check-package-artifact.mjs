@@ -484,6 +484,7 @@ assert.deepEqual(validateResourceDocumentInvariants(document), []);
     "VisibleLoadingSpinner.js",
     "capabilities/worksheet-scaffolding/useWorksheetScaffolding.js",
     "capabilities/worksheet-scaffolding/useWorksheetScaffoldingPolling.js",
+    "capabilities/worksheet-scaffolding/useWorksheetScaffoldingActions.js",
     "capabilities/worksheet-scaffolding/LoadingScreen.js",
     "capabilities/worksheet-scaffolding/PendingReviewControls.js",
     "capabilities/worksheet-scaffolding/PlaceholderScaffoldIllustration.js",
