@@ -183,10 +183,17 @@ export type WorksheetDownloadAvailability = z.infer<
   typeof worksheetDownloadAvailabilitySchema
 >;
 
+export const worksheetExportFormats = ["docx"] as const;
+export type WorksheetExportFormat = (typeof worksheetExportFormats)[number];
+
+export const worksheetExportVariants = ["scaffolded", "original"] as const;
+export type WorksheetExportVariant = (typeof worksheetExportVariants)[number];
+
 export const worksheetExportRequestSchema = z.strictObject({
   adaptationId: internalIdSchema,
   resourceDocumentId: internalIdSchema,
-  format: z.literal("docx"),
+  format: z.enum(worksheetExportFormats),
+  variant: z.enum(worksheetExportVariants),
 });
 export type WorksheetExportRequest = z.infer<typeof worksheetExportRequestSchema>;
 export type WorksheetExportResult = Readonly<{

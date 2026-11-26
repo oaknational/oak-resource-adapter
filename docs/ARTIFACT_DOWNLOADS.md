@@ -7,9 +7,10 @@ document, such as a DOCX or PDF.
 > which is a packed npm package.
 
 `GET /resource-artifacts/:id` serves an artifact only to the teacher whose
-adaptation generated it. Missing, foreign, original Oak and missing-object
-artifacts all answer the same 404, so a refusal cannot confirm that an artifact
-exists. The rule is stated next to its query in
+adaptation generated it, or whose adaptation transformed it as its original Oak
+worksheet. Missing, foreign, other original Oak and missing-object artifacts all
+answer the same 404, so a refusal cannot confirm that an artifact exists. The
+rule is stated next to its query in
 [`repository.ts`](../apps/api/src/resource-artifacts/repository.ts).
 
 The harness proxy must not forward Content-Length or Content-Encoding: undici
@@ -23,6 +24,12 @@ adaptation ID and displayed database document ID. Ownership, the current head,
 completed acceptance and pending document-changing operations are checked in one database
 snapshot. Rendering and storage run after that read; they do not modify the
 adaptation. A stale request must refresh the worksheet before preparing again.
+
+The teacher can also download the original worksheet. It is rendered from the
+adaptation's own copy of the Oak document, so it matches the scaffolded layout
+rather than Oak's designed file. It unlocks with the scaffolded download and
+saves with "(original)" after the title. The request still names the displayed
+head, so a stale worksheet refreshes before either version is prepared.
 
 The browser downloads the returned artifact through the authenticated route above.
 A delivery retry reuses the artifact; a preparation retry renders again. Closing

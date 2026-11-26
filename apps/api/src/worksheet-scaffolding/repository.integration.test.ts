@@ -30,6 +30,7 @@ import {
   findResumableAdaptation,
   getAdaptationAttempt,
   getAdaptationHead,
+  getAdaptationOriginal,
   getOpenSuggestion,
   getPendingReview,
   getPrimaryTransformationInput,
@@ -248,6 +249,25 @@ describeWithDatabase("worksheet scaffolding repository integration", () => {
     expect((await getDownloadHead(adaptationId, teacherId))?.downloadAvailability).toBe(
       "unavailable",
     );
+  });
+
+  it("finds the adaptation's original after its head has moved on", async () => {
+    const { adaptationId, resourceDocumentId, pendingHeadId, accepted } =
+      await newPendingReview();
+    await acceptPendingReview({
+      adaptationId,
+      attemptId: accepted.attempt.id,
+      expectedHeadId: pendingHeadId,
+    });
+    expect((await getAdaptationHead(adaptationId))?.storedDocument.id).toBe(
+      pendingHeadId,
+    );
+    expect(await getAdaptationOriginal(adaptationId)).toMatchObject({
+      id: resourceDocumentId,
+      origin: "oak_resource",
+    });
+    const other = await newAdaptation();
+    expect(await getAdaptationOriginal(other.adaptationId)).toBeNull();
   });
 
   it.each(["queued", "running"] as const)(

@@ -1,5 +1,8 @@
 import { downloadAvailability } from "./download-availability";
-import type { WorksheetExportRequest } from "@oaknational/resource-adapter-contracts/internal";
+import type {
+  WorksheetExportFormat,
+  WorksheetExportRequest,
+} from "@oaknational/resource-adapter-contracts/internal";
 import type { ResourceAdapterAuthenticatedTeacher } from "@oaknational/resource-adapter-contracts/server";
 import { raLogger } from "@oaknational/resource-adapter-logger";
 import { TRPCError } from "@trpc/server";
@@ -8,11 +11,24 @@ import { generateDocx } from "../exports/docx";
 import { docxArtifactFormat } from "../exports/formats";
 import { ExportLimitError } from "../exports/limits";
 import { storeResourceArtifact } from "../resource-artifacts/service";
-import { getAdaptationHead } from "./repository";
+import { getAdaptationHead, getAdaptationOriginal } from "./repository";
 
 const log = raLogger("internal-api");
 
-const defaults = { getAdaptationHead, generateDocx, storeResourceArtifact };
+const defaults = {
+  getAdaptationHead,
+  getAdaptationOriginal,
+  generateDocx,
+  storeResourceArtifact,
+};
+
+function exporterFor(format: WorksheetExportFormat, dependencies: typeof defaults) {
+  if (format === "docx") {
+    return { render: dependencies.generateDocx, ...docxArtifactFormat };
+  }
+  const unsupportedFormat: never = format;
+  throw new Error(`Unsupported worksheet export format: ${unsupportedFormat}`);
+}
 
 export async function prepareWorksheetExport(
   input: WorksheetExportRequest,
@@ -36,17 +52,26 @@ export async function prepareWorksheetExport(
       });
     }
 
+    const storedDocument =
+      input.variant === "original"
+        ? await dependencies.getAdaptationOriginal(input.adaptationId)
+        : head.storedDocument;
+    if (storedDocument === null)
+      throw new Error("An available adaptation has no original document.");
+
+    const exporter = exporterFor(input.format, dependencies);
     // Rendering and storage use the immutable snapshot, without holding a database transaction.
     const started = performance.now();
-    const bytes = await dependencies.generateDocx(head.storedDocument.document);
+    const bytes = await exporter.render(storedDocument.document);
     const renderMs = performance.now() - started;
     const artifact = await dependencies.storeResourceArtifact(
       bytes,
-      head.storedDocument.id,
-      docxArtifactFormat.mimeType,
-      docxArtifactFormat.format,
+      storedDocument.id,
+      exporter.mimeType,
+      exporter.format,
     );
     log.info("Prepared worksheet DOCX", {
+      variant: input.variant,
       renderMs: Math.round(renderMs),
       preparationMs: Math.round(performance.now() - started),
       byteSize: bytes.byteLength,

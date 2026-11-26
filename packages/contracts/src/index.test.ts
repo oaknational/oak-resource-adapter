@@ -315,6 +315,7 @@ describe("Resource Adapter API contracts", () => {
         adaptationId,
         resourceDocumentId: attemptId,
         format: "docx" as const,
+        variant: "original" as const,
       };
       await expect(
         callerWithWorksheet({ prepareExport }).worksheetScaffolding.prepareExport(
@@ -337,6 +338,7 @@ describe("Resource Adapter API contracts", () => {
         adaptationId,
         resourceDocumentId: attemptId,
         format: "docx" as const,
+        variant: "original" as const,
       };
       const anonymous = internalRouter.createCaller({
         authenticatedTeacher: null,

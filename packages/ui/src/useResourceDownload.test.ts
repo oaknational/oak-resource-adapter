@@ -13,15 +13,18 @@ vi.mock("./downloads.js", async (original) => ({
   downloadBlob: vi.fn(),
 }));
 
+type Target = { key: string; format: string };
+const docx = { key: "scaffolded-docx", format: "docx" };
+const otherDocx = { key: "original-docx", format: "docx" };
+
 function options() {
   return {
     apiBaseUrl: "https://adapter.example",
     resourceDocumentId: "document-1",
-    format: "docx",
     enabled: true,
     getToken: async () => "token",
     prepare: vi
-      .fn<(signal: AbortSignal) => Promise<{ artifactId: string }>>()
+      .fn<(target: Target, signal: AbortSignal) => Promise<{ artifactId: string }>>()
       .mockResolvedValue({ artifactId: "artifact-1" }),
     onStale: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
   };
@@ -43,9 +46,9 @@ it.each([404, 503])(
       new ResourceAdapterApiError("delivery failed", status),
     );
     const { result } = renderHook(() => useResourceDownload(props));
-    await act(() => result.current.download());
+    await act(() => result.current.download(docx));
     expect(result.current.state).toMatchObject({ phase: "error", stage: "delivery" });
-    await act(() => result.current.download());
+    await act(() => result.current.download(docx));
     expect(props.prepare).toHaveBeenCalledTimes(status === 404 ? 2 : 1);
     expect(fetchResourceArtifact).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -56,25 +59,45 @@ it.each([404, 503])(
   },
 );
 
-it.each(["resourceDocumentId", "format", "apiBaseUrl"] as const)(
+it.each(["resourceDocumentId", "apiBaseUrl"] as const)(
   "invalidates the prepared artifact when %s changes without remounting",
   async (field) => {
     const props = options();
     const { result, rerender } = renderHook((value) => useResourceDownload(value), {
       initialProps: props,
     });
-    await act(() => result.current.download());
-    const changed = { ...props, [field]: field === "format" ? "pdf" : "changed" };
-    rerender(changed);
+    await act(() => result.current.download(docx));
+    rerender({ ...props, [field]: "changed" });
     expect(result.current.state.phase).toBe("idle");
-    await act(() => result.current.download());
+    await act(() => result.current.download(docx));
     expect(props.prepare).toHaveBeenCalledTimes(2);
-    expect(downloadBlob).toHaveBeenLastCalledWith(
-      expect.any(Blob),
-      field === "format" ? "resource-document.pdf" : "resource-document.docx",
-    );
   },
 );
+
+it("prepares each target once and names it by its own format", async () => {
+  const props = options();
+  props.prepare.mockImplementation(async (target) => ({
+    artifactId: `artifact-${target.key}`,
+  }));
+  const { result } = renderHook(() => useResourceDownload(props));
+  await act(() => result.current.download(docx));
+  await act(() => result.current.download(otherDocx));
+  await act(() => result.current.download(docx));
+  await act(() => result.current.download({ key: "original-pdf", format: "pdf" }));
+  expect(props.prepare.mock.calls.map(([target]) => target.key)).toEqual([
+    "scaffolded-docx",
+    "original-docx",
+    "original-pdf",
+  ]);
+  expect(fetchResourceArtifact).toHaveBeenNthCalledWith(
+    3,
+    expect.objectContaining({ artifactId: "artifact-scaffolded-docx" }),
+  );
+  expect(downloadBlob).toHaveBeenLastCalledWith(
+    expect.any(Blob),
+    "resource-document.pdf",
+  );
+});
 
 it.each(["preparation", "delivery"] as const)(
   "aborts old %s and ignores its late result after a document change",
@@ -90,9 +113,9 @@ it.each(["preparation", "delivery"] as const)(
     });
     let oldDownload: Promise<void>;
     await act(async () => {
-      oldDownload = result.current.download();
+      oldDownload = result.current.download(docx);
     });
-    const signal = props.prepare.mock.calls[0]![0];
+    const signal = props.prepare.mock.calls[0]![1];
     rerender({ ...props, resourceDocumentId: "document-2" });
     expect(signal.aborted).toBe(true);
     await act(async () => {
@@ -102,7 +125,7 @@ it.each(["preparation", "delivery"] as const)(
     });
     expect(downloadBlob).not.toHaveBeenCalled();
     expect(result.current.state.phase).toBe("idle");
-    await act(() => result.current.download());
+    await act(() => result.current.download(docx));
     expect(downloadBlob).toHaveBeenCalledOnce();
   },
 );
@@ -114,7 +137,7 @@ it("aborts an in-flight file request on unmount and ignores its late result", as
   const { result, unmount } = renderHook(() => useResourceDownload(options()));
   let download: Promise<void>;
   await act(async () => {
-    download = result.current.download();
+    download = result.current.download(docx);
   });
   const signal = vi.mocked(fetchResourceArtifact).mock.calls[0]![0].signal;
   unmount();

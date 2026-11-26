@@ -1798,6 +1798,23 @@ describe("WorksheetScaffoldingWorkflow", () => {
   });
 });
 
+async function downloadScaffoldedWorksheet() {
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Download worksheet" }),
+  );
+  await userEvent.click(
+    await screen.findByRole("menuitem", { name: "Scaffolded_worksheet.docx" }),
+  );
+}
+
+async function scaffoldedDownloadOffered() {
+  await userEvent.click(screen.getByRole("button", { name: "Download worksheet" }));
+  const offered =
+    screen.queryByRole("menuitem", { name: "Scaffolded_worksheet.docx" }) !== null;
+  await userEvent.keyboard("{Escape}");
+  return offered;
+}
+
 it.each(["available", "review", "busy"] as const)(
   "keeps refresh feedback after the download component remounts with %s availability",
   async (downloadAvailability) => {
@@ -1815,19 +1832,16 @@ it.each(["available", "review", "busy"] as const)(
     );
     const onError = vi.fn();
     renderDialog({ onError });
-    await userEvent.click(
-      await screen.findByRole("button", { name: "Download worksheet" }),
-    );
+    await downloadScaffoldedWorksheet();
     await waitFor(() =>
       expect(screen.getByRole("status", { name: "Download status" })).toHaveTextContent(
         "Worksheet refreshed.",
       ),
     );
     expect(onError).not.toHaveBeenCalled();
-    if (downloadAvailability === "available")
-      expect(screen.getByRole("button", { name: "Download worksheet" })).toBeEnabled();
-    else
-      expect(screen.getByRole("button", { name: "Download worksheet" })).toBeDisabled();
+    expect(await scaffoldedDownloadOffered()).toBe(
+      downloadAvailability === "available",
+    );
   },
 );
 
@@ -1850,9 +1864,13 @@ it("downloads the accepted worksheet once its new suggestions are ready", async 
     screen.queryByRole("button", { name: "Download worksheet" }),
   ).not.toBeInTheDocument();
 
-  const download = await screen.findByRole("button", { name: "Download worksheet" });
-  await waitFor(() => expect(download).toBeEnabled());
-  await userEvent.click(download);
+  await screen.findByRole("button", { name: "Download worksheet" });
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("heading", { name: "Preparing your scaffolds…" }),
+    ).toBeNull(),
+  );
+  await downloadScaffoldedWorksheet();
   expect(prepareWorksheetExport).toHaveBeenCalledWith(
     expect.objectContaining({ resourceDocumentId: accepted.resourceDocumentId }),
   );
@@ -1877,9 +1895,7 @@ it.each(["resolve", "reject"] as const)(
     );
     const onError = vi.fn();
     renderDialog({ onError });
-    await userEvent.click(
-      await screen.findByRole("button", { name: "Download worksheet" }),
-    );
+    await downloadScaffoldedWorksheet();
     await waitFor(() => expect(getWorksheetScaffoldingMock).toHaveBeenCalled());
     await userEvent.click(screen.getByRole("button", { name: "Remove" }));
     await waitFor(() =>
@@ -1890,7 +1906,7 @@ it.each(["resolve", "reject"] as const)(
       else pending.reject(new Error("old refresh failed"));
     });
     expect(screen.queryByText("Added support")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Download worksheet" })).toBeEnabled();
+    expect(await scaffoldedDownloadOffered()).toBe(true);
     expect(onError).not.toHaveBeenCalled();
   },
 );
@@ -1905,9 +1921,7 @@ it("tells the teacher when refreshing a changed worksheet fails", async () => {
   );
   renderDialog();
 
-  await userEvent.click(
-    await screen.findByRole("button", { name: "Download worksheet" }),
-  );
+  await downloadScaffoldedWorksheet();
 
   await waitFor(() =>
     expect(screen.getByRole("status", { name: "Download status" })).toHaveTextContent(

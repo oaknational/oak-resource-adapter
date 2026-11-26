@@ -1,10 +1,22 @@
 "use client";
 
-import { useId } from "react";
-import { OakFlex, OakIcon, OakP, OakPrimaryButton } from "@oaknational/oak-components";
-import { keyframes, styled } from "styled-components";
-import type { WorksheetDownloadAvailability } from "@oaknational/resource-adapter-contracts/internal";
+import { Fragment, useState } from "react";
+import {
+  OakButtonWithDropdown,
+  OakFlex,
+  OakIcon,
+  OakP,
+  OakSecondaryButton,
+  OakSpan,
+} from "@oaknational/oak-components";
+import {
+  worksheetExportFormats,
+  type WorksheetDownloadAvailability,
+  type WorksheetExportFormat,
+  type WorksheetExportVariant,
+} from "@oaknational/resource-adapter-contracts/internal";
 
+import { AiMenuButton, AiMenuSection, LearnMoreSection } from "../../AiMenu.js";
 import type { TrackAnalyticsEvent } from "../../analytics.js";
 import { ResourceAdapterApiError } from "../../errors.js";
 import type { GetToken, ResourceAdapterErrorHandler } from "../../publicTypes.js";
@@ -14,77 +26,63 @@ import {
 } from "../../useResourceDownload.js";
 import { prepareWorksheetExport } from "../../worksheetScaffolding.js";
 
-const explanations: Record<WorksheetDownloadAvailability, string> = {
-  available: "Editable Word document (.docx)",
-  original: "Apply and accept a scaffold before downloading your adapted worksheet.",
-  review: "Accept or undo the scaffold under review before downloading.",
-  busy: "Wait for the worksheet to finish updating before downloading.",
-  unavailable: "This worksheet is not available to download.",
+const lockedReasons: Record<
+  Exclude<WorksheetDownloadAvailability, "available">,
+  string
+> = {
+  original: "Accept scaffolds to access downloads",
+  review: "Accept or undo the scaffold under review to access downloads",
+  busy: "Wait for the worksheet to finish updating to access downloads",
+  unavailable: "This worksheet isn't available to download",
 };
 
-const DownloadButton = styled(OakPrimaryButton)`
-  min-inline-size: min(15rem, 100%);
-  max-inline-size: 100%;
+const sections = [
+  {
+    variant: "scaffolded",
+    heading: "Scaffolded worksheet",
+    filename: "Scaffolded_worksheet",
+  },
+  {
+    variant: "original",
+    heading: "Original worksheet",
+    filename: "Original_worksheet",
+  },
+] as const satisfies readonly Readonly<{
+  variant: WorksheetExportVariant;
+  heading: string;
+  filename: string;
+}>[];
 
-  button {
-    scroll-margin-block: 7rem;
-  }
-`;
+type DownloadTarget = Readonly<{
+  key: string;
+  format: WorksheetExportFormat;
+  variant: WorksheetExportVariant;
+}>;
 
-const DownloadFeedback = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1 1 16rem;
-  min-inline-size: 0;
+function downloadTarget(
+  variant: WorksheetExportVariant,
+  format: WorksheetExportFormat,
+): DownloadTarget {
+  return { key: `${variant}.${format}`, format, variant };
+}
 
-  img {
-    flex-shrink: 0;
-  }
-`;
-
-const rotate = keyframes`
-  to { transform: rotate(360deg); }
-`;
-
-const DownloadSpinner = styled.span`
-  display: block;
-  flex-shrink: 0;
-  inline-size: 1.25rem;
-  block-size: 1.25rem;
-  box-sizing: border-box;
-  border: 0.1875rem solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: ${rotate} 1.2s linear infinite;
-
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-  }
-`;
-
-const buttonLabels = {
-  idle: "Download worksheet",
-  preparing: "Preparing worksheet…",
-  downloading: "Downloading…",
-  refreshing: "Refreshing worksheet…",
-  done: "Download again",
-  error: "Retry download",
-  tooLarge: "Download unavailable",
-} as const;
-
-function downloadMessage(state: ResourceDownloadState): string {
+function downloadMessage(
+  state: ResourceDownloadState,
+  variant: WorksheetExportVariant,
+): string {
   switch (state.phase) {
     case "idle":
       return "";
     case "preparing":
-      return "Preparing an editable Word document with your accepted changes.";
+      return variant === "original"
+        ? "Preparing an editable Word document of the original worksheet."
+        : "Preparing an editable Word document with your accepted changes.";
     case "downloading":
       return "Getting your Word document. Your changes are saved here.";
     case "refreshing":
       return "The worksheet has changed. Refreshing it before you download again.";
     case "done":
-      return "Your worksheet is ready.";
+      return "Download generated";
     case "tooLarge":
       return "This worksheet is too large to download as a Word document. Your changes are saved here.";
     case "error": {
@@ -99,14 +97,10 @@ function downloadMessage(state: ResourceDownloadState): string {
   }
 }
 
-function idleMessage(
-  availability: WorksheetDownloadAvailability,
-  worksheetWasRefreshed: boolean,
-): string {
-  if (!worksheetWasRefreshed) return explanations[availability];
-  if (availability === "available")
-    return "Worksheet refreshed. You can try downloading again.";
-  return `Worksheet refreshed. ${explanations[availability]}`;
+function refreshedMessage(availability: WorksheetDownloadAvailability): string {
+  return availability === "available"
+    ? "Worksheet refreshed. You can try downloading again."
+    : `Worksheet refreshed. ${lockedReasons[availability]}.`;
 }
 
 export function WorksheetDownload({
@@ -130,29 +124,32 @@ export function WorksheetDownload({
   onError?: ResourceAdapterErrorHandler | undefined;
   track: TrackAnalyticsEvent;
 }>) {
-  const descriptionId = useId();
-  const { state, download } = useResourceDownload({
+  const [lastTarget, setLastTarget] = useState<DownloadTarget | null>(null);
+  const { state, download, tooLargeKeys } = useResourceDownload<DownloadTarget>({
     apiBaseUrl,
     getToken,
     resourceDocumentId,
-    format: "docx",
     enabled: availability === "available",
-    prepare: (signal) =>
+    prepare: (target, signal) =>
       prepareWorksheetExport({
         apiBaseUrl,
         getToken,
         resourceDocumentId,
         adaptationId,
-        format: "docx",
+        format: target.format,
+        variant: target.variant,
         signal,
       }),
     onStale: onRefresh,
-    onDownloaded: () =>
+    onDownloaded: (target) =>
       track({
-        name: "Adapted Resource Downloaded",
+        name:
+          target.variant === "original"
+            ? "Original Resource Downloaded"
+            : "Adapted Resource Downloaded",
         adaptationId,
-        componentType: "download_button",
-        format: "docx",
+        componentType: "download_menu_item",
+        format: target.format,
       }),
     onFailed: () =>
       track({
@@ -164,31 +161,68 @@ export function WorksheetDownload({
     onError,
   });
   const { phase } = state;
-  const message = downloadMessage(state);
   const active =
     phase === "preparing" || phase === "downloading" || phase === "refreshing";
   const failed = phase === "error" || phase === "tooLarge";
-  const feedback = message || idleMessage(availability, worksheetWasRefreshed);
+  const message = downloadMessage(state, lastTarget?.variant ?? "scaffolded");
+  const feedback =
+    message || (worksheetWasRefreshed ? refreshedMessage(availability) : "");
+  const select = (target: DownloadTarget) => {
+    setLastTarget(target);
+    void download(target);
+  };
+
   return (
     <OakFlex
-      $alignItems="center"
-      $columnGap="spacing-16"
-      $flexWrap="wrap"
-      $rowGap="spacing-12"
+      $alignItems={["flex-start", "center"]}
+      $flexDirection={["column", "row"]}
+      $gap="spacing-16"
     >
-      <DownloadButton
-        aria-describedby={descriptionId}
-        aria-busy={active}
-        disabled={availability !== "available" || active || phase === "tooLarge"}
-        iconName="download"
-        iconAriaHidden
-        iconOverride={active ? <DownloadSpinner aria-hidden="true" /> : undefined}
-        onClick={() => void download()}
+      <OakButtonWithDropdown
+        buttonComponent={OakSecondaryButton}
+        dropdownProps={{ "aria-label": "Download worksheet", role: "menu" }}
+        primaryActionText="Download worksheet"
       >
-        {buttonLabels[phase]}
-      </DownloadButton>
-      <DownloadFeedback
-        id={descriptionId}
+        {availability === "available" ? (
+          sections.map(({ variant, heading, filename }, index) => (
+            <Fragment key={variant}>
+              {index > 0 && <OakButtonWithDropdown.Divider />}
+              <AiMenuSection heading={heading}>
+                {worksheetExportFormats.map((format) => {
+                  const target = downloadTarget(variant, format);
+                  return (
+                    <AiMenuButton
+                      disabled={active || tooLargeKeys.has(target.key)}
+                      iconName="download"
+                      key={format}
+                      onSelect={() => select(target)}
+                    >
+                      {`${filename}.${format}`}
+                    </AiMenuButton>
+                  );
+                })}
+              </AiMenuSection>
+            </Fragment>
+          ))
+        ) : (
+          // Focusable but inert, so arrow keys reach it and screen readers announce it.
+          <OakSpan
+            $color="text-error"
+            $font="body-2"
+            $ph="spacing-8"
+            $pv="spacing-8"
+            aria-disabled="true"
+            role="menuitem"
+            tabIndex={0}
+          >
+            {lockedReasons[availability]}
+          </OakSpan>
+        )}
+        <LearnMoreSection onSelect={() => {}} />
+      </OakButtonWithDropdown>
+      <OakFlex
+        $alignItems="center"
+        $gap="spacing-8"
         aria-label="Download status"
         role="status"
         aria-live="polite"
@@ -199,21 +233,15 @@ export function WorksheetDownload({
             iconName={phase === "done" ? "tick" : "warning"}
             $colorFilter={phase === "done" ? "icon-success" : "icon-error"}
             $width="spacing-24"
+            $minWidth="spacing-24"
             $height="spacing-24"
             aria-hidden="true"
           />
         )}
-        <div>
-          <OakP $font="body-2" $color="text-primary">
-            {phase === "done" ? <strong>{feedback}</strong> : feedback}
-          </OakP>
-          {phase === "done" && (
-            <OakP $font="body-3">
-              Find the Word document in your browser’s downloads.
-            </OakP>
-          )}
-        </div>
-      </DownloadFeedback>
+        <OakP $font="body-2" $color="text-primary">
+          {feedback}
+        </OakP>
+      </OakFlex>
     </OakFlex>
   );
 }

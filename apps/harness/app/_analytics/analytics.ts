@@ -55,6 +55,7 @@ const engagementIntent = {
   "Adaptation Step Failed": "use",
   "Adaptation Request Failed": "use",
   "Adapted Resource Downloaded": "use",
+  "Original Resource Downloaded": "use",
   "Usage Limit Reached": "use",
   "Monthly Allowance Displayed": "explore",
 } satisfies Record<HarnessAnalyticsEvent["name"], string>;

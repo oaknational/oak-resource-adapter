@@ -12,22 +12,37 @@ import {
   NEXT_DOCUMENT_ID,
   head,
   loadWorksheet,
+  storedDocument,
   teacher,
 } from "./test-doubles";
-import type { getAdaptationHead } from "./repository";
+import type { getAdaptationHead, getAdaptationOriginal } from "./repository";
 import type { storeResourceArtifact } from "../resource-artifacts/service";
 
 beforeAll(loadWorksheet);
 const ARTIFACT_ID = "44444444-4444-4444-8444-444444444444";
+const ORIGINAL_ID = "99999999-9999-4999-8999-999999999999";
 const input = {
   adaptationId: ADAPTATION_ID,
   resourceDocumentId: DOCUMENT_ID,
   format: "docx",
+  variant: "scaffolded",
 } as const;
+
+function original() {
+  return {
+    ...storedDocument(ORIGINAL_ID),
+    origin: "oak_resource" as const,
+    position: null,
+    transformationAttemptId: null,
+  };
+}
 
 function dependencies() {
   return {
     getAdaptationHead: vi.fn<typeof getAdaptationHead>().mockResolvedValue(head()),
+    getAdaptationOriginal: vi
+      .fn<typeof getAdaptationOriginal>()
+      .mockResolvedValue(original()),
     generateDocx: vi
       .fn<typeof generateDocx>()
       .mockResolvedValue(new Uint8Array([1, 2, 3])),
@@ -65,6 +80,34 @@ describe("worksheet export preparation", () => {
       "docx",
     );
     expect(snapshot).toEqual(before);
+    expect(deps.getAdaptationOriginal).not.toHaveBeenCalled();
+  });
+
+  it("renders and stores the adaptation's original after the same checks", async () => {
+    const deps = dependencies();
+    const originalDocument = original();
+    deps.getAdaptationOriginal.mockResolvedValue(originalDocument);
+    expect(
+      await prepareWorksheetExport({ ...input, variant: "original" }, teacher, deps),
+    ).toEqual({ artifactId: ARTIFACT_ID });
+    expect(deps.getAdaptationOriginal).toHaveBeenCalledWith(ADAPTATION_ID);
+    expect(deps.generateDocx).toHaveBeenCalledWith(originalDocument.document);
+    expect(deps.storeResourceArtifact).toHaveBeenCalledWith(
+      new Uint8Array([1, 2, 3]),
+      ORIGINAL_ID,
+      docxArtifactFormat.mimeType,
+      "docx",
+    );
+  });
+
+  it("locks the original while the scaffolded worksheet is locked", async () => {
+    const deps = dependencies();
+    deps.getAdaptationHead.mockResolvedValue({ ...head(), acceptedAt: null });
+    await expect(
+      prepareWorksheetExport({ ...input, variant: "original" }, teacher, deps),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(deps.getAdaptationOriginal).not.toHaveBeenCalled();
+    expect(deps.generateDocx).not.toHaveBeenCalled();
   });
 
   it("does not render missing or foreign adaptations", async () => {

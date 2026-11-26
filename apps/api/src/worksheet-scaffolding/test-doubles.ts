@@ -330,6 +330,7 @@ export function repositoryDefaults(): RepositoryResults {
     getAcceptedSuggestion: null,
     getAdaptationAttempt: null,
     getAdaptationHead: head(),
+    getAdaptationOriginal: null,
     getAttemptForJob: null,
     getOpenSuggestion: storedSuggestion(),
     getPendingReview: null,

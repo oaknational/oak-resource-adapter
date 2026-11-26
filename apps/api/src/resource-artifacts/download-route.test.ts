@@ -17,6 +17,7 @@ import { downloadArtifact, downloadOptions } from "./download-route";
 const id = "11111111-1111-4111-8111-111111111111";
 const bytes = Buffer.from("a stored file");
 const owned = {
+  origin: "generated",
   title: "Exploring linear equations",
   artifact: {
     id,
@@ -70,6 +71,14 @@ it("authorises before reading and streams stored bytes with private headers", as
   );
   expect(response.headers.get("access-control-expose-headers")).toBe(
     "Content-Disposition",
+  );
+});
+
+it("names an original worksheet's download apart from the scaffolded one", async () => {
+  findOwnedArtifact.mockResolvedValue({ ...owned, origin: "oak_resource" });
+  const response = await downloadArtifact(request(), id);
+  expect(response.headers.get("content-disposition")).toContain(
+    "Exploring-linear-equations-original.docx",
   );
 });
 

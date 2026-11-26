@@ -62,6 +62,12 @@ for (const url of [
       // The test helper establishes a session without completing the modal UI.
       await page.evaluate(() => window.Clerk.closeSignIn());
       expect((await capabilities).status()).toBe(200);
+      await expect(page.getByRole("dialog")).toBeHidden();
+      if (url.includes("case=unsupported-markup")) {
+        await expect(page.getByTestId("capability-outcome")).toHaveText(
+          /^The capabilities endpoint returned [1-9]\d* capabilities\.$/,
+        );
+      }
       const menu = await openAiMenu(page);
       await expect(
         menu.getByRole("menuitem", { name: "Scaffold practice tasks", exact: true }),

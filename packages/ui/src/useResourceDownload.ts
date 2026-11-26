@@ -12,11 +12,13 @@ export type ResourceDownloadState =
   | { phase: "idle" | "preparing" | "downloading" | "refreshing" | "done" }
   | { phase: "error" | "tooLarge"; error: unknown; stage: DownloadStage };
 
-export function useResourceDownload({
+/** One downloadable file. `key` identifies its prepared artifact. */
+export type ResourceDownloadTarget = Readonly<{ key: string; format: string }>;
+
+export function useResourceDownload<Target extends ResourceDownloadTarget>({
   apiBaseUrl,
   getToken,
   resourceDocumentId,
-  format,
   enabled,
   prepare,
   onStale,
@@ -27,26 +29,27 @@ export function useResourceDownload({
   apiBaseUrl: string;
   getToken: GetToken;
   resourceDocumentId: string;
-  format: string;
   enabled: boolean;
-  prepare: (signal: AbortSignal) => Promise<{ artifactId: string }>;
+  prepare: (target: Target, signal: AbortSignal) => Promise<{ artifactId: string }>;
   onStale: () => Promise<void>;
-  onDownloaded?: () => void;
-  onFailed?: () => void;
+  onDownloaded?: (target: Target) => void;
+  onFailed?: (target: Target) => void;
   onError?: ResourceAdapterErrorHandler | undefined;
 }>) {
   const [state, setState] = useState<ResourceDownloadState>({ phase: "idle" });
+  const [tooLargeKeys, setTooLargeKeys] = useState<ReadonlySet<string>>(new Set());
   const request = useRef<AbortController | null>(null);
-  const artifactId = useRef<string | null>(null);
+  const artifactIds = useRef(new Map<string, string>());
 
   useEffect(() => {
-    artifactId.current = null;
+    artifactIds.current.clear();
     setState({ phase: "idle" });
+    setTooLargeKeys(new Set());
     return () => {
       request.current?.abort();
       request.current = null;
     };
-  }, [apiBaseUrl, resourceDocumentId, format, enabled]);
+  }, [apiBaseUrl, resourceDocumentId, enabled]);
 
   async function refreshStaleDocument(signal: AbortSignal) {
     setState({ phase: "refreshing" });
@@ -61,6 +64,7 @@ export function useResourceDownload({
   }
 
   async function handleFailure(
+    target: Target,
     error: unknown,
     stage: DownloadStage,
     signal: AbortSignal,
@@ -72,43 +76,46 @@ export function useResourceDownload({
       return;
     }
     // A collected artifact never returns, so drop the id and let the retry prepare a new one.
-    if (stage === "delivery" && status === 404) artifactId.current = null;
-    onFailed?.();
+    if (stage === "delivery" && status === 404) artifactIds.current.delete(target.key);
+    onFailed?.(target);
     reportToHost(onError, error);
+    if (status === 413) setTooLargeKeys((keys) => new Set(keys).add(target.key));
     setState({ phase: status === 413 ? "tooLarge" : "error", error, stage });
   }
 
-  async function download() {
+  async function download(target: Target) {
     if (request.current !== null || !enabled) return;
     const controller = new AbortController();
     request.current = controller;
     const { signal } = controller;
     let stage: DownloadStage = "preparation";
     try {
-      if (artifactId.current === null) {
+      let artifactId = artifactIds.current.get(target.key);
+      if (artifactId === undefined) {
         setState({ phase: "preparing" });
-        const prepared = await prepare(signal);
+        const prepared = await prepare(target, signal);
         if (signal.aborted) return;
-        artifactId.current = prepared.artifactId;
+        artifactId = prepared.artifactId;
+        artifactIds.current.set(target.key, artifactId);
       }
       stage = "delivery";
       setState({ phase: "downloading" });
       const { blob, contentDisposition } = await fetchResourceArtifact({
         apiBaseUrl,
         getToken,
-        artifactId: artifactId.current,
+        artifactId,
         signal,
       });
       if (signal.aborted) return;
-      downloadBlob(blob, downloadFilename(contentDisposition, format));
+      downloadBlob(blob, downloadFilename(contentDisposition, target.format));
       setState({ phase: "done" });
-      onDownloaded?.();
+      onDownloaded?.(target);
     } catch (error) {
-      await handleFailure(error, stage, signal);
+      await handleFailure(target, error, stage, signal);
     } finally {
       if (request.current === controller) request.current = null;
     }
   }
 
-  return { state, download };
+  return { state, download, tooLargeKeys };
 }

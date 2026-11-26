@@ -3,17 +3,26 @@ import {
   resourceDocuments,
   suggestedTransformations,
   transformationAttempts,
+  transformationInputs,
   transformations,
 } from "@oaknational/resource-adapter-db";
 import type {
   SafetyResult,
   WithheldSafetyResult,
 } from "@oaknational/resource-adapter-moderation";
-import { and, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull, type SQLWrapper } from "drizzle-orm";
 import type { ResourceDocument } from "@oaknational/resource-document";
 import { parseResourceDocument } from "@oaknational/resource-document/parse";
 
 export const PRIMARY_SOURCE = "primary_source";
+
+export function isPrimarySourceOf(transformationId: SQLWrapper | string) {
+  return and(
+    eq(transformationInputs.transformationId, transformationId),
+    eq(transformationInputs.inputRole, PRIMARY_SOURCE),
+    eq(transformationInputs.position, 0),
+  );
+}
 
 export type Transaction = Parameters<
   Parameters<ReturnType<typeof getDatabaseClient>["transaction"]>[0]
