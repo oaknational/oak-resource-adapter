@@ -1,0 +1,266 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:what-is-the-rule-of-law-and-how-does-it-support-a-fair-society:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "What is the rule of law, and how does it support a fair society?"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task A: What is the rule of law?"
+            }
+          ]
+        },
+        {
+          "id": "question-1",
+          "type": "question",
+          "children": [
+            {
+              "id": "unstable:paragraph-in-a-paragraph-explain-what-the-rule-of-law-is-using-t",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "In a paragraph, explain what the rule of law is using the following words:"
+                }
+              ]
+            },
+            {
+              "id": "rule-of-law-words",
+              "type": "table",
+              "role": "key-words",
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "fair / fairly"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "equality"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "accountability"
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "consistent"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "government"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "judicial review"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            },
+            {
+              "id": "question-1-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task B: Why must everyone follow the law?"
+            }
+          ]
+        },
+        {
+          "id": "task-b-scenario",
+          "layout": {
+            "keepWithNext": true
+          },
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "A group of teenagers decide to cross a railway track instead of using the bridge because it is quicker. One of them says, “The rules don’t really matter if no-one is watching.”"
+            }
+          ]
+        },
+        {
+          "id": "question-2",
+          "type": "question",
+          "children": [
+            {
+              "id": "unstable:paragraph-using-the-example-above-explain-why-laws-must-always-b",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Using the example above, explain why laws must always be followed."
+                }
+              ]
+            },
+            {
+              "id": "question-2-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-c",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-c-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task C: What does fair treatment under the law mean?"
+            }
+          ]
+        },
+        {
+          "id": "task-c-scenario",
+          "layout": {
+            "keepWithNext": true
+          },
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "A 16-year-old signs up for a gym membership, but later realises the terms and conditions were unclear. When they try to cancel, the company refuses, even though the key information wasn’t properly explained to them beforehand."
+            }
+          ]
+        },
+        {
+          "id": "question-3",
+          "type": "question",
+          "children": [
+            {
+              "id": "unstable:paragraph-explain-whether-this-is-fair-and-how-the-rule-of-law-p",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Explain whether this is fair and how the rule of law protects this young person."
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-use-the-words-equality-and-accountability-in-your-answ",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Use the words ‘equality’ and ‘accountability’ in your answer."
+                }
+              ]
+            },
+            {
+              "id": "question-3-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 12
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "what-is-the-rule-of-law-and-how-does-it-support-a-fair-society:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/what-is-the-rule-of-law-and-how-does-it-support-a-fair-society"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "What is the rule of law, and how does it support a fair society?",
+    "subject": {
+      "id": "citizenship",
+      "label": "Citizenship"
+    },
+    "keyStage": {
+      "id": "ks3",
+      "label": "Key stage 3"
+    },
+    "yearGroup": {
+      "id": "year-7",
+      "label": "Year 7"
+    }
+  }
+}

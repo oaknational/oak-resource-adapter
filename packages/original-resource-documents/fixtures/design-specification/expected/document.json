@@ -1,0 +1,368 @@
+{
+  "schemaVersion": "0.1",
+  "id": "oak:worksheet:design-specification:pupil",
+  "language": "en-GB",
+  "content": [
+    {
+      "id": "title",
+      "type": "heading",
+      "level": 1,
+      "content": [
+        {
+          "type": "text",
+          "text": "Design specification"
+        }
+      ]
+    },
+    {
+      "id": "task-a",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-a-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task A: Purpose and features of design specifications"
+            }
+          ]
+        },
+        {
+          "id": "task-a-context",
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Below is a non-example of a lunchbox design specification. It is missing important details and does not clearly describe the product's purpose, user, or key features."
+            }
+          ]
+        },
+        {
+          "id": "question-1",
+          "type": "question",
+          "children": [
+            {
+              "id": "unstable:paragraph-improve-this-specification-by-adding-missing-informati",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Improve this specification by adding missing information to make the description clearer."
+                }
+              ]
+            },
+            {
+              "id": "lunchbox-non-example",
+              "type": "table",
+              "role": "table",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Specification point"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Non-example"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Your improvement"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Purpose"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Make the lunchbox."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "User"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Anyone."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Key features"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "It holds food and is a box."
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-b",
+      "type": "task",
+      "children": [
+        {
+          "id": "task-b-heading",
+          "type": "heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "text",
+              "text": "Task B: Function and aesthetics in design specifications"
+            }
+          ]
+        },
+        {
+          "id": "question-2",
+          "type": "question",
+          "label": "1",
+          "children": [
+            {
+              "id": "unstable:paragraph-you-have-already-worked-on-the-purpose-user-and-key-fe",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "You have already worked on the purpose, user, and key features of a lunchbox. Now, focus on improving the aesthetics, materials, and form."
+                }
+              ]
+            },
+            {
+              "id": "unstable:paragraph-look-at-the-following-incomplete-specification-and-imp",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Look at the following incomplete specification and improve it by adding details for these three elements."
+                }
+              ]
+            },
+            {
+              "id": "lunchbox-elements",
+              "type": "table",
+              "role": "table",
+              "header": [
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Element"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Consider"
+                    }
+                  ]
+                },
+                {
+                  "kind": "content",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Your detail"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Aesthetics"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "What should the lunchbox look like? (Consider colour, style, and design)"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Materials"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "What should the lunchbox be made of to ensure it’s durable and safe?"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ],
+                [
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Form"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "content",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "What shape should it be? How should it feel when carried?"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "answer"
+                  }
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "question-3",
+          "type": "question",
+          "label": "2",
+          "children": [
+            {
+              "id": "unstable:paragraph-for-each-part-of-your-design-specification-justify-you",
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "For each part of your design specification: justify your design decisions, and explain how it would be tested."
+                }
+              ]
+            },
+            {
+              "id": "question-3-response",
+              "type": "responseSpace",
+              "kind": "lines",
+              "lines": 12
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "answers": [],
+  "assets": [],
+  "provenance": {
+    "source": {
+      "system": "oak",
+      "id": "design-specification:worksheet",
+      "uri": "https://www.thenational.academy/teachers/lessons/design-specification"
+    },
+    "producer": {
+      "name": "provisional-resource-document-fixture",
+      "version": "0.1.0"
+    }
+  },
+  "diagnostics": [],
+  "profile": "worksheet.v0",
+  "metadata": {
+    "title": "Design specification",
+    "subject": {
+      "id": "design-technology",
+      "label": "Design and technology"
+    },
+    "keyStage": {
+      "id": "ks4",
+      "label": "Key stage 4"
+    },
+    "yearGroup": {
+      "id": "year-11",
+      "label": "Year 11"
+    }
+  }
+}
