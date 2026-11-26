@@ -4,7 +4,11 @@ import type {
   WorksheetScaffoldingState,
 } from "@oaknational/resource-adapter-contracts/internal";
 
-import type { AdaptationRequest, TrackAnalyticsEvent } from "../../analytics.js";
+import type {
+  AdaptationRequest,
+  CapabilityAnalyticsEvent,
+  TrackAnalyticsEvent,
+} from "../../analytics.js";
 
 function sortedUnique(values: readonly string[]): string[] {
   return [...new Set(values)].sort((a, b) => a.localeCompare(b));
@@ -14,6 +18,65 @@ export function transformationKinds(
   suggestions: WorksheetScaffoldingState["suggestions"],
 ): string[] {
   return sortedUnique(suggestions.map((suggestion) => suggestion.kind));
+}
+
+export type ScaffoldingAction =
+  "accept" | "dismiss" | "remove" | "retrySuggestions" | "retryTransformation" | "undo";
+
+export type ComponentTypeFor<Name extends CapabilityAnalyticsEvent["name"]> = Extract<
+  CapabilityAnalyticsEvent,
+  { name: Name; componentType: string }
+>["componentType"];
+
+export type TrackedRequest = AdaptationRequest & Readonly<{ adaptationId: string }>;
+
+export function requestFor(action: ScaffoldingAction): AdaptationRequest {
+  if (action === "retrySuggestions") {
+    return { requestAction: "retry", retryTarget: "suggestions" } as const;
+  }
+  if (action === "retryTransformation") {
+    return { requestAction: "retry", retryTarget: "transformation" } as const;
+  }
+  return { requestAction: action };
+}
+
+const REVIEW_CONTROLS = {
+  accept: "accept_button",
+  retry: "retry_button",
+  undo: "undo_button",
+} as const;
+
+function reviewDetails<Action extends keyof typeof REVIEW_CONTROLS>(
+  { adaptationId, pendingReview }: WorksheetScaffoldingState,
+  reviewAction: Action,
+) {
+  return pendingReview === null
+    ? null
+    : {
+        adaptationId,
+        componentType: REVIEW_CONTROLS[reviewAction],
+        reviewAction,
+        transformationKind: pendingReview.kind,
+        ...(pendingReview.supportLevel === null
+          ? {}
+          : { supportLevel: pendingReview.supportLevel }),
+      };
+}
+
+export function reviewRequestedEvent(
+  value: WorksheetScaffoldingState,
+  reviewAction: keyof typeof REVIEW_CONTROLS,
+): CapabilityAnalyticsEvent | null {
+  const details = reviewDetails(value, reviewAction);
+  return details && { name: "Transformation Review Requested", ...details };
+}
+
+export function reviewedEvent(
+  value: WorksheetScaffoldingState,
+  reviewAction: "accept" | "undo",
+): CapabilityAnalyticsEvent | null {
+  const details = reviewDetails(value, reviewAction);
+  return details && { name: "Transformation Reviewed", ...details };
 }
 
 export function createWorksheetAnalyticsTracker(track: TrackAnalyticsEvent) {
