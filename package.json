@@ -58,6 +58,7 @@
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
     "@eslint/js": "^10.0.1",
+    "@oaknational/oak-agent-skills": "^0.3.0",
     "@oaknational/resource-adapter-db": "workspace:*",
     "@oaknational/resource-adapter-dev-api-contracts": "workspace:*",
     "@playwright/test": "^1.65.0",
@@ -74,5 +75,13 @@
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-eslint": "^8.72.1",
     "vercel": "65.12.1"
+  },
+  "oakSkills": {
+    "profiles": [
+      "base",
+      "frontend"
+    ],
+    "include": [],
+    "exclude": []
   }
 }

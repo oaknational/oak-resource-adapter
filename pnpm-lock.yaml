@@ -23,6 +23,9 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))
+      '@oaknational/oak-agent-skills':
+        specifier: ^0.3.0
+        version: 0.3.0
       '@oaknational/resource-adapter-db':
         specifier: workspace:*
         version: link:packages/db
@@ -2092,6 +2095,11 @@ packages:
         optional: true
       rolldown:
         optional: true
+
+  '@oaknational/oak-agent-skills@0.3.0':
+    resolution: {integrity: sha512-1Ih8XDrUtXJK0txTdMJxKiTFbBvA4cDB16GKRuYxwObdfDsML8WHe649dQVOih67akI0Eqchxmh+HbKIdAgAKg==}
+    engines: {node: '>=24.22.1 <25'}
+    hasBin: true
 
   '@oaknational/oak-components@3.30.0':
     resolution: {integrity: sha512-OKe2zAQPRsu0qjCCbBCd1vCpN/4fik4p9EWLgpsl03GCY0bFvaorsl2ZgFwQMffxRzGFLD+U01ZKkicL5ObwFw==}
@@ -8338,6 +8346,8 @@ snapshots:
     transitivePeerDependencies:
       - magic-string
       - unplugin
+
+  '@oaknational/oak-agent-skills@0.3.0': {}
 
   '@oaknational/oak-components@3.30.0(@portabletext/react@4.0.3(react@19.3.1))(@types/react@19.3.0)(next-cloudinary@7.0.0(next@16.4.5(@opentelemetry/api@1.9.1)(@playwright/test@1.65.0)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1))(next@16.4.5(@opentelemetry/api@1.9.1)(@playwright/test@1.65.0)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(styled-components@6.6.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))':
     dependencies:

@@ -25,16 +25,20 @@ updates:
       - dependency-name: "@portabletext/react"
         update-types: ["version-update:semver-major"]
     groups:
+      oak-agent-skills:
+        patterns: ["@oaknational/oak-agent-skills"]
       # Majors arrive as separate PRs, which splits two pairs that must move
       # together: vitest with @vitest/*, and @google-cloud/cloud-sql-connector
       # with google-auth-library. Push the partner's bump onto one PR and close
       # the other.
       npm:
         patterns: ["*"]
+        exclude-patterns: ["@oaknational/oak-agent-skills"]
         update-types: [minor, patch]
       npm-security:
         applies-to: security-updates
         patterns: ["*"]
+        exclude-patterns: ["@oaknational/oak-agent-skills"]
 
   - package-ecosystem: github-actions
     directory: /
