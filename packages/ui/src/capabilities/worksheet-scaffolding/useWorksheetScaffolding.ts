@@ -9,11 +9,7 @@ import {
 } from "@oaknational/resource-adapter-contracts/internal";
 
 import { scheduleAt } from "../../scheduleAt.js";
-import type {
-  AdaptationRequest,
-  CapabilityAnalyticsEvent,
-  TrackAnalyticsEvent,
-} from "../../analytics.js";
+import type { CapabilityAnalyticsEvent, TrackAnalyticsEvent } from "../../analytics.js";
 import { reportToHost } from "../../errors.js";
 import type {
   GetToken,
@@ -36,7 +32,13 @@ import { useWorksheetScaffoldingPolling } from "./useWorksheetScaffoldingPolling
 import { jobIsBusy, workflowReducer, type WorkflowEvent } from "./workflowState.js";
 import {
   createWorksheetAnalyticsTracker,
+  requestFor,
+  reviewedEvent,
+  reviewRequestedEvent,
   transformationKinds,
+  type ComponentTypeFor,
+  type ScaffoldingAction,
+  type TrackedRequest,
 } from "./worksheetAnalytics.js";
 
 type OpenRequest = Readonly<{
@@ -51,65 +53,6 @@ function openAction(lessonKey: string, replacing: ReplacementRequest | null): st
 }
 
 type Connection = Readonly<{ apiBaseUrl: string; getToken: GetToken }>;
-
-type ScaffoldingAction =
-  "accept" | "dismiss" | "remove" | "retrySuggestions" | "retryTransformation" | "undo";
-
-type ComponentTypeFor<Name extends CapabilityAnalyticsEvent["name"]> = Extract<
-  CapabilityAnalyticsEvent,
-  { name: Name; componentType: string }
->["componentType"];
-
-type TrackedRequest = AdaptationRequest & Readonly<{ adaptationId: string }>;
-
-function requestFor(action: ScaffoldingAction): AdaptationRequest {
-  if (action === "retrySuggestions") {
-    return { requestAction: "retry", retryTarget: "suggestions" } as const;
-  }
-  if (action === "retryTransformation") {
-    return { requestAction: "retry", retryTarget: "transformation" } as const;
-  }
-  return { requestAction: action };
-}
-
-const REVIEW_CONTROLS = {
-  accept: "accept_button",
-  retry: "retry_button",
-  undo: "undo_button",
-} as const;
-
-function reviewDetails<Action extends keyof typeof REVIEW_CONTROLS>(
-  { adaptationId, pendingReview }: WorksheetScaffoldingState,
-  reviewAction: Action,
-) {
-  return pendingReview === null
-    ? null
-    : {
-        adaptationId,
-        componentType: REVIEW_CONTROLS[reviewAction],
-        reviewAction,
-        transformationKind: pendingReview.kind,
-        ...(pendingReview.supportLevel === null
-          ? {}
-          : { supportLevel: pendingReview.supportLevel }),
-      };
-}
-
-function reviewRequestedEvent(
-  value: WorksheetScaffoldingState,
-  reviewAction: keyof typeof REVIEW_CONTROLS,
-): CapabilityAnalyticsEvent | null {
-  const details = reviewDetails(value, reviewAction);
-  return details && { name: "Transformation Review Requested", ...details };
-}
-
-function reviewedEvent(
-  value: WorksheetScaffoldingState,
-  reviewAction: "accept" | "undo",
-): CapabilityAnalyticsEvent | null {
-  const details = reviewDetails(value, reviewAction);
-  return details && { name: "Transformation Reviewed", ...details };
-}
 
 function useLatestRef<T>(value: T) {
   const ref = useRef(value);
