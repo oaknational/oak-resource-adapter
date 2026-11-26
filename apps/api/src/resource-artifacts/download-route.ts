@@ -14,6 +14,16 @@ import { findOwnedArtifact } from "./repository";
 
 const log = raLogger("internal-api");
 const allowedMethods = "GET, OPTIONS";
+const originalMarker = " (original)";
+const maxFilenameStemLength = 100;
+
+function originalDownloadTitle(title: string | null): string {
+  const titleLimit = maxFilenameStemLength - originalMarker.length;
+  const truncatedTitle = Array.from(title ?? "resource")
+    .slice(0, titleLimit)
+    .join("");
+  return `${truncatedTitle}${originalMarker}`;
+}
 
 function responseHeaders(request: NextRequest) {
   const headers = new Headers(getCorsHeaders(request, allowedMethods));
@@ -44,7 +54,7 @@ export async function downloadArtifact(
     if (!owned) return Response.json({ error: "Not found" }, { status: 404, headers });
     const { artifact, origin, title } = owned;
     const disposition = attachmentDisposition(
-      origin === "oak_resource" ? `${title ?? "resource"} (original)` : title,
+      origin === "oak_resource" ? originalDownloadTitle(title) : title,
       artifact.format,
     );
     const opened = await readArtifact(artifact.storageKey);
